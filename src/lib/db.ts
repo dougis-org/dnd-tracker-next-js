@@ -37,9 +37,9 @@ export async function connectToDatabase(): Promise<void> {
     };
 
     // Connect to MongoDB
-    const db = await mongoose.connect(mongoUri, options);
+    await mongoose.connect(mongoUri, options);
 
-    connection.isConnected = db.connections[0].readyState;
+    connection.isConnected = mongoose.connection.readyState;
 
     console.log('Successfully connected to MongoDB');
 

@@ -1,3 +1,4 @@
+import { connectToDatabase } from '../db';
 import User from '../models/User';
 import {
   ServiceResult,
@@ -47,6 +48,9 @@ export class UserServiceAuth {
     userData: UserRegistration
   ): Promise<ServiceResult<UserRegistrationResponse>> {
     try {
+      // Ensure database connection is established
+      await connectToDatabase();
+
       // Validate input data and password
       const validatedData = UserServiceValidation.validateAndParseRegistration(userData);
       const passwordError = this.validatePassword(validatedData.password);

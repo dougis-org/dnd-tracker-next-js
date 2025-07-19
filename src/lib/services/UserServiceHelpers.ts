@@ -1,6 +1,5 @@
+import { connectToDatabase } from '../db';
 import User from '../models/User';
-// For testing compatibility with Jest mock
-const UserModel = User;
 import { UserAlreadyExistsError } from './UserServiceErrors';
 import type { PublicUser } from '../validations/user';
 
@@ -15,12 +14,23 @@ export async function checkUserExists(
   email: string,
   username: string
 ): Promise<void> {
-  const existingUserByEmail = await UserModel.findByEmail(email);
+  // Ensure database connection before using model
+  await connectToDatabase();
+  
+  console.log('User:', User);
+  console.log('User.findByEmail:', User?.findByEmail);
+  console.log('typeof User.findByEmail:', typeof User?.findByEmail);
+  
+  if (!User || typeof User.findByEmail !== 'function') {
+    throw new Error(`User model is not properly initialized. User: ${User}, findByEmail: ${User?.findByEmail}`);
+  }
+  
+  const existingUserByEmail = await User.findByEmail(email);
   if (existingUserByEmail) {
     throw new UserAlreadyExistsError('email', email);
   }
 
-  const existingUserByUsername = await UserModel.findByUsername(username);
+  const existingUserByUsername = await User.findByUsername(username);
   if (existingUserByUsername) {
     throw new UserAlreadyExistsError('username', username);
   }
