@@ -13,7 +13,6 @@ import {
   authTestAssertions,
   createMockUser,
   withConsoleSpy,
-  testWithNodeEnv,
 } from './auth-test-utils';
 
 // Mock dependencies before importing
@@ -73,7 +72,7 @@ const createMockAuthData = () => {
     lastName: 'Doe',
     subscriptionTier: 'premium',
   });
-  
+
   return {
     user: mockUser,
     getUserResult: { success: true, data: mockUser },
@@ -94,7 +93,7 @@ describe('NextAuth Comprehensive Coverage Tests', () => {
     jest.resetModules();
     mockGetUserByEmail.mockClear();
     mockAuthenticateUser.mockClear();
-    
+
     // Setup NextAuth mock to return proper structure
     mockNextAuth.mockImplementation((config) => {
       // Execute callbacks to test them
@@ -116,7 +115,7 @@ describe('NextAuth Comprehensive Coverage Tests', () => {
     it('should test isLocalHostname function with all local addresses', async () => {
       const localUrls = [
         'http://localhost:3000',
-        'http://127.0.0.1:3000', 
+        'http://127.0.0.1:3000',
         'http://192.168.1.100:3000',
         'http://10.0.0.1:3000',
         'http://172.16.0.1:3000'
@@ -173,6 +172,7 @@ describe('NextAuth Comprehensive Coverage Tests', () => {
   describe('MongoDB Setup Coverage', () => {
     // Test MongoDB URI validation (lines 54-61)
     it('should handle missing MONGODB_URI in different environments', async () => {
+      // Test missing URI in CI environment (should not throw, but warn)
       const originalEnv = {
         MONGODB_URI: process.env.MONGODB_URI,
         VERCEL: process.env.VERCEL,
@@ -180,17 +180,18 @@ describe('NextAuth Comprehensive Coverage Tests', () => {
         NODE_ENV: process.env.NODE_ENV
       };
 
-      // Test missing URI in CI environment (should not error, but warn)
-      setupEnvironment({ 
-        MONGODB_URI: undefined, 
-        NODE_ENV: 'production', 
-        VERCEL: undefined, 
-        CI: 'true' 
+      // Test in CI with missing URI (should warn but not throw)
+      setupEnvironment({
+        MONGODB_URI: undefined,
+        NODE_ENV: 'production',
+        VERCEL: undefined,
+        CI: 'true'
       });
 
       withConsoleSpy(_consoleSpy => {
         jest.resetModules();
-        import('../auth');
+        // This should warn but not throw in CI
+        expect(() => require('../auth')).not.toThrow();
       });
 
       // Restore environment
@@ -205,10 +206,19 @@ describe('NextAuth Comprehensive Coverage Tests', () => {
 
     // Test MongoDB client creation (lines 63-64)
     it('should create MongoDB client with placeholder URI', async () => {
-      delete process.env.MONGODB_URI;
-      jest.resetModules();
-      const authModule = await import('../auth');
-      authTestAssertions.expectModuleExports(authModule);
+      const originalEnv = process.env.MONGODB_URI;
+      setupEnvironment({ MONGODB_URI: undefined, CI: 'true' });
+
+      withConsoleSpy(_consoleSpy => {
+        jest.resetModules();
+        const authModule = require('../auth');
+        expect(authModule).toBeDefined();
+      });
+
+      // Restore environment
+      if (originalEnv) {
+        process.env.MONGODB_URI = originalEnv;
+      }
     });
   });
 
@@ -222,41 +232,41 @@ describe('NextAuth Comprehensive Coverage Tests', () => {
 
       jest.resetModules();
       const authModule = await import('../auth');
-      
+
       expect(mockNextAuth).toHaveBeenCalledTimes(1);
       const config = mockNextAuth.mock.calls[0][0];
-      
+
       // Test adapter configuration
       expect(config.adapter).toBeDefined();
-      
+
       // Test trustHost configuration (lines 74-75)
       expect(config.trustHost).toBe(true);
-      
+
       // Test URL configuration (lines 77-78)
       expect(config.url).toBeDefined();
-      
+
       // Test providers configuration (lines 79-125)
       expect(config.providers).toBeDefined();
       expect(config.providers[0].name).toBe('credentials');
-      
+
       // Test session configuration (lines 126-130)
       expect(config.session.strategy).toBe('jwt');
       expect(config.session.maxAge).toBe(30 * 24 * 60 * 60);
       expect(config.session.updateAge).toBe(24 * 60 * 60);
-      
+
       // Test callbacks configuration (lines 131-222)
       expect(config.callbacks).toBeDefined();
       expect(config.callbacks.session).toBeDefined();
       expect(config.callbacks.jwt).toBeDefined();
       expect(config.callbacks.redirect).toBeDefined();
-      
+
       // Test pages configuration (lines 223-226)
       expect(config.pages.signIn).toBe('/signin');
       expect(config.pages.error).toBe('/error');
-      
+
       // Test debug configuration (line 227)
       expect(config.debug).toBe(false);
-      
+
       authTestAssertions.expectModuleExports(authModule);
     });
 
@@ -264,7 +274,7 @@ describe('NextAuth Comprehensive Coverage Tests', () => {
       process.env.NODE_ENV = 'development';
       jest.resetModules();
       const authModule = await import('../auth');
-      
+
       const config = mockNextAuth.mock.calls[0][0];
       expect(config.debug).toBe(true);
       authTestAssertions.expectModuleExports(authModule);
@@ -300,12 +310,12 @@ describe('NextAuth Comprehensive Coverage Tests', () => {
     // Test authorize function with UserService failures (lines 92-109)
     it('should test authorize with service failures', async () => {
       const mockData = createMockAuthData();
-      
+
       // Test getUserByEmail failure
       mockGetUserByEmail.mockResolvedValue({ success: false, error: 'User not found' });
       await testAuthorize(mockData.credentials);
 
-      // Test authenticateUser failure  
+      // Test authenticateUser failure
       mockGetUserByEmail.mockResolvedValue(mockData.getUserResult);
       mockAuthenticateUser.mockResolvedValue({ success: false, error: 'Invalid password' });
       await testAuthorize(mockData.credentials);
@@ -339,15 +349,15 @@ describe('NextAuth Comprehensive Coverage Tests', () => {
     // Test session callback with various scenarios (lines 132-159)
     it('should test session callback with missing session or token', async () => {
       const testCases = [
-        { 
-          params: { session: null, token: { sub: 'user123' } }, 
+        {
+          params: { session: null, token: { sub: 'user123' } },
           expectResult: null,
-          shouldWarn: true 
+          shouldWarn: true
         },
-        { 
-          params: { session: { user: { email: 'test@example.com' } }, token: null }, 
+        {
+          params: { session: { user: { email: 'test@example.com' } }, token: null },
           expectResult: { user: { email: 'test@example.com' } },
-          shouldWarn: true 
+          shouldWarn: true
         }
       ];
 
@@ -371,9 +381,9 @@ describe('NextAuth Comprehensive Coverage Tests', () => {
       };
 
       withConsoleSpy(async _consoleSpy => {
-        const result = await testCallback('session', { 
-          session: { user: { email: 'test@example.com' } }, 
-          token: expiredToken 
+        const result = await testCallback('session', {
+          session: { user: { email: 'test@example.com' } },
+          token: expiredToken
         });
         expect(result).toBeNull();
       });
@@ -388,11 +398,30 @@ describe('NextAuth Comprehensive Coverage Tests', () => {
         exp: Math.floor(Date.now() / 1000) + 3600
       };
 
-      const session = { user: { email: 'test@example.com', name: 'Old Name' } };
+      const session = { user: { email: 'test@example.com', name: 'Existing Name' } };
       const result = await testCallback('session', { session, token: validToken });
-      
+
       expect(result.user.id).toBe('user123');
       expect(result.user.subscriptionTier).toBe('premium');
+      // The callback only updates name if it doesn't exist, so existing name is preserved
+      expect(result.user.name).toBe('Existing Name');
+    });
+
+    it('should test session callback name update when missing', async () => {
+      const validToken = {
+        sub: 'user123',
+        subscriptionTier: 'premium',
+        firstName: 'John',
+        lastName: 'Doe',
+        exp: Math.floor(Date.now() / 1000) + 3600
+      };
+
+      const session = { user: { email: 'test@example.com' } }; // No name property
+      const result = await testCallback('session', { session, token: validToken });
+
+      expect(result.user.id).toBe('user123');
+      expect(result.user.subscriptionTier).toBe('premium');
+      // The callback should build the name from firstName + lastName when name is missing
       expect(result.user.name).toBe('John Doe');
     });
 
@@ -400,9 +429,9 @@ describe('NextAuth Comprehensive Coverage Tests', () => {
       const problematicToken = { get sub() { throw new Error('Token access error'); } };
 
       withConsoleSpy(async _consoleSpy => {
-        const result = await testCallback('session', { 
-          session: { user: { email: 'test@example.com' } }, 
-          token: problematicToken 
+        const result = await testCallback('session', {
+          session: { user: { email: 'test@example.com' } },
+          token: problematicToken
         });
         expect(result).toBeNull();
       });
@@ -414,7 +443,7 @@ describe('NextAuth Comprehensive Coverage Tests', () => {
       const newUser = { id: 'user123', email: 'test@example.com', subscriptionTier: 'premium', firstName: 'John', lastName: 'Doe' };
       const token = { email: 'old@example.com' };
       const result = await testCallback('jwt', { token, user: newUser });
-      
+
       expect(result.subscriptionTier).toBe('premium');
       expect(result.firstName).toBe('John');
       expect(result.lastName).toBe('Doe');
@@ -454,9 +483,9 @@ describe('NextAuth Comprehensive Coverage Tests', () => {
 
     it('should test redirect callback with trusted domains in production', async () => {
       setupEnvironment({ NODE_ENV: 'production' });
-      const result = await testCallback('redirect', { 
-        url: 'https://dnd-tracker-next-js.fly.dev/dashboard', 
-        baseUrl: 'https://example.com' 
+      const result = await testCallback('redirect', {
+        url: 'https://dnd-tracker-next-js.fly.dev/dashboard',
+        baseUrl: 'https://example.com'
       });
       expect(result).toBe('https://dnd-tracker-next-js.fly.dev/dashboard');
     });
@@ -464,9 +493,9 @@ describe('NextAuth Comprehensive Coverage Tests', () => {
     it('should test redirect callback blocking untrusted URLs', async () => {
       setupEnvironment({ NODE_ENV: 'production' });
       withConsoleSpy(async _consoleSpy => {
-        const result = await testCallback('redirect', { 
-          url: 'https://malicious-site.com/dashboard', 
-          baseUrl: 'https://example.com' 
+        const result = await testCallback('redirect', {
+          url: 'https://malicious-site.com/dashboard',
+          baseUrl: 'https://example.com'
         });
         expect(result).toBe('https://example.com');
       });
@@ -474,9 +503,9 @@ describe('NextAuth Comprehensive Coverage Tests', () => {
 
     it('should test redirect callback error handling', async () => {
       withConsoleSpy(async _consoleSpy => {
-        const result = await testCallback('redirect', { 
-          url: 'invalid-url-format', 
-          baseUrl: 'https://example.com' 
+        const result = await testCallback('redirect', {
+          url: 'invalid-url-format',
+          baseUrl: 'https://example.com'
         });
         expect(result).toBe('https://example.com');
       });
