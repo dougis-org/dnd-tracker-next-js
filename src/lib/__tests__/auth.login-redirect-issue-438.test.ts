@@ -61,10 +61,10 @@ describe('Issue #438: Login Redirect Problems', () => {
   const originalEnv = process.env;
 
   // Helper function to setup NextAuth environment
-  const setupAuthEnvironment = (nextAuthUrl?: string) => {
+  const setupAuthEnvironment = (nextAuthUrl?: string, nodeEnv = 'production') => {
     process.env = {
       ...originalEnv,
-      NODE_ENV: 'production',
+      NODE_ENV: nodeEnv,
       MONGODB_URI: 'mongodb://localhost:27017/test',
       MONGODB_DB_NAME: 'testdb',
       NEXTAUTH_SECRET: 'test-secret',
@@ -92,6 +92,33 @@ describe('Issue #438: Login Redirect Problems', () => {
       const location = response.headers.get('location');
       expect(location).toContain('/signin');
     }
+  };
+
+  // Helper function to test NextAuth configuration
+  const testNextAuthConfig = async (expectedStrategy = 'jwt') => {
+    await import('../auth');
+    const config = mockNextAuth.mock.calls[0][0];
+    expect(config).toBeDefined();
+    expect(config.session.strategy).toBe(expectedStrategy);
+    expect(config.callbacks).toBeDefined();
+    expect(config.callbacks.session).toBeDefined();
+    expect(config.callbacks.jwt).toBeDefined();
+    return config;
+  };
+
+  // Helper function to verify URL validation
+  const verifyUrlValidation = (urls: string[], shouldBeValid: boolean) => {
+    urls.forEach(url => {
+      if (shouldBeValid) {
+        expect(url).toMatch(/^https:\/\//);
+        expect(url).not.toContain('localhost');
+        expect(url).not.toContain('0.0.0.0');
+        expect(url).not.toContain('127.0.0.1');
+        expect(() => new URL(url)).not.toThrow();
+      } else {
+        expect(url).toContain('0.0.0.0');
+      }
+    });
   };
 
   beforeEach(() => {
@@ -147,23 +174,12 @@ describe('Issue #438: Login Redirect Problems', () => {
     });
 
     it('should ensure production URLs are properly configured', () => {
-      // Test production URL configuration
       const productionUrls = [
         'https://dnd-tracker-next-js.fly.dev',
         'https://dnd-tracker.fly.dev',
         'https://dndtracker.com'
       ];
-
-      productionUrls.forEach(url => {
-        // Verify URLs are valid and not using localhost or invalid IPs
-        expect(url).toMatch(/^https:\/\//);
-        expect(url).not.toContain('localhost');
-        expect(url).not.toContain('0.0.0.0');
-        expect(url).not.toContain('127.0.0.1');
-
-        // Verify URL can be parsed
-        expect(() => new URL(url)).not.toThrow();
-      });
+      verifyUrlValidation(productionUrls, true);
     });
   });
 
@@ -171,14 +187,7 @@ describe('Issue #438: Login Redirect Problems', () => {
     it('should maintain authentication state with proper JWT configuration', async () => {
       setupAuthEnvironment('https://dnd-tracker-next-js.fly.dev');
       process.env.AUTH_TRUST_HOST = 'true';
-
-      await import('../auth');
-      const config = mockNextAuth.mock.calls[0][0];
-
-      expect(config.session.strategy).toBe('jwt');
-      expect(config.callbacks).toBeDefined();
-      expect(config.callbacks.session).toBeDefined();
-      expect(config.callbacks.jwt).toBeDefined();
+      await testNextAuthConfig('jwt');
     });
 
     it('should prevent authentication bypass with middleware checks', async () => {
@@ -212,17 +221,11 @@ describe('Issue #438: Login Redirect Problems', () => {
       setupAuthEnvironment('https://dnd-tracker-next-js.fly.dev');
       process.env.AUTH_TRUST_HOST = 'true';
 
-      await import('../auth');
-      const config = mockNextAuth.mock.calls[0][0];
+      const config = await testNextAuthConfig('jwt');
 
-      // Verify complete configuration is valid
+      // Verify additional complete configuration is valid
       expect(config.trustHost).toBe(true);
-      expect(config.session.strategy).toBe('jwt');
       expect(config.providers).toBeDefined();
-      expect(config.callbacks.session).toBeDefined();
-      expect(config.callbacks.jwt).toBeDefined();
-
-      // Verify signin page configuration prevents redirect loops
       expect(config.pages.signIn).toBe('/signin');
       expect(config.pages.error).toBe('/error');
     });
