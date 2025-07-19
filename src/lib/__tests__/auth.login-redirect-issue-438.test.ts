@@ -200,7 +200,7 @@ describe('Issue #438: Login Redirect Problems', () => {
 
     it('should redirect unauthenticated users consistently', async () => {
       const routes = ['/dashboard/profile', '/characters/123', '/settings/account'];
-      
+
       for (const route of routes) {
         await testMiddlewareAuth(null, route, true);
       }
