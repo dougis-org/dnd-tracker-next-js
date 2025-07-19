@@ -5,6 +5,27 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import { UserService } from './services/UserService';
 
 /**
+ * Helper function to check if hostname is a local/invalid IP
+ */
+function isLocalHostname(hostname: string): boolean {
+  return (
+    hostname === 'localhost' ||
+    hostname === '0.0.0.0' ||
+    hostname === '127.0.0.1' ||
+    hostname.startsWith('192.168.') ||
+    hostname.startsWith('10.') ||
+    hostname.startsWith('172.')
+  );
+}
+
+/**
+ * Validates hostname for production environment
+ */
+function isValidProductionHostname(hostname: string): boolean {
+  return process.env.NODE_ENV !== 'production' || !isLocalHostname(hostname);
+}
+
+/**
  * Validates and sanitizes NEXTAUTH_URL for security
  * Prevents redirect to invalid URLs like 0.0.0.0 (Issue #438)
  */
@@ -18,22 +39,9 @@ function validateNextAuthUrl(): string | undefined {
   try {
     const parsedUrl = new URL(url);
 
-    // Prevent localhost/local IPs in production
-    if (process.env.NODE_ENV === 'production') {
-      const hostname = parsedUrl.hostname;
-
-      // Block localhost, local IPs, and invalid hostnames
-      if (
-        hostname === 'localhost' ||
-        hostname === '0.0.0.0' ||
-        hostname === '127.0.0.1' ||
-        hostname.startsWith('192.168.') ||
-        hostname.startsWith('10.') ||
-        hostname.startsWith('172.')
-      ) {
-        console.warn(`Invalid NEXTAUTH_URL for production: ${url}. Using fallback.`);
-        return undefined;
-      }
+    if (!isValidProductionHostname(parsedUrl.hostname)) {
+      console.warn(`Invalid NEXTAUTH_URL for production: ${url}. Using fallback.`);
+      return undefined;
     }
 
     return url;
