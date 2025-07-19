@@ -13,6 +13,7 @@ import {
   authTestAssertions,
   createMockUser,
   withConsoleSpy,
+  setupEnvironment,
 } from './auth-test-utils';
 
 // Mock dependencies before importing
@@ -54,15 +55,7 @@ const getAuthConfig = async () => {
   return mockNextAuth.mock.calls[0][0];
 };
 
-const setupEnvironment = (env: Partial<NodeJS.ProcessEnv>) => {
-  Object.keys(env).forEach(key => {
-    if (env[key] === undefined) {
-      delete process.env[key];
-    } else {
-      process.env[key] = env[key];
-    }
-  });
-};
+// Import setupEnvironment from auth-test-utils
 
 const createMockAuthData = () => {
   const mockUser = createMockUser({

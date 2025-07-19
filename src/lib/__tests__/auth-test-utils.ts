@@ -93,3 +93,82 @@ export function testWithNodeEnv(env: string, testFn: () => void): void {
     });
   }
 }
+
+/**
+ * Helper to setup environment variables and reset modules
+ */
+export function setupEnvironment(env: Partial<NodeJS.ProcessEnv>): void {
+  Object.keys(env).forEach(key => {
+    if (env[key] === undefined) {
+      delete process.env[key];
+    } else {
+      process.env[key] = env[key];
+    }
+  });
+}
+
+/**
+ * Helper to test auth configuration with environment setup
+ */
+export async function testAuthConfigWithEnv(
+  env: Partial<NodeJS.ProcessEnv>,
+  useConsoleSpy = false
+): Promise<any> {
+  setupEnvironment(env);
+  jest.resetModules();
+
+  if (useConsoleSpy) {
+    return new Promise((resolve) => {
+      withConsoleSpy(() => {
+        resolve(import('../auth'));
+      });
+    });
+  }
+
+  return import('../auth');
+}
+
+/**
+ * Helper to test middleware authentication
+ */
+export async function testMiddlewareAuth(
+  token: any,
+  route: string,
+  shouldRedirect: boolean
+): Promise<void> {
+  const { getToken } = require('next-auth/jwt');
+  const mockGetToken = getToken as jest.Mock;
+  mockGetToken.mockResolvedValue(token);
+
+  const middleware = await import('../../middleware');
+  const mockRequest = {
+    nextUrl: { pathname: route },
+    url: `https://dnd-tracker-next-js.fly.dev${route}`
+  } as any;
+
+  const response = await middleware.middleware(mockRequest);
+
+  if (shouldRedirect) {
+    expect(response).toBeDefined();
+    expect(response.type).toBe('redirect');
+    const location = response.headers.get('location');
+    expect(location).toContain('/signin');
+  }
+}
+
+/**
+ * Helper to verify URL validation results
+ */
+export function verifyUrlValidation(urls: string[], shouldBeValid: boolean): void {
+  urls.forEach(url => {
+    if (shouldBeValid) {
+      expect(url).toMatch(/^https:\/\//);
+      expect(url).not.toContain('localhost');
+      expect(url).not.toContain('0.0.0.0');
+      expect(url).not.toContain('127.0.0.1');
+      expect(() => new URL(url)).not.toThrow();
+    } else {
+      expect(url).toContain('0.0.0.0');
+    }
+  });
+}

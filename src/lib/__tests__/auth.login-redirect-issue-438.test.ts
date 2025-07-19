@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server';
+import { testMiddlewareAuth, verifyUrlValidation } from './auth-test-utils';
 
 /**
  * Test file for Issue #438: Login fails to redirect to a useful page
@@ -72,28 +72,6 @@ describe('Issue #438: Login Redirect Problems', () => {
     };
   };
 
-  // Helper function to test middleware authentication
-  const testMiddlewareAuth = async (token: any, route: string, shouldRedirect: boolean) => {
-    const { getToken } = require('next-auth/jwt');
-    const mockGetToken = getToken as jest.Mock;
-    mockGetToken.mockResolvedValue(token);
-
-    const middleware = await import('../../middleware');
-    const mockRequest = {
-      nextUrl: { pathname: route },
-      url: `https://dnd-tracker-next-js.fly.dev${route}`
-    } as NextRequest;
-
-    const response = await middleware.middleware(mockRequest);
-
-    if (shouldRedirect) {
-      expect(response).toBeDefined();
-      expect(response.type).toBe('redirect');
-      const location = response.headers.get('location');
-      expect(location).toContain('/signin');
-    }
-  };
-
   // Helper function to test NextAuth configuration
   const testNextAuthConfig = async (expectedStrategy = 'jwt') => {
     await import('../auth');
@@ -106,20 +84,7 @@ describe('Issue #438: Login Redirect Problems', () => {
     return config;
   };
 
-  // Helper function to verify URL validation
-  const verifyUrlValidation = (urls: string[], shouldBeValid: boolean) => {
-    urls.forEach(url => {
-      if (shouldBeValid) {
-        expect(url).toMatch(/^https:\/\//);
-        expect(url).not.toContain('localhost');
-        expect(url).not.toContain('0.0.0.0');
-        expect(url).not.toContain('127.0.0.1');
-        expect(() => new URL(url)).not.toThrow();
-      } else {
-        expect(url).toContain('0.0.0.0');
-      }
-    });
-  };
+  // verifyUrlValidation imported from auth-test-utils
 
   beforeEach(() => {
     jest.clearAllMocks();
