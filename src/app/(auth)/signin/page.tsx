@@ -27,7 +27,38 @@ type FormState = {
 export default function SignInPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get('callbackUrl') || searchParams.get('next') || '/dashboard';
+  // Enhanced callback URL validation for Issue #438: Prevent invalid redirects
+  const getValidatedCallbackUrl = () => {
+    const rawCallbackUrl = searchParams.get('callbackUrl') || searchParams.get('next');
+
+    if (!rawCallbackUrl) {
+      return '/dashboard';
+    }
+
+    try {
+      // If it's a relative URL, it's safe
+      if (rawCallbackUrl.startsWith('/')) {
+        return rawCallbackUrl;
+      }
+
+      // If it's an absolute URL, validate it
+      const url = new URL(rawCallbackUrl);
+      const currentOrigin = window.location.origin;
+
+      // Only allow same-origin redirects
+      if (url.origin === currentOrigin) {
+        return rawCallbackUrl;
+      }
+
+      console.warn(`Blocked redirect to external URL: ${rawCallbackUrl}`);
+      return '/dashboard';
+    } catch (error) {
+      console.warn(`Invalid callback URL format: ${rawCallbackUrl}`, error);
+      return '/dashboard';
+    }
+  };
+
+  const callbackUrl = getValidatedCallbackUrl();
   const error = searchParams.get('error');
 
   // Generate redirect message if user was redirected from a protected route
