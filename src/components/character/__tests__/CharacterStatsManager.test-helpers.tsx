@@ -2,9 +2,12 @@ import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import { CharacterStatsManager } from '../CharacterStatsManager';
 import { CharacterService } from '@/lib/services/CharacterService';
+import { createMockCharacter } from '@/lib/services/__tests__/CharacterService.test-helpers';
 
-// Mock character data factory
-export const createMockCharacter = (overrides = {}) => ({
+// createMockCharacter now imported from centralized test helpers
+
+// Specialized character factory for stats testing (kept for specific use case)
+export const createMockCharacterForStats = (overrides = {}) => ({
   _id: '507f1f77bcf86cd799439011',
   name: 'Test Character',
   type: 'pc' as const,
