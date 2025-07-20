@@ -2,9 +2,10 @@ import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import { CharacterStatsManager } from '../CharacterStatsManager';
 import { CharacterService } from '@/lib/services/CharacterService';
-import { createMockCharacter } from '@/lib/services/__tests__/CharacterService.test-helpers';
+import { createMockCharacter as createMockCharacterBase } from '@/lib/services/__tests__/CharacterService.test-helpers';
 
-// createMockCharacter now imported from centralized test helpers
+// Re-export createMockCharacter for backward compatibility
+export { createMockCharacterBase as createMockCharacter };
 
 // Specialized character factory for stats testing (kept for specific use case)
 export const createMockCharacterForStats = (overrides = {}) => ({

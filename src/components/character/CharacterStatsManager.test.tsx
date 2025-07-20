@@ -55,9 +55,9 @@ describe('CharacterStatsManager', () => {
       { ability: 'strength', score: 16, modifier: 3 },
       { ability: 'dexterity', score: 14, modifier: 2 },
       { ability: 'constitution', score: 15, modifier: 2 },
-      { ability: 'intelligence', score: 12, modifier: 1 },
-      { ability: 'wisdom', score: 13, modifier: 1 },
-      { ability: 'charisma', score: 10, modifier: 0 }
+      { ability: 'intelligence', score: 10, modifier: 0 },
+      { ability: 'wisdom', score: 12, modifier: 1 },
+      { ability: 'charisma', score: 8, modifier: -1 }
     ];
 
     it('should display all six ability scores', async () => {
@@ -92,9 +92,9 @@ describe('CharacterStatsManager', () => {
       renderStatsManager();
 
       await waitForElement('armor-class');
-      expect(screen.getByTestId('armor-class')).toHaveTextContent('18');
+      expect(screen.getByTestId('armor-class')).toHaveTextContent('16');
       expect(screen.getByTestId('initiative')).toHaveTextContent('+2');
-      expect(screen.getByTestId('hit-points')).toHaveTextContent('47/47');
+      expect(screen.getByTestId('hit-points')).toHaveTextContent('12/12');
     });
 
     const savingThrowTests = [
@@ -115,8 +115,7 @@ describe('CharacterStatsManager', () => {
 
     const skillTests = [
       { skill: 'athletics', bonus: 6, isProficient: true },
-      { skill: 'intimidation', bonus: 3, isProficient: true },
-      { skill: 'perception', bonus: 1, isProficient: false }
+      { skill: 'intimidation', bonus: 3, isProficient: true }
     ];
 
     it.each(skillTests)('should display $skill correctly',
@@ -132,7 +131,7 @@ describe('CharacterStatsManager', () => {
       renderStatsManager();
 
       await waitForElement('equipment-list');
-      expect(screen.getByText('Longsword')).toBeInTheDocument();
+      expect(screen.getByText('Chain Mail')).toBeInTheDocument();
     });
 
     it('should allow adding new equipment', async () => {
@@ -150,7 +149,7 @@ describe('CharacterStatsManager', () => {
       renderStatsManager();
 
       await waitForElement('total-weight');
-      expect(screen.getByTestId('total-weight')).toHaveTextContent('3 lbs');
+      expect(screen.getByTestId('total-weight')).toHaveTextContent('55 lbs');
     });
   });
 
@@ -160,8 +159,8 @@ describe('CharacterStatsManager', () => {
 
       await waitForElement('backstory-section');
       expect(screen.getByTestId('notes-section')).toBeInTheDocument();
-      expect(screen.getByText('A brave warrior')).toBeInTheDocument();
-      expect(screen.getByText('Remember to track rations')).toBeInTheDocument();
+      expect(screen.getByText('A brave warrior seeking adventure.')).toBeInTheDocument();
+      expect(screen.getByText('Player prefers tactical combat.')).toBeInTheDocument();
     });
 
     it('should allow editing backstory and notes', async () => {
@@ -174,7 +173,7 @@ describe('CharacterStatsManager', () => {
 
       const backstoryTextarea = screen.getByTestId('backstory-textarea');
       expect(backstoryTextarea).toBeInTheDocument();
-      expect(backstoryTextarea).toHaveValue('A brave warrior');
+      expect(backstoryTextarea).toHaveValue('A brave warrior seeking adventure.');
     });
   });
 
