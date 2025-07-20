@@ -13,6 +13,15 @@ import TroubleshootingSection from './TroubleshootingSection';
 import ContactSupportSection from './ContactSupportSection';
 import SearchResults from './SearchResults';
 
+const HELP_TABS = [
+  { value: 'getting-started', label: 'Getting Started', component: GettingStartedSection },
+  { value: 'user-guides', label: 'User Guides', component: UserGuidesSection },
+  { value: 'faq', label: 'FAQ', component: FAQSection },
+  { value: 'features', label: 'Features', component: FeaturesSection },
+  { value: 'troubleshooting', label: 'Troubleshooting', component: TroubleshootingSection },
+  { value: 'contact-support', label: 'Contact Support', component: ContactSupportSection }
+];
+
 export default function HelpContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('getting-started');
@@ -33,7 +42,6 @@ export default function HelpContent() {
           D&D Encounter Tracker Documentation - Your comprehensive guide to using the D&D Encounter Tracker for managing characters, encounters, and combat sessions.
         </CardDescription>
 
-        {/* Search Section */}
         <div className="relative mt-4">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
@@ -53,39 +61,21 @@ export default function HelpContent() {
         ) : (
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid grid-cols-3 md:grid-cols-6 gap-2">
-              <TabsTrigger value="getting-started">Getting Started</TabsTrigger>
-              <TabsTrigger value="user-guides">User Guides</TabsTrigger>
-              <TabsTrigger value="faq">FAQ</TabsTrigger>
-              <TabsTrigger value="features">Features</TabsTrigger>
-              <TabsTrigger value="troubleshooting">Troubleshooting</TabsTrigger>
-              <TabsTrigger value="contact-support">Contact Support</TabsTrigger>
+              {HELP_TABS.map(tab => (
+                <TabsTrigger key={tab.value} value={tab.value}>{tab.label}</TabsTrigger>
+              ))}
             </TabsList>
 
             <div className="mt-6" data-testid="help-content">
               <div className="prose prose-slate max-w-none">
-                <TabsContent value="getting-started">
-                  <GettingStartedSection />
-                </TabsContent>
-
-                <TabsContent value="user-guides">
-                  <UserGuidesSection />
-                </TabsContent>
-
-                <TabsContent value="faq">
-                  <FAQSection />
-                </TabsContent>
-
-                <TabsContent value="features">
-                  <FeaturesSection />
-                </TabsContent>
-
-                <TabsContent value="troubleshooting">
-                  <TroubleshootingSection />
-                </TabsContent>
-
-                <TabsContent value="contact-support">
-                  <ContactSupportSection />
-                </TabsContent>
+                {HELP_TABS.map(tab => {
+                  const Component = tab.component;
+                  return (
+                    <TabsContent key={tab.value} value={tab.value}>
+                      <Component />
+                    </TabsContent>
+                  );
+                })}
               </div>
             </div>
           </Tabs>

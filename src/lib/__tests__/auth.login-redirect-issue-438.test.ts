@@ -1,4 +1,4 @@
-import { testMiddlewareAuth, verifyUrlValidation, setupCommonAuthTestMocks } from './auth-test-utils';
+import { testMiddlewareAuth, verifyUrlValidation, setupCommonAuthTestMocks, setupAuthEnvironment } from './auth-test-utils';
 
 /**
  * Test file for Issue #438: Login fails to redirect to a useful page
