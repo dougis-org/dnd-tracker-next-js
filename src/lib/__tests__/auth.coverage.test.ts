@@ -19,6 +19,7 @@ import {
   testAuthWithEnvAndSpy,
   testEnvWithConditionalImport,
   testWithTemporaryEnv,
+  testCallbackWithSpy,
 } from './auth-test-utils';
 
 // Mock dependencies before importing
@@ -317,10 +318,7 @@ describe('NextAuth Comprehensive Coverage Tests', () => {
 
       for (const { params, expectResult, shouldWarn } of testCases) {
         if (shouldWarn) {
-          withConsoleSpy(async _consoleSpy => {
-            const result = await testCallback('session', params);
-            expect(result).toEqual(expectResult);
-          });
+          await testCallbackWithSpy(testCallback, 'session', params, expectResult);
         } else {
           const result = await testCallback('session', params);
           expect(result).toEqual(expectResult);
@@ -334,13 +332,10 @@ describe('NextAuth Comprehensive Coverage Tests', () => {
         exp: Math.floor(Date.now() / 1000) - 3600 // Expired 1 hour ago
       };
 
-      withConsoleSpy(async _consoleSpy => {
-        const result = await testCallback('session', {
-          session: { user: { email: 'test@example.com' } },
-          token: expiredToken
-        });
-        expect(result).toBeNull();
-      });
+      await testCallbackWithSpy(testCallback, 'session', {
+        session: { user: { email: 'test@example.com' } },
+        token: expiredToken
+      }, null);
     });
 
     it('should test session callback with valid session', async () => {
@@ -382,13 +377,10 @@ describe('NextAuth Comprehensive Coverage Tests', () => {
     it('should test session callback error handling', async () => {
       const problematicToken = { get sub() { throw new Error('Token access error'); } };
 
-      withConsoleSpy(async _consoleSpy => {
-        const result = await testCallback('session', {
-          session: { user: { email: 'test@example.com' } },
-          token: problematicToken
-        });
-        expect(result).toBeNull();
-      });
+      await testCallbackWithSpy(testCallback, 'session', {
+        session: { user: { email: 'test@example.com' } },
+        token: problematicToken
+      }, null);
     });
   });
 

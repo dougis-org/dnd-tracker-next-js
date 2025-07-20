@@ -328,3 +328,18 @@ export function testWithTemporaryEnv(envKeys: string[], testEnv: Partial<NodeJS.
     });
   }
 }
+
+/**
+ * Helper to test callback with withConsoleSpy wrapper
+ */
+export async function testCallbackWithSpy(
+  testCallback: (name: string, params: any) => Promise<any>,
+  callbackName: string,
+  params: any,
+  expectResult: any
+): Promise<void> {
+  await withConsoleSpy(async _consoleSpy => {
+    const result = await testCallback(callbackName, params);
+    expect(result).toEqual(expectResult);
+  });
+}
