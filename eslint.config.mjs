@@ -93,6 +93,23 @@ export default [
       }
     }
   },
+  // Migration files configuration
+  {
+    files: ['migrations/**/*.js'], // eslint-disable-line
+    languageOptions: {
+      globals: { // eslint-disable-line
+        // Node.js globals for migration files // eslint-disable-line
+        require: 'readonly', // eslint-disable-line
+        module: 'readonly', // eslint-disable-line
+        exports: 'readonly', // eslint-disable-line
+        __dirname: 'readonly', // eslint-disable-line
+        __filename: 'readonly', // eslint-disable-line
+        global: 'readonly', // eslint-disable-line
+        process: 'readonly', // eslint-disable-line
+        console: 'readonly' // eslint-disable-line
+      }
+    }
+  },
   // Mock files configuration
   {
     files: ['**/__mocks__/**/*.{js,jsx,ts,tsx}'], // eslint-disable-line
