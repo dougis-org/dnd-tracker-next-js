@@ -78,9 +78,6 @@ describe('Base Validation Schemas', () => {
       passwordsWithSpecialChars.forEach(password => {
         const result = safeValidate(passwordSchema, password);
         expect(result.success).toBe(true);
-        if (!result.success) {
-          console.log(`Password "${password}" failed validation:`, result.errors);
-        }
       });
     });
 
