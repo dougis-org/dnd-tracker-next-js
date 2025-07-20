@@ -177,4 +177,29 @@ describe('ProfileSetupPage Component', () => {
 
     expect(mockRouter.push).toHaveBeenCalledWith('/dashboard');
   });
+
+  it('shows error when user session has no ID', async () => {
+    // Mock session without user ID
+    (useSession as jest.Mock).mockReturnValue({
+      data: {
+        user: {
+          email: 'test@example.com',
+          name: 'John Doe',
+          // No ID property
+        },
+      },
+      status: 'authenticated',
+    });
+
+    render(<ProfileSetupPage />);
+
+    await fillProfileFormField(/Display Name/i, 'Test User');
+    await clickCompleteSetupButton();
+
+    await waitFor(() => {
+      expect(screen.getByText('User session not found')).toBeInTheDocument();
+      expect(global.fetch).not.toHaveBeenCalled();
+      expect(screen.getByRole('button', { name: /Complete Setup/i })).toBeEnabled();
+    });
+  });
 });
