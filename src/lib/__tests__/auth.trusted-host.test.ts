@@ -1,3 +1,5 @@
+import { setupCommonAuthTestMocks, getAuthConfigAsync } from './auth-test-utils';
+
 // Mock the entire next-auth module to capture configuration
 const mockNextAuth = jest.fn();
 jest.mock('next-auth', () => mockNextAuth);
@@ -22,7 +24,7 @@ jest.mock('../services/UserService', () => ({
 describe('NextAuth Trusted Host Configuration', () => {
   const originalEnv = process.env;
 
-  // Helper function to get NextAuth configuration after import
+  // Helper function to get NextAuth configuration after import - using imported getAuthConfigAsync
   const getNextAuthConfig = async (authTrustHost?: string): Promise<any> => {
     // Set or clear AUTH_TRUST_HOST
     if (authTrustHost !== undefined) {
@@ -33,13 +35,8 @@ describe('NextAuth Trusted Host Configuration', () => {
       }
     }
 
-    // Clear mock and import auth module
-    mockNextAuth.mockClear();
-    await import('../auth');
-
-    // Verify NextAuth was called and return config
-    expect(mockNextAuth).toHaveBeenCalledTimes(1);
-    return mockNextAuth.mock.calls[0][0];
+    // Use the imported helper function
+    return await getAuthConfigAsync(mockNextAuth);
   };
 
   // Helper function to test trustHost value
@@ -49,23 +46,7 @@ describe('NextAuth Trusted Host Configuration', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
-
-    // Clear module cache to ensure fresh imports
-    jest.resetModules();
-
-    // Setup NextAuth mock to return proper structure
-    mockNextAuth.mockImplementation((_config) => {
-      return {
-        handlers: {
-          GET: jest.fn(),
-          POST: jest.fn(),
-        },
-        auth: jest.fn(),
-        signIn: jest.fn(),
-        signOut: jest.fn(),
-      };
-    });
+    setupCommonAuthTestMocks(mockNextAuth);
 
     // Reset environment to simulate production
     process.env = {

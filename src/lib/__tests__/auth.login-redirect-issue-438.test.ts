@@ -1,4 +1,4 @@
-import { testMiddlewareAuth, verifyUrlValidation, setupCommonAuthTestMocks, setupAuthEnvironment } from './auth-test-utils';
+import { testMiddlewareAuth, verifyUrlValidation, setupCommonAuthTestMocks, setupAuthEnvironment, getAuthConfigAsync } from './auth-test-utils';
 
 /**
  * Test file for Issue #438: Login fails to redirect to a useful page
@@ -61,10 +61,9 @@ describe('Issue #438: Login Redirect Problems', () => {
   const originalEnv = process.env;
 
 
-  // Helper function to test NextAuth configuration
+  // Helper function to test NextAuth configuration - using imported getAuthConfigAsync
   const testNextAuthConfig = async (expectedStrategy = 'jwt') => {
-    await import('../auth');
-    const config = mockNextAuth.mock.calls[0][0];
+    const config = await getAuthConfigAsync(mockNextAuth);
     expect(config).toBeDefined();
     expect(config.session.strategy).toBe(expectedStrategy);
     expect(config.callbacks).toBeDefined();
