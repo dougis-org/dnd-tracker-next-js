@@ -82,20 +82,24 @@ describe('Base Validation Schemas', () => {
     });
 
     it('should validate edge case passwords with all required character types', () => {
-      const edgeCasePasswords = [
-        'aA1!', // Minimal length - should fail
+      const validEdgeCasePasswords = [
         'aA1!abcd', // 8 chars, all requirements met
         'Aa1@bcdefgh', // 11 chars, all requirements
         'MyP@ssw0rd!123', // Longer password with all requirements
       ];
 
-      edgeCasePasswords.forEach(password => {
+      const invalidEdgeCasePasswords = [
+        'aA1!', // Minimal length - should fail
+      ];
+
+      validEdgeCasePasswords.forEach(password => {
         const result = safeValidate(passwordSchema, password);
-        if (password.length >= 8) {
-          expect(result.success).toBe(true);
-        } else {
-          expect(result.success).toBe(false);
-        }
+        expect(result.success).toBe(true);
+      });
+
+      invalidEdgeCasePasswords.forEach(password => {
+        const result = safeValidate(passwordSchema, password);
+        expect(result.success).toBe(false);
       });
     });
 
