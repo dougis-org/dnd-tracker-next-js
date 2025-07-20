@@ -61,15 +61,19 @@ jobs:
 
       - name: Commit auto-fixed changes
         if: steps.verify_diff.outputs.changes == 'true'
+        env:
+          AUTHOR_NAME: ${{ steps.last_commit.outputs.author }}
         run: |
           git commit -m "Auto-fix ESLint issues
           
           Files were auto corrected by GitHub action
-          Last commit author: ${{ steps.last_commit.outputs.author }}
+          Last commit author: ${AUTHOR_NAME}
           
           [skip ci]"
 
       - name: Push changes
         if: steps.verify_diff.outputs.changes == 'true'
+        env:
+          BRANCH_NAME: ${{ github.head_ref }}
         run: |
-          git push origin ${{ github.head_ref }}
+          git push origin "${BRANCH_NAME}"
