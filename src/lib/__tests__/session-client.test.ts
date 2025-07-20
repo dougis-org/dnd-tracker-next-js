@@ -8,6 +8,7 @@ import {
   ClientSessionUtils,
   performLogout,
 } from '../session-client';
+import { createMockUser } from './auth-test-utils';
 
 // Mock next-auth/react
 jest.mock('next-auth/react');
@@ -29,12 +30,7 @@ const createMockSession = (overrides = {}) => ({
   ...overrides,
 });
 
-const createMockUser = (overrides = {}) => ({
-  id: '123',
-  email: 'test@example.com',
-  subscriptionTier: 'free',
-  ...overrides,
-});
+// createMockUser now imported from auth-test-utils
 
 const createSessionWithUser = (userOverrides = {}) =>
   createMockSession({ user: createMockUser(userOverrides) });
