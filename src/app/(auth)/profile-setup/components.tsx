@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { User, CheckCircle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { User, CheckCircle, AlertCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import {
   FormWrapper,
@@ -188,9 +189,20 @@ export function ProfileForm({
   isSubmitting,
   errors,
 }: ProfileFormProps) {
+  // Find general errors (not tied to specific fields)
+  const generalError = errors.find(err => !err.field)?.message;
+
   return (
     <div className="space-y-6">
       <ProfileFormHeader />
+
+      {generalError && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{generalError}</AlertDescription>
+        </Alert>
+      )}
+
       <FormWrapper
         onSubmit={handleSubmit}
         errors={errors}
