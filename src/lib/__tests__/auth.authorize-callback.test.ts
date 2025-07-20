@@ -13,7 +13,6 @@ import {
   createMockUser,
   withConsoleSpy,
   setupCommonAuthTestMocks,
-  getAuthConfig,
 } from './auth-test-utils';
 
 // Mock dependencies before importing

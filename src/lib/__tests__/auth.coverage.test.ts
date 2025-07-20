@@ -15,7 +15,6 @@ import {
   withConsoleSpy,
   setupEnvironment,
   setupCommonAuthTestMocks,
-  getAuthConfig,
   testAuthWithEnvAndSpy,
   testEnvWithConditionalImport,
   testWithTemporaryEnv,
