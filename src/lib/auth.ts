@@ -161,6 +161,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async jwt({ token, user }: { token: any; user?: any }) {
       try {
         // Enhanced JWT callback for Issue #438: Better token management
+        // Handle null/undefined token by creating a minimal token object
+        if (!token) {
+          token = {};
+        }
+
         if (user) {
           // Store additional user data in token for session persistence
           token.subscriptionTier = (user as any).subscriptionTier || 'free';
@@ -169,15 +174,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           token.email = (user as any).email || token.email;
         }
 
-        // Ensure token has required fields
-        if (!token.sub && user?.id) {
+        // Ensure token has required fields and update sub when user is provided
+        if (user?.id) {
           token.sub = user.id;
         }
 
         return token;
       } catch (error) {
         console.error('JWT callback error:', error);
-        return token; // Return existing token to prevent complete failure
+        return token || {}; // Return existing token or empty object to prevent complete failure
       }
     },
     async redirect({ url, baseUrl }: { url: string; baseUrl: string }) {

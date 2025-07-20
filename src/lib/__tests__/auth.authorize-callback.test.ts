@@ -78,7 +78,7 @@ describe('Authorize Function Tests', () => {
   });
 
   const testAuthorize = async (credentials: any, expectResult: any = null) => {
-    const config = await getAuthConfig();
+    const config = await getAuthConfigAsync();
     const authorizeFunc = config.providers[0].authorize;
     const result = await authorizeFunc(credentials);
     if (expectResult === null) {
