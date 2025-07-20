@@ -2,6 +2,7 @@ import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import userEvent from '@testing-library/user-event';
 import { screen } from '@testing-library/react';
+import { createMockSession as createMockSessionBase } from '@/lib/test-utils/shared-api-test-helpers';
 
 export const TEST_USER_ID = '123';
 export const TEST_EMAIL = 'test@example.com';
@@ -11,9 +12,9 @@ export const createMockRouter = () => ({
 });
 
 export const createMockSession = (overrides: any = {}) => ({
+  ...createMockSessionBase(overrides.user?.id || TEST_USER_ID),
   user: {
-    id: TEST_USER_ID,
-    email: TEST_EMAIL,
+    ...createMockSessionBase(overrides.user?.id || TEST_USER_ID).user,
     name: 'John Doe',
     ...overrides.user,
   },

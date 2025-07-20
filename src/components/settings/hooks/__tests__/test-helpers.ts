@@ -1,15 +1,16 @@
 import { act, renderHook } from '@testing-library/react';
 import { useSettingsForm } from '../useSettingsForm';
+import { createMockSession as createMockSessionBase } from '@/lib/test-utils/shared-api-test-helpers';
 
 export const createMockEvent = (): React.FormEvent => ({
   preventDefault: jest.fn(),
 } as unknown as React.FormEvent);
 
 export const createMockSession = () => ({
+  ...createMockSessionBase('1'),
   user: {
-    id: '1',
+    ...createMockSessionBase('1').user,
     name: 'Test User',
-    email: 'test@example.com',
     subscriptionTier: 'free',
     notifications: {
       email: true,

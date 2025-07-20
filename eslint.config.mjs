@@ -98,7 +98,7 @@ export default [
     files: ['migrations/**/*.js'], // eslint-disable-line
     languageOptions: {
       globals: { // eslint-disable-line
-        // Node.js globals for migration files // eslint-disable-line
+        // Node.js global variables for migration files // eslint-disable-line
         require: 'readonly', // eslint-disable-line
         module: 'readonly', // eslint-disable-line
         exports: 'readonly', // eslint-disable-line
