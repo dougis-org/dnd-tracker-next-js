@@ -14,6 +14,8 @@ import {
   createMockUser,
   withConsoleSpy,
   setupEnvironment,
+  setupAuthTestMocks,
+  getAuthConfig,
 } from './auth-test-utils';
 
 // Mock dependencies before importing
@@ -49,7 +51,7 @@ afterAll(() => {
 });
 
 // Helper functions to reduce duplication
-const getAuthConfig = async () => {
+const getAuthConfigAsync = async () => {
   jest.resetModules();
   await import('../auth');
   return mockNextAuth.mock.calls[0][0];
@@ -75,32 +77,14 @@ const createMockAuthData = () => {
 };
 
 const testCallback = async (callbackName: string, params: any) => {
-  const config = await getAuthConfig();
+  const config = await getAuthConfigAsync();
   const callback = config.callbacks[callbackName];
   return callback(params);
 };
 
 describe('NextAuth Comprehensive Coverage Tests', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    jest.resetModules();
-    mockGetUserByEmail.mockClear();
-    mockAuthenticateUser.mockClear();
-
-    // Setup NextAuth mock to return proper structure
-    mockNextAuth.mockImplementation((config) => {
-      // Execute callbacks to test them
-      if (config.callbacks) {
-        // Store config for testing
-        (mockNextAuth as any)._lastConfig = config;
-      }
-      return {
-        handlers: { GET: jest.fn(), POST: jest.fn() },
-        auth: jest.fn(),
-        signIn: jest.fn(),
-        signOut: jest.fn(),
-      };
-    });
+    setupAuthTestMocks(mockNextAuth, mockGetUserByEmail, mockAuthenticateUser);
   });
 
   describe('Helper Functions Coverage', () => {
@@ -127,7 +111,7 @@ describe('NextAuth Comprehensive Coverage Tests', () => {
     it('should test isValidProductionHostname in different environments', async () => {
       // Test in development - should allow local hostnames
       setupEnvironment({ NODE_ENV: 'development', NEXTAUTH_URL: 'http://localhost:3000' });
-      const authModule = await getAuthConfig();
+      const authModule = await getAuthConfigAsync();
       expect(authModule).toBeDefined();
 
       // Test in production - should reject local hostnames

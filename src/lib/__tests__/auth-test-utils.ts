@@ -172,3 +172,74 @@ export function verifyUrlValidation(urls: string[], shouldBeValid: boolean): voi
     }
   });
 }
+
+/**
+ * Helper to get NextAuth config from mock
+ */
+export function getAuthConfig(mockNextAuth: jest.Mock): any {
+  if (!mockNextAuth || !mockNextAuth.mock || !mockNextAuth.mock.calls[0]) {
+    throw new Error('getAuthConfig: mockNextAuth has not been called yet');
+  }
+  return mockNextAuth.mock.calls[0][0];
+}
+
+/**
+ * Helper to test auth import with console spy if needed
+ */
+export async function testAuthImport(useConsoleSpy = false): Promise<any> {
+  jest.resetModules();
+
+  if (useConsoleSpy) {
+    return new Promise((resolve) => {
+      withConsoleSpy(() => {
+        resolve(import('../auth'));
+      });
+    });
+  }
+
+  return import('../auth');
+}
+
+/**
+ * Helper to test auth configuration with environment and console spy
+ */
+export async function testAuthConfigWithEnvAndSpy(
+  env: Partial<NodeJS.ProcessEnv>
+): Promise<any> {
+  setupEnvironment(env);
+  return testAuthImport(true);
+}
+
+/**
+ * Common beforeEach setup for auth tests
+ */
+export function setupAuthTestMocks(
+  mockNextAuth: jest.Mock,
+  mockGetUserByEmail?: jest.Mock,
+  mockAuthenticateUser?: jest.Mock
+): void {
+  jest.clearAllMocks();
+  jest.resetModules();
+
+  if (mockGetUserByEmail) {
+    mockGetUserByEmail.mockClear();
+  }
+  if (mockAuthenticateUser) {
+    mockAuthenticateUser.mockClear();
+  }
+
+  // Setup NextAuth mock to return proper structure
+  mockNextAuth.mockImplementation((config) => {
+    // Execute callbacks to test them
+    if (config && config.callbacks) {
+      // Store config for testing
+      (mockNextAuth as any)._lastConfig = config;
+    }
+    return {
+      handlers: { GET: jest.fn(), POST: jest.fn() },
+      auth: jest.fn(),
+      signIn: jest.fn(),
+      signOut: jest.fn(),
+    };
+  });
+}

@@ -1,4 +1,4 @@
-import { testMiddlewareAuth, verifyUrlValidation } from './auth-test-utils';
+import { testMiddlewareAuth, verifyUrlValidation, setupAuthTestMocks } from './auth-test-utils';
 
 /**
  * Test file for Issue #438: Login fails to redirect to a useful page
@@ -87,22 +87,7 @@ describe('Issue #438: Login Redirect Problems', () => {
   // verifyUrlValidation imported from auth-test-utils
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    jest.resetModules();
-
-    // Setup NextAuth mock to return proper structure
-    mockNextAuth.mockImplementation((_config) => {
-      return {
-        handlers: {
-          GET: jest.fn(),
-          POST: jest.fn(),
-        },
-        auth: jest.fn(),
-        signIn: jest.fn(),
-        signOut: jest.fn(),
-      };
-    });
-
+    setupAuthTestMocks(mockNextAuth);
     setupAuthEnvironment();
   });
 
