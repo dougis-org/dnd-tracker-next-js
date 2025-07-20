@@ -24,24 +24,20 @@ jest.mock('../services/UserService', () => ({
 describe('NextAuth Trusted Host Configuration', () => {
   const originalEnv = process.env;
 
-  // Helper function to get NextAuth configuration after import - using imported getAuthConfigAsync
-  const getNextAuthConfig = async (authTrustHost?: string): Promise<any> => {
-    // Set or clear AUTH_TRUST_HOST
-    if (authTrustHost !== undefined) {
-      if (authTrustHost === null) {
-        delete process.env.AUTH_TRUST_HOST;
-      } else {
-        process.env.AUTH_TRUST_HOST = authTrustHost;
-      }
-    }
-
-    // Use the imported helper function
-    return await getAuthConfigAsync(mockNextAuth);
-  };
+  // Helper function removed - using getAuthConfigAsync directly with environment setup
 
   // Helper function to test trustHost value
   const testTrustHostValue = async (envValue: string | null, expectedValue: boolean) => {
-    const config = await getNextAuthConfig(envValue);
+    // Set or clear AUTH_TRUST_HOST
+    if (envValue !== undefined) {
+      if (envValue === null) {
+        delete process.env.AUTH_TRUST_HOST;
+      } else {
+        process.env.AUTH_TRUST_HOST = envValue;
+      }
+    }
+
+    const config = await getAuthConfigAsync(mockNextAuth);
     expect(config).toHaveProperty('trustHost', expectedValue);
   };
 
@@ -135,7 +131,8 @@ describe('NextAuth Trusted Host Configuration', () => {
 
   describe('Production Configuration Validation', () => {
     it('should verify the trustHost configuration solves the UntrustedHost issue', async () => {
-      const config = await getNextAuthConfig('true');
+      process.env.AUTH_TRUST_HOST = 'true';
+      const config = await getAuthConfigAsync(mockNextAuth);
 
       // This is the key fix for Issue #434
       expect(config.trustHost).toBe(true);
@@ -147,7 +144,8 @@ describe('NextAuth Trusted Host Configuration', () => {
     });
 
     it('should maintain all other NextAuth configuration while adding trustHost', async () => {
-      const config = await getNextAuthConfig('true');
+      process.env.AUTH_TRUST_HOST = 'true';
+      const config = await getAuthConfigAsync(mockNextAuth);
 
       // Verify trustHost is enabled
       expect(config.trustHost).toBe(true);

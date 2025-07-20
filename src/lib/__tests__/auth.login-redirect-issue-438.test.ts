@@ -61,16 +61,7 @@ describe('Issue #438: Login Redirect Problems', () => {
   const originalEnv = process.env;
 
 
-  // Helper function to test NextAuth configuration - using imported getAuthConfigAsync
-  const testNextAuthConfig = async (expectedStrategy = 'jwt') => {
-    const config = await getAuthConfigAsync(mockNextAuth);
-    expect(config).toBeDefined();
-    expect(config.session.strategy).toBe(expectedStrategy);
-    expect(config.callbacks).toBeDefined();
-    expect(config.callbacks.session).toBeDefined();
-    expect(config.callbacks.jwt).toBeDefined();
-    return config;
-  };
+  // Helper function removed - using getAuthConfigAsync directly from auth-test-utils
 
   // verifyUrlValidation imported from auth-test-utils
 
@@ -124,7 +115,12 @@ describe('Issue #438: Login Redirect Problems', () => {
     it('should maintain authentication state with proper JWT configuration', async () => {
       setupAuthEnvironment('https://dnd-tracker-next-js.fly.dev');
       process.env.AUTH_TRUST_HOST = 'true';
-      await testNextAuthConfig('jwt');
+      const config = await getAuthConfigAsync(mockNextAuth);
+      expect(config).toBeDefined();
+      expect(config.session.strategy).toBe('jwt');
+      expect(config.callbacks).toBeDefined();
+      expect(config.callbacks.session).toBeDefined();
+      expect(config.callbacks.jwt).toBeDefined();
     });
 
     it('should prevent authentication bypass with middleware checks', async () => {
@@ -158,7 +154,12 @@ describe('Issue #438: Login Redirect Problems', () => {
       setupAuthEnvironment('https://dnd-tracker-next-js.fly.dev');
       process.env.AUTH_TRUST_HOST = 'true';
 
-      const config = await testNextAuthConfig('jwt');
+      const config = await getAuthConfigAsync(mockNextAuth);
+      expect(config).toBeDefined();
+      expect(config.session.strategy).toBe('jwt');
+      expect(config.callbacks).toBeDefined();
+      expect(config.callbacks.session).toBeDefined();
+      expect(config.callbacks.jwt).toBeDefined();
 
       // Verify additional complete configuration is valid
       expect(config.trustHost).toBe(true);
