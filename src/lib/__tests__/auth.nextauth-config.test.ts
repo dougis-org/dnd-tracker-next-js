@@ -115,6 +115,9 @@ describe('NextAuth Configuration Tests', () => {
       ];
 
       for (const { AUTH_TRUST_HOST, expected } of testCases) {
+        // Clear the mock before each iteration
+        mockNextAuth.mockClear();
+        
         process.env.NODE_ENV = 'production';
         process.env.NEXTAUTH_URL = 'https://dnd-tracker-next-js.fly.dev';
         if (AUTH_TRUST_HOST !== undefined) {
