@@ -1,5 +1,4 @@
-// Import mocked NextRequest - the real one will be replaced with our mock
-import { NextRequest } from 'next/server';
+// NextRequest is mocked in jest.mock('next/server') below
 import { POST } from '../register/route';
 import { UserService } from '@/lib/services/UserService';
 import { createMockRequest } from './test-utils';

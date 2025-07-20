@@ -1,9 +1,9 @@
 import { UserService } from '../services/UserService';
 import { TestPasswordConstants } from '../test-utils/password-constants';
-import { 
-  setupAuthTestEnv, 
-  restoreAuthTestEnv, 
-  createMockUser 
+import {
+  setupAuthTestEnv,
+  restoreAuthTestEnv,
+  createMockUser
 } from './auth-test-utils';
 
 // Mock all external dependencies
