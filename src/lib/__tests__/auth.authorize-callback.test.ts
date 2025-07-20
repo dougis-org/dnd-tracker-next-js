@@ -3,17 +3,14 @@ import {
   afterAll,
   describe,
   it,
-  expect,
   beforeEach,
   jest,
 } from '@jest/globals';
 import {
   setupAuthTestEnv,
   restoreAuthTestEnv,
-  createMockUser,
   withConsoleSpy,
   setupCommonAuthTestMocks,
-  getAuthConfigAsync,
   createMockAuthData,
   testAuthorize,
 } from './auth-test-utils';

@@ -12,7 +12,6 @@ import {
   restoreAuthTestEnv,
   setupCommonAuthTestMocks,
   testCallbackWithSpy,
-  getAuthConfigAsync,
   testCallback,
 } from './auth-test-utils';
 

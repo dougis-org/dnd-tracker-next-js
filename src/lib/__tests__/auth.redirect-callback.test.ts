@@ -13,7 +13,6 @@ import {
   withConsoleSpy,
   setupCommonAuthTestMocks,
   setupEnvironment,
-  getAuthConfigAsync,
   testCallback,
 } from './auth-test-utils';
 

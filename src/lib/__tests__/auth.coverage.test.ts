@@ -11,7 +11,6 @@ import {
   setupAuthTestEnv,
   restoreAuthTestEnv,
   authTestAssertions,
-  createMockUser,
   withConsoleSpy,
   setupEnvironment,
   setupCommonAuthTestMocks,

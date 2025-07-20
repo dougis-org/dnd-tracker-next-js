@@ -391,7 +391,7 @@ export async function testAuthorize(
   const config = await getAuthConfigAsync(mockNextAuth);
   const authorizeFunc = config.providers[0].authorize;
   const result = await authorizeFunc(credentials);
-  
+
   if (expectResult === null) {
     expect(result).toBeNull();
   } else {
