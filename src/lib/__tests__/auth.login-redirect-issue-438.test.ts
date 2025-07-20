@@ -1,4 +1,4 @@
-import { testMiddlewareAuth, verifyUrlValidation, setupAuthTestMocks } from './auth-test-utils';
+import { testMiddlewareAuth, verifyUrlValidation, setupCommonAuthTestMocks } from './auth-test-utils';
 
 /**
  * Test file for Issue #438: Login fails to redirect to a useful page
@@ -60,17 +60,7 @@ jest.mock('../services/UserService', () => ({
 describe('Issue #438: Login Redirect Problems', () => {
   const originalEnv = process.env;
 
-  // Helper function to setup NextAuth environment
-  const setupAuthEnvironment = (nextAuthUrl?: string, nodeEnv = 'production') => {
-    process.env = {
-      ...originalEnv,
-      NODE_ENV: nodeEnv,
-      MONGODB_URI: 'mongodb://localhost:27017/test',
-      MONGODB_DB_NAME: 'testdb',
-      NEXTAUTH_SECRET: 'test-secret',
-      ...(nextAuthUrl && { NEXTAUTH_URL: nextAuthUrl }),
-    };
-  };
+
 
   // Helper function to test NextAuth configuration
   const testNextAuthConfig = async (expectedStrategy = 'jwt') => {
@@ -87,8 +77,7 @@ describe('Issue #438: Login Redirect Problems', () => {
   // verifyUrlValidation imported from auth-test-utils
 
   beforeEach(() => {
-    setupAuthTestMocks(mockNextAuth);
-    setupAuthEnvironment();
+    setupCommonAuthTestMocks(mockNextAuth);
   });
 
   afterAll(() => {

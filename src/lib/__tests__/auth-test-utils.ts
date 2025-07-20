@@ -261,3 +261,29 @@ export function testAuthWithEnvAndSpy(env: Partial<NodeJS.ProcessEnv>): void {
   setupEnvironment(env);
   importAuthWithConsoleSpy();
 }
+
+/**
+ * Helper to setup standard auth test environment
+ */
+export function setupAuthEnvironment(nextAuthUrl?: string, nodeEnv = 'production'): void {
+  const env: Partial<NodeJS.ProcessEnv> = {
+    NODE_ENV: nodeEnv,
+    MONGODB_URI: 'mongodb://localhost:27017/test',
+    MONGODB_DB_NAME: 'testdb',
+    NEXTAUTH_SECRET: 'test-secret',
+  };
+  
+  if (nextAuthUrl) {
+    env.NEXTAUTH_URL = nextAuthUrl;
+  }
+  
+  setupEnvironment(env);
+}
+
+/**
+ * Helper for common beforeEach auth test setup
+ */
+export function setupCommonAuthTestMocks(mockNextAuth: jest.Mock): void {
+  setupAuthTestMocks(mockNextAuth);
+  setupAuthEnvironment();
+}

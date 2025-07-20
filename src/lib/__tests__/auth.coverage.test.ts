@@ -14,7 +14,7 @@ import {
   createMockUser,
   withConsoleSpy,
   setupEnvironment,
-  setupAuthTestMocks,
+  setupCommonAuthTestMocks,
   getAuthConfig,
   importAuthWithConsoleSpy,
   testAuthWithEnvAndSpy,
@@ -86,7 +86,14 @@ const testCallback = async (callbackName: string, params: any) => {
 
 describe('NextAuth Comprehensive Coverage Tests', () => {
   beforeEach(() => {
-    setupAuthTestMocks(mockNextAuth, mockGetUserByEmail, mockAuthenticateUser);
+    setupCommonAuthTestMocks(mockNextAuth);
+    // Setup additional mocks for coverage tests
+    if (mockGetUserByEmail) {
+      mockGetUserByEmail.mockClear();
+    }
+    if (mockAuthenticateUser) {
+      mockAuthenticateUser.mockClear();
+    }
   });
 
   describe('Helper Functions Coverage', () => {
