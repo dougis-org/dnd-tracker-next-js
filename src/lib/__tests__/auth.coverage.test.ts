@@ -16,6 +16,8 @@ import {
   setupEnvironment,
   setupAuthTestMocks,
   getAuthConfig,
+  importAuthWithConsoleSpy,
+  testAuthWithEnvAndSpy,
 } from './auth-test-utils';
 
 // Mock dependencies before importing
@@ -99,11 +101,7 @@ describe('NextAuth Comprehensive Coverage Tests', () => {
       ];
 
       localUrls.forEach(url => {
-        setupEnvironment({ NEXTAUTH_URL: url, NODE_ENV: 'production' });
-        withConsoleSpy(_consoleSpy => {
-          jest.resetModules();
-          import('../auth');
-        });
+        testAuthWithEnvAndSpy({ NEXTAUTH_URL: url, NODE_ENV: 'production' });
       });
     });
 
@@ -115,11 +113,7 @@ describe('NextAuth Comprehensive Coverage Tests', () => {
       expect(authModule).toBeDefined();
 
       // Test in production - should reject local hostnames
-      setupEnvironment({ NODE_ENV: 'production', NEXTAUTH_URL: 'http://0.0.0.0:3000' });
-      withConsoleSpy(_consoleSpy => {
-        jest.resetModules();
-        import('../auth');
-      });
+      testAuthWithEnvAndSpy({ NODE_ENV: 'production', NEXTAUTH_URL: 'http://0.0.0.0:3000' });
     });
 
     // Test validateNextAuthUrl function (lines 32-52)
@@ -134,10 +128,7 @@ describe('NextAuth Comprehensive Coverage Tests', () => {
       testCases.forEach(({ env, shouldWarn }) => {
         setupEnvironment(env);
         if (shouldWarn) {
-          withConsoleSpy(_consoleSpy => {
-            jest.resetModules();
-            import('../auth');
-          });
+          importAuthWithConsoleSpy();
         } else {
           jest.resetModules();
           import('../auth');

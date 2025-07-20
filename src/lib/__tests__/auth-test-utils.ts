@@ -243,3 +243,21 @@ export function setupAuthTestMocks(
     };
   });
 }
+
+/**
+ * Helper to import auth module with console spy and reset modules
+ */
+export function importAuthWithConsoleSpy(): void {
+  withConsoleSpy(() => {
+    jest.resetModules();
+    import('../auth');
+  });
+}
+
+/**
+ * Helper to test auth with environment setup and console spy
+ */
+export function testAuthWithEnvAndSpy(env: Partial<NodeJS.ProcessEnv>): void {
+  setupEnvironment(env);
+  importAuthWithConsoleSpy();
+}
