@@ -12,6 +12,7 @@ import {
   restoreAuthTestEnv,
   withConsoleSpy,
   setupCommonAuthTestMocks,
+  testCallback,
 } from './auth-test-utils';
 
 // Mock dependencies before importing
@@ -44,18 +45,7 @@ afterAll(() => {
   restoreAuthTestEnv(originalEnv);
 });
 
-// Helper functions to reduce duplication
-const getAuthConfigAsync = async () => {
-  jest.resetModules();
-  await import('../auth');
-  return mockNextAuth.mock.calls[0][0];
-};
-
-const testCallback = async (callbackName: string, params: any) => {
-  const config = await getAuthConfigAsync();
-  const callback = config.callbacks[callbackName];
-  return callback(params);
-};
+// Helper functions now imported from auth-test-utils
 
 describe('JWT Callback Tests', () => {
   beforeEach(() => {
@@ -72,7 +62,7 @@ describe('JWT Callback Tests', () => {
         lastName: 'Doe'
       };
       const token = { email: 'old@example.com' };
-      const result = await testCallback('jwt', { token, user: newUser });
+      const result = await testCallback(mockNextAuth, 'jwt', { token, user: newUser });
 
       expect(result.subscriptionTier).toBe('premium');
       expect(result.firstName).toBe('John');
@@ -83,7 +73,7 @@ describe('JWT Callback Tests', () => {
     it('should test JWT callback with missing sub field', async () => {
       const user = { id: 'user123' };
       const token = { email: 'test@example.com' };
-      const result = await testCallback('jwt', { token, user });
+      const result = await testCallback(mockNextAuth, 'jwt', { token, user });
       expect(result.sub).toBe('user123');
     });
 
@@ -92,7 +82,7 @@ describe('JWT Callback Tests', () => {
       const token = { email: 'test@example.com' };
 
       withConsoleSpy(async _consoleSpy => {
-        const result = await testCallback('jwt', { token, user: problematicUser });
+        const result = await testCallback(mockNextAuth, 'jwt', { token, user: problematicUser });
         expect(result).toEqual(token);
       });
     });
@@ -100,7 +90,7 @@ describe('JWT Callback Tests', () => {
     it('should test JWT callback with minimal user data', async () => {
       const minimalUser = { id: 'user123', email: 'test@example.com' };
       const token = { sub: 'old-user', email: 'old@example.com' };
-      const result = await testCallback('jwt', { token, user: minimalUser });
+      const result = await testCallback(mockNextAuth, 'jwt', { token, user: minimalUser });
 
       expect(result.sub).toBe('user123');
       expect(result.email).toBe('test@example.com');
@@ -117,7 +107,7 @@ describe('JWT Callback Tests', () => {
         lastLoginAt: new Date().toISOString()
       };
       const token = { email: 'old@example.com' };
-      const result = await testCallback('jwt', { token, user: completeUser });
+      const result = await testCallback(mockNextAuth, 'jwt', { token, user: completeUser });
 
       expect(result.sub).toBe('user123');
       expect(result.email).toBe('test@example.com');
@@ -135,7 +125,7 @@ describe('JWT Callback Tests', () => {
       };
 
       // No user provided, should return existing token
-      const result = await testCallback('jwt', { token: existingToken });
+      const result = await testCallback(mockNextAuth, 'jwt', { token: existingToken });
       expect(result).toEqual(existingToken);
     });
 
@@ -149,7 +139,7 @@ describe('JWT Callback Tests', () => {
           subscriptionTier: tier
         };
         const token = { email: 'old@example.com' };
-        const result = await testCallback('jwt', { token, user });
+        const result = await testCallback(mockNextAuth, 'jwt', { token, user });
 
         expect(result.subscriptionTier).toBe(tier);
         expect(result.sub).toBe('user123');
@@ -166,7 +156,7 @@ describe('JWT Callback Tests', () => {
 
       for (const { user, token } of testCases) {
         // Should not throw and handle gracefully
-        await expect(testCallback('jwt', { token, user })).resolves.toBeDefined();
+        await expect(testCallback(mockNextAuth, 'jwt', { token, user })).resolves.toBeDefined();
       }
     });
   });
