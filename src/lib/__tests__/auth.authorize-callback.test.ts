@@ -13,6 +13,9 @@ import {
   createMockUser,
   withConsoleSpy,
   setupCommonAuthTestMocks,
+  getAuthConfigAsync,
+  createMockAuthData,
+  testAuthorize,
 } from './auth-test-utils';
 
 // Mock dependencies before importing
@@ -47,29 +50,7 @@ afterAll(() => {
   restoreAuthTestEnv(originalEnv);
 });
 
-// Helper functions to reduce duplication
-const getAuthConfigAsync = async () => {
-  jest.resetModules();
-  await import('../auth');
-  return mockNextAuth.mock.calls[0][0];
-};
-
-const createMockAuthData = () => {
-  const mockUser = createMockUser({
-    id: 'user123',
-    email: 'test@example.com',
-    firstName: 'John',
-    lastName: 'Doe',
-    subscriptionTier: 'premium',
-  });
-
-  return {
-    user: mockUser,
-    getUserResult: { success: true, data: mockUser },
-    authResult: { success: true, data: { user: mockUser } },
-    credentials: { email: 'test@example.com', password: 'correctpassword' }
-  };
-};
+// Helper functions now imported from auth-test-utils
 
 describe('Authorize Function Tests', () => {
   beforeEach(() => {
@@ -82,17 +63,7 @@ describe('Authorize Function Tests', () => {
     }
   });
 
-  const testAuthorize = async (credentials: any, expectResult: any = null) => {
-    const config = await getAuthConfigAsync();
-    const authorizeFunc = config.providers[0].authorize;
-    const result = await authorizeFunc(credentials);
-    if (expectResult === null) {
-      expect(result).toBeNull();
-    } else {
-      expect(result).toEqual(expectResult);
-    }
-    return result;
-  };
+  // Using imported testAuthorize helper
 
   describe('Authorize Function Coverage', () => {
     // Test authorize function with missing credentials (lines 86-89)
@@ -104,7 +75,7 @@ describe('Authorize Function Tests', () => {
       ];
 
       for (const credentials of testCases) {
-        await testAuthorize(credentials);
+        await testAuthorize(mockNextAuth, credentials);
       }
     });
 
@@ -114,12 +85,12 @@ describe('Authorize Function Tests', () => {
 
       // Test getUserByEmail failure
       mockGetUserByEmail.mockResolvedValue({ success: false, error: 'User not found' });
-      await testAuthorize(mockData.credentials);
+      await testAuthorize(mockNextAuth, mockData.credentials);
 
       // Test authenticateUser failure
       mockGetUserByEmail.mockResolvedValue(mockData.getUserResult);
       mockAuthenticateUser.mockResolvedValue({ success: false, error: 'Invalid password' });
-      await testAuthorize(mockData.credentials);
+      await testAuthorize(mockNextAuth, mockData.credentials);
     });
 
     // Test authorize function with successful authentication (lines 111-118)
@@ -128,7 +99,7 @@ describe('Authorize Function Tests', () => {
       mockGetUserByEmail.mockResolvedValue(mockData.getUserResult);
       mockAuthenticateUser.mockResolvedValue(mockData.authResult);
 
-      await testAuthorize(mockData.credentials, {
+      await testAuthorize(mockNextAuth, mockData.credentials, {
         id: 'user123',
         email: 'test@example.com',
         name: 'John Doe',
@@ -141,7 +112,7 @@ describe('Authorize Function Tests', () => {
       mockGetUserByEmail.mockRejectedValue(new Error('Database connection failed'));
 
       withConsoleSpy(_consoleSpy => {
-        testAuthorize({ email: 'test@example.com', password: 'test123' });
+        testAuthorize(mockNextAuth, { email: 'test@example.com', password: 'test123' });
       });
     });
 
@@ -155,7 +126,7 @@ describe('Authorize Function Tests', () => {
       ];
 
       for (const credentials of invalidCredentials) {
-        await testAuthorize(credentials);
+        await testAuthorize(mockNextAuth, credentials);
       }
     });
 
@@ -167,7 +138,7 @@ describe('Authorize Function Tests', () => {
         new Promise(resolve => setTimeout(() => resolve({ success: false, error: 'Timeout' }), 100))
       );
 
-      await testAuthorize(mockData.credentials);
+      await testAuthorize(mockNextAuth, mockData.credentials);
 
       // Simulate timeout in authenticateUser
       mockGetUserByEmail.mockResolvedValue(mockData.getUserResult);
@@ -175,7 +146,7 @@ describe('Authorize Function Tests', () => {
         new Promise(resolve => setTimeout(() => resolve({ success: false, error: 'Timeout' }), 100))
       );
 
-      await testAuthorize(mockData.credentials);
+      await testAuthorize(mockNextAuth, mockData.credentials);
     });
   });
 });

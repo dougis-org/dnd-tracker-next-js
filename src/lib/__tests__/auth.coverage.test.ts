@@ -19,6 +19,10 @@ import {
   testEnvWithConditionalImport,
   testWithTemporaryEnv,
   testCallbackWithSpy,
+  getAuthConfigAsync,
+  createMockAuthData,
+  testAuthorize,
+  testCallback,
 } from './auth-test-utils';
 
 // Mock dependencies before importing
@@ -53,37 +57,7 @@ afterAll(() => {
   restoreAuthTestEnv(originalEnv);
 });
 
-// Helper functions to reduce duplication
-const getAuthConfigAsync = async () => {
-  jest.resetModules();
-  await import('../auth');
-  return mockNextAuth.mock.calls[0][0];
-};
-
-// Import setupEnvironment from auth-test-utils
-
-const createMockAuthData = () => {
-  const mockUser = createMockUser({
-    id: 'user123',
-    email: 'test@example.com',
-    firstName: 'John',
-    lastName: 'Doe',
-    subscriptionTier: 'premium',
-  });
-
-  return {
-    user: mockUser,
-    getUserResult: { success: true, data: mockUser },
-    authResult: { success: true, data: { user: mockUser } },
-    credentials: { email: 'test@example.com', password: 'correctpassword' }
-  };
-};
-
-const testCallback = async (callbackName: string, params: any) => {
-  const config = await getAuthConfigAsync();
-  const callback = config.callbacks[callbackName];
-  return callback(params);
-};
+// Helper functions now imported from auth-test-utils
 
 describe('NextAuth Comprehensive Coverage Tests', () => {
   beforeEach(() => {
@@ -117,7 +91,7 @@ describe('NextAuth Comprehensive Coverage Tests', () => {
     it('should test isValidProductionHostname in different environments', async () => {
       // Test in development - should allow local hostnames
       setupEnvironment({ NODE_ENV: 'development', NEXTAUTH_URL: 'http://localhost:3000' });
-      const authModule = await getAuthConfigAsync();
+      const authModule = await getAuthConfigAsync(mockNextAuth);
       expect(authModule).toBeDefined();
 
       // Test in production - should reject local hostnames
@@ -236,17 +210,7 @@ describe('NextAuth Comprehensive Coverage Tests', () => {
   });
 
   describe('Authorize Function Coverage', () => {
-    const testAuthorize = async (credentials: any, expectResult: any = null) => {
-      const config = await getAuthConfigAsync();
-      const authorizeFunc = config.providers[0].authorize;
-      const result = await authorizeFunc(credentials);
-      if (expectResult === null) {
-        expect(result).toBeNull();
-      } else {
-        expect(result).toEqual(expectResult);
-      }
-      return result;
-    };
+    // Using imported testAuthorize helper
 
     // Test authorize function with missing credentials (lines 86-89)
     it('should test authorize with missing credentials', async () => {
@@ -257,7 +221,7 @@ describe('NextAuth Comprehensive Coverage Tests', () => {
       ];
 
       for (const credentials of testCases) {
-        await testAuthorize(credentials);
+        await testAuthorize(mockNextAuth, credentials);
       }
     });
 
@@ -267,12 +231,12 @@ describe('NextAuth Comprehensive Coverage Tests', () => {
 
       // Test getUserByEmail failure
       mockGetUserByEmail.mockResolvedValue({ success: false, error: 'User not found' });
-      await testAuthorize(mockData.credentials);
+      await testAuthorize(mockNextAuth, mockData.credentials);
 
       // Test authenticateUser failure
       mockGetUserByEmail.mockResolvedValue(mockData.getUserResult);
       mockAuthenticateUser.mockResolvedValue({ success: false, error: 'Invalid password' });
-      await testAuthorize(mockData.credentials);
+      await testAuthorize(mockNextAuth, mockData.credentials);
     });
 
     // Test authorize function with successful authentication (lines 111-118)
@@ -281,7 +245,7 @@ describe('NextAuth Comprehensive Coverage Tests', () => {
       mockGetUserByEmail.mockResolvedValue(mockData.getUserResult);
       mockAuthenticateUser.mockResolvedValue(mockData.authResult);
 
-      await testAuthorize(mockData.credentials, {
+      await testAuthorize(mockNextAuth, mockData.credentials, {
         id: 'user123',
         email: 'test@example.com',
         name: 'John Doe',
@@ -294,7 +258,7 @@ describe('NextAuth Comprehensive Coverage Tests', () => {
       mockGetUserByEmail.mockRejectedValue(new Error('Database connection failed'));
 
       withConsoleSpy(_consoleSpy => {
-        testAuthorize({ email: 'test@example.com', password: 'test123' });
+        testAuthorize(mockNextAuth, { email: 'test@example.com', password: 'test123' });
       });
     });
   });
@@ -317,9 +281,9 @@ describe('NextAuth Comprehensive Coverage Tests', () => {
 
       for (const { params, expectResult, shouldWarn } of testCases) {
         if (shouldWarn) {
-          await testCallbackWithSpy(testCallback, 'session', params, expectResult);
+          await testCallbackWithSpy((name, params) => testCallback(mockNextAuth, name, params), 'session', params, expectResult);
         } else {
-          const result = await testCallback('session', params);
+          const result = await testCallback(mockNextAuth, 'session', params);
           expect(result).toEqual(expectResult);
         }
       }
@@ -331,7 +295,7 @@ describe('NextAuth Comprehensive Coverage Tests', () => {
         exp: Math.floor(Date.now() / 1000) - 3600 // Expired 1 hour ago
       };
 
-      await testCallbackWithSpy(testCallback, 'session', {
+      await testCallbackWithSpy((name, params) => testCallback(mockNextAuth, name, params), 'session', {
         session: { user: { email: 'test@example.com' } },
         token: expiredToken
       }, null);
@@ -347,7 +311,7 @@ describe('NextAuth Comprehensive Coverage Tests', () => {
       };
 
       const session = { user: { email: 'test@example.com', name: 'Existing Name' } };
-      const result = await testCallback('session', { session, token: validToken });
+      const result = await testCallback(mockNextAuth, 'session', { session, token: validToken });
 
       expect(result.user.id).toBe('user123');
       expect(result.user.subscriptionTier).toBe('premium');
@@ -365,7 +329,7 @@ describe('NextAuth Comprehensive Coverage Tests', () => {
       };
 
       const session = { user: { email: 'test@example.com' } }; // No name property
-      const result = await testCallback('session', { session, token: validToken });
+      const result = await testCallback(mockNextAuth, 'session', { session, token: validToken });
 
       expect(result.user.id).toBe('user123');
       expect(result.user.subscriptionTier).toBe('premium');
@@ -376,7 +340,7 @@ describe('NextAuth Comprehensive Coverage Tests', () => {
     it('should test session callback error handling', async () => {
       const problematicToken = { get sub() { throw new Error('Token access error'); } };
 
-      await testCallbackWithSpy(testCallback, 'session', {
+      await testCallbackWithSpy((name, params) => testCallback(mockNextAuth, name, params), 'session', {
         session: { user: { email: 'test@example.com' } },
         token: problematicToken
       }, null);
@@ -387,7 +351,7 @@ describe('NextAuth Comprehensive Coverage Tests', () => {
     it('should test JWT callback with new user data', async () => {
       const newUser = { id: 'user123', email: 'test@example.com', subscriptionTier: 'premium', firstName: 'John', lastName: 'Doe' };
       const token = { email: 'old@example.com' };
-      const result = await testCallback('jwt', { token, user: newUser });
+      const result = await testCallback(mockNextAuth, 'jwt', { token, user: newUser });
 
       expect(result.subscriptionTier).toBe('premium');
       expect(result.firstName).toBe('John');
@@ -398,7 +362,7 @@ describe('NextAuth Comprehensive Coverage Tests', () => {
     it('should test JWT callback with missing sub field', async () => {
       const user = { id: 'user123' };
       const token = { email: 'test@example.com' };
-      const result = await testCallback('jwt', { token, user });
+      const result = await testCallback(mockNextAuth, 'jwt', { token, user });
       expect(result.sub).toBe('user123');
     });
 
@@ -407,7 +371,7 @@ describe('NextAuth Comprehensive Coverage Tests', () => {
       const token = { email: 'test@example.com' };
 
       withConsoleSpy(async _consoleSpy => {
-        const result = await testCallback('jwt', { token, user: problematicUser });
+        const result = await testCallback(mockNextAuth, 'jwt', { token, user: problematicUser });
         expect(result).toEqual(token);
       });
     });
@@ -421,14 +385,14 @@ describe('NextAuth Comprehensive Coverage Tests', () => {
       ];
 
       testCases.forEach(async ({ params, expected }) => {
-        const result = await testCallback('redirect', params);
+        const result = await testCallback(mockNextAuth, 'redirect', params);
         expect(result).toBe(expected);
       });
     });
 
     it('should test redirect callback with trusted domains in production', async () => {
       setupEnvironment({ NODE_ENV: 'production' });
-      const result = await testCallback('redirect', {
+      const result = await testCallback(mockNextAuth, 'redirect', {
         url: 'https://dnd-tracker-next-js.fly.dev/dashboard',
         baseUrl: 'https://example.com'
       });
@@ -438,7 +402,7 @@ describe('NextAuth Comprehensive Coverage Tests', () => {
     it('should test redirect callback blocking untrusted URLs', async () => {
       setupEnvironment({ NODE_ENV: 'production' });
       withConsoleSpy(async _consoleSpy => {
-        const result = await testCallback('redirect', {
+        const result = await testCallback(mockNextAuth, 'redirect', {
           url: 'https://malicious-site.com/dashboard',
           baseUrl: 'https://example.com'
         });
@@ -448,7 +412,7 @@ describe('NextAuth Comprehensive Coverage Tests', () => {
 
     it('should test redirect callback error handling', async () => {
       withConsoleSpy(async _consoleSpy => {
-        const result = await testCallback('redirect', {
+        const result = await testCallback(mockNextAuth, 'redirect', {
           url: 'invalid-url-format',
           baseUrl: 'https://example.com'
         });

@@ -12,6 +12,8 @@ import {
   restoreAuthTestEnv,
   setupCommonAuthTestMocks,
   testCallbackWithSpy,
+  getAuthConfigAsync,
+  testCallback,
 } from './auth-test-utils';
 
 // Mock dependencies before importing
@@ -44,18 +46,7 @@ afterAll(() => {
   restoreAuthTestEnv(originalEnv);
 });
 
-// Helper functions to reduce duplication
-const getAuthConfigAsync = async () => {
-  jest.resetModules();
-  await import('../auth');
-  return mockNextAuth.mock.calls[0][0];
-};
-
-const testCallback = async (callbackName: string, params: any) => {
-  const config = await getAuthConfigAsync();
-  const callback = config.callbacks[callbackName];
-  return callback(params);
-};
+// Helper functions now imported from auth-test-utils
 
 describe('Session Callback Tests', () => {
   beforeEach(() => {
@@ -80,9 +71,9 @@ describe('Session Callback Tests', () => {
 
       for (const { params, expectResult, shouldWarn } of testCases) {
         if (shouldWarn) {
-          await testCallbackWithSpy(testCallback, 'session', params, expectResult);
+          await testCallbackWithSpy((name, params) => testCallback(mockNextAuth, name, params), 'session', params, expectResult);
         } else {
-          const result = await testCallback('session', params);
+          const result = await testCallback(mockNextAuth, 'session', params);
           expect(result).toEqual(expectResult);
         }
       }
@@ -94,7 +85,7 @@ describe('Session Callback Tests', () => {
         exp: Math.floor(Date.now() / 1000) - 3600 // Expired 1 hour ago
       };
 
-      await testCallbackWithSpy(testCallback, 'session', {
+      await testCallbackWithSpy((name, params) => testCallback(mockNextAuth, name, params), 'session', {
         session: { user: { email: 'test@example.com' } },
         token: expiredToken
       }, null);
@@ -110,7 +101,7 @@ describe('Session Callback Tests', () => {
       };
 
       const session = { user: { email: 'test@example.com', name: 'Existing Name' } };
-      const result = await testCallback('session', { session, token: validToken });
+      const result = await testCallback(mockNextAuth, 'session', { session, token: validToken });
 
       expect(result.user.id).toBe('user123');
       expect(result.user.subscriptionTier).toBe('premium');
@@ -128,7 +119,7 @@ describe('Session Callback Tests', () => {
       };
 
       const session = { user: { email: 'test@example.com' } }; // No name property
-      const result = await testCallback('session', { session, token: validToken });
+      const result = await testCallback(mockNextAuth, 'session', { session, token: validToken });
 
       expect(result.user.id).toBe('user123');
       expect(result.user.subscriptionTier).toBe('premium');
@@ -139,7 +130,7 @@ describe('Session Callback Tests', () => {
     it('should test session callback error handling', async () => {
       const problematicToken = { get sub() { throw new Error('Token access error'); } };
 
-      await testCallbackWithSpy(testCallback, 'session', {
+      await testCallbackWithSpy((name, params) => testCallback(mockNextAuth, name, params), 'session', {
         session: { user: { email: 'test@example.com' } },
         token: problematicToken
       }, null);
@@ -163,7 +154,7 @@ describe('Session Callback Tests', () => {
 
       for (const { token, _description } of partialTokens) {
         const session = { user: { email: 'test@example.com' } };
-        const result = await testCallback('session', { session, token });
+        const result = await testCallback(mockNextAuth, 'session', { session, token });
         expect(result.user.id).toBe('user123');
         expect(result).toBeDefined();
       }
@@ -180,7 +171,7 @@ describe('Session Callback Tests', () => {
         };
 
         const session = { user: { email: 'test@example.com' } };
-        const result = await testCallback('session', { session, token: validToken });
+        const result = await testCallback(mockNextAuth, 'session', { session, token: validToken });
 
         expect(result.user.subscriptionTier).toBe(tier);
         expect(result.user.id).toBe('user123');

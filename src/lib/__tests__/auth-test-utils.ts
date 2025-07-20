@@ -343,3 +343,69 @@ export async function testCallbackWithSpy(
     expect(result).toEqual(expectResult);
   });
 }
+
+/**
+ * Helper to get NextAuth configuration from mock after import
+ * CONSOLIDATED: Replaces duplicate implementations in coverage.test.ts and authorize-callback.test.ts
+ */
+export async function getAuthConfigAsync(mockNextAuth: jest.Mock): Promise<any> {
+  jest.resetModules();
+  await import('../auth');
+  if (!mockNextAuth.mock.calls[0]) {
+    throw new Error('NextAuth mock was not called. Ensure auth module was imported.');
+  }
+  return mockNextAuth.mock.calls[0][0];
+}
+
+/**
+ * Helper to create comprehensive mock authentication data
+ * CONSOLIDATED: Replaces duplicate implementations in coverage.test.ts and authorize-callback.test.ts
+ */
+export function createMockAuthData(overrides: Partial<any> = {}) {
+  const mockUser = createMockUser({
+    id: 'user123',
+    email: 'test@example.com',
+    firstName: 'John',
+    lastName: 'Doe',
+    subscriptionTier: 'premium',
+    ...overrides,
+  });
+
+  return {
+    user: mockUser,
+    getUserResult: { success: true, data: mockUser },
+    authResult: { success: true, data: { user: mockUser } },
+    credentials: { email: 'test@example.com', password: 'correctpassword' }
+  };
+}
+
+/**
+ * Helper to test NextAuth authorize function with comprehensive assertion options
+ * CONSOLIDATED: Replaces similar implementations in coverage.test.ts and authorize-callback.test.ts
+ */
+export async function testAuthorize(
+  mockNextAuth: jest.Mock,
+  credentials: any,
+  expectResult: any = null
+): Promise<any> {
+  const config = await getAuthConfigAsync(mockNextAuth);
+  const authorizeFunc = config.providers[0].authorize;
+  const result = await authorizeFunc(credentials);
+  
+  if (expectResult === null) {
+    expect(result).toBeNull();
+  } else {
+    expect(result).toEqual(expectResult);
+  }
+  return result;
+}
+
+/**
+ * Helper to test callback functions from NextAuth config
+ * CONSOLIDATED: Provides common callback testing pattern
+ */
+export async function testCallback(mockNextAuth: jest.Mock, callbackName: string, params: any): Promise<any> {
+  const config = await getAuthConfigAsync(mockNextAuth);
+  const callback = config.callbacks[callbackName];
+  return callback(params);
+}

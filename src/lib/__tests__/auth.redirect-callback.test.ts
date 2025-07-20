@@ -13,6 +13,8 @@ import {
   withConsoleSpy,
   setupCommonAuthTestMocks,
   setupEnvironment,
+  getAuthConfigAsync,
+  testCallback,
 } from './auth-test-utils';
 
 // Mock dependencies before importing
@@ -45,18 +47,7 @@ afterAll(() => {
   restoreAuthTestEnv(originalEnv);
 });
 
-// Helper functions to reduce duplication
-const getAuthConfigAsync = async () => {
-  jest.resetModules();
-  await import('../auth');
-  return mockNextAuth.mock.calls[0][0];
-};
-
-const testCallback = async (callbackName: string, params: any) => {
-  const config = await getAuthConfigAsync();
-  const callback = config.callbacks[callbackName];
-  return callback(params);
-};
+// Helper functions now imported from auth-test-utils
 
 describe('Redirect Callback Tests', () => {
   beforeEach(() => {
@@ -71,14 +62,14 @@ describe('Redirect Callback Tests', () => {
       ];
 
       testCases.forEach(async ({ params, expected }) => {
-        const result = await testCallback('redirect', params);
+        const result = await testCallback(mockNextAuth, 'redirect', params);
         expect(result).toBe(expected);
       });
     });
 
     it('should test redirect callback with trusted domains in production', async () => {
       setupEnvironment({ NODE_ENV: 'production' });
-      const result = await testCallback('redirect', {
+      const result = await testCallback(mockNextAuth, 'redirect', {
         url: 'https://dnd-tracker-next-js.fly.dev/dashboard',
         baseUrl: 'https://example.com'
       });
@@ -88,7 +79,7 @@ describe('Redirect Callback Tests', () => {
     it('should test redirect callback blocking untrusted URLs', async () => {
       setupEnvironment({ NODE_ENV: 'production' });
       withConsoleSpy(async _consoleSpy => {
-        const result = await testCallback('redirect', {
+        const result = await testCallback(mockNextAuth, 'redirect', {
           url: 'https://malicious-site.com/dashboard',
           baseUrl: 'https://example.com'
         });
@@ -98,7 +89,7 @@ describe('Redirect Callback Tests', () => {
 
     it('should test redirect callback error handling', async () => {
       withConsoleSpy(async _consoleSpy => {
-        const result = await testCallback('redirect', {
+        const result = await testCallback(mockNextAuth, 'redirect', {
           url: 'invalid-url-format',
           baseUrl: 'https://example.com'
         });
@@ -114,7 +105,7 @@ describe('Redirect Callback Tests', () => {
       ];
 
       for (const { url, baseUrl, expected } of testCases) {
-        const result = await testCallback('redirect', { url, baseUrl });
+        const result = await testCallback(mockNextAuth, 'redirect', { url, baseUrl });
         expect(result).toBe(expected);
       }
     });
@@ -126,7 +117,7 @@ describe('Redirect Callback Tests', () => {
       ];
 
       for (const { url, baseUrl, expected } of testCases) {
-        const result = await testCallback('redirect', { url, baseUrl });
+        const result = await testCallback(mockNextAuth, 'redirect', { url, baseUrl });
         expect(result).toBe(expected);
       }
     });
@@ -136,7 +127,7 @@ describe('Redirect Callback Tests', () => {
 
       for (const env of environments) {
         setupEnvironment({ NODE_ENV: env });
-        const result = await testCallback('redirect', {
+        const result = await testCallback(mockNextAuth, 'redirect', {
           url: '/dashboard',
           baseUrl: 'https://example.com'
         });
@@ -156,7 +147,7 @@ describe('Redirect Callback Tests', () => {
 
       for (const { url, baseUrl, _description } of edgeCases) {
         withConsoleSpy(async _consoleSpy => {
-          const result = await testCallback('redirect', { url, baseUrl });
+          const result = await testCallback(mockNextAuth, 'redirect', { url, baseUrl });
           expect(result).toBeDefined(); // Should handle gracefully
         });
       }
