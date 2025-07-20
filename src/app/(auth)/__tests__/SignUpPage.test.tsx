@@ -199,6 +199,91 @@ describe('SignUpPage Component', () => {
     });
   });
 
+  describe('Status code error handling', () => {
+    it('handles 400 status code with validation errors', async () => {
+      // Mock fetch to return a 400 status
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: false,
+        status: 400,
+        json: jest.fn().mockResolvedValue({
+          success: false,
+          message: 'Validation failed',
+          errors: [{ field: 'email', message: 'Invalid email format' }],
+        }),
+      });
+
+      render(<SignUpPage />);
+
+      await fillRegistrationForm();
+      await submitForm();
+
+      await waitFor(() => {
+        expect(global.fetch).toHaveBeenCalled();
+        expect(mockRouter.push).not.toHaveBeenCalled();
+
+        const submitButton = screen.getByRole('button', {
+          name: /Create Account/i,
+        });
+        expect(submitButton).toBeEnabled();
+      });
+    });
+
+    it('handles 409 status code with conflict errors', async () => {
+      // Mock fetch to return a 409 status
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: false,
+        status: 409,
+        json: jest.fn().mockResolvedValue({
+          success: false,
+          message: 'User already exists',
+          errors: [{ field: 'email', message: 'Email already exists' }],
+        }),
+      });
+
+      render(<SignUpPage />);
+
+      await fillRegistrationForm();
+      await submitForm();
+
+      await waitFor(() => {
+        expect(global.fetch).toHaveBeenCalled();
+        expect(mockRouter.push).not.toHaveBeenCalled();
+
+        const submitButton = screen.getByRole('button', {
+          name: /Create Account/i,
+        });
+        expect(submitButton).toBeEnabled();
+      });
+    });
+
+    it('handles other error status codes differently', async () => {
+      // Mock fetch to return a 500 status (should be handled differently)
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: false,
+        status: 500,
+        json: jest.fn().mockResolvedValue({
+          success: false,
+          message: 'Internal server error',
+        }),
+      });
+
+      render(<SignUpPage />);
+
+      await fillRegistrationForm();
+      await submitForm();
+
+      await waitFor(() => {
+        expect(global.fetch).toHaveBeenCalled();
+        expect(mockRouter.push).not.toHaveBeenCalled();
+
+        const submitButton = screen.getByRole('button', {
+          name: /Create Account/i,
+        });
+        expect(submitButton).toBeEnabled();
+      });
+    });
+  });
+
   describe('Email verification bypass', () => {
     it('redirects to sign-in page when email bypass is enabled', async () => {
       // Mock API response for bypassed email verification
