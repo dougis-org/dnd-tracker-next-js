@@ -2,6 +2,8 @@ import { NextRequest } from 'next/server';
 import { CharacterType } from '@/lib/validations/character';
 import { expectSuccessResponse, expectErrorResponse, createMockParams as createMockParamsBase } from '@/lib/test-utils/shared-api-test-helpers';
 
+export { expectSuccessResponse, expectErrorResponse };
+
 export const TEST_USER_ID = '507f1f77bcf86cd799439011';
 export const TEST_CHARACTER_ID = '507f1f77bcf86cd799439012';
 
