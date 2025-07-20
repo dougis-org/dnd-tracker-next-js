@@ -76,10 +76,10 @@ export const createMockCharacterData = (overrides: Partial<CharacterCreation> = 
     wisdom: false,
     charisma: false,
   },
-  skills: new Map([
-    ['athletics', true],
-    ['intimidation', true],
-  ]),
+  skills: {
+    athletics: true,
+    intimidation: true,
+  },
   equipment: [{
     name: 'Chain Mail',
     quantity: 1,
@@ -128,10 +128,10 @@ export const createMockCharacterCreation = (overrides: Partial<CharacterCreation
     wisdom: false,
     charisma: false,
   },
-  skills: new Map([
-    ['athletics', true],
-    ['intimidation', true],
-  ]),
+  skills: {
+    athletics: true,
+    intimidation: true,
+  },
   equipment: [{
     name: 'Chain Mail',
     quantity: 1,
