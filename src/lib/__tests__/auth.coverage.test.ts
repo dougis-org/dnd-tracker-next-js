@@ -16,8 +16,9 @@ import {
   setupEnvironment,
   setupCommonAuthTestMocks,
   getAuthConfig,
-  importAuthWithConsoleSpy,
   testAuthWithEnvAndSpy,
+  testEnvWithConditionalImport,
+  testWithTemporaryEnv,
 } from './auth-test-utils';
 
 // Mock dependencies before importing
@@ -133,13 +134,7 @@ describe('NextAuth Comprehensive Coverage Tests', () => {
       ];
 
       testCases.forEach(({ env, shouldWarn }) => {
-        setupEnvironment(env);
-        if (shouldWarn) {
-          importAuthWithConsoleSpy();
-        } else {
-          jest.resetModules();
-          import('../auth');
-        }
+        testEnvWithConditionalImport(env, shouldWarn);
       });
     });
   });
@@ -147,53 +142,37 @@ describe('NextAuth Comprehensive Coverage Tests', () => {
   describe('MongoDB Setup Coverage', () => {
     // Test MongoDB URI validation (lines 54-61)
     it('should handle missing MONGODB_URI in different environments', async () => {
-      // Test missing URI in CI environment (should not throw, but warn)
-      const originalEnv = {
-        MONGODB_URI: process.env.MONGODB_URI,
-        VERCEL: process.env.VERCEL,
-        CI: process.env.CI,
-        NODE_ENV: process.env.NODE_ENV
-      };
-
-      // Test in CI with missing URI (should warn but not throw)
-      setupEnvironment({
-        MONGODB_URI: undefined,
-        NODE_ENV: 'production',
-        VERCEL: undefined,
-        CI: 'true'
-      });
-
-      withConsoleSpy(_consoleSpy => {
-        jest.resetModules();
-        // This should warn but not throw in CI
-        expect(() => require('../auth')).not.toThrow();
-      });
-
-      // Restore environment
-      Object.keys(originalEnv).forEach(key => {
-        if (originalEnv[key] !== undefined) {
-          process.env[key] = originalEnv[key];
-        } else {
-          delete process.env[key];
+      testWithTemporaryEnv(
+        ['MONGODB_URI', 'VERCEL', 'CI', 'NODE_ENV'],
+        {
+          MONGODB_URI: undefined,
+          NODE_ENV: 'production',
+          VERCEL: undefined,
+          CI: 'true'
+        },
+        () => {
+          withConsoleSpy(_consoleSpy => {
+            jest.resetModules();
+            // This should warn but not throw in CI
+            expect(() => require('../auth')).not.toThrow();
+          });
         }
-      });
+      );
     });
 
     // Test MongoDB client creation (lines 63-64)
     it('should create MongoDB client with placeholder URI', async () => {
-      const originalEnv = process.env.MONGODB_URI;
-      setupEnvironment({ MONGODB_URI: undefined, CI: 'true' });
-
-      withConsoleSpy(_consoleSpy => {
-        jest.resetModules();
-        const authModule = require('../auth');
-        expect(authModule).toBeDefined();
-      });
-
-      // Restore environment
-      if (originalEnv) {
-        process.env.MONGODB_URI = originalEnv;
-      }
+      testWithTemporaryEnv(
+        ['MONGODB_URI'],
+        { MONGODB_URI: undefined, CI: 'true' },
+        () => {
+          withConsoleSpy(_consoleSpy => {
+            jest.resetModules();
+            const authModule = require('../auth');
+            expect(authModule).toBeDefined();
+          });
+        }
+      );
     });
   });
 

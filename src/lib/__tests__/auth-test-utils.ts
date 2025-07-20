@@ -287,3 +287,44 @@ export function setupCommonAuthTestMocks(mockNextAuth: jest.Mock): void {
   setupAuthTestMocks(mockNextAuth);
   setupAuthEnvironment();
 }
+
+/**
+ * Helper to test environment setup with conditional import/spy
+ */
+export function testEnvWithConditionalImport(env: Partial<NodeJS.ProcessEnv>, shouldWarn: boolean): void {
+  setupEnvironment(env);
+  if (shouldWarn) {
+    importAuthWithConsoleSpy();
+  } else {
+    jest.resetModules();
+    import('../auth');
+  }
+}
+
+/**
+ * Helper to backup, set, test, and restore environment variables
+ */
+export function testWithTemporaryEnv(envKeys: string[], testEnv: Partial<NodeJS.ProcessEnv>, testFn: () => void): void {
+  const originalEnv: Record<string, string | undefined> = {};
+  
+  // Backup original values
+  envKeys.forEach(key => {
+    originalEnv[key] = process.env[key];
+  });
+  
+  // Set test environment
+  setupEnvironment(testEnv);
+  
+  try {
+    testFn();
+  } finally {
+    // Restore environment
+    envKeys.forEach(key => {
+      if (originalEnv[key] !== undefined) {
+        process.env[key] = originalEnv[key];
+      } else {
+        delete process.env[key];
+      }
+    });
+  }
+}
