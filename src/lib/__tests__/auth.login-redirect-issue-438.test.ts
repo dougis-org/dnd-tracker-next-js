@@ -61,7 +61,6 @@ describe('Issue #438: Login Redirect Problems', () => {
   const originalEnv = process.env;
 
 
-
   // Helper function to test NextAuth configuration
   const testNextAuthConfig = async (expectedStrategy = 'jwt') => {
     await import('../auth');

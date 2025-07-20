@@ -272,11 +272,11 @@ export function setupAuthEnvironment(nextAuthUrl?: string, nodeEnv = 'production
     MONGODB_DB_NAME: 'testdb',
     NEXTAUTH_SECRET: 'test-secret',
   };
-  
+
   if (nextAuthUrl) {
     env.NEXTAUTH_URL = nextAuthUrl;
   }
-  
+
   setupEnvironment(env);
 }
 
