@@ -26,11 +26,11 @@ describe('UserService Integration - Issue #439', () => {
 
       try {
         console.log('Testing createUser with data:', validUserData);
-        
+
         const result = await UserService.createUser(validUserData);
-        
+
         console.log('UserService.createUser result:', JSON.stringify(result, null, 2));
-        
+
         expect(result.success).toBe(true);
         expect(result.data).toBeDefined();
         expect(result.data?.user).toBeDefined();
@@ -63,7 +63,7 @@ describe('UserService Integration - Issue #439', () => {
         // Try to create user with same email
         const duplicateResult = await UserService.createUser(validUserData);
         console.log('Duplicate user result:', JSON.stringify(duplicateResult, null, 2));
-        
+
         expect(duplicateResult.success).toBe(false);
         expect(duplicateResult.error?.statusCode).toBe(409);
       } finally {
@@ -86,7 +86,7 @@ describe('UserService Integration - Issue #439', () => {
       try {
         const result = await UserService.createUser(invalidUserData);
         console.log('Invalid password result:', JSON.stringify(result, null, 2));
-        
+
         expect(result.success).toBe(false);
         expect(result.error?.statusCode).toBe(400);
       } catch (error) {

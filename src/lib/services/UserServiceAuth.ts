@@ -109,7 +109,7 @@ export class UserServiceAuth {
   private static async createAndSaveUser(validatedData: any) {
     // Import User model after database connection is established
     const User = (await import('../models/User')).default;
-    
+
     // Check if email verification should be bypassed for MVP
     const bypassEmailVerification = this.shouldBypassEmailVerification();
 
