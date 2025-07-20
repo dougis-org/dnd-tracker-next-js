@@ -4,8 +4,14 @@ import { CharacterStatsManager } from '../CharacterStatsManager';
 import { CharacterService } from '@/lib/services/CharacterService';
 import { createMockCharacter as createMockCharacterBase } from '@/lib/services/__tests__/CharacterService.test-helpers';
 
-// Re-export createMockCharacter for backward compatibility
-export { createMockCharacterBase as createMockCharacter };
+// Convert service layer mock (with object skills) to component layer format (with Map skills)
+export const createMockCharacter = (overrides = {}) => {
+  const baseMock = createMockCharacterBase(overrides);
+  return {
+    ...baseMock,
+    skills: new Map(Object.entries(baseMock.skills || {})),
+  };
+};
 
 // Specialized character factory for stats testing (kept for specific use case)
 export const createMockCharacterForStats = (overrides = {}) => ({
