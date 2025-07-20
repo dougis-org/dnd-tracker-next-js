@@ -13,42 +13,47 @@ export interface ToastProps {
   };
 }
 
-// Helper function to build options object
-const buildToastOptions = (description?: string, duration?: number, action?: ToastProps['action']) => {
-  const options: any = {};
-
-  if (description !== undefined && description !== null) {
-    options.description = description;
-  }
-
-  if (duration !== undefined && duration !== null) {
-    options.duration = duration;
-  }
-
-  if (action) {
-    options.action = action;
-  }
-
-  return Object.keys(options).length > 0 ? options : undefined;
-};
-
-// Helper function to call appropriate toast method
-const callToastMethod = (variant: ToastProps['variant'], title: string, options?: any) => {
-  const toastMethod = variant === 'destructive' ? toast.error :
-                     variant === 'default' ? toast.success :
-                     toast;
-
-  return options ? toastMethod(title, options) : toastMethod(title);
-};
-
 export function useToast() {
   const showToast = ({ title, description, variant, duration, action }: ToastProps) => {
-    const options = buildToastOptions(description, duration, action);
-    callToastMethod(variant, title, options);
+    const options: {
+      description?: string;
+      duration?: number;
+      action?: {
+        label: string;
+        onClick: () => void;
+      };
+    } = {};
+
+    if (description != null) {
+      options.description = description;
+    }
+
+    if (duration != null) {
+      options.duration = duration;
+    }
+
+    if (action) {
+      options.action = action;
+    }
+
+    const hasOptions = Object.keys(options).length > 0;
+
+    const toastFn =
+      variant === 'destructive'
+        ? toast.error
+        : variant === 'default'
+        ? toast.success
+        : toast;
+
+    if (hasOptions) {
+      toastFn(title, options);
+    } else {
+      toastFn(title);
+    }
   };
 
   const dismiss = (id?: string) => {
-    if (id !== undefined) {
+    if (id != null) {
       toast.dismiss(id);
     } else {
       toast.dismiss();
