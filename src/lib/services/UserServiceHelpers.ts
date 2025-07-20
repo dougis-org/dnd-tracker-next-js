@@ -15,14 +15,14 @@ export async function checkUserExists(
 ): Promise<void> {
   // Ensure database connection before using model
   await connectToDatabase();
-  
+
   // Import User model after database connection is established
   const User = (await import('../models/User')).default;
-  
+
   if (!User || typeof User.findByEmail !== 'function') {
     throw new Error(`User model is not properly initialized. User: ${User}, findByEmail: ${User?.findByEmail}`);
   }
-  
+
   const existingUserByEmail = await User.findByEmail(email);
   if (existingUserByEmail) {
     throw new UserAlreadyExistsError('email', email);
@@ -42,15 +42,21 @@ export async function checkProfileUpdateConflicts(
   email?: string,
   username?: string
 ): Promise<void> {
+  // Ensure database connection before using model
+  await connectToDatabase();
+
+  // Import User model after database connection is established
+  const User = (await import('../models/User')).default;
+
   if (email) {
-    const existingUser = await UserModel.findByEmail(email);
+    const existingUser = await User.findByEmail(email);
     if (existingUser && existingUser._id.toString() !== userId) {
       throw new UserAlreadyExistsError('email', email);
     }
   }
 
   if (username) {
-    const existingUser = await UserModel.findByUsername(username);
+    const existingUser = await User.findByUsername(username);
     if (existingUser && existingUser._id.toString() !== userId) {
       throw new UserAlreadyExistsError('username', username);
     }
