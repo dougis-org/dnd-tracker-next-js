@@ -1,4 +1,4 @@
-import User from '../models/User';
+import { connectToDatabase } from '../db';
 import {
   ServiceResult,
   UserAlreadyExistsError,
@@ -47,6 +47,9 @@ export class UserServiceAuth {
     userData: UserRegistration
   ): Promise<ServiceResult<UserRegistrationResponse>> {
     try {
+      // Ensure database connection is established
+      await connectToDatabase();
+
       // Validate input data and password
       const validatedData = UserServiceValidation.validateAndParseRegistration(userData);
       const passwordError = this.validatePassword(validatedData.password);
@@ -104,6 +107,9 @@ export class UserServiceAuth {
    * Create and save a new user with email verification token
    */
   private static async createAndSaveUser(validatedData: any) {
+    // Import User model after database connection is established
+    const User = (await import('../models/User')).default;
+
     // Check if email verification should be bypassed for MVP
     const bypassEmailVerification = this.shouldBypassEmailVerification();
 

@@ -2,9 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { ZodError } from 'zod';
 import { UserService } from '@/lib/services/UserService';
 import { userRegistrationSchema } from '@/lib/validations/user';
+import { connectToDatabase } from '@/lib/db';
 
 export async function POST(request: NextRequest) {
   try {
+    // Ensure database connection is established
+    await connectToDatabase();
+
     const body = await request.json();
 
     // Validate the request body
