@@ -48,6 +48,12 @@ afterAll(() => {
 });
 
 // Helper functions to reduce duplication
+const getAuthConfigAsync = async () => {
+  jest.resetModules();
+  await import('../auth');
+  return mockNextAuth.mock.calls[0][0];
+};
+
 const createMockAuthData = () => {
   const mockUser = createMockUser({
     id: 'user123',
