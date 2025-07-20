@@ -306,15 +306,15 @@ export function testEnvWithConditionalImport(env: Partial<NodeJS.ProcessEnv>, sh
  */
 export function testWithTemporaryEnv(envKeys: string[], testEnv: Partial<NodeJS.ProcessEnv>, testFn: () => void): void {
   const originalEnv: Record<string, string | undefined> = {};
-  
+
   // Backup original values
   envKeys.forEach(key => {
     originalEnv[key] = process.env[key];
   });
-  
+
   // Set test environment
   setupEnvironment(testEnv);
-  
+
   try {
     testFn();
   } finally {
