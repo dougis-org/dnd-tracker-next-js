@@ -23,6 +23,9 @@ COPY . .
 ENV MONGODB_URI=mongodb://localhost:27017/dnd-tracker-build
 RUN npm run build
 
+# Compile TypeScript migration scripts and dependencies to JavaScript for production use
+RUN npx tsc --project tsconfig.json --outDir dist --include "src/lib/scripts/**/*" "src/lib/migrations/**/*" --exclude "**/*.test.ts" "**/__tests__/**/*"
+
 # Production stage
 FROM base AS production
 ENV NODE_ENV=production
@@ -39,6 +42,13 @@ RUN npm ci --omit=dev
 COPY --from=build --chown=nextjs:nodejs /app/.next ./.next
 COPY --from=build --chown=nextjs:nodejs /app/public ./public
 COPY --from=build /app/docker-entrypoint.js ./docker-entrypoint.js
+
+# Copy compiled migration scripts and dependencies (JavaScript, not TypeScript source)
+COPY --from=build --chown=nextjs:nodejs /app/dist/lib/scripts ./lib/scripts
+COPY --from=build --chown=nextjs:nodejs /app/dist/lib/migrations ./lib/migrations
+
+# Copy migration wrapper script
+COPY --from=build /app/scripts/migrate-wrapper.sh ./scripts/migrate-wrapper.sh
 
 # Set the user to the non-root user
 USER nextjs

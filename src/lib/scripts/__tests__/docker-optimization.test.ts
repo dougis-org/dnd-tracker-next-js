@@ -194,4 +194,94 @@ describe('Docker Optimization Tests', () => {
       });
     });
   });
+
+  describe('Issue #410: Production Image Optimization', () => {
+    test('should compile TypeScript migration scripts during build stage', () => {
+      const buildStageStart = expectStageExists('FROM base AS build');
+      const productionStageStart = expectStageExists('FROM base AS production');
+
+      // Check if TypeScript compilation command exists in build stage
+      const buildStageLines = dockerfileLines.slice(buildStageStart, productionStageStart);
+      const hasCompileStep = buildStageLines.some(line =>
+        line.includes('tsc') && line.includes('src/lib/scripts')
+      );
+
+      expect(hasCompileStep).toBe(true);
+    });
+
+    test('should copy compiled JavaScript migration scripts to production', () => {
+      const productionStageStart = expectStageExists('FROM base AS production');
+
+      // Check if compiled scripts are copied from build stage
+      const compiledScriptsCopy = dockerfileLines.find((line, index) =>
+        index > productionStageStart &&
+        line.includes('COPY --from=build') &&
+        line.includes('/app/dist/lib/scripts') &&
+        line.includes('./lib/scripts')
+      );
+
+      expect(compiledScriptsCopy).toBeDefined();
+    });
+
+    test('should not copy src directory to production stage', () => {
+      const productionStageStart = expectStageExists('FROM base AS production');
+
+      // Check that src directory is not copied to production
+      const srcCopy = dockerfileLines.find((line, index) =>
+        index > productionStageStart &&
+        line.includes('COPY') &&
+        line.includes('src/') &&
+        !line.includes('--from=build')
+      );
+
+      expect(srcCopy).toBeUndefined();
+    });
+
+    test('should not install tsx in production dependencies', () => {
+      const productionStageStart = expectStageExists('FROM base AS production');
+
+      // Check that tsx is not installed in production
+      const tsxInstall = dockerfileLines.find((line, index) =>
+        index > productionStageStart &&
+        line.includes('npm install') &&
+        line.includes('tsx')
+      );
+
+      expect(tsxInstall).toBeUndefined();
+    });
+
+    test('should use wrapper script that conditionally runs compiled JavaScript in production', () => {
+      // Check that migration scripts use the wrapper script that handles production/dev differences
+      const packageJsonPath = join(process.cwd(), 'package.json');
+      const packageJsonContent = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
+
+      // Check that migration scripts use the wrapper script
+      const migrationScripts = [
+        'migrate:status',
+        'migrate:up',
+        'migrate:down',
+        'migrate:create',
+        'migrate:validate'
+      ];
+
+      migrationScripts.forEach(scriptName => {
+        const script = packageJsonContent.scripts[scriptName];
+        expect(script).toBeDefined();
+
+        // All scripts should use the wrapper that handles production/dev differences
+        expect(script).toMatch(/bash\s+scripts\/migrate-wrapper\.sh/);
+      });
+
+      // Verify the wrapper script exists
+      const wrapperPath = join(process.cwd(), 'scripts/migrate-wrapper.sh');
+      expect(() => readFileSync(wrapperPath, 'utf-8')).not.toThrow();
+
+      // Verify the wrapper handles production vs development correctly
+      const wrapperContent = readFileSync(wrapperPath, 'utf-8');
+      expect(wrapperContent).toMatch(/NODE_ENV.*production/);
+      expect(wrapperContent).toMatch(/lib\/scripts\/migrate\.js/);
+      expect(wrapperContent).toMatch(/src\/lib\/scripts\/migrate\.ts/);
+      expect(wrapperContent).toMatch(/tsx/);
+    });
+  });
 });
