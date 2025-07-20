@@ -1,5 +1,4 @@
 import { connectToDatabase } from '../db';
-import User from '../models/User';
 import {
   ServiceResult,
   UserAlreadyExistsError,
@@ -108,6 +107,9 @@ export class UserServiceAuth {
    * Create and save a new user with email verification token
    */
   private static async createAndSaveUser(validatedData: any) {
+    // Import User model after database connection is established
+    const User = (await import('../models/User')).default;
+    
     // Check if email verification should be bypassed for MVP
     const bypassEmailVerification = this.shouldBypassEmailVerification();
 

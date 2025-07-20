@@ -1,5 +1,4 @@
 import { connectToDatabase } from '../db';
-import User from '../models/User';
 import { UserAlreadyExistsError } from './UserServiceErrors';
 import type { PublicUser } from '../validations/user';
 
@@ -17,9 +16,8 @@ export async function checkUserExists(
   // Ensure database connection before using model
   await connectToDatabase();
   
-  console.log('User:', User);
-  console.log('User.findByEmail:', User?.findByEmail);
-  console.log('typeof User.findByEmail:', typeof User?.findByEmail);
+  // Import User model after database connection is established
+  const User = (await import('../models/User')).default;
   
   if (!User || typeof User.findByEmail !== 'function') {
     throw new Error(`User model is not properly initialized. User: ${User}, findByEmail: ${User?.findByEmail}`);
