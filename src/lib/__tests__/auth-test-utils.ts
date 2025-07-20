@@ -333,7 +333,7 @@ export function testWithTemporaryEnv(envKeys: string[], testEnv: Partial<NodeJS.
  * Helper to test callback with withConsoleSpy wrapper
  */
 export async function testCallbackWithSpy(
-  testCallback: (name: string, params: any) => Promise<any>,
+  testCallback: (_name: string, _params: any) => Promise<any>,
   callbackName: string,
   params: any,
   expectResult: any
