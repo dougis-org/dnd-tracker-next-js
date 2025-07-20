@@ -2,6 +2,7 @@
 import { NextRequest } from 'next/server';
 import { POST } from '../register/route';
 import { UserService } from '@/lib/services/UserService';
+import { createMockRequest } from './test-utils';
 
 // Configure Jest to use our mocks
 jest.mock('next/server');
@@ -27,12 +28,7 @@ describe('POST /api/auth/register', () => {
     subscribeToNewsletter: false,
   };
 
-  const createMockRequest = (body: any) => {
-    const req = new NextRequest('https://example.com');
-    // Use the mocked json method
-    (req.json as jest.Mock).mockResolvedValue(body);
-    return req;
-  };
+  // createMockRequest now imported from test-utils
 
   beforeEach(() => {
     jest.clearAllMocks();
