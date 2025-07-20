@@ -199,6 +199,53 @@ describe('SignUpPage Component', () => {
     });
   });
 
+  describe('Status code error handling', () => {
+    // Helper function to test error status codes
+    const testErrorStatusCode = async (status: number, responseData: any) => {
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: false,
+        status,
+        json: jest.fn().mockResolvedValue(responseData),
+      });
+
+      render(<SignUpPage />);
+      await fillRegistrationForm();
+      await submitForm();
+
+      await waitFor(() => {
+        expect(global.fetch).toHaveBeenCalled();
+        expect(mockRouter.push).not.toHaveBeenCalled();
+        const submitButton = screen.getByRole('button', {
+          name: /Create Account/i,
+        });
+        expect(submitButton).toBeEnabled();
+      });
+    };
+
+    it('handles 400 status code with validation errors', async () => {
+      await testErrorStatusCode(400, {
+        success: false,
+        message: 'Validation failed',
+        errors: [{ field: 'email', message: 'Invalid email format' }],
+      });
+    });
+
+    it('handles 409 status code with conflict errors', async () => {
+      await testErrorStatusCode(409, {
+        success: false,
+        message: 'User already exists',
+        errors: [{ field: 'email', message: 'Email already exists' }],
+      });
+    });
+
+    it('handles other error status codes differently', async () => {
+      await testErrorStatusCode(500, {
+        success: false,
+        message: 'Internal server error',
+      });
+    });
+  });
+
   describe('Email verification bypass', () => {
     it('redirects to sign-in page when email bypass is enabled', async () => {
       // Mock API response for bypassed email verification

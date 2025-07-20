@@ -64,7 +64,7 @@ export default function SignUpPage() {
 
       if (!response.ok) {
         // Handle server validation errors (400) and duplicate user errors (409)
-        if ((response.status === 400 || response.status === 409) && result.errors) {
+        if ([400, 409].includes(response.status) && result.errors) {
           setFormState({
             success: false,
             errors: result.errors.map((err: any) => ({
