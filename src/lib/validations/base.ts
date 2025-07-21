@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { validatePasswordWithDetails } from './password-detail-validation';
 
 /**
  * Base validation schemas and utilities for consistent data validation
@@ -14,12 +15,18 @@ export const emailSchema = z
 
 export const passwordSchema = z
   .string()
-  .min(8, 'Password must be at least 8 characters long')
-  .max(128, 'Password is too long')
-  .regex(
-    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/,
-    'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'
-  );
+  .superRefine((password, ctx) => {
+    const result = validatePasswordWithDetails(password);
+
+    if (!result.isValid) {
+      result.errors.forEach(error => {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: error,
+        });
+      });
+    }
+  });
 
 export const usernameSchema = z
   .string()
