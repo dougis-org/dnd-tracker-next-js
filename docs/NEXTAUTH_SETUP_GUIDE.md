@@ -1,6 +1,7 @@
 # NextAuth.js Setup Guide for D&D Encounter Tracker
 
-This document provides comprehensive instructions for setting up NextAuth.js authentication in the D&D Encounter Tracker application across three deployment environments.
+This document provides comprehensive instructions for setting up NextAuth.js authentication in the D&D Encounter Tracker
+application across three deployment environments.
 
 ## Current Implementation Status
 
@@ -448,4 +449,5 @@ export async function middleware(request: NextRequest) {
 6. **Deploy and test** authentication flows
 7. **Monitor and optimize** session performance
 
-For questions or issues, refer to the [NextAuth.js documentation](https://next-auth.js.org/) or create an issue in the project repository.
+For questions or issues, refer to the [NextAuth.js documentation](https://next-auth.js.org/) or create an issue in the
+project repository.

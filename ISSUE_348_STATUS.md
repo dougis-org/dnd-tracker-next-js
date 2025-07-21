@@ -16,4 +16,3 @@ This PR implements full account deletion functionality as specified in issue #34
 - Eliminated duplication in API route handlers
 - Consolidated test utilities and patterns
 - Standardized error handling across components
-
