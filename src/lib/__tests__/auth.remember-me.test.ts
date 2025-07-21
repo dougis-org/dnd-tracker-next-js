@@ -37,6 +37,51 @@ describe('Authentication RememberMe Functionality', () => {
   let mockUserService: jest.Mocked<typeof UserService>;
   let mockCredentials: any;
 
+  // Helper functions to reduce duplication
+  const mockSuccessfulUserLookup = (user: any) => {
+    mockUserService.getUserByEmail.mockResolvedValue({
+      success: true,
+      data: user,
+    });
+  };
+
+  const mockFailedUserLookup = (errorMessage = 'User not found', errorCode = 'USER_NOT_FOUND') => {
+    mockUserService.getUserByEmail.mockResolvedValue({
+      success: false,
+      error: {
+        message: errorMessage,
+        code: errorCode,
+        statusCode: 404,
+      },
+    });
+  };
+
+  const mockSuccessfulAuthentication = (user: any) => {
+    mockUserService.authenticateUser.mockResolvedValue({
+      success: true,
+      data: { user, requiresVerification: false },
+    });
+  };
+
+  const mockFailedAuthentication = (errorMessage = 'Invalid credentials', errorCode = 'INVALID_CREDENTIALS') => {
+    mockUserService.authenticateUser.mockResolvedValue({
+      success: false,
+      error: {
+        message: errorMessage,
+        code: errorCode,
+        statusCode: 401,
+      },
+    });
+  };
+
+  const testAuthenticateUserCall = async (email: string, password: string, rememberMe: boolean) => {
+    return await mockUserService.authenticateUser({
+      email,
+      password,
+      rememberMe,
+    });
+  };
+
   beforeEach(() => {
     jest.clearAllMocks();
 
@@ -66,23 +111,15 @@ describe('Authentication RememberMe Functionality', () => {
 
     it('should handle rememberMe as boolean true', async () => {
       const mockUser = createMockUser();
-
-      mockUserService.getUserByEmail.mockResolvedValue({
-        success: true,
-        data: mockUser,
-      });
-
-      mockUserService.authenticateUser.mockResolvedValue({
-        success: true,
-        data: { user: mockUser, requiresVerification: false },
-      });
+      mockSuccessfulUserLookup(mockUser);
+      mockSuccessfulAuthentication(mockUser);
 
       // Test authentication with rememberMe = true
-      const authResult = await mockUserService.authenticateUser({
-        email: mockCredentials.email,
-        password: mockCredentials.password,
-        rememberMe: true,
-      });
+      const authResult = await testAuthenticateUserCall(
+        mockCredentials.email,
+        mockCredentials.password,
+        true
+      );
 
       expect(mockUserService.authenticateUser).toHaveBeenCalledWith({
         email: mockCredentials.email,
@@ -95,23 +132,15 @@ describe('Authentication RememberMe Functionality', () => {
 
     it('should handle rememberMe as boolean false', async () => {
       const mockUser = createMockUser();
-
-      mockUserService.getUserByEmail.mockResolvedValue({
-        success: true,
-        data: mockUser,
-      });
-
-      mockUserService.authenticateUser.mockResolvedValue({
-        success: true,
-        data: { user: mockUser, requiresVerification: false },
-      });
+      mockSuccessfulUserLookup(mockUser);
+      mockSuccessfulAuthentication(mockUser);
 
       // Test authentication with rememberMe = false
-      const authResult = await mockUserService.authenticateUser({
-        email: mockCredentials.email,
-        password: mockCredentials.password,
-        rememberMe: false,
-      });
+      const authResult = await testAuthenticateUserCall(
+        mockCredentials.email,
+        mockCredentials.password,
+        false
+      );
 
       expect(mockUserService.authenticateUser).toHaveBeenCalledWith({
         email: mockCredentials.email,
@@ -182,49 +211,30 @@ describe('Authentication RememberMe Functionality', () => {
   describe('Error Handling with RememberMe', () => {
     it('should handle authentication errors regardless of rememberMe value', async () => {
       const mockUser = createMockUser();
-
-      mockUserService.getUserByEmail.mockResolvedValue({
-        success: true,
-        data: mockUser,
-      });
-
-      mockUserService.authenticateUser.mockResolvedValue({
-        success: false,
-        error: {
-          message: 'Invalid credentials',
-          code: 'INVALID_CREDENTIALS',
-          statusCode: 401,
-        },
-      });
+      mockSuccessfulUserLookup(mockUser);
+      mockFailedAuthentication();
 
       // Test with rememberMe = true
-      const authResultTrue = await mockUserService.authenticateUser({
-        email: mockCredentials.email,
-        password: 'wrongpassword',
-        rememberMe: true,
-      });
+      const authResultTrue = await testAuthenticateUserCall(
+        mockCredentials.email,
+        'wrongpassword',
+        true
+      );
 
       expect(authResultTrue.success).toBe(false);
 
       // Test with rememberMe = false
-      const authResultFalse = await mockUserService.authenticateUser({
-        email: mockCredentials.email,
-        password: 'wrongpassword',
-        rememberMe: false,
-      });
+      const authResultFalse = await testAuthenticateUserCall(
+        mockCredentials.email,
+        'wrongpassword',
+        false
+      );
 
       expect(authResultFalse.success).toBe(false);
     });
 
     it('should handle missing user regardless of rememberMe value', async () => {
-      mockUserService.getUserByEmail.mockResolvedValue({
-        success: false,
-        error: {
-          message: 'User not found',
-          code: 'USER_NOT_FOUND',
-          statusCode: 404,
-        },
-      });
+      mockFailedUserLookup();
 
       const result = await mockUserService.getUserByEmail('nonexistent@example.com');
       expect(result.success).toBe(false);
@@ -238,17 +248,9 @@ describe('Authentication RememberMe Functionality', () => {
     it('should simulate the full authorize flow with rememberMe', async () => {
       const mockUser = createMockUser();
 
-      // Mock successful user lookup
-      mockUserService.getUserByEmail.mockResolvedValue({
-        success: true,
-        data: mockUser,
-      });
-
-      // Mock successful authentication
-      mockUserService.authenticateUser.mockResolvedValue({
-        success: true,
-        data: { user: mockUser, requiresVerification: false },
-      });
+      // Mock successful user lookup and authentication
+      mockSuccessfulUserLookup(mockUser);
+      mockSuccessfulAuthentication(mockUser);
 
       // Simulate NextAuth authorize function flow
       const credentials = {
@@ -268,11 +270,11 @@ describe('Authentication RememberMe Functionality', () => {
 
       // Step 3: Authenticate user with rememberMe conversion
       const rememberMe = credentials.rememberMe === 'true';
-      const authResult = await mockUserService.authenticateUser({
-        email: credentials.email,
-        password: credentials.password,
-        rememberMe,
-      });
+      const authResult = await testAuthenticateUserCall(
+        credentials.email,
+        credentials.password,
+        rememberMe
+      );
 
       expect(mockUserService.authenticateUser).toHaveBeenCalledWith({
         email: credentials.email,
@@ -287,15 +289,8 @@ describe('Authentication RememberMe Functionality', () => {
     it('should handle the authorize flow when rememberMe is not provided', async () => {
       const mockUser = createMockUser();
 
-      mockUserService.getUserByEmail.mockResolvedValue({
-        success: true,
-        data: mockUser,
-      });
-
-      mockUserService.authenticateUser.mockResolvedValue({
-        success: true,
-        data: { user: mockUser, requiresVerification: false },
-      });
+      mockSuccessfulUserLookup(mockUser);
+      mockSuccessfulAuthentication(mockUser);
 
       // Simulate credentials without rememberMe parameter
       const credentials = {
@@ -306,11 +301,11 @@ describe('Authentication RememberMe Functionality', () => {
       // Simulate the conversion logic for missing rememberMe
       const rememberMe = (credentials as any).rememberMe === 'true';
 
-      const authResult = await mockUserService.authenticateUser({
-        email: credentials.email,
-        password: credentials.password,
-        rememberMe,
-      });
+      const authResult = await testAuthenticateUserCall(
+        credentials.email,
+        credentials.password,
+        rememberMe
+      );
 
       expect(mockUserService.authenticateUser).toHaveBeenCalledWith({
         email: credentials.email,
