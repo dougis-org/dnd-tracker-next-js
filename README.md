@@ -79,14 +79,16 @@ All detailed documentation is maintained in the [`docs/`](./docs/) folder. Key d
 
 ### **📊 Core Documentation**
 
-- **[Product Requirements Document](./docs/Product%20Requirements%20Document.md)** - Business requirements, subscription model, success metrics
+- **[Product Requirements Document](./docs/Product%20Requirements%20Document.md)** - Business requirements,
+  subscription model, success metrics
 - **[High Level Design](./docs/High%20Level%20Design.md)** - Technical architecture, database design, API specifications
 - **[Project Roadmap](./docs/Project%20Roadmap.md)** - Complete task breakdown with MVP identification
 
 ### **🗓️ Development Planning**
 
 - **[12-Week MVP Development Phase Plan](./docs/12-Week%20MVP%20Development%20Phase%20Plan.md)** - Weekly sprint schedule
-- **[Project State Summary](./docs/D%26D%20Encounter%20Tracker%20-%20Project%20State%20Summary.md)** - Current development status
+- **[Project State Summary](./docs/D%26D%20Encounter%20Tracker%20-%20Project%20State%20Summary.md)** - Current
+  development status
 - **[GitHub Issues Progress](./docs/D%26D%20Tracker%20MVP%20GitHub%20Issues%20-%20Progress%20State.md)** - Issue tracking
 
 ### **🚀 Quick References**

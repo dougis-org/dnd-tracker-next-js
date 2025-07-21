@@ -4,7 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a D&D Encounter Tracker - a Next.js 15 full-stack web application for Dungeon Masters to manage combat encounters efficiently. The project is currently in **active development** with 46 GitHub issues created for a 12-week MVP development timeline. **Issue #17 (UserService implementation) has been completed and merged.**
+This is a D&D Encounter Tracker - a Next.js 15 full-stack web application for Dungeon Masters to manage combat
+encounters efficiently. The project is currently in **active development** with 46 GitHub issues created for a
+12-week MVP development timeline. **Issue #17 (UserService implementation) has been completed and merged.**
 
 ### Key Features
 
@@ -344,7 +346,8 @@ All comprehensive project documentation is in the `docs/` folder:
 
 - **[README.md](./docs/README.md):** Complete documentation index
 - **[High Level Design.md](./docs/High%20Level%20Design.md):** Technical architecture
-- **[12-Week MVP Development Phase Plan.md](./docs/12-Week%20MVP%20Development%20Phase%20Plan.md):** Detailed development schedule
+- **[12-Week MVP Development Phase Plan.md](./docs/12-Week%20MVP%20Development%20Phase%20Plan.md):** Detailed
+  development schedule
 - **[Product Requirements Document.md](./docs/Product%20Requirements%20Document.md):** Business requirements
 - **[QUICK REFERENCE FOR OTHER CHATS.md](./docs/QUICK%20REFERENCE%20FOR%20OTHER%20CHATS.md):** Quick orientation guide
 
