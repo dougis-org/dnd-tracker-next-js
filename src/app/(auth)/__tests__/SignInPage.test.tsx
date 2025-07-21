@@ -16,6 +16,15 @@ jest.mock('next-auth/react', () => ({
   signIn: jest.fn(),
 }));
 
+// Mock useToast hook
+const mockToast = jest.fn();
+jest.mock('@/hooks/use-toast', () => ({
+  useToast: jest.fn(() => ({
+    toast: mockToast,
+    dismiss: jest.fn(),
+  })),
+}));
+
 describe('SignInPage Component', () => {
   const mockRouter = {
     push: jest.fn(),
@@ -30,6 +39,7 @@ describe('SignInPage Component', () => {
     (useRouter as jest.Mock).mockReturnValue(mockRouter);
     (useSearchParams as jest.Mock).mockReturnValue(mockSearchParams);
     (signIn as jest.Mock).mockResolvedValue({ ok: true, error: null });
+    mockToast.mockClear();
 
     // Default mock implementation for searchParams.get
     mockSearchParams.get.mockImplementation(param => {
@@ -215,6 +225,98 @@ describe('SignInPage Component', () => {
         'http://localhost:3000/characters/123/edit',
         'Please sign in to view your Characters'
       );
+    });
+  });
+
+  describe('Toast Messages (Issue #470)', () => {
+    it('shows success toast and redirects to dashboard on successful login', async () => {
+      render(<SignInPage />);
+
+      await userEvent.type(screen.getByLabelText(/Email/i), 'user@example.com');
+      await userEvent.type(screen.getByLabelText(/Password/i), 'Password123!');
+      await userEvent.click(screen.getByRole('button', { name: /Sign In/i }));
+
+      await waitFor(() => {
+        expect(mockToast).toHaveBeenCalledWith({
+          title: 'Login Success',
+          variant: 'default'
+        });
+
+        expect(mockRouter.push).toHaveBeenCalledWith('/dashboard');
+      });
+    });
+
+    it('shows failure toast on login failure and does not redirect', async () => {
+      // Mock signIn to return an error
+      (signIn as jest.Mock).mockResolvedValue({
+        ok: false,
+        error: 'CredentialsSignin',
+      });
+
+      render(<SignInPage />);
+
+      await userEvent.type(screen.getByLabelText(/Email/i), 'user@example.com');
+      await userEvent.type(
+        screen.getByLabelText(/Password/i),
+        'WrongPassword123!'
+      );
+      await userEvent.click(screen.getByRole('button', { name: /Sign In/i }));
+
+      await waitFor(() => {
+        expect(mockToast).toHaveBeenCalledWith({
+          title: 'Login Failure, please check your email and password',
+          variant: 'destructive'
+        });
+
+        expect(mockRouter.push).not.toHaveBeenCalled();
+      });
+    });
+
+    it('shows generic failure toast for non-credentials errors', async () => {
+      // Mock signIn to return a different error
+      (signIn as jest.Mock).mockResolvedValue({
+        ok: false,
+        error: 'Configuration',
+      });
+
+      render(<SignInPage />);
+
+      await userEvent.type(screen.getByLabelText(/Email/i), 'user@example.com');
+      await userEvent.type(screen.getByLabelText(/Password/i), 'Password123!');
+      await userEvent.click(screen.getByRole('button', { name: /Sign In/i }));
+
+      await waitFor(() => {
+        expect(mockToast).toHaveBeenCalledWith({
+          title: 'Login Failure, please check your email and password',
+          variant: 'destructive'
+        });
+
+        expect(mockRouter.push).not.toHaveBeenCalled();
+      });
+    });
+
+    it('shows success toast with custom callback URL redirect', async () => {
+      // Mock a different callback URL
+      mockSearchParams.get.mockImplementation(param => {
+        if (param === 'callbackUrl') return '/characters';
+        if (param === 'error') return null;
+        return null;
+      });
+
+      render(<SignInPage />);
+
+      await userEvent.type(screen.getByLabelText(/Email/i), 'user@example.com');
+      await userEvent.type(screen.getByLabelText(/Password/i), 'Password123!');
+      await userEvent.click(screen.getByRole('button', { name: /Sign In/i }));
+
+      await waitFor(() => {
+        expect(mockToast).toHaveBeenCalledWith({
+          title: 'Login Success',
+          variant: 'default'
+        });
+
+        expect(mockRouter.push).toHaveBeenCalledWith('/characters');
+      });
     });
   });
 });

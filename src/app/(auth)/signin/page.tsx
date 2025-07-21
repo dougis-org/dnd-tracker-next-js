@@ -17,6 +17,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 import { getRedirectMessage } from '@/lib/utils/redirect-utils';
+import { useToast } from '@/hooks/use-toast';
 
 type FormState = {
   success: boolean;
@@ -27,6 +28,7 @@ type FormState = {
 export default function SignInPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { toast } = useToast();
   // Enhanced callback URL validation for Issue #438: Prevent invalid redirects
   const getValidatedCallbackUrl = () => {
     const rawCallbackUrl = searchParams.get('callbackUrl') || searchParams.get('next');
@@ -113,6 +115,12 @@ export default function SignInPage() {
         isSubmitting: false,
       });
 
+      // Show success toast
+      toast({
+        title: 'Login Success',
+        variant: 'default'
+      });
+
       router.push(callbackUrl as any);
     } catch (error) {
       // Handle Zod validation errors
@@ -142,6 +150,14 @@ export default function SignInPage() {
         ],
         isSubmitting: false,
       });
+
+      // Show failure toast for authentication errors
+      if (error instanceof Error) {
+        toast({
+          title: 'Login Failure, please check your email and password',
+          variant: 'destructive'
+        });
+      }
     }
   };
 
