@@ -109,6 +109,7 @@ describe('SignInPage Component', () => {
         redirect: false,
         email: 'user@example.com',
         password: 'Password123!',
+        rememberMe: 'false',
         callbackUrl: '/dashboard',
       });
 

@@ -143,6 +143,7 @@ export default function SignInPage() {
         redirect: false,
         email: validatedData.email,
         password: validatedData.password,
+        rememberMe: validatedData.rememberMe.toString(),
         callbackUrl,
       });
 
