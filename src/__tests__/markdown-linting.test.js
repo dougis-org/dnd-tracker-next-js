@@ -37,7 +37,9 @@ describe('Markdown Linting', () => {
     keyFiles.forEach(file => {
       test(`${file} should pass markdownlint`, () => {
         expect(() => {
-          execSync(`npx markdownlint ${file}`, { stdio: 'pipe' });
+          // Sanitize filename to prevent command injection
+          const sanitizedFile = path.basename(file).replace(/[^a-zA-Z0-9._-]/g, '');
+          execSync(`npx markdownlint "${sanitizedFile}"`, { stdio: 'pipe' });
         }).not.toThrow();
       });
     });
@@ -46,11 +48,13 @@ describe('Markdown Linting', () => {
   describe('Markdown Style Guidelines', () => {
     test('should not have multiple consecutive blank lines', () => {
       const testMarkdown = 'Header\n\n\n\nContent';
-const tempFile = `test-temp-${Date.now()}.md`;
+      const tempFile = `test-temp-${Date.now()}.md`;
       fs.writeFileSync(tempFile, testMarkdown);
 
       expect(() => {
-        execSync(`npx markdownlint ${tempFile}`, { stdio: 'pipe' });
+        // Sanitize filename to prevent command injection
+        const sanitizedFile = path.basename(tempFile).replace(/[^a-zA-Z0-9._-]/g, '');
+        execSync(`npx markdownlint "${sanitizedFile}"`, { stdio: 'pipe' });
       }).toThrow();
 
       fs.unlinkSync(tempFile);
@@ -62,7 +66,9 @@ const tempFile = `test-temp-${Date.now()}.md`;
       fs.writeFileSync(tempFile, testMarkdown);
 
       expect(() => {
-        execSync(`npx markdownlint ${tempFile}`, { stdio: 'pipe' });
+        // Sanitize filename to prevent command injection
+        const sanitizedFile = path.basename(tempFile).replace(/[^a-zA-Z0-9._-]/g, '');
+        execSync(`npx markdownlint "${sanitizedFile}"`, { stdio: 'pipe' });
       }).toThrow();
 
       fs.unlinkSync(tempFile);
