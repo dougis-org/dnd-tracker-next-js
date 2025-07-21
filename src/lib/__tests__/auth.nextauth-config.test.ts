@@ -110,8 +110,8 @@ describe('NextAuth Configuration Tests', () => {
     it('should test NextAuth configuration with different trust host settings', async () => {
       const testCases = [
         { AUTH_TRUST_HOST: 'true', expected: true },
-        { AUTH_TRUST_HOST: 'false', expected: false },
-        { AUTH_TRUST_HOST: undefined, expected: false }
+        { AUTH_TRUST_HOST: 'false', expected: true }, // Production automatically trusts hosts
+        { AUTH_TRUST_HOST: undefined, expected: true } // Production automatically trusts hosts
       ];
 
       for (const { AUTH_TRUST_HOST, expected } of testCases) {

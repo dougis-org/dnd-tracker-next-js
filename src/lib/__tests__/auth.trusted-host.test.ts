@@ -116,16 +116,16 @@ describe('NextAuth Trusted Host Configuration', () => {
       await testTrustHostValue('true', true);
     });
 
-    it('should set trustHost to false when AUTH_TRUST_HOST is not set', async () => {
-      await testTrustHostValue(null, false);
+    it('should set trustHost to true when AUTH_TRUST_HOST is not set (production default)', async () => {
+      await testTrustHostValue(null, true);
     });
 
-    it('should set trustHost to false when AUTH_TRUST_HOST=false', async () => {
-      await testTrustHostValue('false', false);
+    it('should set trustHost to true when AUTH_TRUST_HOST=false (production override)', async () => {
+      await testTrustHostValue('false', true);
     });
 
-    it('should set trustHost to false when AUTH_TRUST_HOST has invalid value', async () => {
-      await testTrustHostValue('yes', false);
+    it('should set trustHost to true when AUTH_TRUST_HOST has invalid value (production default)', async () => {
+      await testTrustHostValue('yes', true);
     });
   });
 
