@@ -24,7 +24,7 @@ ENV MONGODB_URI=mongodb://localhost:27017/dnd-tracker-build
 RUN npm run build
 
 # Compile TypeScript migration scripts and dependencies to JavaScript for production use
-RUN npx tsc --project tsconfig.json --outDir dist --include "src/lib/scripts/**/*" "src/lib/migrations/**/*" --exclude "**/*.test.ts" "**/__tests__/**/*"
+RUN npx tsc --project tsconfig.production.json
 
 # Production stage
 FROM base AS production
