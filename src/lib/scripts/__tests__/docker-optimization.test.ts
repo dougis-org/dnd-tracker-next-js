@@ -203,7 +203,7 @@ describe('Docker Optimization Tests', () => {
       // Check if TypeScript compilation command exists in build stage
       const buildStageLines = dockerfileLines.slice(buildStageStart, productionStageStart);
       const hasCompileStep = buildStageLines.some(line =>
-        line.includes('tsc') && line.includes('src/lib/scripts')
+        line.includes('tsc') && line.includes('tsconfig.production.json')
       );
 
       expect(hasCompileStep).toBe(true);
