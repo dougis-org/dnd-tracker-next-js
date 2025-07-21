@@ -31,7 +31,7 @@ export const createTestRequest = (pathname: string): NextRequest => ({
 // Common environment setup
 export const setupTestEnvironment = (envOverrides: Record<string, string> = {}) => {
   const originalEnv = process.env;
-  
+
   const defaultEnv = {
     NEXTAUTH_SECRET: 'test-secret-for-jwt-signing',
     NEXTAUTH_URL: 'http://localhost:3000',
