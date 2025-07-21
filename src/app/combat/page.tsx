@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import { AuthenticatedPage } from '@/components/layout/AuthenticatedPage';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -158,27 +157,25 @@ function RealTimeUpdatesCard() {
 
 export default function CombatPage() {
   return (
-    <AuthenticatedPage unauthenticatedMessage="Please sign in to access the combat tracker.">
-      <main className="container mx-auto px-4 py-8">
-        <header className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground">Combat Tracker</h1>
-          <p className="text-muted-foreground mt-2">
-            Manage active combat encounters and initiative tracking
-          </p>
-        </header>
+    <main className="container mx-auto px-4 py-8">
+      <header className="mb-8">
+        <h1 className="text-3xl font-bold text-foreground">Combat Tracker</h1>
+        <p className="text-muted-foreground mt-2">
+          Manage active combat encounters and initiative tracking
+        </p>
+      </header>
 
-        <div className="grid gap-6">
-          <ActiveCombatSessions />
+      <div className="grid gap-6">
+        <ActiveCombatSessions />
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <InitiativeTrackerCard />
-            <ParticipantManagementCard />
-            <CombatActionsCard />
-          </div>
-
-          <RealTimeUpdatesCard />
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <InitiativeTrackerCard />
+          <ParticipantManagementCard />
+          <CombatActionsCard />
         </div>
-      </main>
-    </AuthenticatedPage>
+
+        <RealTimeUpdatesCard />
+      </div>
+    </main>
   );
 }
