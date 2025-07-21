@@ -1,6 +1,7 @@
 # MongoDB Migration System
 
-A comprehensive database migration system for managing MongoDB schema changes with validation, rollback support, and CLI tools.
+A comprehensive database migration system for managing MongoDB schema changes with validation, rollback support, and
+CLI tools.
 
 ## Features
 

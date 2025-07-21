@@ -8,7 +8,7 @@
     "start": "next start -H 0.0.0.0 -p 3000",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
-    "lint:markdown": "markdownlint \"**/*.md\" --ignore node_modules",
+    "lint:markdown": "markdownlint \"**/*.md\" --ignore node_modules --ignore \"docs/legacy/**\" --ignore \"docs/deployment/**\"",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",

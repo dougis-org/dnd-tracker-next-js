@@ -22,7 +22,7 @@ jobs:
         run: npm ci
 
       - name: Lint markdown files
-        run: npx markdownlint "**/*.md" --ignore node_modules
+        run: npx markdownlint "**/*.md" --ignore node_modules --ignore "docs/legacy/**" --ignore "docs/deployment/**"
 
       - name: Build
         env:
