@@ -2,9 +2,19 @@ import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import { CharacterStatsManager } from '../CharacterStatsManager';
 import { CharacterService } from '@/lib/services/CharacterService';
+import { createMockCharacter as createMockCharacterBase } from '@/lib/services/__tests__/CharacterService.test-helpers';
 
-// Mock character data factory
-export const createMockCharacter = (overrides = {}) => ({
+// Convert service layer mock (with object skills) to component layer format (with Map skills)
+export const createMockCharacter = (overrides = {}) => {
+  const baseMock = createMockCharacterBase(overrides);
+  return {
+    ...baseMock,
+    skills: new Map(Object.entries(baseMock.skills || {})),
+  };
+};
+
+// Specialized character factory for stats testing (kept for specific use case)
+export const createMockCharacterForStats = (overrides = {}) => ({
   _id: '507f1f77bcf86cd799439011',
   name: 'Test Character',
   type: 'pc' as const,

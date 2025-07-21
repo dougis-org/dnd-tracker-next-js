@@ -311,11 +311,11 @@ describe('Middleware Route Protection', () => {
       );
       mockRedirect.mockReturnValue({ type: 'redirect' });
 
-      // Should redirect to signin even if getToken throws
-      await expect(middleware(request)).rejects.toThrow(
-        'Token validation failed'
-      );
-      // The middleware doesn't catch getToken errors, which is expected behavior
+      // Middleware should catch errors and redirect to signin
+      const result = await middleware(request);
+
+      expect(result).toBeDefined();
+      expect(mockRedirect).toHaveBeenCalled();
     });
 
     it('should handle missing NEXTAUTH_SECRET', async () => {

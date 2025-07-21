@@ -8,6 +8,7 @@ import {
   ClientSessionUtils,
   performLogout,
 } from '../session-client';
+import { createMockUser } from './auth-test-utils';
 
 // Mock next-auth/react
 jest.mock('next-auth/react');
@@ -23,21 +24,19 @@ jest.mock('next/navigation', () => ({
   }),
 }));
 
-// Helper functions to create mock sessions
-const createMockSession = (overrides = {}) => ({
-  expires: '2024-12-31',
-  ...overrides,
-});
+// createMockUser now imported from auth-test-utils
 
-const createMockUser = (overrides = {}) => ({
-  id: '123',
-  email: 'test@example.com',
-  subscriptionTier: 'free',
-  ...overrides,
-});
-
-const createSessionWithUser = (userOverrides = {}) =>
-  createMockSession({ user: createMockUser(userOverrides) });
+const createSessionWithUser = (userOverrides = {}) => {
+  const user = createMockUser(userOverrides);
+  return {
+    user: {
+      id: user.id || user._id,
+      email: user.email,
+      subscriptionTier: user.subscriptionTier,
+      ...userOverrides
+    },
+  };
+};
 
 // Helper to create session return value for useSession mock
 const createSessionReturn = (
@@ -294,7 +293,7 @@ describe('Client-side Session Management', () => {
       });
 
       it('should return null for session without user id', () => {
-        const session = createMockSession({ user: {} });
+        const session = { user: {} };
         const result = ClientSessionUtils.getUserId(session);
         expect(result).toBeNull();
       });
@@ -313,7 +312,7 @@ describe('Client-side Session Management', () => {
       });
 
       it('should return null for session without user email', () => {
-        const session = createMockSession({ user: {} });
+        const session = { user: {} };
         const result = ClientSessionUtils.getUserEmail(session);
         expect(result).toBeNull();
       });
@@ -332,7 +331,7 @@ describe('Client-side Session Management', () => {
       });
 
       it('should return free when no subscriptionTier', () => {
-        const session = createMockSession({ user: {} });
+        const session = { user: {} };
         const result = ClientSessionUtils.getSubscriptionTier(session);
         expect(result).toBe('free');
       });

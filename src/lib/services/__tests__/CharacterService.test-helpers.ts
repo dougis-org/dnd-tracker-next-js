@@ -77,8 +77,8 @@ export const createMockCharacterData = (overrides: Partial<CharacterCreation> = 
     charisma: false,
   },
   skills: {
-    'athletics': true,
-    'intimidation': true,
+    athletics: true,
+    intimidation: true,
   },
   equipment: [{
     name: 'Chain Mail',
@@ -129,8 +129,8 @@ export const createMockCharacterCreation = (overrides: Partial<CharacterCreation
     charisma: false,
   },
   skills: {
-    'athletics': true,
-    'intimidation': true,
+    athletics: true,
+    intimidation: true,
   },
   equipment: [{
     name: 'Chain Mail',

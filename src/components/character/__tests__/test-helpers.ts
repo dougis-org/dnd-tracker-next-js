@@ -1,20 +1,6 @@
 import type { ICharacter } from '@/lib/models/Character';
 import { Types } from 'mongoose';
-
-export const createMockCharacter = (overrides: Partial<ICharacter> = {}): ICharacter => ({
-  _id: new Types.ObjectId('char1') as any,
-  name: 'Test Character',
-  type: 'pc',
-  level: 1,
-  race: 'human',
-  classes: [{ class: 'fighter', level: 1, subclass: '', hitDie: 10 }],
-  ownerId: new Types.ObjectId('user1') as any,
-  hitPoints: { current: 10, maximum: 10, temporary: 0 },
-  armorClass: 16,
-  createdAt: new Date('2024-01-01'),
-  updatedAt: new Date('2024-01-02'),
-  ...overrides,
-} as ICharacter);
+import { createMockCharacter } from '@/lib/services/__tests__/CharacterService.test-helpers';
 
 const createCharacterWithClass = (
   id: string,

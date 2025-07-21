@@ -1,5 +1,10 @@
 import { UserService } from '../services/UserService';
 import { TestPasswordConstants } from '../test-utils/password-constants';
+import {
+  setupAuthTestEnv,
+  restoreAuthTestEnv,
+  createMockUser
+} from './auth-test-utils';
 
 // Mock all external dependencies
 jest.mock('@auth/mongodb-adapter', () => ({
@@ -17,45 +22,18 @@ jest.mock('../services/UserService', () => ({
   },
 }));
 
-// Setup environment variables
-const originalEnv = process.env;
+// Setup environment variables using auth-test-utils
+let originalEnv: NodeJS.ProcessEnv;
 
 beforeAll(() => {
-  process.env = {
-    ...originalEnv,
-    MONGODB_URI: 'mongodb://localhost:27017/test',
-    MONGODB_DB_NAME: 'testdb',
-    NODE_ENV: 'test',
-  };
+  originalEnv = setupAuthTestEnv();
 });
 
 afterAll(() => {
-  process.env = originalEnv;
+  restoreAuthTestEnv(originalEnv);
 });
 
-// Helper functions to reduce code duplication
-const createMockUser = (overrides: Partial<any> = {}) => ({
-  id: 'user123',
-  email: 'test@example.com',
-  username: 'johndoe',
-  firstName: 'John',
-  lastName: 'Doe',
-  role: 'user' as const,
-  subscriptionTier: 'expert' as const,
-  isEmailVerified: true,
-  preferences: {
-    theme: 'system' as const,
-    emailNotifications: true,
-    browserNotifications: false,
-    timezone: 'UTC',
-    language: 'en',
-    diceRollAnimations: true,
-    autoSaveEncounters: true,
-  },
-  createdAt: new Date(),
-  updatedAt: new Date(),
-  ...overrides,
-});
+// Helper functions now imported from auth-test-utils
 
 const createMockUserWithStrings = (overrides: Partial<any> = {}) => {
   const baseUser = createMockUser(overrides);
