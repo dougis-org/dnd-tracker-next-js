@@ -6,19 +6,25 @@
  * "Middleware: No token found for /dashboard, redirecting to signin"
  */
 
-import { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
+import {
+  mockRedirect,
+  mockNext,
+  mockJson,
+  createTestRequest,
+  setupTestEnvironment,
+  resetAuthMocks,
+  createValidToken,
+  createExpiredToken,
+  createInvalidToken,
+} from './auth-test-helpers';
 
 // Mock the getToken function
 jest.mock('next-auth/jwt', () => ({
   getToken: jest.fn(),
 }));
 
-// Mock NextResponse to match existing test pattern
-const mockRedirect = jest.fn();
-const mockNext = jest.fn();
-const mockJson = jest.fn();
-
+// Setup NextResponse mocks
 jest.mock('next/server', () => ({
   NextRequest: jest.fn(),
   NextResponse: {
@@ -28,29 +34,13 @@ jest.mock('next/server', () => ({
   },
 }));
 
-// Mock environment variables
-const originalEnv = process.env;
-
-// Helper function to create test requests
-const createTestRequest = (pathname: string): NextRequest => ({
-  nextUrl: { pathname },
-  url: `http://localhost:3000${pathname}`,
-} as NextRequest);
-
 describe('Issue #473: Authentication Token Persistence', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-    mockRedirect.mockReset();
-    mockNext.mockReset();
-    mockJson.mockReset();
-    (getToken as jest.Mock).mockReset();
+  let originalEnv: NodeJS.ProcessEnv;
 
-    process.env = {
-      ...originalEnv,
-      NEXTAUTH_SECRET: 'test-secret-for-jwt-signing',
-      NEXTAUTH_URL: 'http://localhost:3000',
-      NODE_ENV: 'development',
-    };
+  beforeEach(() => {
+    resetAuthMocks();
+    (getToken as jest.Mock).mockReset();
+    originalEnv = setupTestEnvironment();
   });
 
   afterEach(() => {
@@ -59,14 +49,7 @@ describe('Issue #473: Authentication Token Persistence', () => {
 
   describe('Reproducing the token persistence issue', () => {
     test('should find valid token for dashboard access after login', async () => {
-      // Simulate a valid JWT token that should exist after login
-      const mockToken = {
-        sub: 'user-123',
-        email: 'test@example.com',
-        exp: Math.floor(Date.now() / 1000) + 3600, // Expires in 1 hour
-        iat: Math.floor(Date.now() / 1000),
-        subscriptionTier: 'free',
-      };
+      const mockToken = createValidToken();
 
       (getToken as jest.Mock).mockResolvedValue(mockToken);
       mockNext.mockReturnValue({ type: 'next' });
@@ -112,12 +95,7 @@ describe('Issue #473: Authentication Token Persistence', () => {
 
     test('should handle token without required sub field', async () => {
       // Test token missing user ID (sub field)
-      const invalidToken = {
-        email: 'test@example.com',
-        exp: Math.floor(Date.now() / 1000) + 3600,
-        iat: Math.floor(Date.now() / 1000),
-        // Missing 'sub' field
-      };
+      const invalidToken = createInvalidToken();
 
       (getToken as jest.Mock).mockResolvedValue(invalidToken);
       mockRedirect.mockReturnValue({ type: 'redirect' });
@@ -139,12 +117,7 @@ describe('Issue #473: Authentication Token Persistence', () => {
 
     test('should handle expired token', async () => {
       // Test expired token scenario
-      const expiredToken = {
-        sub: 'user-123',
-        email: 'test@example.com',
-        exp: Math.floor(Date.now() / 1000) - 3600, // Expired 1 hour ago
-        iat: Math.floor(Date.now() / 1000) - 7200,
-      };
+      const expiredToken = createExpiredToken();
 
       (getToken as jest.Mock).mockResolvedValue(expiredToken);
       mockRedirect.mockReturnValue({ type: 'redirect' });
@@ -224,37 +197,34 @@ describe('Issue #473: Authentication Token Persistence', () => {
   describe('Token persistence requirements', () => {
     test('should persist session across page navigation', async () => {
       // Test that token should be available across different protected routes
-      const validToken = {
-        sub: 'user-123',
-        email: 'test@example.com',
-        exp: Math.floor(Date.now() / 1000) + 3600,
-        iat: Math.floor(Date.now() / 1000),
-        subscriptionTier: 'free',
-      };
-
-      (getToken as jest.Mock).mockResolvedValue(validToken);
-      mockNext.mockReturnValue({ type: 'next' });
+      const validToken = createValidToken();
 
       // Test multiple protected routes
       const routes = ['/dashboard', '/characters', '/encounters', '/parties'];
 
       const { middleware } = await import('@/middleware');
 
+      let totalGetTokenCalls = 0;
+
       for (const route of routes) {
+        // Setup mocks for each iteration
+        (getToken as jest.Mock).mockResolvedValue(validToken);
+        mockNext.mockReturnValue({ type: 'next' });
+
         const request = createTestRequest(route);
         await middleware(request);
 
         // All should succeed with same token
         expect(mockNext).toHaveBeenCalled();
 
+        totalGetTokenCalls++;
+
         // Reset for next iteration
-        jest.clearAllMocks();
-        mockNext.mockReturnValue({ type: 'next' });
-        (getToken as jest.Mock).mockResolvedValue(validToken);
+        resetAuthMocks();
       }
 
       // getToken should be called for each route
-      expect(getToken).toHaveBeenCalledTimes(routes.length);
+      expect(totalGetTokenCalls).toBe(routes.length);
     });
   });
 
