@@ -76,7 +76,7 @@ describe('Issue #494: Production redirect fix', () => {
 
     it('should identify localhost URLs as invalid for production', () => {
       process.env.NODE_ENV = 'production';
-      
+
       // Test invalid production hostnames
       expect(testValidationHelpers.isValidProductionHostname('0.0.0.0')).toBe(false);
       expect(testValidationHelpers.isValidProductionHostname('localhost')).toBe(false);
@@ -110,7 +110,7 @@ describe('Issue #494: Production redirect fix', () => {
     const createRedirectCallback = () => {
       const trustedDomains = [
         'dnd-tracker-next-js.fly.dev',
-        'dnd-tracker.fly.dev', 
+        'dnd-tracker.fly.dev',
         'dndtracker.com',
         'www.dndtracker.com'
       ];
