@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { signIn } from 'next-auth/react';
 import { z } from 'zod';
 import { userLoginSchema } from '@/lib/validations/user';
@@ -17,6 +17,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 import { getRedirectMessage } from '@/lib/utils/redirect-utils';
+import { useToast } from '@/hooks/use-toast';
 
 type FormState = {
   success: boolean;
@@ -24,12 +25,35 @@ type FormState = {
   isSubmitting: boolean;
 };
 
+// Utility functions to reduce duplication
+const createZodErrors = (zodError: z.ZodError): FormValidationError[] =>
+  zodError.errors.map(err => ({
+    field: err.path.join('.'),
+    message: err.message,
+  }));
+
+const createGeneralError = (error: unknown): FormValidationError[] => [{
+  field: '',
+  message: error instanceof Error ? error.message : 'An unexpected error occurred',
+}];
+
+const TOAST_MESSAGES = {
+  success: 'Login Success',
+  failure: 'Login Failure, please check your email and password',
+} as const;
+
 export default function SignInPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { toast } = useToast();
+
+  // Utility function to get callback URL parameters
+  const getCallbackUrlParam = useCallback(() =>
+    searchParams.get('callbackUrl') || searchParams.get('next'), [searchParams]);
+
   // Enhanced callback URL validation for Issue #438: Prevent invalid redirects
-  const getValidatedCallbackUrl = () => {
-    const rawCallbackUrl = searchParams.get('callbackUrl') || searchParams.get('next');
+  const getValidatedCallbackUrl = useCallback(() => {
+    const rawCallbackUrl = getCallbackUrlParam();
 
     if (!rawCallbackUrl) {
       return '/dashboard';
@@ -56,13 +80,13 @@ export default function SignInPage() {
       console.warn(`Invalid callback URL format: ${rawCallbackUrl}`, error);
       return '/dashboard';
     }
-  };
+  }, [getCallbackUrlParam]);
 
   const callbackUrl = getValidatedCallbackUrl();
   const error = searchParams.get('error');
 
   // Generate redirect message if user was redirected from a protected route
-  const redirectMessage = getRedirectMessage(searchParams.get('callbackUrl') || searchParams.get('next'));
+  const redirectMessage = getRedirectMessage(getCallbackUrlParam());
 
   const [formState, setFormState] = useState<FormState>({
     success: false,
@@ -70,10 +94,29 @@ export default function SignInPage() {
     isSubmitting: false,
   });
 
+  // Form state utility functions
+  const updateFormState = useCallback((partial: Partial<FormState>) => {
+    setFormState(prev => ({ ...prev, ...partial }));
+  }, []);
+
+  const setFormErrors = useCallback((errors: FormValidationError[]) =>
+    updateFormState({ errors, isSubmitting: false }), [updateFormState]);
+
+  const setFormSuccess = useCallback(() =>
+    updateFormState({ success: true, errors: [], isSubmitting: false }), [updateFormState]);
+
+  // Toast utility function
+  const showToast = useCallback((type: 'success' | 'failure') => {
+    toast({
+      title: TOAST_MESSAGES[type],
+      variant: type === 'success' ? 'default' : 'destructive'
+    });
+  }, [toast]);
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    setFormState(prev => ({ ...prev, isSubmitting: true, errors: [] }));
+    updateFormState({ isSubmitting: true, errors: [] });
 
     try {
       const formData = new FormData(event.currentTarget);
@@ -107,41 +150,23 @@ export default function SignInPage() {
       }
 
       // Success - redirect to callback URL
-      setFormState({
-        success: true,
-        errors: [],
-        isSubmitting: false,
-      });
-
+      setFormSuccess();
+      showToast('success');
       router.push(callbackUrl as any);
     } catch (error) {
       // Handle Zod validation errors
       if (error instanceof z.ZodError) {
-        setFormState({
-          success: false,
-          errors: error.errors.map(err => ({
-            field: err.path.join('.'),
-            message: err.message,
-          })),
-          isSubmitting: false,
-        });
+        setFormErrors(createZodErrors(error));
         return;
       }
 
       // Handle other errors
-      setFormState({
-        success: false,
-        errors: [
-          {
-            field: '',
-            message:
-              error instanceof Error
-                ? error.message
-                : 'An unexpected error occurred',
-          },
-        ],
-        isSubmitting: false,
-      });
+      setFormErrors(createGeneralError(error));
+
+      // Show failure toast for authentication errors
+      if (error instanceof Error) {
+        showToast('failure');
+      }
     }
   };
 
