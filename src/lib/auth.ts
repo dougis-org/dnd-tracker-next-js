@@ -70,9 +70,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: MongoDBAdapter(clientPromise, {
     databaseName: process.env.MONGODB_DB_NAME,
   }),
-  // Fix for Issue #434: NextAuth v5 requires explicit trust host configuration
-  // This prevents "UntrustedHost" errors in production deployments
-  trustHost: process.env.AUTH_TRUST_HOST === 'true',
+  // Fix for Issue #434 & #473: NextAuth v5 requires explicit trust host configuration
+  // This prevents "UntrustedHost" errors and token persistence issues in production deployments
+  // In production environments (including Fly.io), we need to trust the host automatically
+  trustHost: process.env.AUTH_TRUST_HOST === 'true' || process.env.NODE_ENV === 'production',
 
   // Use validated URL to prevent redirects to invalid URLs like 0.0.0.0 (Issue #438)
   ...(validatedNextAuthUrl && { url: validatedNextAuthUrl }),
