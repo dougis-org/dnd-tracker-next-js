@@ -46,7 +46,7 @@ describe('Markdown Linting', () => {
   describe('Markdown Style Guidelines', () => {
     test('should not have multiple consecutive blank lines', () => {
       const testMarkdown = 'Header\n\n\n\nContent';
-      const tempFile = 'test-temp.md';
+const tempFile = `test-temp-${Date.now()}.md`;
       fs.writeFileSync(tempFile, testMarkdown);
 
       expect(() => {
