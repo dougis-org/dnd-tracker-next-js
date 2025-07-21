@@ -119,6 +119,44 @@ describe('Base Validation Schemas', () => {
       });
     });
 
+    it('should provide detailed error messages for password validation failures', () => {
+      const passwordErrorCases = [
+        {
+          password: 'short',
+          expectedErrors: [
+            'Password must be at least 8 characters long',
+            'Password must contain at least one uppercase letter',
+            'Password must contain at least one number',
+            'Password must contain at least one special character (@$!%*?&)'
+          ]
+        },
+        {
+          password: 'password123',
+          expectedErrors: [
+            'Password must contain at least one uppercase letter',
+            'Password must contain at least one special character (@$!%*?&)'
+          ]
+        },
+        {
+          password: 'PASSWORD123!',
+          expectedErrors: [
+            'Password must contain at least one lowercase letter'
+          ]
+        }
+      ];
+
+      passwordErrorCases.forEach(({ password, expectedErrors }) => {
+        const result = safeValidate(passwordSchema, password);
+        expect(result.success).toBe(false);
+        if (!result.success) {
+          const errorMessages = result.errors.map(err => err.message);
+          expectedErrors.forEach(expectedError => {
+            expect(errorMessages.some(msg => msg.includes(expectedError))).toBe(true);
+          });
+        }
+      });
+    });
+
     it('should reject passwords with disallowed characters', () => {
       const passwordsWithInvalidChars = [
         'TestPassword1!()', // Contains all required types, plus invalid '()'
