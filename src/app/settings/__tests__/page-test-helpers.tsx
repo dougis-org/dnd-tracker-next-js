@@ -94,7 +94,10 @@ export const expectAuthenticatedState = () => {
 };
 
 export const expectAppLayout = () => {
-  expect(screen.getByTestId('app-layout')).toBeInTheDocument();
+  // Settings page no longer wraps content in AppLayout - that's handled at root level
+  // Just verify the main content structure is present
+  const mainContainer = screen.getByRole('main');
+  expect(mainContainer).toHaveClass('container', 'mx-auto', 'px-4', 'py-8');
 };
 
 export const expectPageStructure = () => {

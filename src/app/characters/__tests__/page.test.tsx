@@ -1,5 +1,5 @@
 import React from 'react';
-import { waitFor } from '@testing-library/react';
+import { waitFor, screen } from '@testing-library/react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import {
@@ -101,11 +101,14 @@ describe('CharactersPage', () => {
       expectations.appLayout();
     });
 
-    it('redirects to signin when unauthenticated', () => {
+    it('renders content for unauthenticated users (middleware handles redirect)', () => {
+      // Since middleware handles auth protection, the page just renders its content
+      // In real usage, unauthenticated users would be redirected by middleware before reaching the page
       mockUseSession.mockReturnValue(mockSessionSetup.unauthenticated as any);
       renderHelpers.renderPage();
 
-      expect(mockPush).toHaveBeenCalledWith('/signin');
+      // Page still renders - middleware would prevent this in real usage
+      expect(screen.getByText('Characters')).toBeInTheDocument();
     });
 
     it('renders page content when authenticated', () => {
@@ -271,6 +274,7 @@ describe('CharactersPage', () => {
 
       expectations.appLayout();
       expectations.characterListView();
+      expectations.headingStructure();
     });
   });
 });
