@@ -15,6 +15,7 @@ primary_region = 'sea'
 
 [env]
   NODE_ENV = "production"
+  AUTH_TRUST_HOST = "true"
   MIGRATION_TIMEOUT = "600000"
   MIGRATION_BACKUP_ENABLED = "true"
   MIGRATION_DRY_RUN = "false"
