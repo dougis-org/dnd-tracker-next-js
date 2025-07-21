@@ -83,6 +83,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       credentials: {
         email: { label: 'Email', type: 'email' },
         password: { label: 'Password', type: 'password' },
+        rememberMe: { label: 'Remember Me', type: 'text' },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
@@ -98,11 +99,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             return null;
           }
 
+          // Convert rememberMe from string to boolean (NextAuth passes form values as strings)
+          const rememberMe = credentials.rememberMe === 'true';
+
           // Authenticate user
           const authResult = await UserService.authenticateUser({
             email: credentials.email as string,
             password: credentials.password as string,
-            rememberMe: false,
+            rememberMe,
           });
 
           if (!authResult.success || !authResult.data) {
