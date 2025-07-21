@@ -35,6 +35,13 @@ export default [
   ...compat.extends('prettier'),
   {
     languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: 'module',
+      parserOptions: {
+        ecmaFeatures: {
+          jsx: true
+        }
+      },
       globals: { // eslint-disable-line
         // Node.js globals // eslint-disable-line
         require: 'readonly', // eslint-disable-line
@@ -73,6 +80,8 @@ export default [
   {
     files: ['**/__tests__/**/*.{js,jsx,ts,tsx}', '**/*.{test,spec}.{js,jsx,ts,tsx}'], // eslint-disable-line
     languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: 'module',
       globals: { // eslint-disable-line
         // Jest globals // eslint-disable-line
         describe: 'readonly', // eslint-disable-line
@@ -97,6 +106,8 @@ export default [
   {
     files: ['migrations/**/*.js'], // eslint-disable-line
     languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: 'module',
       globals: { // eslint-disable-line
         // Node.js global variables for migration files // eslint-disable-line
         require: 'readonly', // eslint-disable-line
@@ -114,6 +125,8 @@ export default [
   {
     files: ['**/__mocks__/**/*.{js,jsx,ts,tsx}'], // eslint-disable-line
     languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: 'module',
       globals: { // eslint-disable-line
         // Jest globals for mocks // eslint-disable-line
         jest: 'readonly', // eslint-disable-line
