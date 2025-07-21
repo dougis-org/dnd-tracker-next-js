@@ -106,7 +106,7 @@ export const expectErrorResponse = async (
   const data = await response.json();
   expect(response.status).toBe(status);
   expect(data.success).toBe(false);
-  expect(data.message).toBe(message);
+  expect(data.error || data.message).toBe(message);
   if (expectErrors) {
     expect(Array.isArray(data.errors)).toBe(true);
   }

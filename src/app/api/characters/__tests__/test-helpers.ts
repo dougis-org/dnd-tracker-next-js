@@ -1,11 +1,14 @@
 import { NextRequest } from 'next/server';
 import { CharacterType } from '@/lib/validations/character';
+import { expectSuccessResponse, expectErrorResponse, createMockParams as createMockParamsBase } from '@/lib/test-utils/shared-api-test-helpers';
+
+export { expectSuccessResponse, expectErrorResponse };
 
 export const TEST_USER_ID = '507f1f77bcf86cd799439011';
 export const TEST_CHARACTER_ID = '507f1f77bcf86cd799439012';
 
 export const createMockParams = (id: string = TEST_CHARACTER_ID) =>
-  Promise.resolve({ id });
+  createMockParamsBase(id);
 
 export const createMockRequest = (
   url: string,
@@ -84,22 +87,4 @@ export const createCharacterData = (overrides: Partial<any> = {}) => ({
   ...overrides,
 });
 
-export const expectSuccessResponse = async (response: Response, expectedData: any) => {
-  const data = await response.json();
-  expect(response.status).toBe(200);
-  expect(data.success).toBe(true);
-  if (expectedData) {
-    expect(data).toMatchObject(expectedData);
-  }
-};
-
-export const expectErrorResponse = async (
-  response: Response,
-  status: number,
-  error: string
-) => {
-  const data = await response.json();
-  expect(response.status).toBe(status);
-  expect(data.success).toBe(false);
-  expect(data.error).toBe(error);
-};
+// expectSuccessResponse and expectErrorResponse now imported from shared-api-test-helpers

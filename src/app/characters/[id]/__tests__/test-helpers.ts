@@ -1,4 +1,4 @@
-import { createMockCharacter } from '@/components/character/__tests__/test-helpers';
+import { createMockCharacter } from '@/lib/services/__tests__/CharacterService.test-helpers';
 
 // Common spell data to reduce duplication
 export const mockSpells = {

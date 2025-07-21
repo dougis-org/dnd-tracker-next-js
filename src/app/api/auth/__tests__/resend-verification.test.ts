@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { POST } from '../resend-verification/route';
 import { UserService } from '@/lib/services/UserService';
+import { createMockRequest } from './test-utils';
 
 // Configure Jest to use our mocks
 jest.mock('next/server');
@@ -17,11 +18,7 @@ describe('POST /api/auth/resend-verification', () => {
     email: 'john.doe@example.com',
   };
 
-  const createMockRequest = (body: any) => {
-    const req = new NextRequest('https://example.com');
-    (req.json as jest.Mock).mockResolvedValue(body);
-    return req;
-  };
+  // createMockRequest now imported from test-utils
 
   // Helper function to execute POST request and return response data
   const executeRequest = async (requestData: any) => {
