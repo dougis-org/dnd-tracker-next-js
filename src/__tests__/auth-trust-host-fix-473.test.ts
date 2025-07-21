@@ -1,6 +1,6 @@
 /**
  * Test for Issue #473 Fix: Authentication Trust Host Configuration
- * 
+ *
  * Validates that the trustHost configuration is properly set for production
  * environments to prevent token persistence issues.
  */

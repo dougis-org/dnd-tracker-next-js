@@ -1,7 +1,7 @@
 /**
- * Test case for Issue #473: When a user logs in and tries to go to another page 
+ * Test case for Issue #473: When a user logs in and tries to go to another page
  * an error occurs and they go to the login page
- * 
+ *
  * This test reproduces the specific issue where middleware logs:
  * "Middleware: No token found for /dashboard, redirecting to signin"
  */
@@ -44,7 +44,7 @@ describe('Issue #473: Authentication Token Persistence', () => {
     mockNext.mockReset();
     mockJson.mockReset();
     (getToken as jest.Mock).mockReset();
-    
+
     process.env = {
       ...originalEnv,
       NEXTAUTH_SECRET: 'test-secret-for-jwt-signing',
@@ -72,7 +72,7 @@ describe('Issue #473: Authentication Token Persistence', () => {
       mockNext.mockReturnValue({ type: 'next' });
 
       const request = createTestRequest('/dashboard');
-      
+
       const { middleware } = await import('@/middleware');
       await middleware(request);
 
@@ -101,7 +101,7 @@ describe('Issue #473: Authentication Token Persistence', () => {
       // Should redirect to signin
       expect(mockRedirect).toHaveBeenCalled();
       expect(mockNext).not.toHaveBeenCalled();
-      
+
       // Should log the specific error message from Issue #473
       expect(consoleSpy).toHaveBeenCalledWith(
         'Middleware: No token found for /dashboard, redirecting to signin'
@@ -123,7 +123,7 @@ describe('Issue #473: Authentication Token Persistence', () => {
       mockRedirect.mockReturnValue({ type: 'redirect' });
 
       const request = createTestRequest('/dashboard');
-      
+
       const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
 
       const { middleware } = await import('@/middleware');
@@ -150,7 +150,7 @@ describe('Issue #473: Authentication Token Persistence', () => {
       mockRedirect.mockReturnValue({ type: 'redirect' });
 
       const request = createTestRequest('/dashboard');
-      
+
       const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
 
       const { middleware } = await import('@/middleware');
@@ -170,7 +170,7 @@ describe('Issue #473: Authentication Token Persistence', () => {
       mockRedirect.mockReturnValue({ type: 'redirect' });
 
       const request = createTestRequest('/dashboard');
-      
+
       const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
 
       const { middleware } = await import('@/middleware');
@@ -243,10 +243,10 @@ describe('Issue #473: Authentication Token Persistence', () => {
       for (const route of routes) {
         const request = createTestRequest(route);
         await middleware(request);
-        
+
         // All should succeed with same token
         expect(mockNext).toHaveBeenCalled();
-        
+
         // Reset for next iteration
         jest.clearAllMocks();
         mockNext.mockReturnValue({ type: 'next' });
@@ -261,7 +261,7 @@ describe('Issue #473: Authentication Token Persistence', () => {
   describe('Real-world authentication scenarios', () => {
     test('should identify potential causes of token loss', async () => {
       // Test scenarios that could cause the issue described in #473
-      
+
       // Scenario 1: Token exists but is malformed
       (getToken as jest.Mock).mockResolvedValue({
         // Malformed token - missing critical fields
@@ -272,13 +272,13 @@ describe('Issue #473: Authentication Token Persistence', () => {
 
       const request = createTestRequest('/dashboard');
       const { middleware } = await import('@/middleware');
-      
+
       const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
       await middleware(request);
-      
+
       expect(mockRedirect).toHaveBeenCalled();
       expect(consoleWarnSpy).toHaveBeenCalled();
-      
+
       consoleWarnSpy.mockRestore();
     });
 
@@ -289,15 +289,15 @@ describe('Issue #473: Authentication Token Persistence', () => {
 
       const request = createTestRequest('/dashboard');
       const { middleware } = await import('@/middleware');
-      
+
       const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
       await middleware(request);
-      
+
       expect(mockRedirect).toHaveBeenCalled();
       expect(consoleSpy).toHaveBeenCalledWith(
         'Middleware: No token found for /dashboard, redirecting to signin'
       );
-      
+
       consoleSpy.mockRestore();
     });
   });
