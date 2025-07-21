@@ -6,7 +6,7 @@
  * Problem: Production environment blocking redirects to external URLs like 0.0.0.0:3000
  * Cause: AUTH_TRUST_HOST not set as environment secret, causing NextAuth redirect validation issues
  * Solution: Set AUTH_TRUST_HOST=true as Fly.io environment secret
- * 
+ *
  * Validates that the production authentication redirect fix works correctly.
  */
 
