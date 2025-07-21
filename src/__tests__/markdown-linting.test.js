@@ -2,7 +2,7 @@
  * @jest-environment node
  */
 
-const { execSync } = require('child_process');
+const { spawnSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
@@ -37,9 +37,11 @@ describe('Markdown Linting', () => {
     keyFiles.forEach(file => {
       test(`${file} should pass markdownlint`, () => {
         expect(() => {
-          // Sanitize filename to prevent command injection
-          const sanitizedFile = path.basename(file).replace(/[^a-zA-Z0-9._-]/g, '');
-          execSync(`npx markdownlint "${sanitizedFile}"`, { stdio: 'pipe' });
+          // Use spawnSync with array arguments to prevent command injection
+          const result = spawnSync('npx', ['markdownlint', file], { stdio: 'pipe' });
+          if (result.status !== 0) {
+            throw new Error(`markdownlint failed for ${file}: ${result.stderr?.toString()}`);
+          }
         }).not.toThrow();
       });
     });
@@ -52,9 +54,11 @@ describe('Markdown Linting', () => {
       fs.writeFileSync(tempFile, testMarkdown);
 
       expect(() => {
-        // Sanitize filename to prevent command injection
-        const sanitizedFile = path.basename(tempFile).replace(/[^a-zA-Z0-9._-]/g, '');
-        execSync(`npx markdownlint "${sanitizedFile}"`, { stdio: 'pipe' });
+        // Use spawnSync with array arguments to prevent command injection
+        const result = spawnSync('npx', ['markdownlint', tempFile], { stdio: 'pipe' });
+        if (result.status !== 0) {
+          throw new Error(`markdownlint failed: ${result.stderr?.toString()}`);
+        }
       }).toThrow();
 
       fs.unlinkSync(tempFile);
@@ -66,9 +70,11 @@ describe('Markdown Linting', () => {
       fs.writeFileSync(tempFile, testMarkdown);
 
       expect(() => {
-        // Sanitize filename to prevent command injection
-        const sanitizedFile = path.basename(tempFile).replace(/[^a-zA-Z0-9._-]/g, '');
-        execSync(`npx markdownlint "${sanitizedFile}"`, { stdio: 'pipe' });
+        // Use spawnSync with array arguments to prevent command injection
+        const result = spawnSync('npx', ['markdownlint', tempFile], { stdio: 'pipe' });
+        if (result.status !== 0) {
+          throw new Error(`markdownlint failed: ${result.stderr?.toString()}`);
+        }
       }).toThrow();
 
       fs.unlinkSync(tempFile);
