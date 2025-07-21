@@ -1,8 +1,8 @@
 /**
  * @jest-environment jsdom
- * 
+ *
  * Test suite for Issue #494: Left Nav still not respecting login
- * 
+ *
  * Problem: Production environment blocking redirects to external URLs like 0.0.0.0:3000
  * Cause: AUTH_TRUST_HOST not set as environment secret, causing NextAuth redirect validation issues
  * Solution: Set AUTH_TRUST_HOST=true as Fly.io environment secret
@@ -32,7 +32,7 @@ describe('Issue #494: Production redirect fix', () => {
 
     it('should validate production NODE_ENV enables trustHost automatically', () => {
       process.env.NODE_ENV = 'production';
-      
+
       // In production, trustHost should be enabled even without AUTH_TRUST_HOST
       const shouldTrustHost = process.env.AUTH_TRUST_HOST === 'true' || process.env.NODE_ENV === 'production';
       expect(shouldTrustHost).toBe(true);
