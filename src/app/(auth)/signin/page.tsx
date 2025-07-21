@@ -17,6 +17,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 import { getRedirectMessage } from '@/lib/utils/redirect-utils';
+import { isValidCallbackUrl, getTrustedDomains } from '@/lib/utils/origin-validation';
 import { useToast } from '@/hooks/use-toast';
 
 type FormState = {
@@ -51,7 +52,7 @@ export default function SignInPage() {
   const getCallbackUrlParam = useCallback(() =>
     searchParams.get('callbackUrl') || searchParams.get('next'), [searchParams]);
 
-  // Enhanced callback URL validation for Issue #438: Prevent invalid redirects
+  // Enhanced callback URL validation for Issue #473: Fix development environment redirects
   const getValidatedCallbackUrl = useCallback(() => {
     const rawCallbackUrl = getCallbackUrlParam();
 
@@ -59,27 +60,31 @@ export default function SignInPage() {
       return '/dashboard';
     }
 
-    try {
-      // If it's a relative URL, it's safe
-      if (rawCallbackUrl.startsWith('/')) {
-        return rawCallbackUrl;
-      }
+    // Use the enhanced validation utility that handles development environment variations
+    const currentOrigin = window.location.origin;
+    const trustedDomains = getTrustedDomains();
 
-      // If it's an absolute URL, validate it
-      const url = new URL(rawCallbackUrl);
-      const currentOrigin = window.location.origin;
+    const isValid = isValidCallbackUrl(rawCallbackUrl, currentOrigin, {
+      allowRelative: true,
+      allowedDomains: trustedDomains,
+    });
 
-      // Only allow same-origin redirects
-      if (url.origin === currentOrigin) {
-        return rawCallbackUrl;
-      }
-
-      console.warn(`Blocked redirect to external URL: ${rawCallbackUrl}`);
-      return '/dashboard';
-    } catch (error) {
-      console.warn(`Invalid callback URL format: ${rawCallbackUrl}`, error);
-      return '/dashboard';
+    if (isValid) {
+      return rawCallbackUrl;
     }
+
+    // Log the blocking for debugging, but with more context about why
+    if (rawCallbackUrl.startsWith('http')) {
+      console.warn(
+        `Blocked redirect to external URL: ${rawCallbackUrl}. ` +
+        `Current origin: ${currentOrigin}. ` +
+        `Environment: ${process.env.NODE_ENV || 'unknown'}`
+      );
+    } else {
+      console.warn(`Invalid callback URL format: ${rawCallbackUrl}`);
+    }
+
+    return '/dashboard';
   }, [getCallbackUrlParam]);
 
   const callbackUrl = getValidatedCallbackUrl();
