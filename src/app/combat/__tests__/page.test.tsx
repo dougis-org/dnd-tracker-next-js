@@ -44,7 +44,7 @@ describe('Combat Page', () => {
   });
 
   describe('Loading State', () => {
-    it('displays loading message during authentication check', () => {
+    it('renders combat page content during loading (middleware handles auth)', () => {
       mockUseSession.mockReturnValue({
         data: null,
         status: 'loading',
@@ -53,12 +53,13 @@ describe('Combat Page', () => {
 
       render(<CombatPage />);
 
-      expect(screen.getByText('Loading...')).toBeInTheDocument();
+      // Page renders main content - middleware would handle auth protection in real usage
+      expect(screen.getByText('Combat Tracker')).toBeInTheDocument();
     });
   });
 
   describe('Unauthenticated User', () => {
-    it('displays sign-in message for unauthenticated users', () => {
+    it('renders combat page content for unauthenticated users (middleware handles redirect)', () => {
       mockUseSession.mockReturnValue({
         data: null,
         status: 'unauthenticated',
@@ -67,7 +68,8 @@ describe('Combat Page', () => {
 
       render(<CombatPage />);
 
-      expect(screen.getByText('Please sign in to access the combat tracker.')).toBeInTheDocument();
+      // Page renders main content - middleware would redirect in real usage
+      expect(screen.getByText('Combat Tracker')).toBeInTheDocument();
     });
   });
 
@@ -176,10 +178,13 @@ describe('Combat Page', () => {
       setupAuthenticatedSession();
     });
 
-    it('renders within AppLayout', () => {
+    it('renders main content structure (AppLayout handled at root level)', () => {
       render(<CombatPage />);
 
-      expect(screen.getByTestId('app-layout')).toBeInTheDocument();
+      // Combat page no longer wraps content in AppLayout - verify main content structure
+      const mainElement = screen.getByRole('main');
+      expect(mainElement).toBeInTheDocument();
+      expect(mainElement).toHaveClass('container', 'mx-auto', 'px-4', 'py-8');
     });
 
     it('maintains consistent spacing and layout', () => {
@@ -200,8 +205,8 @@ describe('Combat Page', () => {
 
       render(<CombatPage />);
 
-      // Should not crash and show appropriate message
-      expect(screen.getByText('Please sign in to access the combat tracker.')).toBeInTheDocument();
+      // Should not crash and render main content (middleware handles auth in real usage)
+      expect(screen.getByText('Combat Tracker')).toBeInTheDocument();
     });
 
     it('handles missing user data gracefully', () => {
