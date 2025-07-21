@@ -27,7 +27,7 @@ export const createDashboardPageTests = (
       });
 
       render(React.createElement(Component));
-      expect(screen.getByTestId('app-layout')).toBeInTheDocument();
+      // Dashboard no longer wraps content in AppLayout - that's handled at root level
       expect(screen.getByTestId('dashboard-component')).toBeInTheDocument();
     },
 
@@ -120,7 +120,7 @@ export const createDashboardPageTests = (
       });
 
       render(React.createElement(Component));
-      expect(screen.getByTestId('app-layout')).toBeInTheDocument();
+      // Dashboard no longer wraps content in AppLayout - that's handled at root level
       expect(screen.getByText('Loading...')).toBeInTheDocument();
     },
   },
@@ -134,7 +134,7 @@ export const createDashboardPageTests = (
       });
 
       render(React.createElement(Component));
-      expect(screen.getByTestId('app-layout')).toBeInTheDocument();
+      // Dashboard no longer wraps content in AppLayout - that's handled at root level
       expect(screen.getByText('Please sign in to view your dashboard.')).toBeInTheDocument();
     },
   },

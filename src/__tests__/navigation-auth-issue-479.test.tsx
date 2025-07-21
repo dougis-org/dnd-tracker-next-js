@@ -66,7 +66,7 @@ describe('Issue #479 - Left Navigation Authentication', () => {
     expect(appLayouts.length).toBeLessThanOrEqual(1);
   };
 
-  const testAuthenticatedUserAccess = (pageName: string) => {
+  const testAuthenticatedUserAccess = () => {
     mockUseSession.mockReturnValue(authenticatedSession);
   };
 
@@ -74,7 +74,7 @@ describe('Issue #479 - Left Navigation Authentication', () => {
 
   describe('Dashboard Page Authentication', () => {
     it('should not wrap content in duplicate AppLayout for authenticated users', async () => {
-      testAuthenticatedUserAccess('Dashboard');
+      testAuthenticatedUserAccess();
 
       const DashboardPage = (await import('../app/dashboard/page')).default;
       render(<DashboardPage />);
@@ -83,7 +83,7 @@ describe('Issue #479 - Left Navigation Authentication', () => {
     });
 
     it('should not show sign-in message for authenticated users', async () => {
-      testAuthenticatedUserAccess('Dashboard');
+      testAuthenticatedUserAccess();
 
       const DashboardPage = (await import('../app/dashboard/page')).default;
       render(<DashboardPage />);
@@ -96,7 +96,7 @@ describe('Issue #479 - Left Navigation Authentication', () => {
     beforeEach(setupCharacterPageMocks);
 
     it('should not wrap content in duplicate AppLayout for authenticated users', async () => {
-      testAuthenticatedUserAccess('Characters');
+      testAuthenticatedUserAccess();
 
       const CharactersPage = (await import('../app/characters/page')).default;
       render(<CharactersPage />);
@@ -105,7 +105,7 @@ describe('Issue #479 - Left Navigation Authentication', () => {
     });
 
     it('should not redirect authenticated users to signin', async () => {
-      testAuthenticatedUserAccess('Characters');
+      testAuthenticatedUserAccess();
 
       const CharactersPage = (await import('../app/characters/page')).default;
       render(<CharactersPage />);
