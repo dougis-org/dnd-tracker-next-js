@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useSession, signIn, signOut } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import { Sidebar } from './Sidebar';
 import { MobileMenu } from './MobileMenu';
 import { Breadcrumbs } from './Breadcrumbs';
@@ -20,7 +21,10 @@ interface AppLayoutProps {
   children: React.ReactNode;
 }
 
-const AuthSection = ({ status, session }: { status: string; session: any }) => (
+const AuthSection = ({ status, session }: { status: string; session: any }) => {
+  const router = useRouter();
+
+  return (
   <>
     {status === 'loading' && (
       <div data-testid="auth-loading" className="text-muted-foreground text-sm">
@@ -67,7 +71,7 @@ const AuthSection = ({ status, session }: { status: string; session: any }) => (
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => router.push('/settings')}>
               <svg
                 className="h-4 w-4 mr-2"
                 fill="none"
@@ -111,7 +115,8 @@ const AuthSection = ({ status, session }: { status: string; session: any }) => (
       </div>
     )}
   </>
-);
+  );
+};
 
 const HeaderSection = ({
   isMobile,
