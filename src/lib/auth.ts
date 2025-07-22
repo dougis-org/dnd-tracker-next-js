@@ -28,14 +28,29 @@ export function isValidProductionHostname(hostname: string): boolean {
 }
 
 /**
+ * Production domain fallback for NEXTAUTH_URL
+ * Issue #504: Ensures production deployments always have a valid URL
+ */
+const PRODUCTION_DOMAIN_FALLBACK = 'https://dnd-tracker-next-js.fly.dev';
+
+/**
  * Validates and sanitizes NEXTAUTH_URL for security
  * Prevents redirect to invalid URLs like 0.0.0.0 (Issue #438)
+ * Provides production domain fallback when NEXTAUTH_URL is missing/invalid (Issue #504)
  * Exported for reuse in test files to prevent code duplication (Issue #499)
  */
 export function validateNextAuthUrl(inputUrl?: string): string | undefined {
   const url = inputUrl || process.env.NEXTAUTH_URL;
+  const isProduction = process.env.NODE_ENV === 'production';
 
-  if (!url) {
+  // Handle missing or empty URL
+  if (!url || url.trim() === '') {
+    if (isProduction) {
+      console.warn(
+        `NEXTAUTH_URL is missing in production environment. Using fallback: ${PRODUCTION_DOMAIN_FALLBACK}`
+      );
+      return PRODUCTION_DOMAIN_FALLBACK;
+    }
     return undefined;
   }
 
@@ -46,13 +61,66 @@ export function validateNextAuthUrl(inputUrl?: string): string | undefined {
       console.warn(
         `Invalid NEXTAUTH_URL for production: ${url}. Using fallback.`
       );
+
+      // In production, provide fallback instead of returning undefined
+      if (isProduction) {
+        return PRODUCTION_DOMAIN_FALLBACK;
+      }
       return undefined;
     }
 
     return url;
   } catch (error) {
     console.warn(`Invalid NEXTAUTH_URL format: ${url}. Error: ${error}`);
+
+    // In production, provide fallback instead of returning undefined
+    if (isProduction) {
+      console.warn(`Using production fallback: ${PRODUCTION_DOMAIN_FALLBACK}`);
+      return PRODUCTION_DOMAIN_FALLBACK;
+    }
     return undefined;
+  }
+}
+
+/**
+ * Validates production environment configuration
+ * Issue #504: Runtime validation to ensure proper production setup
+ */
+export function validateProductionEnvironment(): void {
+  if (process.env.NODE_ENV !== 'production') {
+    return; // Only validate in production
+  }
+
+  const nextAuthUrl = process.env.NEXTAUTH_URL;
+
+  // Check if NEXTAUTH_URL is missing
+  if (!nextAuthUrl || nextAuthUrl.trim() === '') {
+    throw new Error(
+      'NEXTAUTH_URL must be configured for production environment'
+    );
+  }
+
+  // Check if NEXTAUTH_URL contains invalid production URLs
+  if (
+    nextAuthUrl.includes('0.0.0.0') ||
+    nextAuthUrl.includes('localhost') ||
+    nextAuthUrl.includes('127.0.0.1')
+  ) {
+    throw new Error(
+      `NEXTAUTH_URL contains invalid production URL: ${nextAuthUrl}`
+    );
+  }
+
+  // Validate URL format
+  try {
+    const parsedUrl = new URL(nextAuthUrl);
+    if (!isValidProductionHostname(parsedUrl.hostname)) {
+      throw new Error(
+        `NEXTAUTH_URL contains invalid hostname for production: ${parsedUrl.hostname}`
+      );
+    }
+  } catch {
+    throw new Error(`NEXTAUTH_URL has invalid format: ${nextAuthUrl}`);
   }
 }
 
