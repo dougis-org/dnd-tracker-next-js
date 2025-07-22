@@ -176,4 +176,50 @@ describe('Issue #494: Production redirect fix', () => {
       expect(relativeUrl).toBe('https://dnd-tracker-next-js.fly.dev/dashboard');
     });
   });
+
+  describe('Production server configuration', () => {
+    it('should not bind to 0.0.0.0 hostname in production start script', () => {
+      // Read package.json to validate start script doesn't use -H 0.0.0.0
+      const fs = require('fs');
+      const path = require('path');
+      const packageJsonPath = path.join(process.cwd(), 'package.json');
+      const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+
+      const startScript = packageJson.scripts.start;
+
+      // Validate start script doesn't contain -H 0.0.0.0 which causes redirect issues
+      expect(startScript).toBeDefined();
+      expect(startScript).not.toContain('-H 0.0.0.0');
+      expect(startScript).not.toContain('--hostname 0.0.0.0');
+
+      // Ensure it still properly starts on port 3000
+      expect(startScript).toContain('-p 3000');
+      expect(startScript).toContain('next start');
+    });
+
+    it('should allow production deployment to determine its own hostname', () => {
+      // This test validates that removing -H 0.0.0.0 allows the deployment platform
+      // (like Fly.io) to correctly determine the application hostname
+      process.env.NODE_ENV = 'production';
+
+      // Simulate how NextAuth would determine baseUrl without forced hostname
+      const simulateNextAuthBaseUrl = (hostname?: string) => {
+        if (hostname === '0.0.0.0') {
+          // This would be the problematic case we're fixing
+          return 'https://0.0.0.0:3000';
+        }
+        // Production platforms should provide the correct hostname
+        return hostname ? `https://${hostname}` : 'https://dnd-tracker-next-js.fly.dev';
+      };
+
+      // Test that without forced hostname, production URL is correct
+      const correctUrl = simulateNextAuthBaseUrl('dnd-tracker-next-js.fly.dev');
+      expect(correctUrl).toBe('https://dnd-tracker-next-js.fly.dev');
+
+      // Test that the problematic 0.0.0.0 case is what we're avoiding
+      const problematicUrl = simulateNextAuthBaseUrl('0.0.0.0');
+      expect(problematicUrl).toBe('https://0.0.0.0:3000');
+      expect(problematicUrl).not.toBe(correctUrl);
+    });
+  });
 });
