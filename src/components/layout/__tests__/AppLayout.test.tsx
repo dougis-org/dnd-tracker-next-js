@@ -1,13 +1,17 @@
 import React from 'react';
 import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { useSession } from 'next-auth/react';
+import { useSession, signOut } from 'next-auth/react';
 import { AppLayout } from '../AppLayout';
 import { setupLayoutTest, mockWindowInnerWidth } from './test-utils';
 import { setupMockSession, setupCustomMockSession } from './session-test-helpers';
 
 // Mock next-auth/react
-jest.mock('next-auth/react');
+jest.mock('next-auth/react', () => ({
+  useSession: jest.fn(),
+  signIn: jest.fn(),
+  signOut: jest.fn(),
+}));
 
 // Mock the child components
 jest.mock('../Sidebar', () => ({
@@ -47,10 +51,14 @@ jest.mock('@/components/theme-toggle', () => ({
 describe('AppLayout', () => {
   const { cleanup } = setupLayoutTest();
   const mockChildren = <div data-testid="main-content">Test Content</div>;
+  const mockUseSession = useSession as jest.MockedFunction<typeof useSession>;
 
   beforeEach(() => {
     // Reset window.innerWidth to desktop size
     mockWindowInnerWidth(1024);
+
+    // Setup default session mock
+    setupMockSession(mockUseSession, 'unauthenticated');
   });
 
   afterEach(() => {
@@ -490,11 +498,8 @@ describe('AppLayout', () => {
     });
 
     test('user menu button does not immediately sign out when clicked', async () => {
-      const mockSignOut = jest.fn();
-      jest.doMock('next-auth/react', () => ({
-        ...jest.requireActual('next-auth/react'),
-        signOut: mockSignOut,
-      }));
+      const mockSignOut = signOut as jest.MockedFunction<typeof signOut>;
+      mockSignOut.mockClear();
 
       const { user, userMenuButton } = await setupUserDropdownTest();
       await user.click(userMenuButton);
@@ -571,6 +576,21 @@ describe('AppLayout', () => {
       await waitFor(() => {
         expect(userMenuButton).toHaveAttribute('aria-expanded', 'true');
       });
+    });
+
+    test('clicking sign out option triggers signOut function', async () => {
+      const mockSignOut = signOut as jest.MockedFunction<typeof signOut>;
+      mockSignOut.mockClear();
+
+      const { user, userMenuButton } = await setupUserDropdownTest();
+      await openDropdownMenu(user, userMenuButton);
+
+      // Click the Sign Out option
+      const signOutOption = screen.getByText('Sign Out');
+      await user.click(signOutOption);
+
+      // Should call signOut function
+      expect(mockSignOut).toHaveBeenCalledTimes(1);
     });
   });
 });
