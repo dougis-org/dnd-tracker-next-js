@@ -466,6 +466,21 @@ describe('AppLayout', () => {
   describe('User Dropdown Menu Functionality', () => {
     const mockUseSession = useSession as jest.MockedFunction<typeof useSession>;
 
+    // Helper functions to reduce duplication
+    const setupUserDropdownTest = async () => {
+      const user = userEvent.setup();
+      render(<AppLayout>{mockChildren}</AppLayout>);
+      const userMenuButton = screen.getByRole('button', { name: 'User menu' });
+      return { user, userMenuButton };
+    };
+
+    const openDropdownMenu = async (user: any, userMenuButton: any) => {
+      await user.click(userMenuButton);
+      await waitFor(() => {
+        expect(screen.getByText('My Account')).toBeInTheDocument();
+      });
+    };
+
     beforeEach(() => {
       jest.clearAllMocks();
       setupCustomMockSession(mockUseSession, {
@@ -481,10 +496,7 @@ describe('AppLayout', () => {
         signOut: mockSignOut,
       }));
 
-      const user = userEvent.setup();
-      render(<AppLayout>{mockChildren}</AppLayout>);
-      const userMenuButton = screen.getByRole('button', { name: 'User menu' });
-
+      const { user, userMenuButton } = await setupUserDropdownTest();
       await user.click(userMenuButton);
 
       // Should NOT call signOut immediately
@@ -492,10 +504,7 @@ describe('AppLayout', () => {
     });
 
     test('clicking user menu button shows dropdown menu', async () => {
-      const user = userEvent.setup();
-      render(<AppLayout>{mockChildren}</AppLayout>);
-      const userMenuButton = screen.getByRole('button', { name: 'User menu' });
-
+      const { user, userMenuButton } = await setupUserDropdownTest();
       await user.click(userMenuButton);
 
       // Should show dropdown menu
@@ -505,41 +514,22 @@ describe('AppLayout', () => {
     });
 
     test('dropdown menu contains settings option', async () => {
-      const user = userEvent.setup();
-      render(<AppLayout>{mockChildren}</AppLayout>);
-      const userMenuButton = screen.getByRole('button', { name: 'User menu' });
+      const { user, userMenuButton } = await setupUserDropdownTest();
+      await openDropdownMenu(user, userMenuButton);
 
-      await user.click(userMenuButton);
-
-      // Should show settings option in menu
-      await waitFor(() => {
-        expect(screen.getByText('Settings')).toBeInTheDocument();
-      });
+      expect(screen.getByText('Settings')).toBeInTheDocument();
     });
 
     test('dropdown menu contains logout option', async () => {
-      const user = userEvent.setup();
-      render(<AppLayout>{mockChildren}</AppLayout>);
-      const userMenuButton = screen.getByRole('button', { name: 'User menu' });
+      const { user, userMenuButton } = await setupUserDropdownTest();
+      await openDropdownMenu(user, userMenuButton);
 
-      await user.click(userMenuButton);
-
-      // Should show logout option in menu
-      await waitFor(() => {
-        expect(screen.getByText('Sign Out')).toBeInTheDocument();
-      });
+      expect(screen.getByText('Sign Out')).toBeInTheDocument();
     });
 
     test('logout button has click handler', async () => {
-      const user = userEvent.setup();
-      render(<AppLayout>{mockChildren}</AppLayout>);
-      const userMenuButton = screen.getByRole('button', { name: 'User menu' });
-
-      await user.click(userMenuButton);
-
-      await waitFor(() => {
-        expect(screen.getByText('Sign Out')).toBeInTheDocument();
-      });
+      const { user, userMenuButton } = await setupUserDropdownTest();
+      await openDropdownMenu(user, userMenuButton);
 
       // Verify the logout button is clickable (has onClick handler)
       const logoutButton = screen.getByText('Sign Out').closest('[role="menuitem"]');
@@ -548,30 +538,17 @@ describe('AppLayout', () => {
     });
 
     test('dropdown menu is properly structured', async () => {
-      const user = userEvent.setup();
-      render(<AppLayout>{mockChildren}</AppLayout>);
-      const userMenuButton = screen.getByRole('button', { name: 'User menu' });
+      const { user, userMenuButton } = await setupUserDropdownTest();
+      await openDropdownMenu(user, userMenuButton);
 
-      await user.click(userMenuButton);
-
-      await waitFor(() => {
-        // Check that all expected elements are present
-        expect(screen.getByText('My Account')).toBeInTheDocument();
-        expect(screen.getByText('Settings')).toBeInTheDocument();
-        expect(screen.getByText('Sign Out')).toBeInTheDocument();
-      });
+      // Check that all expected elements are present
+      expect(screen.getByText('Settings')).toBeInTheDocument();
+      expect(screen.getByText('Sign Out')).toBeInTheDocument();
     });
 
     test('pressing escape closes the dropdown', async () => {
-      const user = userEvent.setup();
-      render(<AppLayout>{mockChildren}</AppLayout>);
-      const userMenuButton = screen.getByRole('button', { name: 'User menu' });
-
-      // Open dropdown
-      await user.click(userMenuButton);
-      await waitFor(() => {
-        expect(screen.getByText('My Account')).toBeInTheDocument();
-      });
+      const { user, userMenuButton } = await setupUserDropdownTest();
+      await openDropdownMenu(user, userMenuButton);
 
       // Press escape
       await user.keyboard('{Escape}');
@@ -583,9 +560,7 @@ describe('AppLayout', () => {
     });
 
     test('dropdown has proper accessibility attributes', async () => {
-      const user = userEvent.setup();
-      render(<AppLayout>{mockChildren}</AppLayout>);
-      const userMenuButton = screen.getByRole('button', { name: 'User menu' });
+      const { user, userMenuButton } = await setupUserDropdownTest();
 
       // Button should have aria-expanded
       expect(userMenuButton).toHaveAttribute('aria-expanded', 'false');
