@@ -2,6 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useSession, signOut } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import { AppLayout } from '../AppLayout';
 import { setupLayoutTest, mockWindowInnerWidth } from './test-utils';
 import { setupMockSession, setupCustomMockSession } from './session-test-helpers';
@@ -11,6 +12,11 @@ jest.mock('next-auth/react', () => ({
   useSession: jest.fn(),
   signIn: jest.fn(),
   signOut: jest.fn(),
+}));
+
+// Mock next/navigation
+jest.mock('next/navigation', () => ({
+  useRouter: jest.fn(),
 }));
 
 // Mock the child components
@@ -591,6 +597,30 @@ describe('AppLayout', () => {
 
       // Should call signOut function
       expect(mockSignOut).toHaveBeenCalledTimes(1);
+    });
+
+    test('clicking settings option navigates to settings page', async () => {
+      const mockPush = jest.fn();
+      const mockRouter = useRouter as jest.MockedFunction<typeof useRouter>;
+      mockRouter.mockReturnValue({
+        push: mockPush,
+        back: jest.fn(),
+        forward: jest.fn(),
+        refresh: jest.fn(),
+        replace: jest.fn(),
+        prefetch: jest.fn(),
+      });
+
+      const { user, userMenuButton } = await setupUserDropdownTest();
+      await openDropdownMenu(user, userMenuButton);
+
+      // Click the Settings option
+      const settingsOption = screen.getByText('Settings');
+      await user.click(settingsOption);
+
+      // Should navigate to settings page
+      expect(mockPush).toHaveBeenCalledTimes(1);
+      expect(mockPush).toHaveBeenCalledWith('/settings');
     });
   });
 });
