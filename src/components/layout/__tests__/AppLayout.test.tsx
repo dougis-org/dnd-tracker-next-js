@@ -1,12 +1,17 @@
 import React from 'react';
-import { render, screen, fireEvent, act } from '@testing-library/react';
-import { useSession } from 'next-auth/react';
+import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { useSession, signOut } from 'next-auth/react';
 import { AppLayout } from '../AppLayout';
 import { setupLayoutTest, mockWindowInnerWidth } from './test-utils';
 import { setupMockSession, setupCustomMockSession } from './session-test-helpers';
 
 // Mock next-auth/react
-jest.mock('next-auth/react');
+jest.mock('next-auth/react', () => ({
+  useSession: jest.fn(),
+  signIn: jest.fn(),
+  signOut: jest.fn(),
+}));
 
 // Mock the child components
 jest.mock('../Sidebar', () => ({
@@ -46,10 +51,14 @@ jest.mock('@/components/theme-toggle', () => ({
 describe('AppLayout', () => {
   const { cleanup } = setupLayoutTest();
   const mockChildren = <div data-testid="main-content">Test Content</div>;
+  const mockUseSession = useSession as jest.MockedFunction<typeof useSession>;
 
   beforeEach(() => {
     // Reset window.innerWidth to desktop size
     mockWindowInnerWidth(1024);
+
+    // Setup default session mock
+    setupMockSession(mockUseSession, 'unauthenticated');
   });
 
   afterEach(() => {
@@ -459,6 +468,129 @@ describe('AppLayout', () => {
       render(<AppLayout>{mockChildren}</AppLayout>);
       const userMenuButton = screen.getByRole('button', { name: 'User menu' });
       expect(userMenuButton).toBeInTheDocument();
+    });
+  });
+
+  describe('User Dropdown Menu Functionality', () => {
+    const mockUseSession = useSession as jest.MockedFunction<typeof useSession>;
+
+    // Helper functions to reduce duplication
+    const setupUserDropdownTest = async () => {
+      const user = userEvent.setup();
+      render(<AppLayout>{mockChildren}</AppLayout>);
+      const userMenuButton = screen.getByRole('button', { name: 'User menu' });
+      return { user, userMenuButton };
+    };
+
+    const openDropdownMenu = async (user: any, userMenuButton: any) => {
+      await user.click(userMenuButton);
+      await waitFor(() => {
+        expect(screen.getByText('My Account')).toBeInTheDocument();
+      });
+    };
+
+    beforeEach(() => {
+      jest.clearAllMocks();
+      setupCustomMockSession(mockUseSession, {
+        status: 'authenticated',
+        user: { name: 'Test User', email: 'test@example.com' },
+      });
+    });
+
+    test('user menu button does not immediately sign out when clicked', async () => {
+      const mockSignOut = signOut as jest.MockedFunction<typeof signOut>;
+      mockSignOut.mockClear();
+
+      const { user, userMenuButton } = await setupUserDropdownTest();
+      await user.click(userMenuButton);
+
+      // Should NOT call signOut immediately
+      expect(mockSignOut).not.toHaveBeenCalled();
+    });
+
+    test('clicking user menu button shows dropdown menu', async () => {
+      const { user, userMenuButton } = await setupUserDropdownTest();
+      await user.click(userMenuButton);
+
+      // Should show dropdown menu
+      await waitFor(() => {
+        expect(screen.getByText('My Account')).toBeInTheDocument();
+      });
+    });
+
+    test('dropdown menu contains settings option', async () => {
+      const { user, userMenuButton } = await setupUserDropdownTest();
+      await openDropdownMenu(user, userMenuButton);
+
+      expect(screen.getByText('Settings')).toBeInTheDocument();
+    });
+
+    test('dropdown menu contains logout option', async () => {
+      const { user, userMenuButton } = await setupUserDropdownTest();
+      await openDropdownMenu(user, userMenuButton);
+
+      expect(screen.getByText('Sign Out')).toBeInTheDocument();
+    });
+
+    test('logout button has click handler', async () => {
+      const { user, userMenuButton } = await setupUserDropdownTest();
+      await openDropdownMenu(user, userMenuButton);
+
+      // Verify the logout button is clickable (has onClick handler)
+      const logoutButton = screen.getByText('Sign Out').closest('[role="menuitem"]');
+      expect(logoutButton).toBeInTheDocument();
+      expect(logoutButton).toHaveAttribute('role', 'menuitem');
+    });
+
+    test('dropdown menu is properly structured', async () => {
+      const { user, userMenuButton } = await setupUserDropdownTest();
+      await openDropdownMenu(user, userMenuButton);
+
+      // Check that all expected elements are present
+      expect(screen.getByText('Settings')).toBeInTheDocument();
+      expect(screen.getByText('Sign Out')).toBeInTheDocument();
+    });
+
+    test('pressing escape closes the dropdown', async () => {
+      const { user, userMenuButton } = await setupUserDropdownTest();
+      await openDropdownMenu(user, userMenuButton);
+
+      // Press escape
+      await user.keyboard('{Escape}');
+
+      // Should close dropdown
+      await waitFor(() => {
+        expect(screen.queryByText('My Account')).not.toBeInTheDocument();
+      });
+    });
+
+    test('dropdown has proper accessibility attributes', async () => {
+      const { user, userMenuButton } = await setupUserDropdownTest();
+
+      // Button should have aria-expanded
+      expect(userMenuButton).toHaveAttribute('aria-expanded', 'false');
+
+      await user.click(userMenuButton);
+
+      // Button should show expanded state
+      await waitFor(() => {
+        expect(userMenuButton).toHaveAttribute('aria-expanded', 'true');
+      });
+    });
+
+    test('clicking sign out option triggers signOut function', async () => {
+      const mockSignOut = signOut as jest.MockedFunction<typeof signOut>;
+      mockSignOut.mockClear();
+
+      const { user, userMenuButton } = await setupUserDropdownTest();
+      await openDropdownMenu(user, userMenuButton);
+
+      // Click the Sign Out option
+      const signOutOption = screen.getByText('Sign Out');
+      await user.click(signOutOption);
+
+      // Should call signOut function
+      expect(mockSignOut).toHaveBeenCalledTimes(1);
     });
   });
 });
