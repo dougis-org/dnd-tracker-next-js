@@ -8,7 +8,11 @@
  * Solution: Set AUTH_TRUST_HOST=true as Fly.io environment secret
  *
  * Validates that the production authentication redirect fix works correctly.
+ *
+ * Fixed Issue #499: Removed code duplication by importing utility functions from src/lib/auth.ts
  */
+
+import { isValidProductionHostname, validateNextAuthUrl } from '../lib/auth';
 
 describe('Issue #494: Production redirect fix', () => {
   let originalEnv: NodeJS.ProcessEnv;
@@ -36,72 +40,46 @@ describe('Issue #494: Production redirect fix', () => {
       process.env.NODE_ENV = 'production';
 
       // In production, trustHost should be enabled even without AUTH_TRUST_HOST
-      const shouldTrustHost = process.env.AUTH_TRUST_HOST === 'true' || process.env.NODE_ENV === 'production';
+      const shouldTrustHost =
+        process.env.AUTH_TRUST_HOST === 'true' ||
+        process.env.NODE_ENV === 'production';
       expect(shouldTrustHost).toBe(true);
     });
   });
 
   describe('Production URL validation', () => {
-    // Extract common validation logic to reduce duplication
-    const testValidationHelpers = {
-      isLocalHostname: (hostname: string): boolean => {
-        return (
-          hostname === 'localhost' ||
-          hostname === '0.0.0.0' ||
-          hostname === '127.0.0.1' ||
-          hostname.startsWith('192.168.') ||
-          hostname.startsWith('10.') ||
-          hostname.startsWith('172.')
-        );
-      },
-
-      isValidProductionHostname: (hostname: string): boolean => {
-        return process.env.NODE_ENV !== 'production' || !testValidationHelpers.isLocalHostname(hostname);
-      },
-
-      validateNextAuthUrl: (url?: string): string | undefined => {
-        if (!url) return undefined;
-
-        try {
-          const parsedUrl = new URL(url);
-          if (!testValidationHelpers.isValidProductionHostname(parsedUrl.hostname)) {
-            console.warn(`Invalid NEXTAUTH_URL for production: ${url}. Using fallback.`);
-            return undefined;
-          }
-          return url;
-        } catch (error) {
-          console.warn(`Invalid NEXTAUTH_URL format: ${url}. Error: ${error}`);
-          return undefined;
-        }
-      }
-    };
-
     it('should identify localhost URLs as invalid for production', () => {
       process.env.NODE_ENV = 'production';
 
       // Test invalid production hostnames
-      expect(testValidationHelpers.isValidProductionHostname('0.0.0.0')).toBe(false);
-      expect(testValidationHelpers.isValidProductionHostname('localhost')).toBe(false);
-      expect(testValidationHelpers.isValidProductionHostname('127.0.0.1')).toBe(false);
+      expect(isValidProductionHostname('0.0.0.0')).toBe(false);
+      expect(isValidProductionHostname('localhost')).toBe(false);
+      expect(isValidProductionHostname('127.0.0.1')).toBe(false);
 
       // Test valid production hostname
-      expect(testValidationHelpers.isValidProductionHostname('dnd-tracker-next-js.fly.dev')).toBe(true);
+      expect(isValidProductionHostname('dnd-tracker-next-js.fly.dev')).toBe(
+        true
+      );
     });
 
     it('should validate NEXTAUTH_URL correctly for production environment', () => {
       process.env.NODE_ENV = 'production';
 
       // Test invalid production URL
-      const invalidUrl = testValidationHelpers.validateNextAuthUrl('http://0.0.0.0:3000');
+      const invalidUrl = validateNextAuthUrl('http://0.0.0.0:3000');
       expect(invalidUrl).toBeUndefined();
       expect(consoleWarnSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Invalid NEXTAUTH_URL for production: http://0.0.0.0:3000')
+        expect.stringContaining(
+          'Invalid NEXTAUTH_URL for production: http://0.0.0.0:3000'
+        )
       );
 
       consoleWarnSpy.mockClear();
 
       // Test valid production URL
-      const validUrl = testValidationHelpers.validateNextAuthUrl('https://dnd-tracker-next-js.fly.dev');
+      const validUrl = validateNextAuthUrl(
+        'https://dnd-tracker-next-js.fly.dev'
+      );
       expect(validUrl).toBe('https://dnd-tracker-next-js.fly.dev');
       expect(consoleWarnSpy).not.toHaveBeenCalled();
     });
@@ -114,7 +92,7 @@ describe('Issue #494: Production redirect fix', () => {
         'dnd-tracker-next-js.fly.dev',
         'dnd-tracker.fly.dev',
         'dndtracker.com',
-        'www.dndtracker.com'
+        'www.dndtracker.com',
       ];
 
       return async ({ url, baseUrl }: { url: string; baseUrl: string }) => {
@@ -130,7 +108,10 @@ describe('Issue #494: Production redirect fix', () => {
             return url;
           }
 
-          if (process.env.NODE_ENV === 'production' && trustedDomains.includes(parsedUrl.hostname)) {
+          if (
+            process.env.NODE_ENV === 'production' &&
+            trustedDomains.includes(parsedUrl.hostname)
+          ) {
             return url;
           }
 
@@ -151,11 +132,13 @@ describe('Issue #494: Production redirect fix', () => {
       // Test blocking 0.0.0.0 redirect
       const blockedUrl = await redirectCallback({
         url: 'https://0.0.0.0:3000/dashboard',
-        baseUrl
+        baseUrl,
       });
       expect(blockedUrl).toBe(baseUrl);
       expect(consoleWarnSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Blocked redirect to untrusted URL: https://0.0.0.0:3000/dashboard')
+        expect.stringContaining(
+          'Blocked redirect to untrusted URL: https://0.0.0.0:3000/dashboard'
+        )
       );
 
       consoleWarnSpy.mockClear();
@@ -163,7 +146,7 @@ describe('Issue #494: Production redirect fix', () => {
       // Test allowing same-origin redirect
       const validUrl = await redirectCallback({
         url: 'https://dnd-tracker-next-js.fly.dev/dashboard',
-        baseUrl
+        baseUrl,
       });
       expect(validUrl).toBe('https://dnd-tracker-next-js.fly.dev/dashboard');
       expect(consoleWarnSpy).not.toHaveBeenCalled();
@@ -171,7 +154,7 @@ describe('Issue #494: Production redirect fix', () => {
       // Test allowing relative redirect
       const relativeUrl = await redirectCallback({
         url: '/dashboard',
-        baseUrl
+        baseUrl,
       });
       expect(relativeUrl).toBe('https://dnd-tracker-next-js.fly.dev/dashboard');
     });
@@ -209,7 +192,9 @@ describe('Issue #494: Production redirect fix', () => {
           return 'https://0.0.0.0:3000';
         }
         // Production platforms should provide the correct hostname
-        return hostname ? `https://${hostname}` : 'https://dnd-tracker-next-js.fly.dev';
+        return hostname
+          ? `https://${hostname}`
+          : 'https://dnd-tracker-next-js.fly.dev';
       };
 
       // Test that without forced hostname, production URL is correct
