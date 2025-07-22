@@ -6,8 +6,9 @@ import { UserService } from './services/UserService';
 
 /**
  * Helper function to check if hostname is a local/invalid IP
+ * Exported for reuse in test files to prevent code duplication (Issue #499)
  */
-function isLocalHostname(hostname: string): boolean {
+export function isLocalHostname(hostname: string): boolean {
   return (
     hostname === 'localhost' ||
     hostname === '0.0.0.0' ||
@@ -20,17 +21,19 @@ function isLocalHostname(hostname: string): boolean {
 
 /**
  * Validates hostname for production environment
+ * Exported for reuse in test files to prevent code duplication (Issue #499)
  */
-function isValidProductionHostname(hostname: string): boolean {
+export function isValidProductionHostname(hostname: string): boolean {
   return process.env.NODE_ENV !== 'production' || !isLocalHostname(hostname);
 }
 
 /**
  * Validates and sanitizes NEXTAUTH_URL for security
  * Prevents redirect to invalid URLs like 0.0.0.0 (Issue #438)
+ * Exported for reuse in test files to prevent code duplication (Issue #499)
  */
-function validateNextAuthUrl(): string | undefined {
-  const url = process.env.NEXTAUTH_URL;
+export function validateNextAuthUrl(inputUrl?: string): string | undefined {
+  const url = inputUrl || process.env.NEXTAUTH_URL;
 
   if (!url) {
     return undefined;
@@ -40,7 +43,9 @@ function validateNextAuthUrl(): string | undefined {
     const parsedUrl = new URL(url);
 
     if (!isValidProductionHostname(parsedUrl.hostname)) {
-      console.warn(`Invalid NEXTAUTH_URL for production: ${url}. Using fallback.`);
+      console.warn(
+        `Invalid NEXTAUTH_URL for production: ${url}. Using fallback.`
+      );
       return undefined;
     }
 
@@ -53,14 +58,20 @@ function validateNextAuthUrl(): string | undefined {
 
 const mongoUri = process.env.MONGODB_URI;
 if (!mongoUri) {
-  if (process.env.NODE_ENV === 'production' && process.env.VERCEL !== '1' && process.env.CI !== 'true') {
+  if (
+    process.env.NODE_ENV === 'production' &&
+    process.env.VERCEL !== '1' &&
+    process.env.CI !== 'true'
+  ) {
     throw new Error('MONGODB_URI environment variable is not set');
   }
   // For build time or CI environment, use a placeholder URI that won't be used
   console.warn('MONGODB_URI not set, using placeholder for build/CI');
 }
 
-const client = new MongoClient(mongoUri || 'mongodb://localhost:27017/placeholder');
+const client = new MongoClient(
+  mongoUri || 'mongodb://localhost:27017/placeholder'
+);
 const clientPromise = Promise.resolve(client);
 
 // Validate NEXTAUTH_URL to prevent invalid redirects (Issue #438)
@@ -73,7 +84,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   // Fix for Issue #434 & #473: NextAuth v5 requires explicit trust host configuration
   // This prevents "UntrustedHost" errors and token persistence issues in production deployments
   // In production environments (including Fly.io), we need to trust the host automatically
-  trustHost: process.env.AUTH_TRUST_HOST === 'true' || process.env.NODE_ENV === 'production',
+  trustHost:
+    process.env.AUTH_TRUST_HOST === 'true' ||
+    process.env.NODE_ENV === 'production',
 
   // Use validated URL to prevent redirects to invalid URLs like 0.0.0.0 (Issue #438)
   ...(validatedNextAuthUrl && { url: validatedNextAuthUrl }),
@@ -214,7 +227,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             'dnd-tracker-next-js.fly.dev',
             'dnd-tracker.fly.dev',
             'dndtracker.com',
-            'www.dndtracker.com'
+            'www.dndtracker.com',
           ];
 
           if (trustedDomains.includes(parsedUrl.hostname)) {
