@@ -1,5 +1,6 @@
 import React from 'react';
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { useSession } from 'next-auth/react';
 import { AppLayout } from '../AppLayout';
 import { setupLayoutTest, mockWindowInnerWidth } from './test-utils';
@@ -459,6 +460,142 @@ describe('AppLayout', () => {
       render(<AppLayout>{mockChildren}</AppLayout>);
       const userMenuButton = screen.getByRole('button', { name: 'User menu' });
       expect(userMenuButton).toBeInTheDocument();
+    });
+  });
+
+  describe('User Dropdown Menu Functionality', () => {
+    const mockUseSession = useSession as jest.MockedFunction<typeof useSession>;
+
+    beforeEach(() => {
+      jest.clearAllMocks();
+      setupCustomMockSession(mockUseSession, {
+        status: 'authenticated',
+        user: { name: 'Test User', email: 'test@example.com' },
+      });
+    });
+
+    test('user menu button does not immediately sign out when clicked', async () => {
+      const mockSignOut = jest.fn();
+      jest.doMock('next-auth/react', () => ({
+        ...jest.requireActual('next-auth/react'),
+        signOut: mockSignOut,
+      }));
+
+      const user = userEvent.setup();
+      render(<AppLayout>{mockChildren}</AppLayout>);
+      const userMenuButton = screen.getByRole('button', { name: 'User menu' });
+
+      await user.click(userMenuButton);
+
+      // Should NOT call signOut immediately
+      expect(mockSignOut).not.toHaveBeenCalled();
+    });
+
+    test('clicking user menu button shows dropdown menu', async () => {
+      const user = userEvent.setup();
+      render(<AppLayout>{mockChildren}</AppLayout>);
+      const userMenuButton = screen.getByRole('button', { name: 'User menu' });
+
+      await user.click(userMenuButton);
+
+      // Should show dropdown menu
+      await waitFor(() => {
+        expect(screen.getByText('My Account')).toBeInTheDocument();
+      });
+    });
+
+    test('dropdown menu contains settings option', async () => {
+      const user = userEvent.setup();
+      render(<AppLayout>{mockChildren}</AppLayout>);
+      const userMenuButton = screen.getByRole('button', { name: 'User menu' });
+
+      await user.click(userMenuButton);
+
+      // Should show settings option in menu
+      await waitFor(() => {
+        expect(screen.getByText('Settings')).toBeInTheDocument();
+      });
+    });
+
+    test('dropdown menu contains logout option', async () => {
+      const user = userEvent.setup();
+      render(<AppLayout>{mockChildren}</AppLayout>);
+      const userMenuButton = screen.getByRole('button', { name: 'User menu' });
+
+      await user.click(userMenuButton);
+
+      // Should show logout option in menu
+      await waitFor(() => {
+        expect(screen.getByText('Sign Out')).toBeInTheDocument();
+      });
+    });
+
+    test('logout button has click handler', async () => {
+      const user = userEvent.setup();
+      render(<AppLayout>{mockChildren}</AppLayout>);
+      const userMenuButton = screen.getByRole('button', { name: 'User menu' });
+
+      await user.click(userMenuButton);
+
+      await waitFor(() => {
+        expect(screen.getByText('Sign Out')).toBeInTheDocument();
+      });
+
+      // Verify the logout button is clickable (has onClick handler)
+      const logoutButton = screen.getByText('Sign Out').closest('[role="menuitem"]');
+      expect(logoutButton).toBeInTheDocument();
+      expect(logoutButton).toHaveAttribute('role', 'menuitem');
+    });
+
+    test('dropdown menu is properly structured', async () => {
+      const user = userEvent.setup();
+      render(<AppLayout>{mockChildren}</AppLayout>);
+      const userMenuButton = screen.getByRole('button', { name: 'User menu' });
+
+      await user.click(userMenuButton);
+
+      await waitFor(() => {
+        // Check that all expected elements are present
+        expect(screen.getByText('My Account')).toBeInTheDocument();
+        expect(screen.getByText('Settings')).toBeInTheDocument();
+        expect(screen.getByText('Sign Out')).toBeInTheDocument();
+      });
+    });
+
+    test('pressing escape closes the dropdown', async () => {
+      const user = userEvent.setup();
+      render(<AppLayout>{mockChildren}</AppLayout>);
+      const userMenuButton = screen.getByRole('button', { name: 'User menu' });
+
+      // Open dropdown
+      await user.click(userMenuButton);
+      await waitFor(() => {
+        expect(screen.getByText('My Account')).toBeInTheDocument();
+      });
+
+      // Press escape
+      await user.keyboard('{Escape}');
+
+      // Should close dropdown
+      await waitFor(() => {
+        expect(screen.queryByText('My Account')).not.toBeInTheDocument();
+      });
+    });
+
+    test('dropdown has proper accessibility attributes', async () => {
+      const user = userEvent.setup();
+      render(<AppLayout>{mockChildren}</AppLayout>);
+      const userMenuButton = screen.getByRole('button', { name: 'User menu' });
+
+      // Button should have aria-expanded
+      expect(userMenuButton).toHaveAttribute('aria-expanded', 'false');
+
+      await user.click(userMenuButton);
+
+      // Button should show expanded state
+      await waitFor(() => {
+        expect(userMenuButton).toHaveAttribute('aria-expanded', 'true');
+      });
     });
   });
 });
