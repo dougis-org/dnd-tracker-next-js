@@ -66,7 +66,7 @@ const customJestConfig = {
   },
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
-    '^next-auth/react$': '<rootDir>/src/__mocks__/next-auth/react.js',
+    '^next-auth/react$': '<rootDir>/src/lib/auth/nextauth-compat.ts',
     '^next-auth/jwt$': '<rootDir>/src/__mocks__/next-auth/jwt.js',
   },
   transformIgnorePatterns: ['node_modules/(?!(bson|next-auth|@auth)/)'],

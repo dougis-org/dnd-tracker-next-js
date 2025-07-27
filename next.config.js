@@ -16,17 +16,25 @@ const nextConfig = {
   // Compression
   compress: true,
 
-  // Bundle analyzer for development
-  ...(process.env.ANALYZE === 'true' && {
-    webpack: config => {
+  // Webpack configuration
+  webpack: config => {
+    // Add alias for next-auth/react compatibility
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      'next-auth/react': require.resolve('./src/lib/auth/nextauth-compat.ts'),
+    };
+
+    // Bundle analyzer for development
+    if (process.env.ANALYZE === 'true') {
       config.plugins.push(
         require('@next/bundle-analyzer')({
           enabled: true,
         })
       );
-      return config;
-    },
-  }),
+    }
+
+    return config;
+  },
 };
 
 module.exports = nextConfig;

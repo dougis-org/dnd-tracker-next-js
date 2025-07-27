@@ -3,9 +3,8 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { ThemeProvider } from '@/components/theme-provider';
-import { SessionProvider } from '@/components/providers/SessionProvider';
+import { AuthProvider } from '@/lib/auth/AuthProvider';
 import { Toaster } from 'sonner';
-import { auth } from '@/lib/auth';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -14,22 +13,20 @@ export const metadata: Metadata = {
   description: 'A comprehensive tool for managing D&D combat encounters',
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const session = await auth();
-
   return (
     <html lang="en">
       <body className={inter.className}>
-        <SessionProvider session={session}>
+        <AuthProvider>
           <ThemeProvider defaultTheme="system" storageKey="dnd-tracker-theme">
             <AppLayout>{children}</AppLayout>
             <Toaster />
           </ThemeProvider>
-        </SessionProvider>
+        </AuthProvider>
       </body>
     </html>
   );
