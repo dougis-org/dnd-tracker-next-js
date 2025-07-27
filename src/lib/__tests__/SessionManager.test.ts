@@ -11,7 +11,7 @@ describe('SessionManager', () => {
     if (mongoose.connection.readyState !== 0) {
       await mongoose.disconnect();
     }
-    
+
     mongoServer = await MongoMemoryServer.create();
     const mongoUri = mongoServer.getUri();
     await mongoose.connect(mongoUri);
@@ -178,7 +178,7 @@ describe('SessionManager', () => {
       const deleteResult = await sessionManager.deleteSession(sessionId);
 
       expect(deleteResult).toBe(true);
-      
+
       const session = await sessionManager.getSession(sessionId);
       expect(session).toBeNull();
     });
@@ -252,8 +252,7 @@ describe('SessionManager', () => {
 
   describe('Error handling', () => {
     it('should handle database connection errors gracefully', async () => {
-      const originalConnection = mongoose.connection;
-      
+
       // Mock a database error
       jest.spyOn(mongoose.connection, 'readyState', 'get').mockReturnValue(0);
 

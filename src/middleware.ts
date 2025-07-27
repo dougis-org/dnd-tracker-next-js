@@ -33,7 +33,7 @@ export const config = {
     '/parties/:path*',
     '/combat/:path*',
     '/settings/:path*',
-    
+
     // Protected API routes
     '/api/users/:path*',
     '/api/characters/:path*',

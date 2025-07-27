@@ -1,14 +1,23 @@
 // Compatibility layer for next-auth/react to make existing components work
-export { useAuth as useSession } from './AuthProvider';
+import { useAuth } from './AuthProvider';
 
-export function signIn(provider?: string, options?: any) {
+export function useSession() {
+  const auth = useAuth();
+  return {
+    data: auth.user ? { user: auth.user } : null,
+    status: auth.loading ? 'loading' : (auth.user ? 'authenticated' : 'unauthenticated'),
+    update: () => Promise.resolve()
+  };
+}
+
+export function signIn(_provider?: string, _options?: any) {
   if (typeof window !== 'undefined') {
     window.location.href = '/signin';
   }
   return Promise.resolve({ error: null, status: 200, ok: true, url: '/signin' });
 }
 
-export function signOut(options?: any) {
+export function signOut(_options?: any) {
   if (typeof window !== 'undefined') {
     fetch('/api/auth/signout', { method: 'POST' })
       .then(() => {

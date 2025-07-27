@@ -20,7 +20,8 @@
     ],
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "next-auth/react": ["./src/lib/auth/nextauth-compat.ts"]
     }
   },
   "include": [

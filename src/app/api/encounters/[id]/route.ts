@@ -1,18 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
+import { getServerSession } from '@/lib/auth/server-session';
 import { EncounterService } from '@/lib/services/EncounterService';
 import { updateEncounterSchema } from '@/lib/validations/encounter';
 
 // Helper function to validate authentication
-async function validateAuth() {
-  const session = await auth();
-  if (!session?.user?.id) {
+async function validateAuth(request: NextRequest) {
+  const userInfo = await getServerSession(request.headers.get('cookie'));
+  if (!userInfo) {
     return NextResponse.json(
       { success: false, error: 'Authentication required' },
       { status: 401 }
     );
   }
-  return { session, userId: session.user.id };
+  return { userInfo, userId: userInfo.userId };
 }
 
 // Helper function to validate encounter ID
@@ -81,8 +81,8 @@ function handleUnexpectedError(error: unknown, operation: string) {
 }
 
 // Helper function for common validation steps (auth + encounter ID)
-async function validateBasicRequest(params: Promise<{ id: string }>) {
-  const authResult = await validateAuth();
+async function validateBasicRequest(request: NextRequest, params: Promise<{ id: string }>) {
+  const authResult = await validateAuth(request);
   if (authResult instanceof NextResponse) return { error: authResult };
 
   const encounterId = await validateEncounterId(params);

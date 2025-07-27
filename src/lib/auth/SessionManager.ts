@@ -66,14 +66,16 @@ export interface SessionData extends UserData {
 
 export class SessionManager {
   private static readonly DEFAULT_SESSION_DURATION = 24 * 60 * 60 * 1000; // 24 hours
+
   private static readonly REMEMBER_ME_DURATION = 30 * 24 * 60 * 60 * 1000; // 30 days
+
   private static readonly MIN_SESSION_ID_LENGTH = 32;
 
   /**
    * Creates a new session for the user
    */
   async createSession(
-    userData: UserData, 
+    userData: UserData,
     expiresAt?: Date,
     rememberMe: boolean = false
   ): Promise<string> {
@@ -120,7 +122,7 @@ export class SessionManager {
     }
 
     try {
-      const session = await Session.findOne({ 
+      const session = await Session.findOne({
         sessionId,
         expiresAt: { $gt: new Date() } // Only get non-expired sessions
       });

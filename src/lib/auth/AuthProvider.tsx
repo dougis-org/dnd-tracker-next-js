@@ -7,15 +7,16 @@ export interface User {
   email: string;
   firstName?: string;
   lastName?: string;
+  name?: string;
   subscriptionTier: 'free' | 'premium' | 'pro' | 'enterprise';
 }
 
 export interface AuthContextType {
   user: User | null;
   loading: boolean;
-  signIn: (email: string, password: string, rememberMe?: boolean) => Promise<{ success: boolean; error?: string }>;
+  signIn: (_email: string, _password: string, _rememberMe?: boolean) => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<void>;
-  signUp: (userData: {
+  signUp: (_userData: {
     email: string;
     password: string;
     firstName: string;
@@ -50,9 +51,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       const response = await fetch('/api/auth/session');
       const data = await response.json();
-      
+
       if (data.success && data.authenticated) {
-        setUser(data.user);
+        const user = data.user;
+        // Ensure name is set for compatibility
+        if (!user.name && user.firstName && user.lastName) {
+          user.name = `${user.firstName} ${user.lastName}`;
+        }
+        setUser(user);
       } else {
         setUser(null);
       }
@@ -77,7 +83,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const data = await response.json();
 
       if (data.success) {
-        setUser(data.user);
+        const user = data.user;
+        // Ensure name is set for compatibility
+        if (!user.name && user.firstName && user.lastName) {
+          user.name = `${user.firstName} ${user.lastName}`;
+        }
+        setUser(user);
         return { success: true };
       } else {
         return { success: false, error: data.error?.message || 'Sign in failed' };
@@ -106,7 +117,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const data = await response.json();
 
       if (data.success) {
-        setUser(data.user);
+        const user = data.user;
+        // Ensure name is set for compatibility
+        if (!user.name && user.firstName && user.lastName) {
+          user.name = `${user.firstName} ${user.lastName}`;
+        }
+        setUser(user);
         return { success: true };
       } else {
         return { success: false, error: data.error?.message || 'Sign up failed' };

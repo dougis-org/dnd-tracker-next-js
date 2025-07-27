@@ -240,7 +240,7 @@ export async function sessionHandler(request: NextRequest): Promise<NextResponse
 async function parseRequestBody(request: NextRequest): Promise<any> {
   try {
     return await request.json();
-  } catch (error) {
+  } catch {
     throw new Error('Invalid JSON in request body');
   }
 }
@@ -248,7 +248,7 @@ async function parseRequestBody(request: NextRequest): Promise<any> {
 function setSessionCookie(response: NextResponse, sessionId: string, rememberMe: boolean): void {
   const isProduction = process.env.NODE_ENV === 'production';
   const maxAge = rememberMe ? 30 * 24 * 60 * 60 : 24 * 60 * 60; // 30 days or 24 hours
-  
+
   const cookieOptions = [
     `session=${sessionId}`,
     `Max-Age=${maxAge}`,
@@ -268,7 +268,7 @@ function setSessionCookie(response: NextResponse, sessionId: string, rememberMe:
 
 function clearSessionCookie(response: NextResponse): void {
   const isProduction = process.env.NODE_ENV === 'production';
-  
+
   const cookieOptions = [
     'session=',
     'Max-Age=0',

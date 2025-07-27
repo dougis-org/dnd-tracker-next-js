@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { signInHandler, signOutHandler, signUpHandler } from '../auth/api-handlers';
 import { SessionManager } from '../auth/SessionManager';
 import { UserService } from '../services/UserService';
@@ -113,7 +113,7 @@ describe('Auth API Handlers', () => {
 
       const response = await signInHandler(request);
       const setCookieHeader = response.headers.get('Set-Cookie');
-      
+
       // For remember me, session should have longer expiration
       expect(setCookieHeader).toContain('Max-Age=2592000'); // 30 days
     });

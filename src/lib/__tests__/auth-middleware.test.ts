@@ -127,7 +127,7 @@ describe('Auth Middleware', () => {
       it(`should allow access to public route: ${route}`, async () => {
         const request = new NextRequest(`http://localhost:3000${route}`);
         const response = await testAuthMiddleware(request);
-        
+
         expect(response).toBeInstanceOf(NextResponse);
         expect(response.status).toBe(200);
       });
@@ -137,7 +137,7 @@ describe('Auth Middleware', () => {
       it(`should protect route: ${route}`, async () => {
         const request = new NextRequest(`http://localhost:3000${route}`);
         const response = await testAuthMiddleware(request);
-        
+
         expect(response.status).toBeOneOf([302, 401]);
       });
     });
@@ -206,13 +206,13 @@ describe('Auth Middleware', () => {
 
     it('should validate trusted origins in production', async () => {
       process.env.NODE_ENV = 'production';
-      
+
       const request = new NextRequest('http://malicious-site.com/dashboard');
       const response = await testAuthMiddleware(request);
 
       expect(response.status).toBe(302);
       expect(response.headers.get('location')).toContain('/signin');
-      
+
       process.env.NODE_ENV = 'test';
     });
   });

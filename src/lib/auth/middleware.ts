@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { SessionManager } from './SessionManager';
+import { extractSessionIdFromCookie, isValidSessionIdFormat, isValidOrigin } from './session-utils';
 
 export interface AuthMiddlewareConfig {
   publicRoutes: string[];
@@ -49,11 +49,9 @@ const defaultConfig: AuthMiddlewareConfig = {
 };
 
 export class AuthMiddleware {
-  private sessionManager: SessionManager;
   private config: AuthMiddlewareConfig;
 
   constructor(config: Partial<AuthMiddlewareConfig> = {}) {
-    this.sessionManager = new SessionManager();
     this.config = { ...defaultConfig, ...config };
   }
 
@@ -70,32 +68,22 @@ export class AuthMiddleware {
       }
 
       // Validate origin in production
-      if (process.env.NODE_ENV === 'production' && !this.isValidOrigin(request)) {
+      if (process.env.NODE_ENV === 'production' && !isValidOrigin(request.url, this.config.trustedOrigins)) {
         console.warn(`Invalid origin for ${pathname}: ${request.url}`);
         return this.handleUnauthenticated(request, isProtectedAPI);
       }
 
       // Get session from cookie
-      const sessionId = this.extractSessionId(request);
-      if (!sessionId) {
-        console.log(`No session found for ${pathname}`);
+      const sessionId = extractSessionIdFromCookie(request.headers.get('cookie'));
+      if (!sessionId || !isValidSessionIdFormat(sessionId)) {
+        console.log(`No valid session found for ${pathname}`);
         return this.handleUnauthenticated(request, isProtectedAPI);
       }
 
-      // Validate session
-      const session = await this.sessionManager.getSession(sessionId);
-      if (!session) {
-        console.log(`Invalid or expired session for ${pathname}`);
-        return this.handleUnauthenticated(request, isProtectedAPI);
-      }
-
-      // Add user info to request headers for downstream handlers
-      const response = NextResponse.next();
-      response.headers.set('x-user-id', session.userId);
-      response.headers.set('x-user-email', session.email);
-      response.headers.set('x-user-tier', session.subscriptionTier);
-
-      return response;
+      // For middleware in Edge Runtime, we can't validate session directly
+      // We rely on the session ID format validation and let API routes handle
+      // actual session validation. If session is invalid, API routes will return 401.
+      return NextResponse.next();
     } catch (error) {
       console.error(`Auth middleware error for ${pathname}:`, error);
       return this.handleUnauthenticated(request, this.isProtectedAPI(pathname));
@@ -103,54 +91,24 @@ export class AuthMiddleware {
   }
 
   private isProtectedRoute(pathname: string): boolean {
-    return this.config.protectedRoutes.some(route => 
+    return this.config.protectedRoutes.some(route =>
       pathname.startsWith(route)
     );
   }
 
   private isProtectedAPI(pathname: string): boolean {
-    return this.config.apiRoutes.some(route => 
+    return this.config.apiRoutes.some(route =>
       pathname.startsWith(route)
     );
   }
 
-  private isValidOrigin(request: NextRequest): boolean {
-    try {
-      const url = new URL(request.url);
-      const origin = url.hostname + (url.port ? `:${url.port}` : '');
-      
-      // Check against trusted origins
-      return this.config.trustedOrigins.some(trusted => 
-        origin === trusted || 
-        origin.endsWith(`.${trusted}`)
-      );
-    } catch (error) {
-      console.error('Error validating origin:', error);
-      return false;
-    }
-  }
-
-  private extractSessionId(request: NextRequest): string | null {
-    try {
-      const cookies = request.headers.get('cookie');
-      if (!cookies) {
-        return null;
-      }
-
-      const sessionMatch = cookies.match(/session=([^;]+)/);
-      return sessionMatch ? sessionMatch[1] : null;
-    } catch (error) {
-      console.error('Error extracting session ID:', error);
-      return null;
-    }
-  }
 
   private handleUnauthenticated(request: NextRequest, isAPI: boolean): NextResponse {
     if (isAPI) {
       return NextResponse.json(
-        { 
+        {
           success: false,
-          error: { 
+          error: {
             message: 'Authentication required',
             code: 'AUTHENTICATION_REQUIRED'
           }
@@ -161,7 +119,7 @@ export class AuthMiddleware {
 
     try {
       const signInUrl = new URL('/signin', request.url);
-      
+
       // Add callback URL for redirect after signin
       const currentUrl = request.url;
       try {
@@ -173,7 +131,7 @@ export class AuthMiddleware {
         if (requestOrigin === signInOrigin) {
           signInUrl.searchParams.set('callbackUrl', encodeURI(currentUrl));
         }
-      } catch (urlError) {
+      } catch {
         console.warn('Invalid request URL for callback:', currentUrl);
       }
 
