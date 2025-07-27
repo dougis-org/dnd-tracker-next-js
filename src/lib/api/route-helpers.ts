@@ -1,23 +1,23 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { ZodError } from 'zod';
-import { auth } from '@/lib/auth';
+import { getServerSession } from '@/lib/auth/server-session';
 
 /**
  * Shared API route helpers for authentication and access control
  */
 
-export async function validateAuth() {
-  const session = await auth();
-  if (!session?.user?.id) {
+export async function validateAuth(cookie?: string | null) {
+  const userInfo = await getServerSession(cookie || null);
+  if (!userInfo?.userId) {
     return {
       error: NextResponse.json(
         { success: false, message: 'Authentication required' },
         { status: 401 }
       ),
-      session: null
+      userInfo: null
     };
   }
-  return { error: null, session };
+  return { error: null, userInfo };
 }
 
 /**
@@ -25,12 +25,13 @@ export async function validateAuth() {
  * This eliminates code duplication across API routes
  */
 export async function withAuth<T>(
-  callback: (_userId: string) => Promise<T>
+  callback: (_userId: string) => Promise<T>,
+  cookie?: string | null
 ): Promise<T | NextResponse> {
-  const { error: authError, session } = await validateAuth();
+  const { error: authError, userInfo } = await validateAuth(cookie);
   if (authError) return authError;
 
-  return await callback(session!.user.id);
+  return await callback(userInfo!.userId);
 }
 
 export async function validateUserAccess(requestedUserId: string, sessionUserId: string) {
@@ -45,14 +46,15 @@ export async function validateUserAccess(requestedUserId: string, sessionUserId:
 
 export async function withAuthAndAccess(
   params: Promise<{ id: string }>,
-  callback: (_userId: string) => Promise<Response>
+  callback: (_userId: string) => Promise<Response>,
+  cookie?: string | null
 ): Promise<Response> {
   try {
-    const { error: authError, session } = await validateAuth();
+    const { error: authError, userInfo } = await validateAuth(cookie);
     if (authError) return authError;
 
     const { id: userId } = await params;
-    const accessError = await validateUserAccess(userId, session!.user.id);
+    const accessError = await validateUserAccess(userId, userInfo!.userId);
     if (accessError) return accessError;
 
     return await callback(userId);
@@ -237,7 +239,7 @@ export function createValidatedRouteHandler<T>(
         }
         throw error; // Let withAuthAndAccess handle unexpected errors
       }
-    });
+    }, request.headers.get('cookie'));
   };
 }
 
@@ -252,11 +254,11 @@ export function createSimpleRouteHandler(
     defaultErrorStatus?: number;
   }
 ) {
-  return async (_request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
+  return async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
     return withAuthAndAccess(params, async (userId) => {
       const result = await serviceCall(userId);
       return handleUserServiceResult(result, successMessage, errorOptions);
-    });
+    }, request.headers.get('cookie'));
   };
 }
 

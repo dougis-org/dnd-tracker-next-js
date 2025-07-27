@@ -1,4 +1,4 @@
-import { SessionUser } from '@/types/auth';
+import { User } from '@/lib/auth/AuthProvider';
 
 // Re-export shared test utilities to eliminate duplication
 export {
@@ -13,7 +13,7 @@ export {
 
 export const TEST_USER_ID = '507f1f77bcf86cd799439011';
 
-export const createMockSessionUser = (overrides: Partial<SessionUser> = {}): SessionUser => ({
+export const createMockSessionUser = (overrides: Partial<User> = {}): User => ({
   id: TEST_USER_ID,
   name: 'Test User',
   email: 'test@example.com',

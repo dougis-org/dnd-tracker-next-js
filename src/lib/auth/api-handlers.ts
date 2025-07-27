@@ -90,13 +90,13 @@ export async function signUpHandler(request: NextRequest): Promise<NextResponse>
     const body = await parseRequestBody(request);
     const validatedData = signUpSchema.parse(body);
 
-    // Create user
+    // Create user - generate username from email for now
     const createResult = await UserService.createUser({
-      email: validatedData.email,
-      password: validatedData.password,
-      firstName: validatedData.firstName,
-      lastName: validatedData.lastName,
-      subscriptionTier: 'free'
+      ...validatedData,
+      username: validatedData.email.split('@')[0], // Generate username from email
+      confirmPassword: validatedData.password, // Required field
+      agreeToTerms: true, // Assume terms are agreed
+      subscribeToNewsletter: false // Default value
     });
 
     if (!createResult.success || !createResult.data) {

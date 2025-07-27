@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import { redirect } from 'next/navigation';
-import { auth } from '@/lib/auth';
+import { headers } from 'next/headers';
+import { getServerSession } from '@/lib/auth/server-session';
 import { PartyListView } from '@/components/party/PartyListView';
 
 export const metadata: Metadata = {
@@ -9,9 +10,10 @@ export const metadata: Metadata = {
 };
 
 export default async function PartiesPage() {
-  const session = await auth();
+  const headersList = await headers();
+  const userInfo = await getServerSession(headersList.get('cookie'));
 
-  if (!session?.user?.id) {
+  if (!userInfo?.userId) {
     redirect('/signin?callbackUrl=/parties');
   }
 
@@ -23,7 +25,7 @@ export default async function PartiesPage() {
           Manage and organize your D&D parties
         </p>
       </div>
-      <PartyListView userId={session.user.id} />
+      <PartyListView userId={userInfo.userId} />
     </div>
   );
 }

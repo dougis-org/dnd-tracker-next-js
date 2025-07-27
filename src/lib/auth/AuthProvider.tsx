@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { NotificationPreferences } from '@/types/auth';
 
 export interface User {
   id: string;
@@ -8,7 +9,8 @@ export interface User {
   firstName?: string;
   lastName?: string;
   name?: string;
-  subscriptionTier: 'free' | 'premium' | 'pro' | 'enterprise';
+  subscriptionTier: 'free' | 'seasoned' | 'expert' | 'master' | 'guild';
+  notifications?: NotificationPreferences;
 }
 
 export interface AuthContextType {

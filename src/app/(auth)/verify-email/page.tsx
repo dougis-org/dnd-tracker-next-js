@@ -2,14 +2,14 @@
 
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import { Check, Loader2, Mail } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 type VerificationState = 'pending' | 'success' | 'error' | 'sending' | 'sent';
 
-export default function VerifyEmailPage() {
+function VerifyEmailContent() {
   const _router = useRouter();
   const searchParams = useSearchParams();
   const email = searchParams.get('email');
@@ -225,4 +225,12 @@ export default function VerifyEmailPage() {
   };
 
   return <div className="space-y-6">{renderContent()}</div>;
+}
+
+export default function VerifyEmailPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <VerifyEmailContent />
+    </Suspense>
+  );
 }

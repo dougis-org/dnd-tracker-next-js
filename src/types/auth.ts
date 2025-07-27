@@ -1,6 +1,5 @@
-import { Session } from 'next-auth';
-
-export type SessionUser = NonNullable<Session['user']>;
+// Remove next-auth dependency since we have our own auth system
+// export type SessionUser = NonNullable<Session['user']>;
 
 export interface NotificationPreferences {
   email: boolean;

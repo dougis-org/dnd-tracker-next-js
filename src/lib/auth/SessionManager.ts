@@ -5,7 +5,7 @@ interface ISession extends Document {
   sessionId: string;
   userId: string;
   email: string;
-  subscriptionTier: 'free' | 'premium' | 'pro' | 'enterprise';
+  subscriptionTier: 'free' | 'seasoned' | 'expert' | 'master' | 'guild';
   createdAt: Date;
   expiresAt: Date;
   lastAccessedAt: Date;
@@ -55,7 +55,7 @@ const Session = mongoose.models.Session || mongoose.model<ISession>('Session', S
 export interface UserData {
   userId: string;
   email: string;
-  subscriptionTier: 'free' | 'premium' | 'pro' | 'enterprise';
+  subscriptionTier: 'free' | 'seasoned' | 'expert' | 'master' | 'guild';
 }
 
 export interface SessionData extends UserData {

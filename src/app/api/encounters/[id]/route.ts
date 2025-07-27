@@ -92,8 +92,8 @@ async function validateBasicRequest(request: NextRequest, params: Promise<{ id: 
 }
 
 // Helper function for validation steps that include access check
-async function validateRequestWithAccess(params: Promise<{ id: string }>) {
-  const basicResult = await validateBasicRequest(params);
+async function validateRequestWithAccess(request: NextRequest, params: Promise<{ id: string }>) {
+  const basicResult = await validateBasicRequest(request, params);
   if (basicResult.error) return basicResult;
 
   const { authResult, encounterId } = basicResult;
@@ -110,7 +110,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const validation = await validateBasicRequest(params);
+    const validation = await validateBasicRequest(request, params);
     if (validation.error) return validation.error;
 
     const { encounterId } = validation;
@@ -131,7 +131,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const validation = await validateRequestWithAccess(params);
+    const validation = await validateRequestWithAccess(request, params);
     if (validation.error) return validation.error;
 
     const { encounterId } = validation;
@@ -156,7 +156,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const validation = await validateRequestWithAccess(params);
+    const validation = await validateRequestWithAccess(request, params);
     if (validation.error) return validation.error;
 
     const { encounterId } = validation;

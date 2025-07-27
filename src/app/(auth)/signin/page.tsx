@@ -2,8 +2,8 @@
 
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useState, useCallback } from 'react';
-import { signIn } from 'next-auth/react';
+import { useState, useCallback, Suspense } from 'react';
+import { useAuth } from '@/lib/auth/AuthProvider';
 import { z } from 'zod';
 import { userLoginSchema } from '@/lib/validations/user';
 import {
@@ -43,10 +43,11 @@ const TOAST_MESSAGES = {
   failure: 'Login Failure, please check your email and password',
 } as const;
 
-export default function SignInPage() {
+function SignInContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
+  const { signIn } = useAuth();
 
   // Utility function to get callback URL parameters
   const getCallbackUrlParam = useCallback(() =>
@@ -138,21 +139,15 @@ export default function SignInPage() {
       // Validate the form data with Zod
       const validatedData = userLoginSchema.parse(validationData);
 
-      // Sign in with NextAuth
-      const response = await signIn('credentials', {
-        redirect: false,
-        email: validatedData.email,
-        password: validatedData.password,
-        rememberMe: validatedData.rememberMe.toString(),
-        callbackUrl,
-      });
+      // Sign in with our auth system
+      const response = await signIn(
+        validatedData.email,
+        validatedData.password,
+        validatedData.rememberMe
+      );
 
-      if (response?.error) {
-        throw new Error(
-          response.error === 'CredentialsSignin'
-            ? 'Invalid email or password'
-            : response.error
-        );
+      if (!response.success) {
+        throw new Error(response.error || 'Sign in failed');
       }
 
       // Success - redirect to callback URL
@@ -258,5 +253,13 @@ export default function SignInPage() {
         </div>
       </FormWrapper>
     </div>
+  );
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <SignInContent />
+    </Suspense>
   );
 }

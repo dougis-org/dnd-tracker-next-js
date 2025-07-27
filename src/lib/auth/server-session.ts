@@ -7,7 +7,7 @@ const sessionManager = new SessionManager();
 export interface ServerUserInfo {
   userId: string;
   email: string;
-  subscriptionTier: 'free' | 'premium' | 'pro' | 'enterprise';
+  subscriptionTier: 'free' | 'seasoned' | 'expert' | 'master' | 'guild';
 }
 
 /**
