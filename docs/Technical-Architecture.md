@@ -36,6 +36,20 @@
 5. **Payment Layer**: Stripe integration for subscriptions
 6. **File Storage**: Vercel Blob for user uploads
 
+### 1.4 Technology Stack
+
+For a comprehensive inventory of all technologies, frameworks, libraries, and development tools used in this
+project, including current versions, latest stable versions, and upgrade recommendations, see:
+
+**📋 [Technology Stack Documentation](./TECH-STACK.md)**
+
+The technology stack document provides:
+- Complete dependency inventory with version tracking
+- Security and upgrade recommendations
+- Development tool configurations
+- Package management and maintenance procedures
+- Environment-specific version requirements
+
 ## 2. Component Architecture
 
 ### 2.1 Frontend Components Structure
