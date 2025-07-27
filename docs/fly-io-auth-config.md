@@ -1,6 +1,7 @@
 # Fly.io Authentication Configuration
 
-This document outlines the required environment variables and configuration for the custom authentication system to work properly in production on Fly.io.
+This document outlines the required environment variables and configuration for the custom authentication system to work
+properly in production on Fly.io.
 
 ## Required Environment Variables
 
