@@ -7,8 +7,17 @@
 
 import { NextRequest } from 'next/server';
 import { Types } from 'mongoose';
-import { auth } from '@/lib/auth';
 import { EncounterServiceImportExport } from '@/lib/services/EncounterServiceImportExport';
+import {
+  mockGetServerSession,
+  createTestUserInfo,
+  mockAuthenticatedRequest,
+  mockUnauthenticatedRequest,
+  createRequestWithAuth,
+  createUnauthenticatedRequest,
+  TEST_USERS,
+} from '@/__tests__/auth-session-test-helpers';
+import type { ServerUserInfo } from '@/lib/auth/server-session';
 
 // ============================================================================
 // AUTHENTICATION UTILITIES
@@ -18,36 +27,33 @@ import { EncounterServiceImportExport } from '@/lib/services/EncounterServiceImp
  * Standard test user for consistent authentication testing
  */
 export const TEST_USER = {
-  id: 'test-user-123',
-  email: 'test@example.com',
+  id: TEST_USERS.FREE_USER.userId,
+  email: TEST_USERS.FREE_USER.email,
 } as const;
 
 /**
  * Mock auth to return successful authentication
  */
-export const mockAuthSuccess = (mockAuth: jest.MockedFunction<typeof auth>) => {
-  mockAuth.mockResolvedValue({
-    user: TEST_USER,
-  } as any);
+export const mockAuthSuccess = () => {
+  mockAuthenticatedRequest(TEST_USERS.FREE_USER);
 };
 
 /**
  * Mock auth to return null (unauthenticated)
  */
-export const mockAuthFailure = (mockAuth: jest.MockedFunction<typeof auth>) => {
-  mockAuth.mockResolvedValue(null);
+export const mockAuthFailure = () => {
+  mockUnauthenticatedRequest();
 };
 
 /**
  * Mock auth to return session without user ID
  */
-export const mockAuthIncomplete = (mockAuth: jest.MockedFunction<typeof auth>) => {
-  mockAuth.mockResolvedValue({
-    user: {
-      email: TEST_USER.email,
-      // Missing ID
-    },
-  } as any);
+export const mockAuthIncomplete = () => {
+  const incompleteUser = createTestUserInfo({
+    userId: '', // Missing/empty ID
+    email: TEST_USER.email,
+  });
+  mockGetServerSession.mockResolvedValue(incompleteUser);
 };
 
 // ============================================================================
@@ -152,20 +158,18 @@ export const createMockRequest = (config: {
   method?: string;
   url?: string;
   headers?: Record<string, string>;
+  userInfo?: Partial<ServerUserInfo>;
 } = {}): NextRequest => {
   const {
     body,
     method = 'POST',
     url = 'http://localhost:3000/api/encounters/import',
     headers = { 'Content-Type': 'application/json' },
+    userInfo,
   } = config;
 
-  return {
-    json: jest.fn().mockResolvedValue(body || {}),
-    method,
-    headers: new Headers(headers),
-    url,
-  } as unknown as NextRequest;
+  // Use the auth helper to create authenticated requests
+  return createRequestWithAuth(url, method as any, body, userInfo || TEST_USERS.FREE_USER);
 };
 
 /**
@@ -203,10 +207,12 @@ export const createRestoreRequestBody = (
  * Creates request with invalid JSON to test error handling
  */
 export const createInvalidJsonRequest = (): NextRequest => {
-  const request = createMockRequest({
-    method: 'POST',
-    body: undefined, // Will cause JSON parsing to fail
-  });
+  const request = createRequestWithAuth(
+    'http://localhost:3000/api/encounters/import',
+    'POST',
+    undefined,
+    TEST_USERS.FREE_USER
+  );
 
   // Override json method to throw error
   request.json = jest.fn().mockRejectedValue(new Error('Invalid JSON'));
@@ -453,14 +459,12 @@ export const setupEncounterApiTest = () => {
   jest.clearAllMocks();
 
   // Return mock functions for common use
-  const mockAuth = auth as jest.MockedFunction<typeof auth>;
   const mockService = EncounterServiceImportExport as jest.Mocked<typeof EncounterServiceImportExport>;
 
   // Default to successful authentication
-  mockAuthSuccess(mockAuth);
+  mockAuthSuccess();
 
   return {
-    mockAuth,
     mockService,
   };
 };
@@ -473,10 +477,14 @@ export const testAuthenticationRequired = async (
   requestBody: any = {},
   method: string = 'POST'
 ) => {
-  const { mockAuth } = setupEncounterApiTest();
-  mockAuthFailure(mockAuth);
+  setupEncounterApiTest();
+  mockAuthFailure();
 
-  const request = createMockRequest({ body: requestBody, method });
+  const request = createUnauthenticatedRequest(
+    'http://localhost:3000/api/encounters/import',
+    method as any,
+    requestBody
+  );
   const response = await handler(request);
 
   await expectAuthenticationError(response);
@@ -494,7 +502,8 @@ export const testValidationError = async (
   setupEncounterApiTest();
 
   const request = createMockRequest({ body: invalidBody });
-  const response = await handler(request);
+  const context = { params: Promise.resolve({}) };
+  const response = await handler(request, context);
 
   await expectValidationError(response, expectedField);
   return response;
@@ -512,7 +521,8 @@ export const testServiceException = async (
   mockServiceException(mockService, errorMessage);
 
   const request = createMockRequest({ body: requestBody });
-  const response = await handler(request);
+  const context = { params: Promise.resolve({}) };
+  const response = await handler(request, context);
 
   await expectServerError(response);
   return response;

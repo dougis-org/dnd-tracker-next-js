@@ -1,26 +1,28 @@
 import { describe, it, expect, beforeEach } from '@jest/globals';
 import { GET, POST } from '../route';
 import { CharacterService } from '@/lib/services/CharacterService';
+
+// Mock dependencies
+jest.mock('@/lib/services/CharacterService');
+
+// Import test helpers - they handle auth mocking
 import {
-  createRequestWithAuth,
-  createUnauthenticatedRequest,
   createTestContext,
   expectSuccessResponse,
   expectAuthError,
   expectValidationError,
   testApiRouteAuth,
   testApiRouteUnauth,
-  setupAuthTestEnvironment,
   TEST_USERS,
+  resetAuthMocks,
 } from '@/__tests__/auth-session-test-helpers';
 
-// Mock dependencies
-jest.mock('@/lib/services/CharacterService');
+// Since we're using the centralized test helpers, we don't need local helpers
 
 const mockCharacterService = CharacterService as jest.Mocked<typeof CharacterService>;
 
 describe('/api/characters API Route', () => {
-  const testUserId = TEST_USERS.FREE_USER.userId;
+  const testUserId = 'free-user-123';
 
   const mockCharacter = {
     _id: 'character-123',
@@ -47,10 +49,9 @@ describe('/api/characters API Route', () => {
     error: (message: string) => ({ success: false, error: { message } }),
   };
 
-  setupAuthTestEnvironment();
-
   beforeEach(() => {
     jest.clearAllMocks();
+    resetAuthMocks();
   });
 
   describe('GET /api/characters', () => {
@@ -87,16 +88,14 @@ describe('/api/characters API Route', () => {
         mockApiResponses.success([mockCharacter])
       );
 
-      const request = createRequestWithAuth(
-        '/api/characters?search=Test',
-        'GET',
+      const { response, data } = await testApiRouteAuth(
+        GET,
+        TEST_USERS.FREE_USER,
         undefined,
-        TEST_USERS.FREE_USER
+        undefined,
+        'GET',
+        '/api/characters?search=Test'
       );
-      const context = createTestContext();
-
-      const response = await GET(request, context);
-      const data = await response.json();
 
       expectSuccessResponse(response);
       expect(data.success).toBe(true);
@@ -111,16 +110,14 @@ describe('/api/characters API Route', () => {
         mockApiResponses.success([mockCharacter])
       );
 
-      const request = createRequestWithAuth(
-        '/api/characters?type=pc',
-        'GET',
+      const { response, data } = await testApiRouteAuth(
+        GET,
+        TEST_USERS.FREE_USER,
         undefined,
-        TEST_USERS.FREE_USER
+        undefined,
+        'GET',
+        '/api/characters?type=pc'
       );
-      const context = createTestContext();
-
-      const response = await GET(request, context);
-      const data = await response.json();
 
       expectSuccessResponse(response);
       expect(data.success).toBe(true);
@@ -173,16 +170,13 @@ describe('/api/characters API Route', () => {
         mockApiResponses.success(createdCharacter)
       );
 
-      const request = createRequestWithAuth(
-        '/api/characters',
-        'POST',
+      const { response, data } = await testApiRouteAuth(
+        POST,
+        TEST_USERS.FREE_USER,
         validCharacterData,
-        TEST_USERS.FREE_USER
+        undefined,
+        'POST'
       );
-      const context = createTestContext();
-
-      const response = await POST(request, context);
-      const data = await response.json();
 
       expect(response.status).toBe(201);
       expect(data.success).toBe(true);
@@ -194,29 +188,25 @@ describe('/api/characters API Route', () => {
     });
 
     it('should return 401 when user not authenticated', async () => {
-      const request = createUnauthenticatedRequest(
-        '/api/characters',
-        'POST',
-        validCharacterData
+      const { response } = await testApiRouteUnauth(
+        POST,
+        validCharacterData,
+        undefined,
+        'POST'
       );
-      const context = createTestContext();
-
-      const response = await POST(request, context);
       expectAuthError(response);
     });
 
     it('should validate required fields', async () => {
       const invalidData = { ...validCharacterData, name: '' };
 
-      const request = createRequestWithAuth(
-        '/api/characters',
-        'POST',
+      const { response } = await testApiRouteAuth(
+        POST,
+        TEST_USERS.FREE_USER,
         invalidData,
-        TEST_USERS.FREE_USER
+        undefined,
+        'POST'
       );
-      const context = createTestContext();
-
-      const response = await POST(request, context);
       expectValidationError(response);
     });
 
@@ -225,16 +215,13 @@ describe('/api/characters API Route', () => {
         new Error('Failed to create character')
       );
 
-      const request = createRequestWithAuth(
-        '/api/characters',
-        'POST',
+      const { response, data } = await testApiRouteAuth(
+        POST,
+        TEST_USERS.FREE_USER,
         validCharacterData,
-        TEST_USERS.FREE_USER
+        undefined,
+        'POST'
       );
-      const context = createTestContext();
-
-      const response = await POST(request, context);
-      const data = await response.json();
 
       expect(response.status).toBe(500);
       expect(data.success).toBe(false);

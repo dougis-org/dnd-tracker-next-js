@@ -6,13 +6,17 @@
 import { NextRequest } from 'next/server';
 import type { ServerUserInfo } from '@/lib/auth/server-session';
 
-// Mock getServerSession function for tests
-export const mockGetServerSession = jest.fn<Promise<ServerUserInfo | null>, [string | null]>();
+// The mock must be hoisted before any imports that might use the module
+jest.mock('@/lib/auth/server-session', () => {
+  return {
+    ...jest.requireActual('@/lib/auth/server-session'),
+    getServerSession: jest.fn(),
+  };
+});
 
-jest.mock('@/lib/auth/server-session', () => ({
-  ...jest.requireActual('@/lib/auth/server-session'),
-  getServerSession: mockGetServerSession,
-}));
+// After mocking, get the mocked function reference
+const serverSessionModule = require('@/lib/auth/server-session');
+export const mockGetServerSession = serverSessionModule.getServerSession as jest.MockedFunction<typeof serverSessionModule.getServerSession>;
 
 /**
  * Default test user info
@@ -39,6 +43,11 @@ export const mockAuthenticatedRequest = (userInfo?: Partial<ServerUserInfo>) => 
 export const mockUnauthenticatedRequest = () => {
   mockGetServerSession.mockResolvedValue(null);
 };
+
+/**
+ * Get the mock function for direct manipulation if needed
+ */
+export const getMockServerSession = () => mockGetServerSession;
 
 /**
  * Create a NextRequest with session cookie
@@ -114,6 +123,7 @@ export const createTestContext = (params: Record<string, string> = {}) => ({
  */
 export const resetAuthMocks = () => {
   mockGetServerSession.mockReset();
+  mockGetServerSession.mockClear();
 };
 
 /**
@@ -145,9 +155,11 @@ export const testApiRouteAuth = async (
   userInfo?: Partial<ServerUserInfo>,
   requestBody?: any,
   params?: Record<string, string>,
-  method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' = 'GET'
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' = 'GET',
+  path?: string
 ) => {
-  const request = createRequestWithAuth('/api/test', method, requestBody, userInfo);
+  const requestPath = path || '/api/test';
+  const request = createRequestWithAuth(requestPath, method, requestBody, userInfo);
   const context = createTestContext(params);
 
   const response = await handler(request, context);
@@ -163,9 +175,11 @@ export const testApiRouteUnauth = async (
   handler: Function,
   requestBody?: any,
   params?: Record<string, string>,
-  method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' = 'GET'
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' = 'GET',
+  path?: string
 ) => {
-  const request = createUnauthenticatedRequest('/api/test', method, requestBody);
+  const requestPath = path || '/api/test';
+  const request = createUnauthenticatedRequest(requestPath, method, requestBody);
   const context = createTestContext(params);
 
   const response = await handler(request, context);
@@ -179,11 +193,13 @@ export const testApiRouteUnauth = async (
  */
 export const setupAuthTestEnvironment = () => {
   beforeEach(() => {
-    resetAuthMocks();
+    // Don't reset mocks - just clear call history
+    mockGetServerSession.mockClear();
   });
 
   afterEach(() => {
-    resetAuthMocks();
+    // Don't reset mocks - just clear call history
+    mockGetServerSession.mockClear();
   });
 };
 

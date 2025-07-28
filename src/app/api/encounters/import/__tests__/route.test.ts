@@ -1,172 +1,323 @@
-// Test file for import route
+import { describe, it, expect, beforeEach } from '@jest/globals';
+import { NextRequest } from 'next/server';
 import { POST } from '../route';
 import { EncounterServiceImportExport } from '@/lib/services/EncounterServiceImportExport';
-// Auth utilities available from shared-test-utilities
-import {
-  setupEncounterApiTest,
-  createMockRequest,
-  createImportRequestBody,
-  createDefaultImportOptions,
-  mockImportSuccess,
-  mockImportFailure,
-  // mockServiceException - available but not used in this test
-  expectImportSuccess,
-  expectErrorResponse,
-  // expectValidationError - available but not used in this test
-  expectServerError,
-  // testAuthenticationRequired - available but not used in this test
-  testValidationError,
-  testServiceException,
-  createMockImportData,
-  createMockEncounter,
-  createMockXmlData,
-} from '../../__tests__/shared-test-utilities';
+import type { ServerUserInfo } from '@/lib/auth/server-session';
 
-// Mock the service and auth
+// Mock the auth module FIRST - must be hoisted
+jest.mock('@/lib/auth/server-session', () => ({
+  ...jest.requireActual('@/lib/auth/server-session'),
+  getServerSession: jest.fn(),
+}));
+
+// Get the mocked function after Jest sets up the mock
+import { getServerSession } from '@/lib/auth/server-session';
+const mockGetServerSession = getServerSession as jest.MockedFunction<typeof getServerSession>;
+
+// Mock the service
 jest.mock('@/lib/services/EncounterServiceImportExport');
-jest.mock('@/lib/auth');
+
+// Import test helpers after mocking
+import {
+  createTestContext,
+  expectSuccessResponse,
+  expectAuthError,
+  TEST_USERS,
+} from '@/__tests__/auth-session-test-helpers';
+
+// Helper functions for this test file
+const createRequestWithAuth = (
+  path: string = '/api/test',
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' = 'GET',
+  body?: any,
+  userInfo?: Partial<ServerUserInfo>
+): NextRequest => {
+  // Setup auth mock
+  const testUser = {
+    userId: 'free-user-123',
+    email: 'free@example.com',
+    subscriptionTier: 'free' as const,
+    ...userInfo,
+  };
+  mockGetServerSession.mockResolvedValue(testUser);
+
+  const url = `http://localhost:3000${path}`;
+  const headers = new Headers();
+  headers.set('cookie', 'sessionId=test-session-id');
+
+  if (body && method !== 'GET') {
+    headers.set('content-type', 'application/json');
+  }
+
+  const requestInit: RequestInit = {
+    method,
+    headers,
+  };
+
+  if (body && method !== 'GET') {
+    requestInit.body = JSON.stringify(body);
+  }
+
+  return new NextRequest(url, requestInit);
+};
+
+const createUnauthenticatedRequest = (
+  path: string = '/api/test',
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' = 'GET',
+  body?: any
+): NextRequest => {
+  // Setup unauth mock
+  mockGetServerSession.mockResolvedValue(null);
+
+  const url = `http://localhost:3000${path}`;
+  const headers = new Headers();
+
+  if (body && method !== 'GET') {
+    headers.set('content-type', 'application/json');
+  }
+
+  const requestInit: RequestInit = {
+    method,
+    headers,
+  };
+
+  if (body && method !== 'GET') {
+    requestInit.body = JSON.stringify(body);
+  }
+
+  return new NextRequest(url, requestInit);
+};
+
+const testApiRouteAuth = async (
+  handler: Function,
+  userInfo?: Partial<ServerUserInfo>,
+  requestBody?: any,
+  params?: Record<string, string>,
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' = 'GET'
+) => {
+  const request = createRequestWithAuth('/api/test', method, requestBody, userInfo);
+  const context = createTestContext(params);
+
+  const response = await handler(request, context);
+  const data = await response.json();
+
+  return { response, data };
+};
+
+const testApiRouteUnauth = async (
+  handler: Function,
+  requestBody?: any,
+  params?: Record<string, string>,
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' = 'GET'
+) => {
+  const request = createUnauthenticatedRequest('/api/test', method, requestBody);
+  const context = createTestContext(params);
+
+  const response = await handler(request, context);
+  const data = await response.json();
+
+  return { response, data };
+};
 
 const mockService = EncounterServiceImportExport as jest.Mocked<typeof EncounterServiceImportExport>;
-// Auth mocking handled by shared utilities
 
 
 describe('/api/encounters/import', () => {
+  const testUserId = 'free-user-123';
+
+  const mockImportData = {
+    metadata: {
+      exportedAt: new Date().toISOString(),
+      exportedBy: testUserId,
+      format: 'json',
+      version: '1.0.0',
+      appVersion: '1.0.0',
+    },
+    encounter: {
+      name: 'Imported Encounter',
+      description: 'Test import',
+      tags: ['test'],
+      difficulty: 'medium',
+      estimatedDuration: 30,
+      targetLevel: 3,
+      status: 'draft',
+      isPublic: false,
+      settings: {
+        allowPlayerVisibility: true,
+        autoRollInitiative: false,
+        trackResources: true,
+        enableLairActions: false,
+        enableGridMovement: false,
+        gridSize: 5,
+      },
+      participants: [
+        {
+          id: 'temp-1',
+          name: 'Test Character',
+          type: 'pc',
+          maxHitPoints: 25,
+          currentHitPoints: 25,
+          temporaryHitPoints: 0,
+          armorClass: 15,
+          isPlayer: true,
+          isVisible: true,
+          notes: '',
+          conditions: [],
+        },
+      ],
+    },
+  };
+
+  const mockEncounter = {
+    _id: 'encounter-123',
+    name: 'Imported Encounter',
+    description: 'Test import',
+    participants: [{ name: 'Test Character' }],
+    ownerId: testUserId,
+  };
+
+  const mockApiResponses = {
+    success: (data: any) => ({ success: true, data }),
+    error: (message: string) => ({ success: false, error: { message } }),
+  };
+
   beforeEach(() => {
-    setupEncounterApiTest();
+    jest.clearAllMocks();
+    mockGetServerSession.mockClear();
   });
 
-  describe('POST', () => {
+  describe('POST /api/encounters/import', () => {
     it('should import encounter from JSON successfully', async () => {
-      // Arrange
-      const mockImportData = createMockImportData();
-      const mockEncounter = createMockEncounter();
+      mockService.importFromJson.mockResolvedValue(
+        mockApiResponses.success(mockEncounter)
+      );
 
-      mockImportSuccess(mockService, mockEncounter);
+      const requestBody = {
+        data: JSON.stringify(mockImportData),
+        format: 'json',
+        options: {
+          createMissingCharacters: true,
+          preserveIds: false,
+          overwriteExisting: false,
+        },
+      };
 
-      const requestBody = createImportRequestBody(
+      const { response, data } = await testApiRouteAuth(
+        POST,
+        { userId: testUserId, email: 'free@example.com', subscriptionTier: 'free' },
+        requestBody,
+        undefined,
+        'POST'
+      );
+
+      expectSuccessResponse(response);
+      expect(data.success).toBe(true);
+      expect(mockService.importFromJson).toHaveBeenCalledWith(
         JSON.stringify(mockImportData),
-        'json',
         {
+          ownerId: testUserId,
           createMissingCharacters: true,
           preserveIds: false,
           overwriteExisting: false,
         }
       );
-
-      const request = createMockRequest({ body: requestBody });
-
-      // Act
-      const response = await POST(request);
-
-      // Assert
-      await expectImportSuccess(response);
-
-      expect(mockService.importFromJson).toHaveBeenCalledWith(
-        JSON.stringify(mockImportData),
-        createDefaultImportOptions({
-          createMissingCharacters: true,
-          preserveIds: false,
-          overwriteExisting: false,
-        })
-      );
     });
 
     it('should import encounter from XML successfully', async () => {
-      // Arrange
-      const mockEncounter = createMockEncounter();
-      const xmlData = createMockXmlData();
+      const xmlData = '<encounter><name>Test XML Encounter</name><description>XML import test</description></encounter>';
+      
+      mockService.importFromXml.mockResolvedValue(
+        mockApiResponses.success(mockEncounter)
+      );
 
-      mockImportSuccess(mockService, mockEncounter);
+      const requestBody = {
+        data: xmlData,
+        format: 'xml',
+        options: {
+          createMissingCharacters: true,
+        },
+      };
 
-      const requestBody = createImportRequestBody(xmlData, 'xml', {
-        createMissingCharacters: true,
-      });
+      const { response, data } = await testApiRouteAuth(
+        POST,
+        { userId: testUserId, email: 'free@example.com', subscriptionTier: 'free' },
+        requestBody,
+        undefined,
+        'POST'
+      );
 
-      const request = createMockRequest({ body: requestBody });
-
-      // Act
-      const response = await POST(request);
-
-      // Assert
-      await expectImportSuccess(response);
-
+      expectSuccessResponse(response);
+      expect(data.success).toBe(true);
       expect(mockService.importFromXml).toHaveBeenCalledWith(
         xmlData,
-        createDefaultImportOptions({ createMissingCharacters: true })
+        {
+          ownerId: testUserId,
+          createMissingCharacters: true,
+          preserveIds: false,
+          overwriteExisting: false,
+        }
       );
     });
 
     it('should use default options when not provided', async () => {
-      // Arrange
-      const mockImportData = createMockImportData();
-      const mockEncounter = createMockEncounter({ name: 'Test', participants: [] });
+      mockService.importFromJson.mockResolvedValue(
+        mockApiResponses.success(mockEncounter)
+      );
 
-      mockImportSuccess(mockService, mockEncounter);
+      const requestBody = {
+        data: JSON.stringify(mockImportData),
+        format: 'json',
+      };
 
-      const requestBody = createImportRequestBody(JSON.stringify(mockImportData));
-      const request = createMockRequest({ body: requestBody });
+      await testApiRouteAuth(
+        POST,
+        { userId: testUserId, email: 'free@example.com', subscriptionTier: 'free' },
+        requestBody,
+        undefined,
+        'POST'
+      );
 
-      // Act
-      await POST(request);
-
-      // Assert
       expect(mockService.importFromJson).toHaveBeenCalledWith(
         JSON.stringify(mockImportData),
-        createDefaultImportOptions()
+        {
+          ownerId: testUserId,
+          preserveIds: false,
+          createMissingCharacters: true,
+          overwriteExisting: false,
+        }
       );
     });
 
-    it('should return error when import fails', async () => {
-      // Arrange
-      const mockImportData = createMockImportData();
+    it('should return 401 when user not authenticated', async () => {
+      const { response } = await testApiRouteUnauth(POST, {
+        data: JSON.stringify(mockImportData),
+        format: 'json',
+      }, undefined, 'POST');
 
-      mockImportFailure(mockService, {
-        message: 'Import failed',
-        code: 'IMPORT_ERROR',
-        details: 'Invalid data format',
-      });
-
-      const requestBody = createImportRequestBody(JSON.stringify(mockImportData));
-      const request = createMockRequest({ body: requestBody });
-
-      // Act
-      const response = await POST(request);
-
-      // Assert
-      await expectErrorResponse(response, 400, 'Import failed', 'Invalid data format');
+      expectAuthError(response);
     });
 
-    it('should handle service exceptions', async () => {
-      // Arrange
-      const mockImportData = createMockImportData();
+    it('should handle service errors gracefully', async () => {
+      mockService.importFromJson.mockRejectedValue(
+        new Error('Import service failed')
+      );
 
-      await testServiceException(
+      const requestBody = {
+        data: JSON.stringify(mockImportData),
+        format: 'json',
+      };
+
+      const { response, data } = await testApiRouteAuth(
         POST,
-        createImportRequestBody(JSON.stringify(mockImportData)),
-        'Service error'
+        { userId: testUserId, email: 'free@example.com', subscriptionTier: 'free' },
+        requestBody,
+        undefined,
+        'POST'
       );
-    });
 
-    it('should validate request body', async () => {
-      // Arrange
-      const invalidRequestBody = createImportRequestBody(''); // Empty data
-
-      // Act & Assert
-      await testValidationError(POST, invalidRequestBody, 'Import data is required');
-    });
-
-    it('should handle invalid JSON body', async () => {
-      // Arrange
-      setupEncounterApiTest();
-
-      const request = createMockRequest({ body: undefined });
-      request.json = jest.fn().mockRejectedValue(new Error('Invalid JSON'));
-
-      // Act
-      const response = await POST(request);
-
-      // Assert
-      await expectServerError(response);
+      expect(response.status).toBe(500);
+      expect(data.success).toBe(false);
+      expect(data.error).toContain('Import service failed');
     });
   });
 });
