@@ -1,50 +1,51 @@
-import { NextRequest } from 'next/server';
-import { ZodError } from 'zod';
 import { UserService } from '@/lib/services/UserService';
 import { userProfileUpdateSchema } from '@/lib/validations/user';
-import { withAuthAndAccess, handleUserServiceResult, handleZodValidationError } from '@/lib/api/route-helpers';
+import {
+  withUserOwnership,
+  createSuccessResponse,
+  handleApiError
+} from '@/lib/api/auth-middleware';
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  return withAuthAndAccess(params, async (userId) => {
-    try {
-      const body = await request.json();
-      const validatedData = userProfileUpdateSchema.parse(body);
+export const PATCH = withUserOwnership(async (authResult, request, _context) => {
+  try {
+    const { userId } = authResult;
 
-      const result = await UserService.updateUserProfile(userId, validatedData);
-      return handleUserServiceResult(result, 'Profile updated successfully', {
-        defaultErrorMessage: 'Profile update failed'
-      });
-    } catch (error) {
-      if (error instanceof ZodError) {
-        return handleZodValidationError(error);
-      }
-      throw error; // Let withAuthAndAccess handle unexpected errors
-    }
-  });
-}
+    // Parse and validate request body
+    const body = await request.json();
+    const validatedBody = userProfileUpdateSchema.parse(body);
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  return withAuthAndAccess(params, async (userId) => {
+    const result = await UserService.updateUserProfile(userId, validatedBody);
+
+    if (!result.success) throw new Error(result.error?.message || 'Profile update failed');
+
+    return createSuccessResponse(result.data, 'Profile updated successfully');
+  } catch (error) {
+    return handleApiError(error);
+  }
+});
+
+export const GET = withUserOwnership(async (authResult) => {
+  try {
+    const { userId } = authResult;
     const result = await UserService.getUserById(userId);
-    return handleUserServiceResult(result);
-  });
-}
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  return withAuthAndAccess(params, async (userId) => {
+    if (!result.success) throw new Error(result.error?.message || 'User not found');
+
+    return createSuccessResponse(result.data);
+  } catch (error) {
+    return handleApiError(error);
+  }
+});
+
+export const DELETE = withUserOwnership(async (authResult) => {
+  try {
+    const { userId } = authResult;
     const result = await UserService.deleteUser(userId);
-    return handleUserServiceResult(result, 'Account deleted successfully', {
-      defaultErrorMessage: 'Account deletion failed',
-      defaultErrorStatus: 500
-    });
-  });
-}
+
+    if (!result.success) throw new Error(result.error?.message || 'Account deletion failed');
+
+    return createSuccessResponse(result.data, 'Account deleted successfully');
+  } catch (error) {
+    return handleApiError(error);
+  }
+});

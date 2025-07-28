@@ -21,7 +21,7 @@ encounters efficiently. The project is currently in **active development** with 
 
 - **Frontend:** Next.js 15 with App Router, TypeScript, Tailwind CSS, shadcn/ui
 - **Backend:** Next.js API routes, MongoDB with Mongoose ODM
-- **Authentication:** NextAuth.js v5 with MongoDB sessions
+- **Authentication:** Custom MongoDB-based session management with centralized API middleware
 - **Deployment:** Vercel with GitHub Actions CI/CD
 - **Testing:** Jest and React Testing Library
 
@@ -297,6 +297,128 @@ src/
 - **Encounter Builder:** Drag-and-drop creature addition, CR calculation
 - **Party Manager:** Character creation/editing, player assignment
 - **Subscription Manager:** Freemium tier enforcement and upgrade flows
+
+## API Development Guidelines
+
+### Centralized Authentication System
+
+**All API routes MUST use the centralized authentication middleware** located in `@/lib/api/auth-middleware.ts`.
+
+#### For Standard Protected Routes
+
+```typescript
+import { withApiAuth } from '@/lib/api/auth-middleware';
+
+export const GET = withApiAuth(async (authResult, request) => {
+  const { userId, userInfo } = authResult;
+  // Your route logic here
+  return createSuccessResponse(data);
+});
+```
+
+#### For Routes with User Ownership Validation
+
+```typescript
+import { withUserOwnership } from '@/lib/api/auth-middleware';
+
+export const GET = withUserOwnership(async (authResult, request, context) => {
+  // Automatically validates that authenticated user matches route param user ID
+  const { userId } = authResult;
+  // Your route logic here
+  return createSuccessResponse(userData);
+});
+```
+
+#### For Routes with Request Body Validation
+
+```typescript
+import { withBodyValidation } from '@/lib/api/auth-middleware';
+import { myDataSchema } from '@/lib/validations/my-schema';
+
+export const POST = withBodyValidation(
+  (body) => myDataSchema.parse(body), // Zod validation
+  async (authResult, validatedBody, request) => {
+    // Your route logic with pre-validated body
+    return createSuccessResponse(result);
+  }
+);
+```
+
+#### Error Handling Standards
+
+Use the centralized error classes and handlers:
+
+```typescript
+import { 
+  AuthenticationError, 
+  ValidationError, 
+  NotFoundError, 
+  ForbiddenError,
+  handleApiError 
+} from '@/lib/api/auth-middleware';
+
+// Throw specific error types for automatic status code mapping
+throw new NotFoundError('Character not found');
+throw new ForbiddenError('Cannot access this resource');
+throw new ValidationError('Invalid input', details);
+```
+
+#### Response Standards
+
+Always use the standardized response creators:
+
+```typescript
+import { createSuccessResponse, createErrorResponse } from '@/lib/api/auth-middleware';
+
+// Success responses (200/201)
+return createSuccessResponse(data, 'Operation successful');
+return createSuccessResponse(data, 'Created successfully', undefined, 201);
+
+// Error responses (400/404/500)
+return createErrorResponse('Error message', 400);
+```
+
+### Route Organization Patterns
+
+1. **Authentication Routes**: `/api/auth/*` - Handle signin, signup, session management
+2. **Resource Routes**: `/api/{resource}/` - Standard CRUD operations  
+3. **Nested Resource Routes**: `/api/{resource}/[id]/{sub-resource}` - Related operations
+4. **Utility Routes**: `/api/health`, `/api/monitoring` - System endpoints
+
+### Security Requirements
+
+- **ALL API routes** (except auth and health) MUST use authentication middleware
+- **User-specific routes** MUST validate resource ownership
+- **Input validation** MUST use Zod schemas through `withBodyValidation`
+- **Error responses** MUST NOT leak sensitive information
+- **Route parameters** MUST be validated using `validateRouteParam`
+
+### Migration from Legacy Auth
+
+If updating existing routes from old auth systems:
+
+1. Replace old auth imports with centralized middleware
+2. Remove manual auth validation code  
+3. Use appropriate wrapper function (`withApiAuth`, `withUserOwnership`, etc.)
+4. Update error handling to use centralized error classes
+5. Update tests to mock new auth system
+
+**Example Migration:**
+
+```typescript
+// OLD (insecure)
+export async function GET(request: NextRequest) {
+  const userId = request.headers.get('x-user-id'); // Insecure!
+  if (!userId) return NextResponse.json({error: 'Unauthorized'}, {status: 401});
+  // Route logic...
+}
+
+// NEW (secure)
+export const GET = withApiAuth(async (authResult, request) => {
+  const { userId } = authResult; // Validated session
+  // Route logic...
+});
+```
 
 ## Development Process
 

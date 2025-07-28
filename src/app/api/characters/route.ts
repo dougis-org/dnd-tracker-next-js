@@ -1,53 +1,66 @@
-import { NextRequest } from 'next/server';
+// NextRequest type imported for withApiAuth/withBodyValidation compatibility
 import { CharacterService } from '@/lib/services/CharacterService';
+import { characterCreationSchema } from '@/lib/validations/character';
 import {
-  parseQueryParams
-} from './helpers/api-helpers';
-import {
-  initializeRoute,
-  handleSimpleResult,
-  handleCreationResult,
-  handlePaginatedResult,
-  handleRouteError,
-  validateCharacterCreation
-} from './helpers/route-helpers';
+  withApiAuth,
+  withBodyValidation,
+  parseQueryParams,
+  createSuccessResponse,
+  handleApiError
+} from '@/lib/api/auth-middleware';
 
-
-export async function GET(request: NextRequest) {
+export const GET = withApiAuth(async (authResult, request) => {
   try {
-    const { error, userId } = await initializeRoute(request);
-    if (error) return error;
+    const { userId } = authResult;
+    const queryParams = parseQueryParams(request);
 
-    const { type, search, limit, page } = parseQueryParams(request.url);
+    const search = queryParams.getString('search');
+    const type = queryParams.getString('type');
+    const limit = queryParams.getNumber('limit', 50);
+    const page = queryParams.getNumber('page', 1);
 
     if (search) {
-      const result = await CharacterService.searchCharacters(search, userId!);
-      return handleSimpleResult(result);
+      const result = await CharacterService.searchCharacters(search, userId);
+      if (!result.success) throw new Error(result.error);
+      return createSuccessResponse(result.data);
     }
+
     if (type) {
-      const result = await CharacterService.getCharactersByType(type as any, userId!);
-      return handleSimpleResult(result);
+      const result = await CharacterService.getCharactersByType(type as any, userId);
+      if (!result.success) throw new Error(result.error);
+      return createSuccessResponse(result.data);
     }
 
-    const result = await CharacterService.getCharactersByOwner(userId!, page, limit);
-    return handlePaginatedResult(result);
+    const result = await CharacterService.getCharactersByOwner(userId, page, limit);
+    if (!result.success) throw new Error(result.error);
+
+    return createSuccessResponse(
+      result.data.items,
+      undefined,
+      result.data.pagination
+    );
   } catch (error) {
-    return handleRouteError(error, 'GET /api/characters');
+    return handleApiError(error);
   }
-}
+});
 
-export async function POST(request: NextRequest) {
-  try {
-    const { error, userId } = await initializeRoute(request);
-    if (error) return error;
+export const POST = withBodyValidation(
+  (body) => characterCreationSchema.parse(body),
+  async (authResult, validatedBody) => {
+    try {
+      const { userId } = authResult;
+      const result = await CharacterService.createCharacter(userId, validatedBody);
 
-    const body = await request.json();
-    const validation = validateCharacterCreation(body);
-    if (!validation.isValid) return validation.error!;
+      if (!result.success) throw new Error(result.error);
 
-    const result = await CharacterService.createCharacter(userId!, validation.data!);
-    return handleCreationResult(result, 'Character created successfully');
-  } catch (error) {
-    return handleRouteError(error, 'POST /api/characters');
+      return createSuccessResponse(
+        result.data,
+        'Character created successfully',
+        undefined,
+        201
+      );
+    } catch (error) {
+      return handleApiError(error);
+    }
   }
-}
+);

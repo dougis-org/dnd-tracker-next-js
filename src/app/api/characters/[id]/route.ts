@@ -1,63 +1,55 @@
-import { NextRequest } from 'next/server';
+// NextRequest type imported for withApiAuth/withBodyValidation compatibility
 import { CharacterService } from '@/lib/services/CharacterService';
+import { characterUpdateSchema } from '@/lib/validations/character';
 import {
-  initializeRoute,
-  handleSimpleResult,
-  handleRouteError,
-  validateCharacterUpdate
-} from '../helpers/route-helpers';
+  withApiAuth,
+  withBodyValidation,
+  validateRouteParam,
+  createSuccessResponse,
+  handleApiError
+} from '@/lib/api/auth-middleware';
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export const GET = withApiAuth(async (authResult, request, context) => {
   try {
-    const { error, userId } = await initializeRoute(request);
-    if (error) return error;
+    const { userId } = authResult;
+    const characterId = await validateRouteParam(context.params, 'id', 'Character ID is required');
 
-    const resolvedParams = await params;
-    const { id } = resolvedParams;
-    const result = await CharacterService.getCharacterById(id, userId!);
-    return handleSimpleResult(result);
+    const result = await CharacterService.getCharacterById(characterId, userId);
+    if (!result.success) throw new Error(result.error);
+
+    return createSuccessResponse(result.data);
   } catch (error) {
-    return handleRouteError(error, 'GET /api/characters/[id]');
+    return handleApiError(error);
   }
-}
+});
 
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export const PUT = withBodyValidation(
+  (body) => characterUpdateSchema.parse(body),
+  async (authResult, validatedBody, request, context) => {
+    try {
+      const { userId } = authResult;
+      const characterId = await validateRouteParam(context.params, 'id', 'Character ID is required');
+
+      const result = await CharacterService.updateCharacter(characterId, userId, validatedBody);
+      if (!result.success) throw new Error(result.error);
+
+      return createSuccessResponse(result.data, 'Character updated successfully');
+    } catch (error) {
+      return handleApiError(error);
+    }
+  }
+);
+
+export const DELETE = withApiAuth(async (authResult, request, context) => {
   try {
-    const { error, userId } = await initializeRoute(request);
-    if (error) return error;
+    const { userId } = authResult;
+    const characterId = await validateRouteParam(context.params, 'id', 'Character ID is required');
 
-    const resolvedParams = await params;
-    const { id } = resolvedParams;
-    const body = await request.json();
-    const validation = validateCharacterUpdate(body);
-    if (!validation.isValid) return validation.error!;
+    const result = await CharacterService.deleteCharacter(characterId, userId);
+    if (!result.success) throw new Error(result.error);
 
-    const result = await CharacterService.updateCharacter(id, userId!, validation.data!);
-    return handleSimpleResult(result, 'Character updated successfully');
+    return createSuccessResponse(result.data, 'Character deleted successfully');
   } catch (error) {
-    return handleRouteError(error, 'PUT /api/characters/[id]');
+    return handleApiError(error);
   }
-}
-
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { error, userId } = await initializeRoute(request);
-    if (error) return error;
-
-    const resolvedParams = await params;
-    const { id } = resolvedParams;
-    const result = await CharacterService.deleteCharacter(id, userId!);
-    return handleSimpleResult(result, 'Character deleted successfully');
-  } catch (error) {
-    return handleRouteError(error, 'DELETE /api/characters/[id]');
-  }
-}
+});

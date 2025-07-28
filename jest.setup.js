@@ -158,6 +158,40 @@ jest.mock('mongodb', () => ({
     .mockImplementation(id => ({ toString: () => id || 'mock-object-id' })),
 }));
 
+// Mock the auth middleware to allow all requests in test environment
+jest.mock('./src/middleware', () => ({
+  middleware: jest.fn().mockImplementation(async (request) => {
+    // In tests, always allow requests to proceed
+    const { NextResponse } = require('next/server');
+    return NextResponse.next();
+  }),
+  config: {
+    matcher: [
+      '/dashboard/:path*',
+      '/characters/:path*',
+      '/encounters/:path*',
+      '/parties/:path*',
+      '/combat/:path*',
+      '/settings/:path*',
+      '/api/users/:path*',
+      '/api/characters/:path*',
+      '/api/encounters/:path*',
+      '/api/combat/:path*',
+      '/api/parties/:path*',
+    ],
+  },
+}));
+
+// Mock the AuthMiddleware class to bypass authentication in tests
+jest.mock('./src/lib/auth/middleware', () => ({
+  AuthMiddleware: jest.fn().mockImplementation(() => ({
+    handle: jest.fn().mockImplementation(async (request) => {
+      const { NextResponse } = require('next/server');
+      return NextResponse.next();
+    }),
+  })),
+}));
+
 jest.mock('mongoose', () => {
   // Generate a proper ObjectId-like string (24 character hex)
   const generateObjectId = () => {
