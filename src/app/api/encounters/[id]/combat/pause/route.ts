@@ -5,7 +5,7 @@ export const PATCH = withCombatValidation(
     operation: 'pausing combat',
     validateNotPaused: true
   },
-  async (encounter) => {
+  async (encounter, _userId) => {
     encounter.combatState.pausedAt = new Date();
     return true;
   }

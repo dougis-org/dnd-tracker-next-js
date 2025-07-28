@@ -6,7 +6,7 @@ export const PATCH = withCombatValidation(
     requiredFields: ['participantId'],
     findParticipant: true
   },
-  async (encounter, body, participant) => {
+  async (encounter, _userId, body, participant) => {
     participant.isDelayed = true;
     return true;
   }

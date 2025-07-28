@@ -102,7 +102,7 @@ export const POST = withCombatValidation(
     requireBody: false,
     requiredFields: [],
   },
-  async (encounter, body) => {
+  async (encounter, _userId, body) => {
     const bodyData = body || {};
     const { participantId, rollAll = false } = bodyData;
 

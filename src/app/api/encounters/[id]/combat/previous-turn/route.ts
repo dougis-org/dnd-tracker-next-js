@@ -6,7 +6,7 @@ export const PATCH = withCombatValidation(
     operation: 'going to previous turn',
     validateTurnHistory: true
   },
-  async (encounter) => {
+  async (encounter, _userId) => {
     return previousTurn(encounter);
   }
 );

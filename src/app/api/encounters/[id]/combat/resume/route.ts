@@ -5,7 +5,7 @@ export const PATCH = withCombatValidation(
     operation: 'resuming combat',
     validatePaused: true
   },
-  async (encounter) => {
+  async (encounter, _userId) => {
     encounter.combatState.pausedAt = undefined;
     return true;
   }

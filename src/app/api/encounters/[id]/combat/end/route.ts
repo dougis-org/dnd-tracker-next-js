@@ -5,7 +5,7 @@ export const PATCH = withCombatValidation(
   {
     operation: 'ending combat'
   },
-  async (encounter) => {
+  async (encounter, _userId) => {
     endCombat(encounter);
     return true;
   }

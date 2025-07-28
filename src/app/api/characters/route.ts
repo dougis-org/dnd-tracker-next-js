@@ -21,18 +21,18 @@ export const GET = withApiAuth(async (authResult, request) => {
 
     if (search) {
       const result = await CharacterService.searchCharacters(search, userId);
-      if (!result.success) throw new Error(result.error);
+      if (!result.success) throw new Error(result.error?.message || 'Operation failed');
       return createSuccessResponse(result.data);
     }
 
     if (type) {
       const result = await CharacterService.getCharactersByType(type as any, userId);
-      if (!result.success) throw new Error(result.error);
+      if (!result.success) throw new Error(result.error?.message || 'Operation failed');
       return createSuccessResponse(result.data);
     }
 
     const result = await CharacterService.getCharactersByOwner(userId, page, limit);
-    if (!result.success) throw new Error(result.error);
+    if (!result.success) throw new Error(result.error?.message || 'Failed to get characters');
 
     return createSuccessResponse(
       result.data.items,
@@ -51,7 +51,7 @@ export const POST = withBodyValidation(
       const { userId } = authResult;
       const result = await CharacterService.createCharacter(userId, validatedBody);
 
-      if (!result.success) throw new Error(result.error);
+      if (!result.success) throw new Error(result.error?.message || 'Operation failed');
 
       return createSuccessResponse(
         result.data,

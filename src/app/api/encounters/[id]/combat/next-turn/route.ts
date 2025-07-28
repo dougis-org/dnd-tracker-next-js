@@ -6,7 +6,7 @@ export const PATCH = withCombatValidation(
     operation: 'advancing turn',
     validateNotPaused: true
   },
-  async (encounter) => {
+  async (encounter, _userId) => {
     return nextTurn(encounter);
   }
 );

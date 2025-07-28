@@ -15,7 +15,7 @@ export const GET = withApiAuth(async (authResult, request, context) => {
     const characterId = await validateRouteParam(context.params, 'id', 'Character ID is required');
 
     const result = await CharacterService.getCharacterById(characterId, userId);
-    if (!result.success) throw new Error(result.error);
+    if (!result.success) throw new Error(result.error?.message || 'Operation failed');
 
     return createSuccessResponse(result.data);
   } catch (error) {
@@ -31,7 +31,7 @@ export const PUT = withBodyValidation(
       const characterId = await validateRouteParam(context.params, 'id', 'Character ID is required');
 
       const result = await CharacterService.updateCharacter(characterId, userId, validatedBody);
-      if (!result.success) throw new Error(result.error);
+      if (!result.success) throw new Error(result.error?.message || 'Operation failed');
 
       return createSuccessResponse(result.data, 'Character updated successfully');
     } catch (error) {
@@ -46,7 +46,7 @@ export const DELETE = withApiAuth(async (authResult, request, context) => {
     const characterId = await validateRouteParam(context.params, 'id', 'Character ID is required');
 
     const result = await CharacterService.deleteCharacter(characterId, userId);
-    if (!result.success) throw new Error(result.error);
+    if (!result.success) throw new Error(result.error?.message || 'Operation failed');
 
     return createSuccessResponse(result.data, 'Character deleted successfully');
   } catch (error) {

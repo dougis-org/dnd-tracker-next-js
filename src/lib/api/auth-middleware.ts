@@ -176,7 +176,7 @@ export function handleApiError(error: unknown): NextResponse<ApiErrorResponse> {
  */
 export function withApiAuth<T = any>(
   // eslint-disable-next-line no-unused-vars
-  handler: (userInfo: AuthResult, request: NextRequest, context?: any) => Promise<NextResponse<T>>
+  handler: (userInfo: AuthResult, request: NextRequest, context?: any) => Promise<NextResponse<T | ApiErrorResponse>>
 ) {
   return async (request: NextRequest, context?: any): Promise<NextResponse<T | ApiErrorResponse>> => {
     try {
@@ -194,7 +194,7 @@ export function withApiAuth<T = any>(
  */
 export function withUserOwnership<T = any>(
   // eslint-disable-next-line no-unused-vars
-  handler: (userInfo: AuthResult, request: NextRequest, context: any) => Promise<NextResponse<T>>,
+  handler: (userInfo: AuthResult, request: NextRequest, context: any) => Promise<NextResponse<T | ApiErrorResponse>>,
   // eslint-disable-next-line no-unused-vars
   getUserIdFromContext: (context: any) => Promise<string> | string = async (ctx) => {
     // Default: extract user ID from route params
@@ -220,7 +220,7 @@ export function withBodyValidation<TBody, TResponse = any>(
   // eslint-disable-next-line no-unused-vars
   validator: (body: any) => TBody,
   // eslint-disable-next-line no-unused-vars
-  handler: (userInfo: AuthResult, validatedBody: TBody, request: NextRequest, context?: any) => Promise<NextResponse<TResponse>>
+  handler: (userInfo: AuthResult, validatedBody: TBody, request: NextRequest, context?: any) => Promise<NextResponse<TResponse | ApiErrorResponse>>
 ) {
   return withApiAuth<TResponse>(async (authResult, request, context) => {
     try {

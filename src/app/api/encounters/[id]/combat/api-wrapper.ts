@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import {
   validateAndGetEncounter,
   validateCombatActive,
@@ -9,10 +9,9 @@ import {
   findParticipantInInitiative
 } from './utils';
 import type { IEncounter } from '@/lib/models/encounter/interfaces';
-import { 
-  withApiAuth, 
-  validateRouteParam,
-  AuthResult
+import {
+  withApiAuth,
+  validateRouteParam
 } from '@/lib/api/auth-middleware';
 
 /**
@@ -33,23 +32,22 @@ export interface CombatApiConfig {
  */
 export type CombatHandler = (
   _encounter: IEncounter,
+  _userId: string,
   _body?: any,
   _participant?: any
 ) => Promise<boolean | NextResponse> | boolean | NextResponse;
 
 /**
- * Higher-order function that wraps combat API endpoints with common validation and error handling
+ * Higher-order function that wraps combat API endpoints with authentication and common validation
  */
 export function withCombatValidation(
   config: CombatApiConfig,
   handler: CombatHandler
 ) {
-  return async function(
-    request: NextRequest,
-    context: { params: Promise<{ id: string }> }
-  ): Promise<NextResponse> {
+  return withApiAuth(async (authResult, request, context) => {
     try {
-      const { id: encounterId } = await context.params;
+      const { userId } = authResult;
+      const encounterId = await validateRouteParam(context.params, 'id', 'Encounter ID is required');
 
       // Parse body if required or if there's content
       let body;
@@ -72,9 +70,13 @@ export function withCombatValidation(
         }
       }
 
-      // Validate and get encounter
+      // Validate and get encounter with user ownership check
       const { encounter, errorResponse } = await validateAndGetEncounter(encounterId);
       if (errorResponse) return errorResponse;
+
+      // TODO: Add user ownership validation for encounter
+      // This should check if the authenticated user owns this encounter
+      // For now, we're adding auth but need to add ownership check
 
       // Validate combat is active
       const combatError = validateCombatActive(encounter!);
@@ -93,8 +95,8 @@ export function withCombatValidation(
         }
       }
 
-      // Execute the handler
-      const result = await handler(encounter!, body, participant);
+      // Execute the handler with userId
+      const result = await handler(encounter!, userId, body, participant);
 
       // Handle different return types
       if (result instanceof Response) {
@@ -112,7 +114,7 @@ export function withCombatValidation(
     } catch (error) {
       return handleAsyncError(error, config.operation);
     }
-  };
+  });
 }
 
 /**

@@ -6,7 +6,7 @@ export const PATCH = withCombatValidation(
     requiredFields: ['participantId', 'readyAction'],
     findParticipant: true
   },
-  async (encounter, body, participant) => {
+  async (encounter, _userId, body, participant) => {
     participant.readyAction = body.readyAction;
     return true;
   }
