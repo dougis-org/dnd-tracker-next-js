@@ -50,7 +50,7 @@ describe('Auth API Handlers', () => {
         password: 'password123',
         rememberMe: false
       };
-      
+
       const request = new NextRequest('http://localhost:3000/api/auth/signin', {
         method: 'POST',
         headers: {
@@ -84,7 +84,7 @@ describe('Auth API Handlers', () => {
         email: 'test@example.com',
         password: 'wrongpassword'
       };
-      
+
       const request = new NextRequest('http://localhost:3000/api/auth/signin', {
         method: 'POST',
         body: JSON.stringify(requestData)
@@ -119,7 +119,7 @@ describe('Auth API Handlers', () => {
         password: 'password123',
         rememberMe: true
       };
-      
+
       const request = new NextRequest('http://localhost:3000/api/auth/signin', {
         method: 'POST',
         body: JSON.stringify(requestData)
@@ -139,7 +139,7 @@ describe('Auth API Handlers', () => {
         email: 'invalid-email',
         password: ''
       };
-      
+
       const request = new NextRequest('http://localhost:3000/api/auth/signin', {
         method: 'POST',
         body: JSON.stringify(requestData)
@@ -221,7 +221,7 @@ describe('Auth API Handlers', () => {
         firstName: 'Jane',
         lastName: 'Smith'
       };
-      
+
       const request = new NextRequest('http://localhost:3000/api/auth/signup', {
         method: 'POST',
         body: JSON.stringify(requestData)
@@ -253,7 +253,7 @@ describe('Auth API Handlers', () => {
         firstName: 'Jane',
         lastName: 'Smith'
       };
-      
+
       const request = new NextRequest('http://localhost:3000/api/auth/signup', {
         method: 'POST',
         body: JSON.stringify(requestData)
@@ -276,7 +276,7 @@ describe('Auth API Handlers', () => {
         firstName: '',
         lastName: ''
       };
-      
+
       const request = new NextRequest('http://localhost:3000/api/auth/signup', {
         method: 'POST',
         body: JSON.stringify(requestData)
@@ -303,7 +303,7 @@ describe('Auth API Handlers', () => {
         email: 'test@example.com',
         password: 'password123'
       };
-      
+
       const request = new NextRequest('http://localhost:3000/api/auth/signin', {
         method: 'POST',
         body: JSON.stringify(requestData)
@@ -357,7 +357,7 @@ describe('Auth API Handlers', () => {
         email: 'test@example.com',
         password: 'password123'
       };
-      
+
       const request = new NextRequest('http://localhost:3000/api/auth/signin', {
         method: 'POST',
         body: JSON.stringify(requestData)
@@ -392,7 +392,7 @@ describe('Auth API Handlers', () => {
         email: 'test@example.com',
         password: 'password123'
       };
-      
+
       const request = new NextRequest('http://localhost:3000/api/auth/signin', {
         method: 'POST',
         body: JSON.stringify(requestData)

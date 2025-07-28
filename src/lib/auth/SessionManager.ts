@@ -57,25 +57,25 @@ function getSessionModel(): mongoose.Model<ISession> {
     if (!mongoose) {
       throw new Error('Mongoose is not available');
     }
-    
+
     // Check connection state
     if (mongoose.connection.readyState === 0) {
       throw new Error('Mongoose is not connected to database');
     }
-    
+
     // Check if model already exists
     if (mongoose.models.Session) {
       return mongoose.models.Session as mongoose.Model<ISession>;
     }
-    
+
     // Create new model if it doesn't exist
     const model = mongoose.model<ISession>('Session', SessionSchema);
-    
+
     // Validate that we got a valid model
     if (!model) {
       throw new Error('Model creation returned undefined');
     }
-    
+
     return model;
   } catch (error) {
     console.error('Error getting Session model:', error);
