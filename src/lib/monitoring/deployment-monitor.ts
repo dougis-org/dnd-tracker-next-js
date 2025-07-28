@@ -437,7 +437,8 @@ export class DeploymentMonitor {
    * Generate unique alert ID
    */
   private generateAlertId(): string {
-    return `alert-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const crypto = require('crypto');
+    return `alert-${Date.now()}-${crypto.randomBytes(5).toString('hex')}`;
   }
 
   /**

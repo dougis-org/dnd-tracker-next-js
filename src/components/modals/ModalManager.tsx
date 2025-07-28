@@ -42,7 +42,7 @@ export function ModalManager({
       const config = _config;
       const id =
         config.id ||
-        `modal-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        `modal-${Date.now()}-${require('crypto').randomBytes(5).toString('hex')}`;
 
       setModals(prevModals => {
         // Check if we've reached the maximum number of modals

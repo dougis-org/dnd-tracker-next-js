@@ -221,7 +221,7 @@ export class MigrationRunner implements IMigrationRunner {
 
       const version = await this.getNextVersion();
       const filename = this.generateMigrationFilename(version, description);
-      const filepath = path.join(this.config.migrationsPath, filename);
+      const filepath = this.safeMigrationPath(filename);
       const content = this.generateMigrationTemplate(version, description);
 
       await fs.writeFile(filepath, content, 'utf8');
@@ -243,7 +243,7 @@ export class MigrationRunner implements IMigrationRunner {
 
       for (const filename of migrationFiles) {
         try {
-          const filepath = path.join(this.config.migrationsPath, filename);
+          const filepath = this.safeMigrationPath(filename);
           const migration = await this.loadMigration(filepath);
 
           // Validate structure
@@ -309,8 +309,31 @@ export class MigrationRunner implements IMigrationRunner {
    * Check if file is a migration file
    */
   private isMigrationFile(filename: string): boolean {
+    // Prevent path traversal attacks by validating filename doesn't contain path separators
+    if (filename.includes('/') || filename.includes('\\') || filename.includes('..')) {
+      return false;
+    }
+
     const ext = path.extname(filename);
     return (ext === '.js' || ext === '.ts') && /^\d+_/.test(filename);
+  }
+
+  /**
+   * Safely join migration file path with security validation
+   */
+  private safeMigrationPath(filename: string): string {
+    // Additional security check before path operations
+    if (!this.isMigrationFile(filename)) {
+      throw new Error(`Invalid migration filename: ${filename}`);
+    }
+
+    // Ensure the filename doesn't contain path traversal sequences
+    const normalizedFilename = path.normalize(filename);
+    if (normalizedFilename !== filename || normalizedFilename.includes('..')) {
+      throw new Error(`Potentially malicious migration filename detected: ${filename}`);
+    }
+
+    return path.join(this.config.migrationsPath, filename);
   }
 
   /**
@@ -350,7 +373,7 @@ export class MigrationRunner implements IMigrationRunner {
     const startTime = Date.now();
 
     try {
-      const filepath = path.join(this.config.migrationsPath, migrationStatus.filename);
+      const filepath = this.safeMigrationPath(migrationStatus.filename);
       const migration = await this.loadMigration(filepath);
 
       if (this.config.dryRun) {
@@ -404,7 +427,7 @@ export class MigrationRunner implements IMigrationRunner {
     const startTime = Date.now();
 
     try {
-      const filepath = path.join(this.config.migrationsPath, migrationRecord.filename);
+      const filepath = this.safeMigrationPath(migrationRecord.filename);
       const migration = await this.loadMigration(filepath);
 
       if (!migration.down) {

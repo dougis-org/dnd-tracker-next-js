@@ -215,7 +215,9 @@ export class DeploymentManager {
    */
   private generateDeploymentId(): string {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '').slice(0, 15);
-    const random = Math.random().toString(36).substr(2, 5);
+    // Use cryptographically secure random generation instead of Math.random()
+    const crypto = require('crypto');
+    const random = crypto.randomBytes(3).toString('hex');
     return `deploy-${this.config.environment}-${timestamp}-${random}`;
   }
 

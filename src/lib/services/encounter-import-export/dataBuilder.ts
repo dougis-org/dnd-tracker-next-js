@@ -203,5 +203,5 @@ async function buildCharacterSheetsData(encounter: IEncounter, options: ExportOp
  * Generate temporary ID for data without persistent IDs
  */
 function generateTempId(): string {
-  return `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  return `temp_${Date.now()}_${require('crypto').randomBytes(5).toString('hex')}`;
 }

@@ -59,16 +59,38 @@ export default function SearchResults({ query, onClearSearch }: SearchResultsPro
   const highlightText = (text: string, query: string) => {
     if (!query) return text;
 
-    const regex = new RegExp(`(${query})`, 'gi');
-    const parts = text.split(regex);
+    // Use safe string-based highlighting to prevent ReDoS attacks
+    const parts: React.ReactNode[] = [];
+    const lowerText = text.toLowerCase();
+    const lowerQuery = query.toLowerCase();
 
-    return parts.map((part, index) =>
-      regex.test(part) ? (
-        <mark key={index} className="bg-yellow-200 dark:bg-yellow-800 px-1 rounded">
-          {part}
+    let lastIndex = 0;
+    let index = lowerText.indexOf(lowerQuery, lastIndex);
+    let partIndex = 0;
+
+    while (index !== -1) {
+      // Add text before match
+      if (index > lastIndex) {
+        parts.push(text.slice(lastIndex, index));
+      }
+
+      // Add highlighted match
+      parts.push(
+        <mark key={partIndex++} className="bg-yellow-200 dark:bg-yellow-800 px-1 rounded">
+          {text.slice(index, index + query.length)}
         </mark>
-      ) : part
-    );
+      );
+
+      lastIndex = index + query.length;
+      index = lowerText.indexOf(lowerQuery, lastIndex);
+    }
+
+    // Add remaining text
+    if (lastIndex < text.length) {
+      parts.push(text.slice(lastIndex));
+    }
+
+    return parts.length > 0 ? parts : text;
   };
 
   return (

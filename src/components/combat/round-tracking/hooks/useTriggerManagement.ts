@@ -34,7 +34,7 @@ export function useTriggerManagement(
   const addTrigger = useCallback((triggerData: Omit<Trigger, 'id' | 'isActive'>) => {
     const newTrigger: Trigger = {
       ...triggerData,
-      id: `trigger-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: `trigger-${Date.now()}-${require('crypto').randomBytes(5).toString('hex')}`,
       isActive: true,
     };
 

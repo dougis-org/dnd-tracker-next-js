@@ -50,7 +50,13 @@ const SessionSchema = new Schema<ISession>({
 // Add compound index for efficient queries
 SessionSchema.index({ userId: 1, expiresAt: 1 });
 
-const Session = mongoose.models.Session || mongoose.model<ISession>('Session', SessionSchema);
+// Helper function to get Session model (handles test environment properly)
+function getSessionModel() {
+  return mongoose.models.Session as mongoose.Model<ISession> || mongoose.model<ISession>('Session', SessionSchema);
+}
+
+// Create Session model
+const Session = getSessionModel();
 
 export interface UserData {
   userId: string;

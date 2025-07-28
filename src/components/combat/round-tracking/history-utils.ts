@@ -39,14 +39,33 @@ export function createTextParts(text: string, query: string): Array<{ text: stri
     return [{ text, isHighlight: false }];
   }
 
-  const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const regex = new RegExp(`(${escapedQuery})`, 'gi');
-  const parts = text.split(regex);
+  // Use string methods instead of regex for better security
+  const lowerText = text.toLowerCase();
+  const lowerQuery = query.toLowerCase();
+  const parts: Array<{ text: string; isHighlight: boolean }> = [];
 
-  return parts.filter(part => part !== '').map((part) => ({
-    text: part,
-    isHighlight: part.toLowerCase() === query.toLowerCase()
-  }));
+  let lastIndex = 0;
+  let index = lowerText.indexOf(lowerQuery, lastIndex);
+
+  while (index !== -1) {
+    // Add text before match
+    if (index > lastIndex) {
+      parts.push({ text: text.slice(lastIndex, index), isHighlight: false });
+    }
+
+    // Add matched text
+    parts.push({ text: text.slice(index, index + query.length), isHighlight: true });
+
+    lastIndex = index + query.length;
+    index = lowerText.indexOf(lowerQuery, lastIndex);
+  }
+
+  // Add remaining text
+  if (lastIndex < text.length) {
+    parts.push({ text: text.slice(lastIndex), isHighlight: false });
+  }
+
+  return parts.length > 0 ? parts : [{ text, isHighlight: false }];
 }
 
 /**

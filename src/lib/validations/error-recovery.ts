@@ -58,7 +58,7 @@ export class CharacterDataRecovery {
     characterId?: string
   ): CharacterBackup {
     const backup: CharacterBackup = {
-      id: `backup_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: `backup_${Date.now()}_${require('crypto').randomBytes(5).toString('hex')}`,
       timestamp: new Date(),
       characterId,
       data: JSON.parse(JSON.stringify(data)), // Deep clone to avoid reference issues

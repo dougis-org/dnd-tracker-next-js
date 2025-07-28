@@ -36,7 +36,7 @@ export function useEffectManagement(
     setState((prev: any) => {
       const newEffect: Effect = {
         ...effectData,
-        id: `effect-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        id: `effect-${Date.now()}-${require('crypto').randomBytes(5).toString('hex')}`,
         startRound: prev.currentRound,
       };
 
