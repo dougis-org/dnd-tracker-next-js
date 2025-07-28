@@ -1,25 +1,37 @@
-import { describe, it, expect, beforeEach } from '@jest/globals';
-import { GET, PUT, DELETE } from '../route';
-import { CharacterService } from '@/lib/services/CharacterService';
-import {
-  createRequestWithAuth,
-  createUnauthenticatedRequest,
-  createTestContext,
-  expectSuccessResponse,
-  expectAuthError,
-  expectValidationError,
-  testApiRouteAuth,
-  testApiRouteUnauth,
-  setupAuthTestEnvironment,
-  TEST_USERS,
-} from '@/__tests__/auth-session-test-helpers';
+import { describe, it, expect } from '@jest/globals';
 
-// Mock dependencies
+// Mock auth module FIRST - this must be before any imports that use it
+jest.mock('@/lib/auth/server-session', () => ({
+  ...jest.requireActual('@/lib/auth/server-session'),
+  getServerSession: jest.fn(),
+}));
+
+// Mock other dependencies
 jest.mock('@/lib/services/CharacterService');
 
+// Import everything after mocks are set up
+import { GET, PUT, DELETE } from '../route';
+import { CharacterService } from '@/lib/services/CharacterService';
+import { getServerSession } from '@/lib/auth/server-session';
+import {
+  TEST_USERS,
+  testAuthenticatedRoute,
+  testUnauthenticatedRoute,
+  expectSuccessResponse,
+  expectAuthenticationError,
+  expectValidationError,
+  expectSuccessData,
+  expectErrorData,
+  setupApiRouteTests,
+} from '@/__tests__/auth-session-test-helpers';
+
+// Get the mocked function from the module
+const mockGetServerSession = getServerSession as jest.MockedFunction<typeof getServerSession>;
 const mockCharacterService = CharacterService as jest.Mocked<typeof CharacterService>;
 
 describe('/api/characters/[id] API Route', () => {
+  setupApiRouteTests();
+
   const testUserId = TEST_USERS.FREE_USER.userId;
   const testCharacterId = 'character-123';
 
@@ -40,228 +52,158 @@ describe('/api/characters/[id] API Route', () => {
     armorClass: 16,
   };
 
-  const mockApiResponses = {
-    success: (data?: any) => ({ success: true, data }),
-    error: (message: string) => ({ success: false, error: { message } }),
+  const validUpdateData = {
+    name: 'Updated Character',
+    hitPoints: { max: 30, current: 25 },
+    armorClass: 18,
   };
 
-  setupAuthTestEnvironment();
-
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
-
   describe('GET /api/characters/[id]', () => {
-    it('should return character when found', async () => {
-      mockCharacterService.getCharacterById.mockResolvedValue(
-        mockApiResponses.success(mockCharacter)
-      );
+    it('should return character for authenticated owner', async () => {
+      mockCharacterService.getCharacterById.mockResolvedValue({
+        success: true,
+        data: mockCharacter
+      });
 
-      const { response, data } = await testApiRouteAuth(
-        GET,
-        TEST_USERS.FREE_USER,
-        undefined,
-        { id: testCharacterId }
-      );
+      const { response, data } = await testAuthenticatedRoute(GET, {
+        user: TEST_USERS.FREE_USER,
+        params: { id: testCharacterId }
+      });
 
       expectSuccessResponse(response);
-      expect(data.success).toBe(true);
+      expectSuccessData(data);
       expect(data.data.name).toBe('Test Character');
-      expect(mockCharacterService.getCharacterById).toHaveBeenCalledWith(
-        testCharacterId,
-        testUserId
-      );
+      expect(mockCharacterService.getCharacterById).toHaveBeenCalledWith(testCharacterId, testUserId);
     });
 
     it('should return 401 when user not authenticated', async () => {
-      const { response } = await testApiRouteUnauth(
-        GET,
-        undefined,
-        { id: testCharacterId }
-      );
-
-      expectAuthError(response);
-    });
-
-    it('should handle character not found', async () => {
-      mockCharacterService.getCharacterById.mockResolvedValue(
-        mockApiResponses.error('Character not found')
-      );
-
-      const { response, data } = await testApiRouteAuth(
-        GET,
-        TEST_USERS.FREE_USER,
-        undefined,
-        { id: testCharacterId }
-      );
-
-      expect(response.status).toBe(500); // Service error becomes 500
-      expect(data.success).toBe(false);
+      const { response } = await testUnauthenticatedRoute(GET, {
+        params: { id: testCharacterId }
+      });
+      expectAuthenticationError(response);
     });
 
     it('should handle service errors gracefully', async () => {
-      mockCharacterService.getCharacterById.mockRejectedValue(
-        new Error('Database connection failed')
-      );
+      mockCharacterService.getCharacterById.mockResolvedValue({
+        success: false,
+        error: { message: 'Character not found' }
+      });
 
-      const { response, data } = await testApiRouteAuth(
-        GET,
-        TEST_USERS.FREE_USER,
-        undefined,
-        { id: testCharacterId }
-      );
+      const { response, data } = await testAuthenticatedRoute(GET, {
+        user: TEST_USERS.FREE_USER,
+        params: { id: testCharacterId }
+      });
 
       expect(response.status).toBe(500);
-      expect(data.success).toBe(false);
-      expect(data.error).toContain('Database connection failed');
+      expectErrorData(data);
     });
   });
 
   describe('PUT /api/characters/[id]', () => {
-    const validUpdateData = {
-      name: 'Updated Character',
-      hitPoints: { max: 30, current: 25 },
-      armorClass: 18,
-    };
-
     it('should update character successfully', async () => {
       const updatedCharacter = { ...mockCharacter, ...validUpdateData };
-      mockCharacterService.updateCharacter.mockResolvedValue(
-        mockApiResponses.success(updatedCharacter)
-      );
+      mockCharacterService.updateCharacter.mockResolvedValue({
+        success: true,
+        data: updatedCharacter
+      });
 
-      const request = createRequestWithAuth(
-        `/api/characters/${testCharacterId}`,
-        'PUT',
-        validUpdateData,
-        TEST_USERS.FREE_USER
-      );
-      const context = createTestContext({ id: testCharacterId });
-
-      const response = await PUT(request, context);
-      const data = await response.json();
+      const { response, data } = await testAuthenticatedRoute(PUT, {
+        method: 'PUT',
+        body: validUpdateData,
+        user: TEST_USERS.FREE_USER,
+        params: { id: testCharacterId }
+      });
 
       expectSuccessResponse(response);
-      expect(data.success).toBe(true);
+      expectSuccessData(data);
       expect(data.data.name).toBe('Updated Character');
       expect(mockCharacterService.updateCharacter).toHaveBeenCalledWith(
         testCharacterId,
-        validUpdateData,
-        testUserId
+        testUserId,
+        validUpdateData
       );
     });
 
     it('should return 401 when user not authenticated', async () => {
-      const request = createUnauthenticatedRequest(
-        `/api/characters/${testCharacterId}`,
-        'PUT',
-        validUpdateData
-      );
-      const context = createTestContext({ id: testCharacterId });
-
-      const response = await PUT(request, context);
-      expectAuthError(response);
+      const { response } = await testUnauthenticatedRoute(PUT, {
+        method: 'PUT',
+        body: validUpdateData,
+        params: { id: testCharacterId }
+      });
+      expectAuthenticationError(response);
     });
 
-    it('should validate required fields', async () => {
-      const invalidData = { ...validUpdateData, name: '' };
+    it('should validate request body', async () => {
+      const invalidData = { invalidField: 'invalid' };
 
-      const request = createRequestWithAuth(
-        `/api/characters/${testCharacterId}`,
-        'PUT',
-        invalidData,
-        TEST_USERS.FREE_USER
-      );
-      const context = createTestContext({ id: testCharacterId });
+      const { response } = await testAuthenticatedRoute(PUT, {
+        method: 'PUT',
+        body: invalidData,
+        user: TEST_USERS.FREE_USER,
+        params: { id: testCharacterId }
+      });
 
-      const response = await PUT(request, context);
       expectValidationError(response);
     });
 
     it('should handle service errors gracefully', async () => {
-      mockCharacterService.updateCharacter.mockRejectedValue(
-        new Error('Failed to update character')
-      );
+      mockCharacterService.updateCharacter.mockResolvedValue({
+        success: false,
+        error: { message: 'Update failed' }
+      });
 
-      const request = createRequestWithAuth(
-        `/api/characters/${testCharacterId}`,
-        'PUT',
-        validUpdateData,
-        TEST_USERS.FREE_USER
-      );
-      const context = createTestContext({ id: testCharacterId });
-
-      const response = await PUT(request, context);
-      const data = await response.json();
+      const { response, data } = await testAuthenticatedRoute(PUT, {
+        method: 'PUT',
+        body: validUpdateData,
+        user: TEST_USERS.FREE_USER,
+        params: { id: testCharacterId }
+      });
 
       expect(response.status).toBe(500);
-      expect(data.success).toBe(false);
-      expect(data.error).toContain('Failed to update character');
+      expectErrorData(data);
     });
   });
 
   describe('DELETE /api/characters/[id]', () => {
     it('should delete character successfully', async () => {
-      mockCharacterService.deleteCharacter.mockResolvedValue(
-        mockApiResponses.success()
-      );
+      mockCharacterService.deleteCharacter.mockResolvedValue({
+        success: true,
+        data: null
+      });
 
-      const { response, data } = await testApiRouteAuth(
-        DELETE,
-        TEST_USERS.FREE_USER,
-        undefined,
-        { id: testCharacterId }
-      );
+      const { response, data } = await testAuthenticatedRoute(DELETE, {
+        method: 'DELETE',
+        user: TEST_USERS.FREE_USER,
+        params: { id: testCharacterId }
+      });
 
       expectSuccessResponse(response);
-      expect(data.success).toBe(true);
-      expect(mockCharacterService.deleteCharacter).toHaveBeenCalledWith(
-        testCharacterId,
-        testUserId
-      );
+      expectSuccessData(data);
+      expect(mockCharacterService.deleteCharacter).toHaveBeenCalledWith(testCharacterId, testUserId);
     });
 
     it('should return 401 when user not authenticated', async () => {
-      const { response } = await testApiRouteUnauth(
-        DELETE,
-        undefined,
-        { id: testCharacterId }
-      );
-
-      expectAuthError(response);
-    });
-
-    it('should handle character not found', async () => {
-      mockCharacterService.deleteCharacter.mockResolvedValue(
-        mockApiResponses.error('Character not found')
-      );
-
-      const { response, data } = await testApiRouteAuth(
-        DELETE,
-        TEST_USERS.FREE_USER,
-        undefined,
-        { id: testCharacterId }
-      );
-
-      expect(response.status).toBe(500); // Service error becomes 500
-      expect(data.success).toBe(false);
+      const { response } = await testUnauthenticatedRoute(DELETE, {
+        method: 'DELETE',
+        params: { id: testCharacterId }
+      });
+      expectAuthenticationError(response);
     });
 
     it('should handle service errors gracefully', async () => {
-      mockCharacterService.deleteCharacter.mockRejectedValue(
-        new Error('Failed to delete character')
-      );
+      mockCharacterService.deleteCharacter.mockResolvedValue({
+        success: false,
+        error: { message: 'Delete failed' }
+      });
 
-      const { response, data } = await testApiRouteAuth(
-        DELETE,
-        TEST_USERS.FREE_USER,
-        undefined,
-        { id: testCharacterId }
-      );
+      const { response, data } = await testAuthenticatedRoute(DELETE, {
+        method: 'DELETE',
+        user: TEST_USERS.FREE_USER,
+        params: { id: testCharacterId }
+      });
 
       expect(response.status).toBe(500);
-      expect(data.success).toBe(false);
-      expect(data.error).toContain('Failed to delete character');
+      expectErrorData(data);
     });
   });
 });

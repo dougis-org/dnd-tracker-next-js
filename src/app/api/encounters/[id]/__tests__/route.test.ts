@@ -1,7 +1,17 @@
+// Mock auth module FIRST - this must be before any imports that use it
+jest.mock('@/lib/auth/server-session', () => ({
+  ...jest.requireActual('@/lib/auth/server-session'),
+  getServerSession: jest.fn(),
+}));
+
+// Mock other dependencies
+jest.mock('@/lib/services/EncounterService');
+
+// Import everything after mocks are set up
 import { GET, PUT, DELETE } from '../route';
 import { EncounterService } from '@/lib/services/EncounterService';
 import {
-  createRequestWithAuth,
+  createAuthenticatedRequest,
   createUnauthenticatedRequest,
   createTestContext,
   expectSuccessResponse,
@@ -9,13 +19,10 @@ import {
   expectValidationError,
   testApiRouteAuth,
   testApiRouteUnauth,
-  setupAuthTestEnvironment,
+  setupApiRouteTests,
   TEST_USERS,
   resetAuthMocks,
 } from '@/__tests__/auth-session-test-helpers';
-
-// Mock dependencies
-jest.mock('@/lib/services/EncounterService');
 
 const mockEncounterService = EncounterService as jest.Mocked<typeof EncounterService>;
 
@@ -41,7 +48,7 @@ describe('/api/encounters/[id] route', () => {
     error: (message: string) => ({ success: false, error: { message } }),
   };
 
-  setupAuthTestEnvironment();
+  setupApiRouteTests();
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -132,7 +139,7 @@ describe('/api/encounters/[id] route', () => {
         mockApiResponses.success(updatedEncounter)
       );
 
-      const request = createRequestWithAuth(
+      const request = createAuthenticatedRequest(
         `/api/encounters/${testEncounterId}`,
         'PUT',
         validUpdateData,
@@ -164,7 +171,7 @@ describe('/api/encounters/[id] route', () => {
     it('should validate required fields', async () => {
       const invalidData = { ...validUpdateData, name: '' };
 
-      const request = createRequestWithAuth(
+      const request = createAuthenticatedRequest(
         `/api/encounters/${testEncounterId}`,
         'PUT',
         invalidData,
@@ -183,7 +190,7 @@ describe('/api/encounters/[id] route', () => {
         participants: [{ invalidField: 'invalid' }],
       };
 
-      const request = createRequestWithAuth(
+      const request = createAuthenticatedRequest(
         `/api/encounters/${testEncounterId}`,
         'PUT',
         invalidParticipantData,
@@ -202,7 +209,7 @@ describe('/api/encounters/[id] route', () => {
         settings: { invalidSetting: 'invalid' },
       };
 
-      const request = createRequestWithAuth(
+      const request = createAuthenticatedRequest(
         `/api/encounters/${testEncounterId}`,
         'PUT',
         invalidSettingsData,

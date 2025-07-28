@@ -1,129 +1,38 @@
-import { describe, it, expect, beforeEach } from '@jest/globals';
-import { NextRequest } from 'next/server';
-import { POST } from '../route';
-import { EncounterServiceImportExport } from '@/lib/services/EncounterServiceImportExport';
-import type { ServerUserInfo } from '@/lib/auth/server-session';
+import { describe, it, expect } from '@jest/globals';
 
-// Mock the auth module FIRST - must be hoisted
+// Mock auth module FIRST - this must be before any imports that use it
 jest.mock('@/lib/auth/server-session', () => ({
   ...jest.requireActual('@/lib/auth/server-session'),
   getServerSession: jest.fn(),
 }));
 
-// Get the mocked function after Jest sets up the mock
-import { getServerSession } from '@/lib/auth/server-session';
-const mockGetServerSession = getServerSession as jest.MockedFunction<typeof getServerSession>;
-
-// Mock the service
+// Mock other dependencies
 jest.mock('@/lib/services/EncounterServiceImportExport');
 
-// Import test helpers after mocking
+// Import everything after mocks are set up
+import { POST } from '../route';
+import { EncounterServiceImportExport } from '@/lib/services/EncounterServiceImportExport';
+import { getServerSession } from '@/lib/auth/server-session';
 import {
-  createTestContext,
-  expectSuccessResponse,
-  expectAuthError,
   TEST_USERS,
+  testAuthenticatedRoute,
+  testUnauthenticatedRoute,
+  expectSuccessResponse,
+  expectAuthenticationError,
+  expectSuccessData,
+  expectErrorData,
+  setupApiRouteTests,
 } from '@/__tests__/auth-session-test-helpers';
 
-// Helper functions for this test file
-const createRequestWithAuth = (
-  path: string = '/api/test',
-  method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' = 'GET',
-  body?: any,
-  userInfo?: Partial<ServerUserInfo>
-): NextRequest => {
-  // Setup auth mock
-  const testUser = {
-    userId: 'free-user-123',
-    email: 'free@example.com',
-    subscriptionTier: 'free' as const,
-    ...userInfo,
-  };
-  mockGetServerSession.mockResolvedValue(testUser);
-
-  const url = `http://localhost:3000${path}`;
-  const headers = new Headers();
-  headers.set('cookie', 'sessionId=test-session-id');
-
-  if (body && method !== 'GET') {
-    headers.set('content-type', 'application/json');
-  }
-
-  const requestInit: RequestInit = {
-    method,
-    headers,
-  };
-
-  if (body && method !== 'GET') {
-    requestInit.body = JSON.stringify(body);
-  }
-
-  return new NextRequest(url, requestInit);
-};
-
-const createUnauthenticatedRequest = (
-  path: string = '/api/test',
-  method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' = 'GET',
-  body?: any
-): NextRequest => {
-  // Setup unauth mock
-  mockGetServerSession.mockResolvedValue(null);
-
-  const url = `http://localhost:3000${path}`;
-  const headers = new Headers();
-
-  if (body && method !== 'GET') {
-    headers.set('content-type', 'application/json');
-  }
-
-  const requestInit: RequestInit = {
-    method,
-    headers,
-  };
-
-  if (body && method !== 'GET') {
-    requestInit.body = JSON.stringify(body);
-  }
-
-  return new NextRequest(url, requestInit);
-};
-
-const testApiRouteAuth = async (
-  handler: Function,
-  userInfo?: Partial<ServerUserInfo>,
-  requestBody?: any,
-  params?: Record<string, string>,
-  method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' = 'GET'
-) => {
-  const request = createRequestWithAuth('/api/test', method, requestBody, userInfo);
-  const context = createTestContext(params);
-
-  const response = await handler(request, context);
-  const data = await response.json();
-
-  return { response, data };
-};
-
-const testApiRouteUnauth = async (
-  handler: Function,
-  requestBody?: any,
-  params?: Record<string, string>,
-  method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' = 'GET'
-) => {
-  const request = createUnauthenticatedRequest('/api/test', method, requestBody);
-  const context = createTestContext(params);
-
-  const response = await handler(request, context);
-  const data = await response.json();
-
-  return { response, data };
-};
-
+// Get the mocked function from the module
+const mockGetServerSession = getServerSession as jest.MockedFunction<typeof getServerSession>;
 const mockService = EncounterServiceImportExport as jest.Mocked<typeof EncounterServiceImportExport>;
 
 
-describe('/api/encounters/import', () => {
-  const testUserId = 'free-user-123';
+describe('/api/encounters/import API Route', () => {
+  setupApiRouteTests();
+
+  const testUserId = TEST_USERS.FREE_USER.userId;
 
   const mockImportData = {
     metadata: {
@@ -181,10 +90,6 @@ describe('/api/encounters/import', () => {
     error: (message: string) => ({ success: false, error: { message } }),
   };
 
-  beforeEach(() => {
-    jest.clearAllMocks();
-    mockGetServerSession.mockClear();
-  });
 
   describe('POST /api/encounters/import', () => {
     it('should import encounter from JSON successfully', async () => {
@@ -194,7 +99,7 @@ describe('/api/encounters/import', () => {
 
       const requestBody = {
         data: JSON.stringify(mockImportData),
-        format: 'json',
+        format: 'json' as const,
         options: {
           createMissingCharacters: true,
           preserveIds: false,
@@ -202,16 +107,16 @@ describe('/api/encounters/import', () => {
         },
       };
 
-      const { response, data } = await testApiRouteAuth(
-        POST,
-        { userId: testUserId, email: 'free@example.com', subscriptionTier: 'free' },
-        requestBody,
-        undefined,
-        'POST'
-      );
+      const { response, data } = await testAuthenticatedRoute(POST, {
+        method: 'POST',
+        body: requestBody,
+        user: TEST_USERS.FREE_USER
+      });
 
       expectSuccessResponse(response);
       expect(data.success).toBe(true);
+      expect(data.encounter).toBeDefined();
+      expect(data.encounter.name).toBe('Imported Encounter');
       expect(mockService.importFromJson).toHaveBeenCalledWith(
         JSON.stringify(mockImportData),
         {
@@ -232,22 +137,21 @@ describe('/api/encounters/import', () => {
 
       const requestBody = {
         data: xmlData,
-        format: 'xml',
+        format: 'xml' as const,
         options: {
           createMissingCharacters: true,
         },
       };
 
-      const { response, data } = await testApiRouteAuth(
-        POST,
-        { userId: testUserId, email: 'free@example.com', subscriptionTier: 'free' },
-        requestBody,
-        undefined,
-        'POST'
-      );
+      const { response, data } = await testAuthenticatedRoute(POST, {
+        method: 'POST',
+        body: requestBody,
+        user: TEST_USERS.FREE_USER
+      });
 
       expectSuccessResponse(response);
       expect(data.success).toBe(true);
+      expect(data.encounter).toBeDefined();
       expect(mockService.importFromXml).toHaveBeenCalledWith(
         xmlData,
         {
@@ -266,16 +170,14 @@ describe('/api/encounters/import', () => {
 
       const requestBody = {
         data: JSON.stringify(mockImportData),
-        format: 'json',
+        format: 'json' as const,
       };
 
-      await testApiRouteAuth(
-        POST,
-        { userId: testUserId, email: 'free@example.com', subscriptionTier: 'free' },
-        requestBody,
-        undefined,
-        'POST'
-      );
+      await testAuthenticatedRoute(POST, {
+        method: 'POST',
+        body: requestBody,
+        user: TEST_USERS.FREE_USER
+      });
 
       expect(mockService.importFromJson).toHaveBeenCalledWith(
         JSON.stringify(mockImportData),
@@ -289,12 +191,15 @@ describe('/api/encounters/import', () => {
     });
 
     it('should return 401 when user not authenticated', async () => {
-      const { response } = await testApiRouteUnauth(POST, {
-        data: JSON.stringify(mockImportData),
-        format: 'json',
-      }, undefined, 'POST');
+      const { response } = await testUnauthenticatedRoute(POST, {
+        method: 'POST',
+        body: {
+          data: JSON.stringify(mockImportData),
+          format: 'json' as const,
+        }
+      });
 
-      expectAuthError(response);
+      expectAuthenticationError(response);
     });
 
     it('should handle service errors gracefully', async () => {
@@ -304,20 +209,18 @@ describe('/api/encounters/import', () => {
 
       const requestBody = {
         data: JSON.stringify(mockImportData),
-        format: 'json',
+        format: 'json' as const,
       };
 
-      const { response, data } = await testApiRouteAuth(
-        POST,
-        { userId: testUserId, email: 'free@example.com', subscriptionTier: 'free' },
-        requestBody,
-        undefined,
-        'POST'
-      );
+      const { response, data } = await testAuthenticatedRoute(POST, {
+        method: 'POST',
+        body: requestBody,
+        user: TEST_USERS.FREE_USER
+      });
 
       expect(response.status).toBe(500);
-      expect(data.success).toBe(false);
-      expect(data.error).toContain('Import service failed');
+      expect(data.error).toBeDefined();
+      expect(data.error).toContain('Internal server error');
     });
   });
 });

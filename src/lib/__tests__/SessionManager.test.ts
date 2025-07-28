@@ -7,20 +7,38 @@ describe('SessionManager', () => {
   let sessionManager: SessionManager;
 
   beforeAll(async () => {
-    // Close any existing connections
-    if (mongoose.connection.readyState !== 0) {
-      await mongoose.disconnect();
+    // Import and use the application's database connection method
+    const { connectToDatabase } = await import('@/lib/db');
+    
+    try {
+      await connectToDatabase();
+      console.log('Connected using application\'s connectToDatabase()');
+    } catch (error) {
+      console.error('Failed to connect using application method:', error);
+      // Fallback to direct connection
+      const mongoUri = process.env.MONGODB_URI;
+      if (mongoUri) {
+        await mongoose.connect(mongoUri, {
+          dbName: process.env.MONGODB_DB_NAME || 'testdb',
+          bufferCommands: false,
+        });
+        console.log('Connected using fallback method');
+      }
     }
-
-    mongoServer = await MongoMemoryServer.create();
-    const mongoUri = mongoServer.getUri();
-    await mongoose.connect(mongoUri);
+    
     sessionManager = new SessionManager();
   });
 
   afterAll(async () => {
-    await mongoose.disconnect();
-    await mongoServer.stop();
+    // Don't disconnect or stop - let the global teardown handle it
+    // Just clean up any sessions we created
+    if (mongoose.connection.readyState === 1) {
+      try {
+        await sessionManager?.clearAllSessions();
+      } catch (error) {
+        console.warn('Failed to clear sessions in afterAll:', error);
+      }
+    }
   });
 
   beforeEach(async () => {
@@ -73,7 +91,7 @@ describe('SessionManager', () => {
       const userData2 = {
         userId: '507f1f77bcf86cd799439012',
         email: 'user2@example.com',
-        subscriptionTier: 'premium' as const
+        subscriptionTier: 'expert' as const
       };
 
       const sessionId1 = await sessionManager.createSession(userData1);
@@ -88,12 +106,15 @@ describe('SessionManager', () => {
       const userData = {
         userId: '507f1f77bcf86cd799439011',
         email: 'test@example.com',
-        subscriptionTier: 'premium' as const
+        subscriptionTier: 'expert' as const
       };
 
       const sessionId = await sessionManager.createSession(userData);
-      const session = await sessionManager.getSession(sessionId);
+      expect(sessionId).toBeDefined();
+      expect(typeof sessionId).toBe('string');
+      expect(sessionId.length).toBeGreaterThan(20);
 
+      const session = await sessionManager.getSession(sessionId);
       expect(session).toBeDefined();
       expect(session!.userId).toBe(userData.userId);
       expect(session!.email).toBe(userData.email);
@@ -138,9 +159,13 @@ describe('SessionManager', () => {
 
   describe('Session validation', () => {
     it('should validate session format', () => {
-      expect(sessionManager.isValidSessionId('valid-session-id-format')).toBe(true);
+      // Valid session ID (64 hex characters)
+      expect(sessionManager.isValidSessionId('a1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456')).toBe(true);
+      // Minimum length session ID (32 characters)
+      expect(sessionManager.isValidSessionId('a1b2c3d4e5f6789012345678901234567')).toBe(true);
       expect(sessionManager.isValidSessionId('')).toBe(false);
       expect(sessionManager.isValidSessionId('short')).toBe(false);
+      expect(sessionManager.isValidSessionId('valid-with-hyphens-not-allowed')).toBe(false);
       expect(sessionManager.isValidSessionId(null as any)).toBe(false);
       expect(sessionManager.isValidSessionId(undefined as any)).toBe(false);
     });
@@ -239,14 +264,14 @@ describe('SessionManager', () => {
       const sessionId = await sessionManager.createSession(userData);
       const updatedData = {
         ...userData,
-        subscriptionTier: 'premium' as const
+        subscriptionTier: 'expert' as const
       };
 
       const updateResult = await sessionManager.updateSessionData(sessionId, updatedData);
       expect(updateResult).toBe(true);
 
       const session = await sessionManager.getSession(sessionId);
-      expect(session!.subscriptionTier).toBe('premium');
+      expect(session!.subscriptionTier).toBe('expert');
     });
   });
 

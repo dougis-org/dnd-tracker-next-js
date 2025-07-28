@@ -1,123 +1,178 @@
+import { describe, it, expect } from '@jest/globals';
+
+// Mock auth module FIRST - this must be before any imports that use it
+jest.mock('@/lib/auth/server-session', () => ({
+  ...jest.requireActual('@/lib/auth/server-session'),
+  getServerSession: jest.fn(),
+}));
+
+// Mock other dependencies
+jest.mock('@/lib/services/EncounterService');
+
+// Import everything after mocks are set up
 import { PATCH } from '../route';
 import { EncounterService } from '@/lib/services/EncounterService';
+import { getServerSession } from '@/lib/auth/server-session';
 import {
-  TEST_SETTINGS,
-  TEST_INVALID_SETTINGS,
-  TEST_PARTIAL_SETTINGS,
-  createTestRequest,
-  createTestParams,
-  createServiceSuccess,
-  createServiceError,
-  expectServiceCall,
+  TEST_USERS,
+  testAuthenticatedRoute,
+  testUnauthenticatedRoute,
   expectSuccessResponse,
-  expectErrorResponse,
-} from '@/__test-utils__/encounter-settings-test-utils';
+  expectAuthenticationError,
+  expectValidationError,
+  expectSuccessData,
+  expectErrorData,
+  setupApiRouteTests,
+} from '@/__tests__/auth-session-test-helpers';
 
-// Configure Jest to use our mocks
-jest.mock('next/server');
+// Get the mocked function from the module
+const mockGetServerSession = getServerSession as jest.MockedFunction<typeof getServerSession>;
+const mockEncounterService = EncounterService as jest.Mocked<typeof EncounterService>;
 
-// Mock the EncounterService
-jest.mock('@/lib/services/EncounterService', () => {
-  return {
-    EncounterService: {
-      updateEncounter: jest.fn(),
-      getEncounterById: jest.fn(),
+describe('/api/encounters/[id]/settings API Route', () => {
+  setupApiRouteTests();
+
+  const testUserId = TEST_USERS.FREE_USER.userId;
+  const testEncounterId = 'encounter-123';
+
+  const mockEncounter = {
+    _id: testEncounterId,
+    name: 'Test Encounter',
+    ownerId: testUserId,
+    settings: {
+      allowPlayerVisibility: true,
+      autoRollInitiative: false,
+      turnTimer: 60,
+      enableLairActions: true,
     },
   };
-});
 
-describe('PATCH /api/encounters/[id]/settings', () => {
-
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
-
-  it('successfully updates encounter settings', async () => {
-    EncounterService.updateEncounter = jest.fn().mockResolvedValue(createServiceSuccess());
-
-    const request = createTestRequest(TEST_SETTINGS);
-    const response = await PATCH(request, createTestParams());
-
-    await expectSuccessResponse(response, TEST_SETTINGS);
-    expectServiceCall(EncounterService.updateEncounter, TEST_SETTINGS);
-  });
-
-  it('returns validation errors for invalid settings data', async () => {
-    const request = createTestRequest(TEST_INVALID_SETTINGS);
-    const response = await PATCH(request, createTestParams());
-
-    await expectErrorResponse(response, 400, 'Validation error');
-    expect(EncounterService.updateEncounter).not.toHaveBeenCalled();
-  });
-
-  it('returns error for invalid encounter ID format', async () => {
-    const request = createTestRequest(TEST_SETTINGS);
-    const response = await PATCH(request, createTestParams('invalid-id'));
-
-    await expectErrorResponse(response, 400, 'Validation error');
-    expect(EncounterService.updateEncounter).not.toHaveBeenCalled();
-  });
-
-  it('returns 404 when encounter not found', async () => {
-    EncounterService.updateEncounter = jest.fn().mockResolvedValue(
-      createServiceError('Encounter not found', 404)
-    );
-
-    const request = createTestRequest(TEST_SETTINGS);
-    const response = await PATCH(request, createTestParams());
-
-    await expectErrorResponse(response, 404, 'Encounter not found');
-    expectServiceCall(EncounterService.updateEncounter, TEST_SETTINGS);
-  });
-
-  it('handles service errors gracefully', async () => {
-    EncounterService.updateEncounter = jest.fn().mockResolvedValue(
-      createServiceError('Database connection failed', 500)
-    );
-
-    const request = createTestRequest(TEST_SETTINGS);
-    const response = await PATCH(request, createTestParams());
-
-    await expectErrorResponse(response, 500, 'Database connection failed');
-    expectServiceCall(EncounterService.updateEncounter, TEST_SETTINGS);
-  });
-
-  it('handles unexpected errors', async () => {
-    EncounterService.updateEncounter = jest
-      .fn()
-      .mockRejectedValue(new Error('Unexpected error'));
-
-    const request = createTestRequest(TEST_SETTINGS);
-    const response = await PATCH(request, createTestParams());
-
-    await expectErrorResponse(response, 500, 'An unexpected error occurred');
-    expectServiceCall(EncounterService.updateEncounter, TEST_SETTINGS);
-  });
-
-  it('validates partial settings updates', async () => {
-    const mergedSettings = { ...TEST_SETTINGS, ...TEST_PARTIAL_SETTINGS };
-    EncounterService.updateEncounter = jest.fn().mockResolvedValue(
-      createServiceSuccess(mergedSettings)
-    );
-
-    const request = createTestRequest(TEST_PARTIAL_SETTINGS);
-    const response = await PATCH(request, createTestParams());
-
-    await expectSuccessResponse(response, mergedSettings);
-    expectServiceCall(EncounterService.updateEncounter, TEST_PARTIAL_SETTINGS);
-  });
-
-  it('validates lair action settings dependency', async () => {
-    const lairSettings = {
-      enableLairActions: true,
-      lairActionInitiative: 15,
+  describe('PATCH /api/encounters/[id]/settings', () => {
+    const validSettingsUpdate = {
+      allowPlayerVisibility: false,
+      autoRollInitiative: true,
+      turnTimer: 120,
+      enableLairActions: false,
     };
-    const request = createTestRequest(lairSettings);
-    const response = await PATCH(request, createTestParams());
-    await response.json();
 
-    // This should still be valid as the schema allows optional lairActionInitiative
-    // The business logic for enforcing the dependency should be in the service layer
-    expect(response.status).toBe(200);
+    it('should update encounter settings successfully', async () => {
+      const updatedEncounter = {
+        ...mockEncounter,
+        settings: { ...mockEncounter.settings, ...validSettingsUpdate }
+      };
+      
+      mockEncounterService.updateEncounterSettings.mockResolvedValue({
+        success: true,
+        data: updatedEncounter
+      });
+
+      const { response, data } = await testAuthenticatedRoute(PATCH, {
+        method: 'PATCH',
+        body: validSettingsUpdate,
+        user: TEST_USERS.FREE_USER,
+        params: { id: testEncounterId }
+      });
+
+      expectSuccessResponse(response);
+      expectSuccessData(data);
+      expect(data.data.settings.allowPlayerVisibility).toBe(false);
+      expect(data.data.settings.autoRollInitiative).toBe(true);
+      expect(mockEncounterService.updateEncounterSettings).toHaveBeenCalledWith(
+        testEncounterId,
+        testUserId,
+        validSettingsUpdate
+      );
+    });
+
+    it('should return 401 when user not authenticated', async () => {
+      const { response } = await testUnauthenticatedRoute(PATCH, {
+        method: 'PATCH',
+        body: validSettingsUpdate,
+        params: { id: testEncounterId }
+      });
+      expectAuthenticationError(response);
+    });
+
+    it('should validate settings data', async () => {
+      const invalidSettings = {
+        turnTimer: -10, // Invalid negative timer
+        invalidField: 'invalid'
+      };
+
+      const { response } = await testAuthenticatedRoute(PATCH, {
+        method: 'PATCH',
+        body: invalidSettings,
+        user: TEST_USERS.FREE_USER,
+        params: { id: testEncounterId }
+      });
+
+      expectValidationError(response);
+    });
+
+    it('should handle partial settings updates', async () => {
+      const partialUpdate = {
+        turnTimer: 90
+      };
+
+      const updatedEncounter = {
+        ...mockEncounter,
+        settings: { ...mockEncounter.settings, turnTimer: 90 }
+      };
+
+      mockEncounterService.updateEncounterSettings.mockResolvedValue({
+        success: true,
+        data: updatedEncounter
+      });
+
+      const { response, data } = await testAuthenticatedRoute(PATCH, {
+        method: 'PATCH',
+        body: partialUpdate,
+        user: TEST_USERS.FREE_USER,
+        params: { id: testEncounterId }
+      });
+
+      expectSuccessResponse(response);
+      expectSuccessData(data);
+      expect(data.data.settings.turnTimer).toBe(90);
+      expect(mockEncounterService.updateEncounterSettings).toHaveBeenCalledWith(
+        testEncounterId,
+        testUserId,
+        partialUpdate
+      );
+    });
+
+    it('should handle service errors gracefully', async () => {
+      mockEncounterService.updateEncounterSettings.mockResolvedValue({
+        success: false,
+        error: { message: 'Encounter not found' }
+      });
+
+      const { response, data } = await testAuthenticatedRoute(PATCH, {
+        method: 'PATCH',
+        body: validSettingsUpdate,
+        user: TEST_USERS.FREE_USER,
+        params: { id: testEncounterId }
+      });
+
+      expect(response.status).toBe(500);
+      expectErrorData(data);
+    });
+
+    it('should handle ownership validation', async () => {
+      mockEncounterService.updateEncounterSettings.mockResolvedValue({
+        success: false,
+        error: { message: 'Encounter not found or access denied' }
+      });
+
+      const { response, data } = await testAuthenticatedRoute(PATCH, {
+        method: 'PATCH',
+        body: validSettingsUpdate,
+        user: TEST_USERS.EXPERT_USER, // Different user
+        params: { id: testEncounterId }
+      });
+
+      expect(response.status).toBe(500);
+      expectErrorData(data);
+    });
   });
 });

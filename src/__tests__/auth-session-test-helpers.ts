@@ -114,7 +114,15 @@ export function createAuthenticatedRequest(
     requestInit.body = JSON.stringify(body);
   }
 
-  return new NextRequest(fullUrl, requestInit);
+  const request = new NextRequest(fullUrl, requestInit);
+  
+  // Fix for NextRequest body parsing in test environment
+  if (body && method !== 'GET') {
+    // Override the json() method to return the body directly
+    (request as any).json = async () => body;
+  }
+
+  return request;
 }
 
 /**
@@ -144,7 +152,15 @@ export function createUnauthenticatedRequest(
     requestInit.body = JSON.stringify(body);
   }
 
-  return new NextRequest(fullUrl, requestInit);
+  const request = new NextRequest(fullUrl, requestInit);
+  
+  // Fix for NextRequest body parsing in test environment
+  if (body && method !== 'GET') {
+    // Override the json() method to return the body directly
+    (request as any).json = async () => body;
+  }
+
+  return request;
 }
 
 /**
