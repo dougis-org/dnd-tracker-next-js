@@ -55,7 +55,7 @@ export const createRequestWithAuth = (
   const url = `http://localhost:3000${path}`;
   const headers = new Headers();
   headers.set('cookie', 'sessionId=test-session-id');
-  
+
   if (body && method !== 'GET') {
     headers.set('content-type', 'application/json');
   }
@@ -85,7 +85,7 @@ export const createUnauthenticatedRequest = (
 
   const url = `http://localhost:3000${path}`;
   const headers = new Headers();
-  
+
   if (body && method !== 'GET') {
     headers.set('content-type', 'application/json');
   }
@@ -149,10 +149,10 @@ export const testApiRouteAuth = async (
 ) => {
   const request = createRequestWithAuth('/api/test', method, requestBody, userInfo);
   const context = createTestContext(params);
-  
+
   const response = await handler(request, context);
   const data = await response.json();
-  
+
   return { response, data };
 };
 
@@ -167,10 +167,10 @@ export const testApiRouteUnauth = async (
 ) => {
   const request = createUnauthenticatedRequest('/api/test', method, requestBody);
   const context = createTestContext(params);
-  
+
   const response = await handler(request, context);
   const data = await response.json();
-  
+
   return { response, data };
 };
 
@@ -181,7 +181,7 @@ export const setupAuthTestEnvironment = () => {
   beforeEach(() => {
     resetAuthMocks();
   });
-  
+
   afterEach(() => {
     resetAuthMocks();
   });

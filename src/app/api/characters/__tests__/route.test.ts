@@ -40,9 +40,9 @@ describe('/api/characters API Route', () => {
   };
 
   const mockApiResponses = {
-    success: (data: any, pagination?: any) => ({ 
-      success: true, 
-      data: pagination ? { items: data, pagination } : data 
+    success: (data: any, pagination?: any) => ({
+      success: true,
+      data: pagination ? { items: data, pagination } : data
     }),
     error: (message: string) => ({ success: false, error: { message } }),
   };
