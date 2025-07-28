@@ -1,6 +1,6 @@
 /**
  * Centralized Test Helpers for SessionManager-based Authentication
- * 
+ *
  * This file provides a complete testing infrastructure for the new auth middleware system.
  * It replaces all previous NextAuth-based test helpers with SessionManager-compatible ones.
  */
@@ -28,13 +28,13 @@ export const TEST_USERS = {
     subscriptionTier: 'free' as const,
   },
   SEASONED_USER: {
-    userId: 'seasoned-user-123', 
+    userId: 'seasoned-user-123',
     email: 'seasoned@example.com',
     subscriptionTier: 'seasoned' as const,
   },
   EXPERT_USER: {
     userId: 'expert-user-123',
-    email: 'expert@example.com', 
+    email: 'expert@example.com',
     subscriptionTier: 'expert' as const,
   },
   MASTER_USER: {
@@ -94,13 +94,13 @@ export function createAuthenticatedRequest(
 ): NextRequest {
   // Set up auth mock
   mockAuthenticatedUser(userInfo);
-  
+
   const fullUrl = url.startsWith('http') ? url : `http://localhost:3000${url}`;
   const headers = new Headers();
-  
+
   // Add session cookie that the auth middleware expects
   headers.set('cookie', 'sessionId=test-session-id-123');
-  
+
   if (body && method !== 'GET') {
     headers.set('content-type', 'application/json');
   }
@@ -115,7 +115,7 @@ export function createAuthenticatedRequest(
   }
 
   const request = new NextRequest(fullUrl, requestInit);
-  
+
   // Fix for NextRequest body parsing in test environment
   if (body && method !== 'GET') {
     // Override the json() method to return the body directly
@@ -135,10 +135,10 @@ export function createUnauthenticatedRequest(
 ): NextRequest {
   // Set up unauth mock
   mockUnauthenticatedUser();
-  
+
   const fullUrl = url.startsWith('http') ? url : `http://localhost:3000${url}`;
   const headers = new Headers();
-  
+
   if (body && method !== 'GET') {
     headers.set('content-type', 'application/json');
   }
@@ -153,7 +153,7 @@ export function createUnauthenticatedRequest(
   }
 
   const request = new NextRequest(fullUrl, requestInit);
-  
+
   // Fix for NextRequest body parsing in test environment
   if (body && method !== 'GET') {
     // Override the json() method to return the body directly
@@ -216,7 +216,7 @@ export async function testUnauthenticatedRoute(
 ) {
   const {
     url = '/api/test',
-    method = 'GET', 
+    method = 'GET',
     body,
     params = {},
   } = options;

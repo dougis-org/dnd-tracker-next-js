@@ -12,20 +12,20 @@ jest.mock('@/lib/services/EncounterServiceImportExport');
 // Import everything after mocks are set up
 import { POST } from '../route';
 import { EncounterServiceImportExport } from '@/lib/services/EncounterServiceImportExport';
-import { getServerSession } from '@/lib/auth/server-session';
+// import { getServerSession } from '@/lib/auth/server-session'; // Handled by helper functions
 import {
   TEST_USERS,
   testAuthenticatedRoute,
   testUnauthenticatedRoute,
   expectSuccessResponse,
   expectAuthenticationError,
-  expectSuccessData,
-  expectErrorData,
+  // expectSuccessData, // Not used in this test file
+  // expectErrorData, // Not used in this test file
   setupApiRouteTests,
 } from '@/__tests__/auth-session-test-helpers';
 
 // Get the mocked function from the module
-const mockGetServerSession = getServerSession as jest.MockedFunction<typeof getServerSession>;
+// const mockGetServerSession = getServerSession as jest.MockedFunction<typeof getServerSession>; // Handled by helper functions
 const mockService = EncounterServiceImportExport as jest.Mocked<typeof EncounterServiceImportExport>;
 
 

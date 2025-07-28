@@ -12,7 +12,7 @@ jest.mock('@/lib/services/EncounterService');
 // Import everything after mocks are set up
 import { PATCH } from '../route';
 import { EncounterService } from '@/lib/services/EncounterService';
-import { getServerSession } from '@/lib/auth/server-session';
+// import { getServerSession } from '@/lib/auth/server-session'; // Handled by helper functions
 import {
   TEST_USERS,
   testAuthenticatedRoute,
@@ -26,7 +26,7 @@ import {
 } from '@/__tests__/auth-session-test-helpers';
 
 // Get the mocked function from the module
-const mockGetServerSession = getServerSession as jest.MockedFunction<typeof getServerSession>;
+// const mockGetServerSession = getServerSession as jest.MockedFunction<typeof getServerSession>; // Handled by helper functions
 const mockEncounterService = EncounterService as jest.Mocked<typeof EncounterService>;
 
 describe('/api/encounters/[id]/settings API Route', () => {
@@ -60,7 +60,7 @@ describe('/api/encounters/[id]/settings API Route', () => {
         ...mockEncounter,
         settings: { ...mockEncounter.settings, ...validSettingsUpdate }
       };
-      
+
       mockEncounterService.updateEncounterSettings.mockResolvedValue({
         success: true,
         data: updatedEncounter

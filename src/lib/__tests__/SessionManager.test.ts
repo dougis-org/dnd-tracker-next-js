@@ -3,13 +3,13 @@ import { MongoMemoryServer } from 'mongodb-memory-server';
 import mongoose from 'mongoose';
 
 describe('SessionManager', () => {
-  let mongoServer: MongoMemoryServer;
+  let _mongoServer: MongoMemoryServer; // Prefixed with underscore since not used
   let sessionManager: SessionManager;
 
   beforeAll(async () => {
     // Import and use the application's database connection method
     const { connectToDatabase } = await import('@/lib/db');
-    
+
     try {
       await connectToDatabase();
       console.log('Connected using application\'s connectToDatabase()');
@@ -25,7 +25,7 @@ describe('SessionManager', () => {
         console.log('Connected using fallback method');
       }
     }
-    
+
     sessionManager = new SessionManager();
   });
 
@@ -76,10 +76,17 @@ describe('SessionManager', () => {
       const customExpiration = new Date(Date.now() + 1000 * 60 * 60); // 1 hour
 
       const sessionId = await sessionManager.createSession(userData, customExpiration);
+      
+      // Add a small delay to ensure database write is complete
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       const session = await sessionManager.getSession(sessionId);
 
       expect(session).toBeDefined();
-      expect(session!.expiresAt.getTime()).toBe(customExpiration.getTime());
+      expect(session).not.toBeNull();
+      if (session) {
+        expect(session.expiresAt.getTime()).toBe(customExpiration.getTime());
+      }
     });
 
     it('should create unique session IDs for different users', async () => {
@@ -109,16 +116,31 @@ describe('SessionManager', () => {
         subscriptionTier: 'expert' as const
       };
 
+      console.log('Creating session with userData:', userData);
       const sessionId = await sessionManager.createSession(userData);
+      console.log('Session created with ID:', sessionId);
       expect(sessionId).toBeDefined();
       expect(typeof sessionId).toBe('string');
       expect(sessionId.length).toBeGreaterThan(20);
 
+      // Add a small delay to ensure database write is complete
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      console.log(`Testing retrieval for sessionId: ${sessionId}`);
+      
+      // Check if session exists in database directly first
+      const directSession = await sessionManager.getSessionFromDb(sessionId);
+      console.log(`Direct DB session:`, directSession);
+      
       const session = await sessionManager.getSession(sessionId);
+      console.log(`Retrieved session:`, session);
       expect(session).toBeDefined();
-      expect(session!.userId).toBe(userData.userId);
-      expect(session!.email).toBe(userData.email);
-      expect(session!.subscriptionTier).toBe(userData.subscriptionTier);
+      expect(session).not.toBeNull();
+      if (session) {
+        expect(session.userId).toBe(userData.userId);
+        expect(session.email).toBe(userData.email);
+        expect(session.subscriptionTier).toBe(userData.subscriptionTier);
+      }
     });
 
     it('should return null for non-existent sessions', async () => {
@@ -279,7 +301,11 @@ describe('SessionManager', () => {
     it('should handle database connection errors gracefully', async () => {
 
       // Mock a database error
-      jest.spyOn(mongoose.connection, 'readyState', 'get').mockReturnValue(0);
+      const originalReadyState = mongoose.connection.readyState;
+      Object.defineProperty(mongoose.connection, 'readyState', {
+        value: 0,
+        configurable: true,
+      });
 
       const userData = {
         userId: '507f1f77bcf86cd799439011',
@@ -292,7 +318,10 @@ describe('SessionManager', () => {
         .toThrow('Database connection not available');
 
       // Restore original connection
-      jest.restoreAllMocks();
+      Object.defineProperty(mongoose.connection, 'readyState', {
+        value: originalReadyState,
+        configurable: true,
+      });
     });
 
     it('should handle invalid session data gracefully', async () => {

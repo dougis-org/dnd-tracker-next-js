@@ -39,7 +39,7 @@ const SessionSchema = new Schema<ISession>({
   expiresAt: {
     type: Date,
     required: true,
-    index: { expireAfterSeconds: 0 } // MongoDB TTL index for automatic cleanup
+    index: true // Regular index for query performance, no TTL for now
   },
   lastAccessedAt: {
     type: Date,
@@ -127,6 +127,7 @@ export class SessionManager {
 
     try {
       const Session = getSessionModel();
+      console.log('SessionManager: Creating session with model:', Session.modelName);
       const session = new Session({
         sessionId,
         userId: userData.userId,
@@ -135,7 +136,16 @@ export class SessionManager {
         expiresAt: sessionExpiry
       });
 
-      await session.save();
+      console.log('SessionManager: Session document created, saving...', {
+        sessionId: session.sessionId,
+        userId: session.userId,
+        expiresAt: session.expiresAt
+      });
+      const savedSession = await session.save();
+      console.log('SessionManager: Session saved successfully:', {
+        id: savedSession._id,
+        sessionId: savedSession.sessionId
+      });
       return sessionId;
     } catch (error) {
       console.error('Failed to create session:', error);

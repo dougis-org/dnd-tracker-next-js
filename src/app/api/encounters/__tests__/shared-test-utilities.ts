@@ -164,7 +164,7 @@ export const createMockRequest = (config: {
     body,
     method = 'POST',
     url = 'http://localhost:3000/api/encounters/import',
-    headers = { 'Content-Type': 'application/json' },
+    headers: _headers = { 'Content-Type': 'application/json' }, // Prefixed with underscore
     userInfo,
   } = config;
 

@@ -12,7 +12,7 @@ jest.mock('@/lib/services/CharacterService');
 // Import everything after mocks are set up
 import { GET, POST } from '../route';
 import { CharacterService } from '@/lib/services/CharacterService';
-import { getServerSession } from '@/lib/auth/server-session';
+// import { getServerSession } from '@/lib/auth/server-session'; // Handled by helper functions
 import {
   TEST_USERS,
   testAuthenticatedRoute,
@@ -26,7 +26,7 @@ import {
 } from '@/__tests__/auth-session-test-helpers';
 
 // Get the mocked function from the module
-const mockGetServerSession = getServerSession as jest.MockedFunction<typeof getServerSession>;
+// const mockGetServerSession = getServerSession as jest.MockedFunction<typeof getServerSession>; // Handled by helper functions
 
 const mockCharacterService = CharacterService as jest.Mocked<typeof CharacterService>;
 
