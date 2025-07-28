@@ -205,16 +205,61 @@ jest.mock('mongoose', () => {
   // Add Schema.Types static property
   MockSchema.Types = SchemaTypes;
 
+  // Mock model instances with required methods
+  const createMockModel = (modelName) => {
+    const mockModel = jest.fn().mockImplementation(function(data) {
+      return {
+        ...data,
+        save: jest.fn().mockResolvedValue(this),
+        toObject: jest.fn().mockReturnValue(data),
+        _id: generateObjectId(),
+      };
+    });
+    
+    // Add static methods to the mock model constructor
+    mockModel.find = jest.fn().mockReturnValue({
+      sort: jest.fn().mockReturnValue({
+        toArray: jest.fn().mockResolvedValue([])
+      })
+    });
+    mockModel.findOne = jest.fn().mockResolvedValue(null);
+    mockModel.findById = jest.fn().mockResolvedValue(null);
+    mockModel.findByIdAndUpdate = jest.fn().mockResolvedValue(null);
+    mockModel.findByIdAndDelete = jest.fn().mockResolvedValue(null);
+    mockModel.deleteOne = jest.fn().mockResolvedValue({ deletedCount: 0 });
+    mockModel.deleteMany = jest.fn().mockResolvedValue({ deletedCount: 0 });
+    mockModel.updateOne = jest.fn().mockResolvedValue({ modifiedCount: 0 });
+    mockModel.updateMany = jest.fn().mockResolvedValue({ modifiedCount: 0 });
+    mockModel.create = jest.fn().mockResolvedValue({});
+    mockModel.insertMany = jest.fn().mockResolvedValue([]);
+    mockModel.countDocuments = jest.fn().mockResolvedValue(0);
+    mockModel.createIndex = jest.fn().mockResolvedValue({});
+    
+    return mockModel;
+  };
+
+  const models = {};
+  const mockMongooseModel = jest.fn().mockImplementation((modelName, schema) => {
+    if (models[modelName]) {
+      return models[modelName];
+    }
+    
+    const mockModel = createMockModel(modelName);
+    models[modelName] = mockModel;
+    return mockModel;
+  });
+
   return {
     connect: jest.fn().mockResolvedValue({}),
+    disconnect: jest.fn().mockResolvedValue({}),
     connection: {
       readyState: 1,
       on: jest.fn(),
       once: jest.fn(),
     },
     Schema: MockSchema,
-    model: jest.fn(),
-    models: {},
+    model: mockMongooseModel,
+    models: models,
     Types: {
       ObjectId: mockObjectId,
     },

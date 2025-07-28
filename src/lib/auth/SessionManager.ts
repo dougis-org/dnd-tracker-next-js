@@ -29,7 +29,7 @@ const SessionSchema = new Schema<ISession>({
   },
   subscriptionTier: {
     type: String,
-    enum: ['free', 'premium', 'pro', 'enterprise'],
+    enum: ['free', 'seasoned', 'expert', 'master', 'guild'],
     default: 'free'
   },
   createdAt: {
@@ -51,12 +51,39 @@ const SessionSchema = new Schema<ISession>({
 SessionSchema.index({ userId: 1, expiresAt: 1 });
 
 // Helper function to get Session model (handles test environment properly)
-function getSessionModel() {
-  return mongoose.models.Session as mongoose.Model<ISession> || mongoose.model<ISession>('Session', SessionSchema);
+function getSessionModel(): mongoose.Model<ISession> {
+  try {
+    // Ensure mongoose is available
+    if (!mongoose) {
+      throw new Error('Mongoose is not available');
+    }
+    
+    // Check connection state
+    if (mongoose.connection.readyState === 0) {
+      throw new Error('Mongoose is not connected to database');
+    }
+    
+    // Check if model already exists
+    if (mongoose.models.Session) {
+      return mongoose.models.Session as mongoose.Model<ISession>;
+    }
+    
+    // Create new model if it doesn't exist
+    const model = mongoose.model<ISession>('Session', SessionSchema);
+    
+    // Validate that we got a valid model
+    if (!model) {
+      throw new Error('Model creation returned undefined');
+    }
+    
+    return model;
+  } catch (error) {
+    console.error('Error getting Session model:', error);
+    throw new Error(`Failed to get Session model: ${error instanceof Error ? error.message : String(error)}`);
+  }
 }
 
-// Create Session model
-const Session = getSessionModel();
+// Get Session model lazily to avoid initialization issues
 
 export interface UserData {
   userId: string;
@@ -99,6 +126,7 @@ export class SessionManager {
     );
 
     try {
+      const Session = getSessionModel();
       const session = new Session({
         sessionId,
         userId: userData.userId,
@@ -128,6 +156,7 @@ export class SessionManager {
     }
 
     try {
+      const Session = getSessionModel();
       const session = await Session.findOne({
         sessionId,
         expiresAt: { $gt: new Date() } // Only get non-expired sessions
@@ -140,7 +169,7 @@ export class SessionManager {
       }
 
       // Update last accessed time
-      await Session.updateOne(
+      await getSessionModel().updateOne(
         { sessionId },
         { lastAccessedAt: new Date() }
       );
@@ -168,7 +197,7 @@ export class SessionManager {
     }
 
     try {
-      return await Session.findOne({ sessionId });
+      return await getSessionModel().findOne({ sessionId });
     } catch (error) {
       console.error('Failed to retrieve session from DB:', error);
       return null;
@@ -188,7 +217,7 @@ export class SessionManager {
     }
 
     try {
-      const result = await Session.deleteOne({ sessionId });
+      const result = await getSessionModel().deleteOne({ sessionId });
       return result.deletedCount > 0;
     } catch (error) {
       console.error('Failed to delete session:', error);
@@ -209,7 +238,7 @@ export class SessionManager {
     }
 
     try {
-      const result = await Session.deleteMany({ userId });
+      const result = await getSessionModel().deleteMany({ userId });
       return result.deletedCount || 0;
     } catch (error) {
       console.error('Failed to delete user sessions:', error);
@@ -230,7 +259,7 @@ export class SessionManager {
     }
 
     try {
-      const result = await Session.updateOne(
+      const result = await getSessionModel().updateOne(
         { sessionId },
         { expiresAt: newExpiration }
       );
@@ -254,7 +283,7 @@ export class SessionManager {
     }
 
     try {
-      const result = await Session.updateOne(
+      const result = await getSessionModel().updateOne(
         { sessionId },
         {
           email: userData.email,
@@ -278,7 +307,7 @@ export class SessionManager {
     }
 
     try {
-      await Session.deleteMany({});
+      await getSessionModel().deleteMany({});
     } catch (error) {
       console.error('Failed to clear all sessions:', error);
       throw error;
@@ -294,7 +323,7 @@ export class SessionManager {
     }
 
     try {
-      const result = await Session.deleteMany({
+      const result = await getSessionModel().deleteMany({
         expiresAt: { $lt: new Date() }
       });
       return result.deletedCount || 0;
@@ -336,7 +365,7 @@ export class SessionManager {
     }
 
     // Validate subscription tier
-    const validTiers = ['free', 'premium', 'pro', 'enterprise'];
+    const validTiers = ['free', 'seasoned', 'expert', 'master', 'guild'];
     if (!subscriptionTier || !validTiers.includes(subscriptionTier)) {
       return false;
     }

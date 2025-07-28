@@ -35,6 +35,18 @@ function setupWebAPIGlobals() {
         this.method = init.method || 'GET';
         this.headers = new Headers(init.headers || {});
         this.body = init.body;
+        this._bodyText = typeof init.body === 'string' ? init.body : JSON.stringify(init.body);
+      }
+
+      text() {
+        return Promise.resolve(this._bodyText || '');
+      }
+
+      json() {
+        return this.text().then(text => {
+          if (!text) return {};
+          return JSON.parse(text);
+        });
       }
     };
   }

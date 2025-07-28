@@ -45,14 +45,22 @@ describe('Auth API Handlers', () => {
         data: { user: mockUser }
       });
 
+      const requestData = {
+        email: 'test@example.com',
+        password: 'password123',
+        rememberMe: false
+      };
+      
       const request = new NextRequest('http://localhost:3000/api/auth/signin', {
         method: 'POST',
-        body: JSON.stringify({
-          email: 'test@example.com',
-          password: 'password123',
-          rememberMe: false
-        })
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData)
       });
+
+      // Mock the json method to return our test data
+      request.json = jest.fn().mockResolvedValue(requestData);
 
       const response = await signInHandler(request);
       expect(response.status).toBe(200);
@@ -72,13 +80,17 @@ describe('Auth API Handlers', () => {
         error: { message: 'Invalid credentials', code: 'INVALID_CREDENTIALS' }
       });
 
+      const requestData = {
+        email: 'test@example.com',
+        password: 'wrongpassword'
+      };
+      
       const request = new NextRequest('http://localhost:3000/api/auth/signin', {
         method: 'POST',
-        body: JSON.stringify({
-          email: 'test@example.com',
-          password: 'wrongpassword'
-        })
+        body: JSON.stringify(requestData)
       });
+
+      request.json = jest.fn().mockResolvedValue(requestData);
 
       const response = await signInHandler(request);
       expect(response.status).toBe(401);
@@ -102,14 +114,18 @@ describe('Auth API Handlers', () => {
         data: { user: mockUser }
       });
 
+      const requestData = {
+        email: 'test@example.com',
+        password: 'password123',
+        rememberMe: true
+      };
+      
       const request = new NextRequest('http://localhost:3000/api/auth/signin', {
         method: 'POST',
-        body: JSON.stringify({
-          email: 'test@example.com',
-          password: 'password123',
-          rememberMe: true
-        })
+        body: JSON.stringify(requestData)
       });
+
+      request.json = jest.fn().mockResolvedValue(requestData);
 
       const response = await signInHandler(request);
       const setCookieHeader = response.headers.get('Set-Cookie');
@@ -119,20 +135,24 @@ describe('Auth API Handlers', () => {
     });
 
     it('should validate request body', async () => {
+      const requestData = {
+        email: 'invalid-email',
+        password: ''
+      };
+      
       const request = new NextRequest('http://localhost:3000/api/auth/signin', {
         method: 'POST',
-        body: JSON.stringify({
-          email: 'invalid-email',
-          password: ''
-        })
+        body: JSON.stringify(requestData)
       });
+
+      request.json = jest.fn().mockResolvedValue(requestData);
 
       const response = await signInHandler(request);
       expect(response.status).toBe(400);
 
       const data = await response.json();
       expect(data.success).toBe(false);
-      expect(data.error.message).toContain('validation');
+      expect(data.error.message).toContain('Validation error');
     });
   });
 
@@ -195,15 +215,19 @@ describe('Auth API Handlers', () => {
         data: { user: mockUser }
       });
 
+      const requestData = {
+        email: 'newuser@example.com',
+        password: 'password123',
+        firstName: 'Jane',
+        lastName: 'Smith'
+      };
+      
       const request = new NextRequest('http://localhost:3000/api/auth/signup', {
         method: 'POST',
-        body: JSON.stringify({
-          email: 'newuser@example.com',
-          password: 'password123',
-          firstName: 'Jane',
-          lastName: 'Smith'
-        })
+        body: JSON.stringify(requestData)
       });
+
+      request.json = jest.fn().mockResolvedValue(requestData);
 
       const response = await signUpHandler(request);
       expect(response.status).toBe(201);
@@ -223,15 +247,19 @@ describe('Auth API Handlers', () => {
         error: { message: 'Email already exists', code: 'EMAIL_EXISTS' }
       });
 
+      const requestData = {
+        email: 'existing@example.com',
+        password: 'password123',
+        firstName: 'Jane',
+        lastName: 'Smith'
+      };
+      
       const request = new NextRequest('http://localhost:3000/api/auth/signup', {
         method: 'POST',
-        body: JSON.stringify({
-          email: 'existing@example.com',
-          password: 'password123',
-          firstName: 'Jane',
-          lastName: 'Smith'
-        })
+        body: JSON.stringify(requestData)
       });
+
+      request.json = jest.fn().mockResolvedValue(requestData);
 
       const response = await signUpHandler(request);
       expect(response.status).toBe(409);
@@ -242,22 +270,26 @@ describe('Auth API Handlers', () => {
     });
 
     it('should validate signup data', async () => {
+      const requestData = {
+        email: 'invalid-email',
+        password: '123', // Too short
+        firstName: '',
+        lastName: ''
+      };
+      
       const request = new NextRequest('http://localhost:3000/api/auth/signup', {
         method: 'POST',
-        body: JSON.stringify({
-          email: 'invalid-email',
-          password: '123', // Too short
-          firstName: '',
-          lastName: ''
-        })
+        body: JSON.stringify(requestData)
       });
+
+      request.json = jest.fn().mockResolvedValue(requestData);
 
       const response = await signUpHandler(request);
       expect(response.status).toBe(400);
 
       const data = await response.json();
       expect(data.success).toBe(false);
-      expect(data.error.message).toContain('validation');
+      expect(data.error.message).toContain('Validation error');
     });
   });
 
@@ -267,13 +299,17 @@ describe('Auth API Handlers', () => {
         new Error('Database connection failed')
       );
 
+      const requestData = {
+        email: 'test@example.com',
+        password: 'password123'
+      };
+      
       const request = new NextRequest('http://localhost:3000/api/auth/signin', {
         method: 'POST',
-        body: JSON.stringify({
-          email: 'test@example.com',
-          password: 'password123'
-        })
+        body: JSON.stringify(requestData)
       });
+
+      request.json = jest.fn().mockResolvedValue(requestData);
 
       const response = await signInHandler(request);
       expect(response.status).toBe(500);
@@ -288,6 +324,9 @@ describe('Auth API Handlers', () => {
         method: 'POST',
         body: 'invalid json'
       });
+
+      // Mock json method to throw an error for malformed JSON
+      request.json = jest.fn().mockRejectedValue(new Error('Invalid JSON'));
 
       const response = await signInHandler(request);
       expect(response.status).toBe(400);
@@ -314,13 +353,17 @@ describe('Auth API Handlers', () => {
         data: { user: mockUser }
       });
 
+      const requestData = {
+        email: 'test@example.com',
+        password: 'password123'
+      };
+      
       const request = new NextRequest('http://localhost:3000/api/auth/signin', {
         method: 'POST',
-        body: JSON.stringify({
-          email: 'test@example.com',
-          password: 'password123'
-        })
+        body: JSON.stringify(requestData)
       });
+
+      request.json = jest.fn().mockResolvedValue(requestData);
 
       const response = await signInHandler(request);
       const data = await response.json();
@@ -345,13 +388,17 @@ describe('Auth API Handlers', () => {
         data: { user: mockUser }
       });
 
+      const requestData = {
+        email: 'test@example.com',
+        password: 'password123'
+      };
+      
       const request = new NextRequest('http://localhost:3000/api/auth/signin', {
         method: 'POST',
-        body: JSON.stringify({
-          email: 'test@example.com',
-          password: 'password123'
-        })
+        body: JSON.stringify(requestData)
       });
+
+      request.json = jest.fn().mockResolvedValue(requestData);
 
       const response = await signInHandler(request);
       const setCookieHeader = response.headers.get('Set-Cookie');
