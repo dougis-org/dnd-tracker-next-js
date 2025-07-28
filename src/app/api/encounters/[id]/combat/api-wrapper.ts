@@ -9,6 +9,11 @@ import {
   findParticipantInInitiative
 } from './utils';
 import type { IEncounter } from '@/lib/models/encounter/interfaces';
+import { 
+  withApiAuth, 
+  validateRouteParam,
+  AuthResult
+} from '@/lib/api/auth-middleware';
 
 /**
  * Configuration for combat API endpoint
