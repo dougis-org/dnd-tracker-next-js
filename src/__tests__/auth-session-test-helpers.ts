@@ -1,70 +1,106 @@
 /**
- * Test helpers for SessionManager-based authentication
- * Replaces NextAuth-based test helpers with our custom auth system
+ * Centralized Test Helpers for SessionManager-based Authentication
+ * 
+ * This file provides a complete testing infrastructure for the new auth middleware system.
+ * It replaces all previous NextAuth-based test helpers with SessionManager-compatible ones.
  */
 
 import { NextRequest } from 'next/server';
 import type { ServerUserInfo } from '@/lib/auth/server-session';
 
-// The mock must be hoisted before any imports that might use the module
-jest.mock('@/lib/auth/server-session', () => {
+// Mock the server-session module BEFORE any imports
+jest.mock('@/lib/auth/server-session', () => ({
+  ...jest.requireActual('@/lib/auth/server-session'),
+  getServerSession: jest.fn(),
+}));
+
+// Import and get the mocked function
+import { getServerSession } from '@/lib/auth/server-session';
+export const mockGetServerSession = getServerSession as jest.MockedFunction<typeof getServerSession>;
+
+/**
+ * Test user profiles for different subscription tiers
+ */
+export const TEST_USERS = {
+  FREE_USER: {
+    userId: 'free-user-123',
+    email: 'free@example.com',
+    subscriptionTier: 'free' as const,
+  },
+  SEASONED_USER: {
+    userId: 'seasoned-user-123', 
+    email: 'seasoned@example.com',
+    subscriptionTier: 'seasoned' as const,
+  },
+  EXPERT_USER: {
+    userId: 'expert-user-123',
+    email: 'expert@example.com', 
+    subscriptionTier: 'expert' as const,
+  },
+  MASTER_USER: {
+    userId: 'master-user-123',
+    email: 'master@example.com',
+    subscriptionTier: 'master' as const,
+  },
+  GUILD_USER: {
+    userId: 'guild-user-123',
+    email: 'guild@example.com',
+    subscriptionTier: 'guild' as const,
+  },
+} as const;
+
+/**
+ * Create a test user with custom properties
+ */
+export function createTestUser(overrides: Partial<ServerUserInfo> = {}): ServerUserInfo {
   return {
-    ...jest.requireActual('@/lib/auth/server-session'),
-    getServerSession: jest.fn(),
+    userId: 'test-user-123',
+    email: 'test@example.com',
+    subscriptionTier: 'free',
+    ...overrides,
   };
-});
-
-// After mocking, get the mocked function reference
-const serverSessionModule = require('@/lib/auth/server-session');
-export const mockGetServerSession = serverSessionModule.getServerSession as jest.MockedFunction<typeof serverSessionModule.getServerSession>;
+}
 
 /**
- * Default test user info
+ * Mock successful authentication with specified user
  */
-export const createTestUserInfo = (overrides: Partial<ServerUserInfo> = {}): ServerUserInfo => ({
-  userId: 'test-user-123',
-  email: 'test@example.com',
-  subscriptionTier: 'free',
-  ...overrides,
-});
+export function mockAuthenticatedUser(userInfo: ServerUserInfo = TEST_USERS.FREE_USER): void {
+  mockGetServerSession.mockResolvedValue(userInfo);
+}
 
 /**
- * Mock authenticated request with valid session
+ * Mock failed authentication (no session)
  */
-export const mockAuthenticatedRequest = (userInfo?: Partial<ServerUserInfo>) => {
-  const testUser = createTestUserInfo(userInfo);
-  mockGetServerSession.mockResolvedValue(testUser);
-  return testUser;
-};
-
-/**
- * Mock unauthenticated request (no session)
- */
-export const mockUnauthenticatedRequest = () => {
+export function mockUnauthenticatedUser(): void {
   mockGetServerSession.mockResolvedValue(null);
-};
+}
 
 /**
- * Get the mock function for direct manipulation if needed
+ * Reset all authentication mocks
  */
-export const getMockServerSession = () => mockGetServerSession;
+export function resetAuthMocks(): void {
+  // Only clear call history, don't reset implementations
+  mockGetServerSession.mockClear();
+}
 
 /**
- * Create a NextRequest with session cookie
+ * Create a NextRequest with proper session cookie for authenticated requests
  */
-export const createRequestWithAuth = (
-  path: string = '/api/test',
+export function createAuthenticatedRequest(
+  url: string = '/api/test',
   method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' = 'GET',
   body?: any,
-  userInfo?: Partial<ServerUserInfo>
-): NextRequest => {
-  // Setup auth mock
-  mockAuthenticatedRequest(userInfo);
-
-  const url = `http://localhost:3000${path}`;
+  userInfo: ServerUserInfo = TEST_USERS.FREE_USER
+): NextRequest {
+  // Set up auth mock
+  mockAuthenticatedUser(userInfo);
+  
+  const fullUrl = url.startsWith('http') ? url : `http://localhost:3000${url}`;
   const headers = new Headers();
-  headers.set('cookie', 'sessionId=test-session-id');
-
+  
+  // Add session cookie that the auth middleware expects
+  headers.set('cookie', 'sessionId=test-session-id-123');
+  
   if (body && method !== 'GET') {
     headers.set('content-type', 'application/json');
   }
@@ -78,23 +114,23 @@ export const createRequestWithAuth = (
     requestInit.body = JSON.stringify(body);
   }
 
-  return new NextRequest(url, requestInit);
-};
+  return new NextRequest(fullUrl, requestInit);
+}
 
 /**
- * Create unauthenticated request
+ * Create a NextRequest without authentication
  */
-export const createUnauthenticatedRequest = (
-  path: string = '/api/test',
+export function createUnauthenticatedRequest(
+  url: string = '/api/test',
   method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' = 'GET',
   body?: any
-): NextRequest => {
-  // Setup unauth mock
-  mockUnauthenticatedRequest();
-
-  const url = `http://localhost:3000${path}`;
+): NextRequest {
+  // Set up unauth mock
+  mockUnauthenticatedUser();
+  
+  const fullUrl = url.startsWith('http') ? url : `http://localhost:3000${url}`;
   const headers = new Headers();
-
+  
   if (body && method !== 'GET') {
     headers.set('content-type', 'application/json');
   }
@@ -108,118 +144,135 @@ export const createUnauthenticatedRequest = (
     requestInit.body = JSON.stringify(body);
   }
 
-  return new NextRequest(url, requestInit);
-};
+  return new NextRequest(fullUrl, requestInit);
+}
 
 /**
- * Test context for API routes with params
+ * Create test context for API route params
  */
-export const createTestContext = (params: Record<string, string> = {}) => ({
-  params: Promise.resolve(params),
-});
+export function createTestContext(params: Record<string, string> = {}): { params: Promise<Record<string, string>> } {
+  return {
+    params: Promise.resolve(params),
+  };
+}
 
 /**
- * Reset auth mocks
+ * Helper to test authenticated API routes
  */
-export const resetAuthMocks = () => {
-  mockGetServerSession.mockReset();
-  mockGetServerSession.mockClear();
-};
+export async function testAuthenticatedRoute(
+  handler: Function,
+  options: {
+    url?: string;
+    method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
+    body?: any;
+    user?: ServerUserInfo;
+    params?: Record<string, string>;
+  } = {}
+) {
+  const {
+    url = '/api/test',
+    method = 'GET',
+    body,
+    user = TEST_USERS.FREE_USER,
+    params = {},
+  } = options;
+
+  const request = createAuthenticatedRequest(url, method, body, user);
+  const context = createTestContext(params);
+
+  const response = await handler(request, context);
+  const data = await response.json();
+
+  return { response, data, user };
+}
 
 /**
- * Expect successful response
+ * Helper to test unauthenticated API routes
  */
-export const expectSuccessResponse = (response: Response, expectedStatus = 200) => {
+export async function testUnauthenticatedRoute(
+  handler: Function,
+  options: {
+    url?: string;
+    method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
+    body?: any;
+    params?: Record<string, string>;
+  } = {}
+) {
+  const {
+    url = '/api/test',
+    method = 'GET', 
+    body,
+    params = {},
+  } = options;
+
+  const request = createUnauthenticatedRequest(url, method, body);
+  const context = createTestContext(params);
+
+  const response = await handler(request, context);
+  const data = await response.json();
+
+  return { response, data };
+}
+
+/**
+ * Response assertion helpers
+ */
+export function expectSuccessResponse(response: Response, expectedStatus: number = 200): void {
   expect(response.status).toBe(expectedStatus);
-};
+}
 
-/**
- * Expect authentication error
- */
-export const expectAuthError = (response: Response) => {
+export function expectErrorResponse(response: Response, expectedStatus: number = 500): void {
+  expect(response.status).toBe(expectedStatus);
+}
+
+export function expectAuthenticationError(response: Response): void {
   expect(response.status).toBe(401);
-};
+}
 
-/**
- * Expect validation error
- */
-export const expectValidationError = (response: Response) => {
+export function expectValidationError(response: Response): void {
   expect(response.status).toBe(400);
-};
+}
+
+export function expectNotFoundError(response: Response): void {
+  expect(response.status).toBe(404);
+}
+
+export function expectForbiddenError(response: Response): void {
+  expect(response.status).toBe(403);
+}
 
 /**
- * Helper to test API route with authentication
+ * Data assertion helpers
  */
-export const testApiRouteAuth = async (
-  handler: Function,
-  userInfo?: Partial<ServerUserInfo>,
-  requestBody?: any,
-  params?: Record<string, string>,
-  method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' = 'GET',
-  path?: string
-) => {
-  const requestPath = path || '/api/test';
-  const request = createRequestWithAuth(requestPath, method, requestBody, userInfo);
-  const context = createTestContext(params);
+export function expectSuccessData(data: any): void {
+  expect(data.success).toBe(true);
+  expect(data.data).toBeDefined();
+}
 
-  const response = await handler(request, context);
-  const data = await response.json();
-
-  return { response, data };
-};
+export function expectErrorData(data: any, errorMessage?: string): void {
+  expect(data.success).toBe(false);
+  if (errorMessage) {
+    expect(data.message || data.error).toContain(errorMessage);
+  }
+}
 
 /**
- * Helper to test API route without authentication
+ * Common test setup for API route test suites
  */
-export const testApiRouteUnauth = async (
-  handler: Function,
-  requestBody?: any,
-  params?: Record<string, string>,
-  method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' = 'GET',
-  path?: string
-) => {
-  const requestPath = path || '/api/test';
-  const request = createUnauthenticatedRequest(requestPath, method, requestBody);
-  const context = createTestContext(params);
-
-  const response = await handler(request, context);
-  const data = await response.json();
-
-  return { response, data };
-};
-
-/**
- * Setup common test environment
- */
-export const setupAuthTestEnvironment = () => {
+export function setupApiRouteTests(): void {
   beforeEach(() => {
-    // Don't reset mocks - just clear call history
-    mockGetServerSession.mockClear();
+    resetAuthMocks();
   });
 
   afterEach(() => {
-    // Don't reset mocks - just clear call history
-    mockGetServerSession.mockClear();
+    resetAuthMocks();
   });
-};
+}
 
 /**
- * Common test users
+ * Legacy compatibility functions for existing tests
+ * These are deprecated - use the new functions above
  */
-export const TEST_USERS = {
-  FREE_USER: createTestUserInfo({
-    userId: 'free-user-123',
-    email: 'free@example.com',
-    subscriptionTier: 'free',
-  }),
-  PREMIUM_USER: createTestUserInfo({
-    userId: 'premium-user-123',
-    email: 'premium@example.com',
-    subscriptionTier: 'expert',
-  }),
-  ADMIN_USER: createTestUserInfo({
-    userId: 'admin-user-123',
-    email: 'admin@example.com',
-    subscriptionTier: 'guild',
-  }),
-};
+export const testApiRouteAuth = testAuthenticatedRoute;
+export const testApiRouteUnauth = testUnauthenticatedRoute;
+export const expectAuthError = expectAuthenticationError;
