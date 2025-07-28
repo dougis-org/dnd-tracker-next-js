@@ -7,7 +7,6 @@ jest.mock('@/lib/services/CharacterService');
 
 // Import test helpers - they handle auth mocking
 import {
-  createTestContext,
   expectSuccessResponse,
   expectAuthError,
   expectValidationError,

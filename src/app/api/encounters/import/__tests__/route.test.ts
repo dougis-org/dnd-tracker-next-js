@@ -225,7 +225,7 @@ describe('/api/encounters/import', () => {
 
     it('should import encounter from XML successfully', async () => {
       const xmlData = '<encounter><name>Test XML Encounter</name><description>XML import test</description></encounter>';
-      
+
       mockService.importFromXml.mockResolvedValue(
         mockApiResponses.success(mockEncounter)
       );
