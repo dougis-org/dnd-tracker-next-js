@@ -24,10 +24,15 @@ export const TEST_USER = {
 } as const;
 
 /**
+ * Pre-created mock session for TEST_USER to reduce complexity in mock functions
+ */
+const TEST_USER_SESSION = createMockSession(TEST_USER.id);
+
+/**
  * Mock auth to return successful authentication
  */
 export const mockAuthSuccess = (mockAuth: jest.MockedFunction<typeof auth>) => {
-  mockAuth.mockResolvedValue(createMockSession(TEST_USER.id));
+  mockAuth.mockResolvedValue(TEST_USER_SESSION);
 };
 
 /**
