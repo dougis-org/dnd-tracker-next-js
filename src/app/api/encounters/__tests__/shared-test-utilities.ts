@@ -9,6 +9,7 @@ import { NextRequest } from 'next/server';
 import { Types } from 'mongoose';
 import { auth } from '@/lib/auth';
 import { EncounterServiceImportExport } from '@/lib/services/EncounterServiceImportExport';
+import { createMockSession } from '@/lib/test-utils/shared-api-test-helpers';
 
 // ============================================================================
 // AUTHENTICATION UTILITIES
@@ -24,11 +25,10 @@ export const TEST_USER = {
 
 /**
  * Mock auth to return successful authentication
+ * Uses shared factory function to eliminate code duplication
  */
 export const mockAuthSuccess = (mockAuth: jest.MockedFunction<typeof auth>) => {
-  mockAuth.mockResolvedValue({
-    user: TEST_USER,
-  } as any);
+  mockAuth.mockResolvedValue(createMockSession(TEST_USER.id));
 };
 
 /**
