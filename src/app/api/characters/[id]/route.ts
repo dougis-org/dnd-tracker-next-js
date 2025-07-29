@@ -12,7 +12,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { error, userId } = await initializeRoute(request);
+    const { error, userId } = await initializeRoute();
     if (error) return error;
 
     const resolvedParams = await params;
@@ -29,7 +29,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { error, userId } = await initializeRoute(request);
+    const { error, userId } = await initializeRoute();
     if (error) return error;
 
     const resolvedParams = await params;
@@ -50,7 +50,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { error, userId } = await initializeRoute(request);
+    const { error, userId } = await initializeRoute();
     if (error) return error;
 
     const resolvedParams = await params;

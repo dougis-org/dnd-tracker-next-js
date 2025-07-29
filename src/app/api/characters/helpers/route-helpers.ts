@@ -1,27 +1,26 @@
-import { NextRequest } from 'next/server';
 import { connectToDatabase } from '@/lib/db';
 import { characterCreationSchema, characterUpdateSchema } from '@/lib/validations/character';
 import {
   createErrorResponse,
-  createSuccessResponse,
-  validateAuth
+  createSuccessResponse
 } from './api-helpers';
+import { auth } from '@/lib/auth';
 
 /**
  * Common route initialization - handles DB connection and authentication
  */
-export async function initializeRoute(request: NextRequest) {
+export async function initializeRoute() {
   await connectToDatabase();
 
-  const userId = validateAuth(request);
-  if (!userId) {
+  const session = await auth();
+  if (!session?.user?.id) {
     return {
       error: createErrorResponse('Unauthorized', 401),
       userId: null
     };
   }
 
-  return { error: null, userId };
+  return { error: null, userId: session.user.id };
 }
 
 /**
