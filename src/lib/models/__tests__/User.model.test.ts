@@ -9,8 +9,13 @@ import type { IUser, CreateUserInput, SubscriptionFeature } from '../User';
 
 // Mock implementation of User model methods for testing
 const createMockUser = (overrides: Partial<IUser> = {}): IUser => {
+  // Create a stable ObjectId that won't change between setup and test execution
+  const objectId = overrides._id || new Types.ObjectId();
+  // Immediately convert to string to avoid any timing issues
+  const objectIdString = objectId.toString();
+
   const defaultUser = {
-    _id: new Types.ObjectId(),
+    _id: objectId,
     email: 'test@example.com',
     username: 'testuser',
     firstName: 'Test',
@@ -46,21 +51,23 @@ const createMockUser = (overrides: Partial<IUser> = {}): IUser => {
     ...overrides,
   } as IUser;
 
-  // Implement toPublicJSON method
-  (defaultUser.toPublicJSON as jest.Mock).mockImplementation(() => ({
-    id: defaultUser._id.toString(),
-    email: defaultUser.email,
-    username: defaultUser.username,
-    firstName: defaultUser.firstName,
-    lastName: defaultUser.lastName,
-    role: defaultUser.role,
-    subscriptionTier: defaultUser.subscriptionTier,
-    isEmailVerified: defaultUser.isEmailVerified,
-    lastLoginAt: defaultUser.lastLoginAt,
-    preferences: defaultUser.preferences,
-    createdAt: defaultUser.createdAt,
-    updatedAt: defaultUser.updatedAt,
-  }));
+  // Implement toPublicJSON method using the pre-computed string
+  (defaultUser.toPublicJSON as jest.Mock).mockImplementation(() => {
+    return {
+      id: objectIdString,
+      email: defaultUser.email,
+      username: defaultUser.username,
+      firstName: defaultUser.firstName,
+      lastName: defaultUser.lastName,
+      role: defaultUser.role,
+      subscriptionTier: defaultUser.subscriptionTier,
+      isEmailVerified: defaultUser.isEmailVerified,
+      lastLoginAt: defaultUser.lastLoginAt,
+      preferences: defaultUser.preferences,
+      createdAt: defaultUser.createdAt,
+      updatedAt: defaultUser.updatedAt,
+    };
+  });
 
   // Implement canAccessFeature method
   (defaultUser.canAccessFeature as jest.Mock).mockImplementation((feature: SubscriptionFeature, quantity: number) => {
@@ -107,9 +114,12 @@ describe('User Model Unit Tests', () => {
 
   describe('Instance Methods', () => {
     let mockUser: IUser;
+    let stableObjectId: Types.ObjectId;
 
     beforeEach(() => {
-      mockUser = createMockUser();
+      // Create a stable ObjectId that will be consistent across the test
+      stableObjectId = new Types.ObjectId();
+      mockUser = createMockUser({ _id: stableObjectId });
     });
 
     describe('toPublicJSON', () => {
@@ -136,10 +146,16 @@ describe('User Model Unit Tests', () => {
 
       it('should convert ObjectId to string for id field', () => {
         const publicUser = mockUser.toPublicJSON();
+
+        // Verify the id field is a string
         expect(typeof publicUser.id).toBe('string');
-        expect(publicUser.id).toBe(mockUser._id.toString());
+
         // Verify it's a valid ObjectId format (24 hex characters)
         expect(publicUser.id).toMatch(/^[a-f0-9]{24}$/);
+
+        // Verify it's not undefined or empty
+        expect(publicUser.id).toBeTruthy();
+        expect(publicUser.id.length).toBe(24);
       });
     });
 

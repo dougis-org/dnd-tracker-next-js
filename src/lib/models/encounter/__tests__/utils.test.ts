@@ -80,12 +80,13 @@ describe('Encounter Utils', () => {
 
   describe('findParticipantById', () => {
     it('should find participant by ID', () => {
-      const characterId = new Types.ObjectId();
+      const characterIdString = '507f1f77bcf86cd799439013';
+      const characterId = new Types.ObjectId(characterIdString);
       const participants: IParticipantReference[] = [
         createTestParticipant({ characterId }),
       ];
 
-      const found = findParticipantById(participants, characterId.toString());
+      const found = findParticipantById(participants, characterIdString);
       expect(found).toBeTruthy();
       expect(found?.name).toBe('Test Character');
     });
@@ -95,7 +96,7 @@ describe('Encounter Utils', () => {
 
       const found = findParticipantById(
         participants,
-        new Types.ObjectId().toString()
+        '507f1f77bcf86cd799439999'
       );
       expect(found).toBeNull();
     });

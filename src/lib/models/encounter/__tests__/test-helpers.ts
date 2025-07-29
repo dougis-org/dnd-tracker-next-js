@@ -8,7 +8,7 @@ import { IParticipantReference, IInitiativeEntry } from '../interfaces';
 export const createTestParticipant = (
   overrides?: Partial<IParticipantReference>
 ): IParticipantReference => ({
-  characterId: new Types.ObjectId(),
+  characterId: new Types.ObjectId('507f1f77bcf86cd799439011'),
   name: 'Test Character',
   type: 'pc',
   maxHitPoints: 100,
@@ -25,7 +25,7 @@ export const createTestParticipant = (
 export const createTestInitiativeEntry = (
   overrides?: Partial<IInitiativeEntry>
 ): IInitiativeEntry => ({
-  participantId: new Types.ObjectId(),
+  participantId: new Types.ObjectId('507f1f77bcf86cd799439012'),
   initiative: 15,
   dexterity: 14,
   isActive: false,

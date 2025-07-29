@@ -76,8 +76,8 @@ const createMockEncounter = (): IEncounter => ({
   toSummary: toSummary.bind(this),
 });
 
-const createMockParticipant = (): IParticipantReference => ({
-  characterId: new Types.ObjectId(),
+const createMockParticipant = (characterIdString?: string): IParticipantReference => ({
+  characterId: new Types.ObjectId(characterIdString || '507f1f77bcf86cd799439011'),
   name: 'Test Character',
   type: 'pc',
   maxHitPoints: 100,
@@ -122,12 +122,13 @@ describe('Encounter Methods', () => {
 
     describe('removeParticipant', () => {
       it('should remove participant and return true', () => {
-        const participant = createMockParticipant();
+        const characterIdString = '507f1f77bcf86cd799439011';
+        const participant = createMockParticipant(characterIdString);
         encounter.participants = [participant];
 
         const result = removeParticipant(
           encounter,
-          participant.characterId.toString()
+          characterIdString
         );
         expect(result).toBe(true);
         expect(encounter.participants).toHaveLength(0);
@@ -142,11 +143,12 @@ describe('Encounter Methods', () => {
       });
 
       it('should remove from initiative order and adjust current turn', () => {
-        const participant = createMockParticipant();
+        const characterIdString = '507f1f77bcf86cd799439012';
+        const participant = createMockParticipant(characterIdString);
         encounter.participants = [participant];
         encounter.combatState.initiativeOrder = [
           {
-            participantId: participant.characterId,
+            participantId: new Types.ObjectId(characterIdString),
             initiative: 15,
             dexterity: 14,
             isActive: false,
@@ -155,7 +157,7 @@ describe('Encounter Methods', () => {
         ];
         encounter.combatState.currentTurn = 1;
 
-        removeParticipant(encounter, participant.characterId.toString());
+        removeParticipant(encounter, characterIdString);
         expect(encounter.combatState.initiativeOrder).toHaveLength(0);
         expect(encounter.combatState.currentTurn).toBe(0);
       });
@@ -163,12 +165,13 @@ describe('Encounter Methods', () => {
 
     describe('updateParticipant', () => {
       it('should update participant and return true', () => {
-        const participant = createMockParticipant();
+        const characterIdString = '507f1f77bcf86cd799439013';
+        const participant = createMockParticipant(characterIdString);
         encounter.participants = [participant];
 
         const result = updateParticipant(
           encounter,
-          participant.characterId.toString(),
+          characterIdString,
           {
             currentHitPoints: 50,
           }
@@ -191,12 +194,13 @@ describe('Encounter Methods', () => {
 
     describe('getParticipant', () => {
       it('should return participant if found', () => {
-        const participant = createMockParticipant();
+        const characterIdString = '507f1f77bcf86cd799439014';
+        const participant = createMockParticipant(characterIdString);
         encounter.participants = [participant];
 
         const result = getParticipant(
           encounter,
-          participant.characterId.toString()
+          characterIdString
         );
         expect(result).toBe(participant);
       });
@@ -370,7 +374,8 @@ describe('Encounter Methods', () => {
   describe('Initiative and Combat Actions', () => {
     describe('setInitiative', () => {
       it('should update initiative and re-sort order', () => {
-        const participantId = new Types.ObjectId();
+        const participantIdString = '507f1f77bcf86cd799439019';
+        const participantId = new Types.ObjectId(participantIdString);
         encounter.combatState.initiativeOrder = [
           {
             participantId,
@@ -380,7 +385,7 @@ describe('Encounter Methods', () => {
             hasActed: false,
           },
           {
-            participantId: new Types.ObjectId(),
+            participantId: new Types.ObjectId('507f1f77bcf86cd799439020'),
             initiative: 15,
             dexterity: 14,
             isActive: false,
@@ -390,7 +395,7 @@ describe('Encounter Methods', () => {
 
         const result = setInitiative(
           encounter,
-          participantId.toString(),
+          participantIdString,
           20,
           16
         );
@@ -414,12 +419,13 @@ describe('Encounter Methods', () => {
 
     describe('applyDamage', () => {
       it('should apply damage to participant', () => {
-        const participant = createMockParticipant();
+        const characterIdString = '507f1f77bcf86cd799439015';
+        const participant = createMockParticipant(characterIdString);
         encounter.participants = [participant];
 
         const result = applyDamage(
           encounter,
-          participant.characterId.toString(),
+          characterIdString,
           20
         );
         expect(result).toBe(true);
@@ -438,12 +444,13 @@ describe('Encounter Methods', () => {
 
     describe('applyHealing', () => {
       it('should apply healing to participant', () => {
-        const participant = createMockParticipant();
+        const characterIdString = '507f1f77bcf86cd799439016';
+        const participant = createMockParticipant(characterIdString);
         encounter.participants = [participant];
 
         const result = applyHealing(
           encounter,
-          participant.characterId.toString(),
+          characterIdString,
           20
         );
         expect(result).toBe(true);
@@ -462,12 +469,13 @@ describe('Encounter Methods', () => {
 
     describe('addCondition', () => {
       it('should add condition to participant', () => {
-        const participant = createMockParticipant();
+        const characterIdString = '507f1f77bcf86cd799439017';
+        const participant = createMockParticipant(characterIdString);
         encounter.participants = [participant];
 
         const result = addCondition(
           encounter,
-          participant.characterId.toString(),
+          characterIdString,
           'poisoned'
         );
         expect(result).toBe(true);
@@ -486,13 +494,14 @@ describe('Encounter Methods', () => {
 
     describe('removeCondition', () => {
       it('should remove condition from participant', () => {
-        const participant = createMockParticipant();
+        const characterIdString = '507f1f77bcf86cd799439018';
+        const participant = createMockParticipant(characterIdString);
         participant.conditions = ['poisoned'];
         encounter.participants = [participant];
 
         const result = removeCondition(
           encounter,
-          participant.characterId.toString(),
+          characterIdString,
           'poisoned'
         );
         expect(result).toBe(true);
