@@ -16,6 +16,7 @@ complexity explosion from previous "big bang" rewrite attempts.
 ## Phase Structure & Parallel Execution Strategy
 
 ### Phase 1: Analysis and Core Fixes (Weeks 1-2)
+
 **Objective**: Understand current state and fix fundamental issues without major rewrites
 
 #### Stream 1A: Test Analysis & Infrastructure (Sequential)
@@ -65,6 +66,7 @@ complexity explosion from previous "big bang" rewrite attempts.
   - **Estimated Duration**: 3-4 days
 
 ### Phase 2: NextAuth Integration (Weeks 2-3)
+
 **Objective**: Properly integrate NextAuth with existing systems
 
 #### Stream 2A: NextAuth Configuration (Can start after Phase 1 core)
@@ -82,6 +84,7 @@ complexity explosion from previous "big bang" rewrite attempts.
   - **Estimated Duration**: 3-4 days
 
 #### Stream 2B: Middleware Integration (Can start after API alignment)
+
 - **[#528 - Phase 2.3: Ensure middleware respects authentication][issue-528]**
   - **Priority**: P1 MVP 🔴
   - **Dependencies**: API route alignment from #534
@@ -90,6 +93,7 @@ complexity explosion from previous "big bang" rewrite attempts.
   - **Estimated Duration**: 3-4 days
 
 #### Stream 2C: Integration Testing (Can start after test utilities)
+
 - **[#536 - Phase 2.4: Add integration tests for complete authentication flow][issue-536]**
   - **Priority**: P1 MVP 🔴
   - **Dependencies**: Test helpers from #535, Session fixes from #527
@@ -97,9 +101,11 @@ complexity explosion from previous "big bang" rewrite attempts.
   - **Estimated Duration**: 4-5 days
 
 ### Phase 3: Production Validation (Weeks 3-4)
+
 **Objective**: Ensure authentication works correctly in production environment
 
 #### Stream 3A: Production Environment (Can start early)
+
 - **[#529 - Phase 3.1: Configure Fly.io environment for authentication][issue-529]**
   - **Priority**: P1 MVP 🔴
   - **Dependencies**: None (infrastructure setup)
@@ -108,6 +114,7 @@ complexity explosion from previous "big bang" rewrite attempts.
   - **Estimated Duration**: 2-3 days
 
 #### Stream 3B: Production Testing (Sequential after Phase 2)
+
 - **[#530 - Phase 3.2: Test production authentication flow][issue-530]**
   - **Priority**: P1 MVP 🔴
   - **Dependencies**: Session storage (#527), Middleware (#528), Fly.io config (#529)
@@ -115,6 +122,7 @@ complexity explosion from previous "big bang" rewrite attempts.
   - **Estimated Duration**: 3-4 days
 
 #### Stream 3C: Advanced Testing Utilities
+
 - **[#537 - Phase 3.3: Create realistic session mocks and test utilities][issue-537]**
   - **Priority**: P1 MVP 🔴
   - **Dependencies**: Integration tests from #536
@@ -124,39 +132,46 @@ complexity explosion from previous "big bang" rewrite attempts.
 ## Parallel Execution Timeline
 
 ### Week 1
+
 - **Start immediately**: #522 (Test Analysis)
 - **Day 3**: Start #534 (API Routes) and #535 (Test Utilities) after test analysis
 - **Day 4**: Start #523 (Infrastructure) based on analysis insights
 
 ### Week 2
+
 - **Day 1**: Start #524 (SessionManager) after infrastructure fixes
 - **Day 3**: Start #525 (Auth Incremental) after SessionManager
 - **Day 4**: Start #529 (Fly.io Config) - no dependencies
 - **Day 5**: Start #526 (MongoDB Adapter) after database fixes
 
 ### Week 3
+
 - **Day 1**: Start #527 (Session Storage) after MongoDB adapter
 - **Day 2**: Start #528 (Middleware) after API alignment complete
 - **Day 3**: Start #536 (Integration Tests) after test utilities and session storage
 - **Day 4**: Start #530 (Production Testing) after middleware and Fly.io config
 
 ### Week 4
+
 - **Day 1**: Start #537 (Advanced Test Utilities) after integration tests
 - **Days 2-5**: Complete remaining work and final validation
 
 ## Quality Gates & Risk Mitigation
 
 ### Before Each Issue Starts
+
 - [ ] All dependencies completed and merged
 - [ ] Codacy scan of current codebase shows no regressions
 - [ ] Test suite passing for affected areas
 
 ### During Development
+
 - [ ] Each PR must pass all CI/CD checks
 - [ ] Codacy quality gates enforced (no complexity increases)
 - [ ] Test coverage maintained or improved
 
 ### Before Issue Completion
+
 - [ ] Integration testing with dependent components
 - [ ] Production-like environment validation
 - [ ] Documentation updated
@@ -164,12 +179,14 @@ complexity explosion from previous "big bang" rewrite attempts.
 ## Critical Success Factors
 
 ### Technical Requirements
+
 1. **No "Big Bang" Changes**: Each issue must be incremental and focused
 2. **Pattern Consistency**: Follow established User model and mongoose patterns
 3. **Test Quality**: Tests must reflect real authentication behavior, not mock 401s
 4. **Database Integrity**: Ensure proper MongoDB session persistence
 
 ### Process Requirements
+
 1. **Dependency Management**: Strict adherence to dependency chains
 2. **Quality First**: No shortcuts that introduce technical debt
 3. **Communication**: Clear status updates on blocking dependencies
@@ -178,11 +195,13 @@ complexity explosion from previous "big bang" rewrite attempts.
 ## Risk Assessment & Mitigation
 
 ### High Risk Areas
+
 - **Database Session Persistence**: Critical for user experience
 - **Middleware Integration**: Affects all protected routes
 - **Production Environment**: Configuration complexity with Fly.io
 
 ### Mitigation Strategies
+
 - **Incremental Testing**: Test each change in isolation before integration
 - **Rollback Plans**: Maintain ability to revert changes quickly
 - **Environment Parity**: Ensure dev/staging/prod consistency
@@ -191,6 +210,7 @@ complexity explosion from previous "big bang" rewrite attempts.
 ## Completion Criteria
 
 ### Phase 1 Complete When
+
 - [ ] All test assumptions documented and corrected
 - [ ] Core infrastructure stable and properly configured
 - [ ] SessionManager working with database persistence
@@ -198,18 +218,21 @@ complexity explosion from previous "big bang" rewrite attempts.
 - [x] **Test helpers properly simulate authentication** ✅ (#535 - Completed 2025-07-29)
 
 ### Phase 2 Complete When
+
 - [ ] NextAuth fully integrated with MongoDB
 - [ ] Session storage and retrieval working correctly
 - [ ] Middleware properly handling all authentication scenarios
 - [ ] Integration tests covering complete auth flows
 
 ### Phase 3 Complete When
+
 - [ ] Production environment properly configured
 - [ ] Authentication working in production
 - [ ] Advanced test utilities available for future development
 - [ ] All monitoring and alerting in place
 
 ### Overall Success When
+
 - [ ] Authentication works reliably in development and production
 - [ ] No increase in code complexity or duplication
 - [ ] Comprehensive test coverage for authentication flows
@@ -245,6 +268,7 @@ complexity explosion from previous "big bang" rewrite attempts.
 ## Recent Updates
 
 ### 2025-07-29 - Issues #534 & #535 Completed
+
 - ✅ **Phase 1.4: Align API routes with NextAuth session validation** (#534) - Successfully migrated
   character API routes from header-based authentication to NextAuth session validation, achieving
   consistency across all API endpoints. All tests updated to use NextAuth session mocking.
@@ -254,6 +278,7 @@ complexity explosion from previous "big bang" rewrite attempts.
   during transition period. All code duplications eliminated (12 → 0 clones).
 
 ### 2025-07-29 - Issues #523 & #529 Completed
+
 - ✅ **Phase 1.2: Fix core infrastructure issues** (#523) - Successfully resolved fundamental infrastructure
   problems causing test failures. Fixed Mongoose model registration conflicts, disabled conflicting Jest
   global MongoDB setup, enhanced test environment isolation with proper mocking, and reduced code
@@ -265,6 +290,7 @@ complexity explosion from previous "big bang" rewrite attempts.
   are working correctly in production with MongoDB connection and JWT session storage.
 
 ### 2025-07-29 - Issue #546 Completed
+
 - ✅ **Issue #546: Eliminate hardcoded mock session objects** - Successfully replaced hardcoded mock session
   object in encounter test utilities with shared `createMockSession` factory function. Reduced code complexity
   from 31 to within limits (≤20) by replacing nested object structure with simple function call. Eliminated
@@ -286,4 +312,3 @@ complexity explosion from previous "big bang" rewrite attempts.
 [issue-535]: https://github.com/dougis-org/dnd-tracker-next-js/issues/535
 [issue-536]: https://github.com/dougis-org/dnd-tracker-next-js/issues/536
 [issue-537]: https://github.com/dougis-org/dnd-tracker-next-js/issues/537
-[issue-546]: https://github.com/dougis-org/dnd-tracker-next-js/issues/546
