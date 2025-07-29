@@ -8,6 +8,7 @@ import {
   mockCharacterService,
   setupSuccessfulGetCharacters,
   setupSuccessfulCharacterCreate,
+  setupSuccessfulCharactersByType,
   createAuthenticatedRequest,
   createCharacterListRequest,
   createTestCharacters,
@@ -19,6 +20,15 @@ import {
 // Mock dependencies
 jest.mock('@/lib/services/CharacterService');
 jest.mock('@/lib/db');
+
+// Mock NextAuth for future compatibility
+jest.mock('@/lib/auth', () => ({
+  auth: jest.fn(),
+}));
+
+// Get the mocked auth function
+const { auth } = require('@/lib/auth');
+const mockAuth = auth as jest.MockedFunction<typeof auth>;
 
 describe('/api/characters API Route', () => {
   beforeEach(() => {
@@ -60,16 +70,13 @@ describe('/api/characters API Route', () => {
     });
 
     it('should return 401 when user is not authenticated', async () => {
-      await runAuthenticationTest(GET);
+      await runAuthenticationTest(GET, mockAuth);
     });
 
     it('should filter characters by type when specified', async () => {
       // Arrange
       const pcCharacters = [{ name: 'PC Character', type: 'pc' }];
-      mockCharacterService.getCharactersByType.mockResolvedValue({
-        success: true,
-        data: pcCharacters
-      });
+      setupSuccessfulCharactersByType(pcCharacters);
       const request = createCharacterListRequest('?type=pc');
 
       // Act
@@ -135,7 +142,7 @@ describe('/api/characters API Route', () => {
     });
 
     it('should return 401 when user is not authenticated', async () => {
-      await runAuthenticationTest(POST);
+      await runAuthenticationTest(POST, mockAuth);
     });
   });
 });

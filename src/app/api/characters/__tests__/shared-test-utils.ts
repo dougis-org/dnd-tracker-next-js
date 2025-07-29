@@ -5,64 +5,56 @@ import {
   createMockRequest,
   createTestCharacter,
   expectErrorResponse,
+  createMockParams,
 } from './test-helpers';
+import {
+  expectSuccessResponse,
+  setupNextAuthMocks,
+  setupUnauthenticatedState,
+} from '@/lib/test-utils/shared-api-test-helpers';
 
 // Mock service utilities
 export const mockCharacterService = CharacterService as jest.Mocked<typeof CharacterService>;
 
+// Common mock response patterns
+const createSuccessResponse = (data: any) => ({ success: true, data });
+const createErrorResponse = (error: any) => ({ success: false, error });
+const createPaginatedResponse = (items: any[]) => createSuccessResponse({
+  items,
+  pagination: { page: 1, limit: 50, total: items.length, totalPages: 1 }
+});
+
 // Common test setup
 export const setupSuccessfulGetCharacters = (characters: any[] = []) => {
-  mockCharacterService.getCharactersByOwner.mockResolvedValue({
-    success: true,
-    data: {
-      items: characters,
-      pagination: { page: 1, limit: 50, total: characters.length, totalPages: 1 }
-    }
-  });
+  mockCharacterService.getCharactersByOwner.mockResolvedValue(createPaginatedResponse(characters));
 };
 
 export const setupSuccessfulCharacterById = (character: any) => {
-  mockCharacterService.getCharacterById.mockResolvedValue({
-    success: true,
-    data: character
-  });
+  mockCharacterService.getCharacterById.mockResolvedValue(createSuccessResponse(character));
 };
 
 export const setupSuccessfulCharacterUpdate = (character: any) => {
-  mockCharacterService.updateCharacter.mockResolvedValue({
-    success: true,
-    data: character
-  });
+  mockCharacterService.updateCharacter.mockResolvedValue(createSuccessResponse(character));
 };
 
 export const setupSuccessfulCharacterCreate = (character: any) => {
-  mockCharacterService.createCharacter.mockResolvedValue({
-    success: true,
-    data: character
-  });
+  mockCharacterService.createCharacter.mockResolvedValue(createSuccessResponse(character));
 };
 
 export const setupSuccessfulCharacterDelete = () => {
-  mockCharacterService.deleteCharacter.mockResolvedValue({
-    success: true,
-    data: undefined
-  });
+  mockCharacterService.deleteCharacter.mockResolvedValue(createSuccessResponse(undefined));
+};
+
+export const setupSuccessfulCharactersByType = (characters: any[]) => {
+  mockCharacterService.getCharactersByType.mockResolvedValue(createSuccessResponse(characters));
 };
 
 export const setupCharacterNotFound = () => {
   const notFoundError = { code: 'CHARACTER_NOT_FOUND', message: 'Character not found' };
-  mockCharacterService.getCharacterById.mockResolvedValue({
-    success: false,
-    error: notFoundError
-  });
-  mockCharacterService.updateCharacter.mockResolvedValue({
-    success: false,
-    error: notFoundError
-  });
-  mockCharacterService.deleteCharacter.mockResolvedValue({
-    success: false,
-    error: notFoundError
-  });
+  const errorResponse = createErrorResponse(notFoundError);
+  mockCharacterService.getCharacterById.mockResolvedValue(errorResponse);
+  mockCharacterService.updateCharacter.mockResolvedValue(errorResponse);
+  mockCharacterService.deleteCharacter.mockResolvedValue(errorResponse);
 };
 
 export const setupAccessDeniedError = () => {
@@ -72,15 +64,34 @@ export const setupAccessDeniedError = () => {
   mockCharacterService.deleteCharacter.mockRejectedValue(accessError);
 };
 
-// Common request creators
-export const createAuthenticatedRequest = (url: string, options: any = {}) => {
+// Common request creators (NextAuth compatible with header fallback)
+export const createAuthenticatedRequest = (
+  url: string,
+  options: any = {},
+  mockAuth?: jest.MockedFunction<any>
+) => {
+  // Setup NextAuth mock if provided (for future API routes)
+  if (mockAuth) {
+    setupNextAuthMocks(mockAuth, undefined, TEST_USER_ID);
+  }
+
+  // For current character API routes that still use header-based auth
   return createMockRequest(url, {
     ...options,
     headers: { 'x-user-id': TEST_USER_ID, ...options.headers }
   });
 };
 
-export const createUnauthenticatedRequest = (url: string, options: any = {}) => {
+export const createUnauthenticatedRequest = (
+  url: string,
+  options: any = {},
+  mockAuth?: jest.MockedFunction<any>
+) => {
+  // Setup unauthenticated mock if provided
+  if (mockAuth) {
+    setupUnauthenticatedState(mockAuth);
+  }
+
   return createMockRequest(url, options);
 };
 
@@ -90,6 +101,17 @@ export const createCharacterRequest = (overrides: any = {}) => {
 
 export const createCharacterListRequest = (queryParams: string = '') => {
   return createAuthenticatedRequest(`http://localhost:3000/api/characters${queryParams}`);
+};
+
+// Common test execution patterns
+export const createMockParamsObject = () => ({ params: createMockParams() });
+
+export const executeApiTest = async (
+  apiFunction: Function,
+  request: any,
+  paramsObject: any = createMockParamsObject()
+) => {
+  return await apiFunction(request, paramsObject);
 };
 
 // Common test data creators
@@ -105,13 +127,14 @@ export const createUpdateData = () => ({
 
 // Common assertion patterns
 export const expectSuccessfulResponse = async (response: Response, expectedData?: any) => {
-  const data = await response.json();
-  expect(response.status).toBe(200);
-  expect(data.success).toBe(true);
   if (expectedData) {
-    expect(data.data).toEqual(expect.objectContaining(expectedData));
+    return expectSuccessResponse(response, { data: expectedData });
+  } else {
+    const data = await response.json();
+    expect(response.status).toBe(200);
+    expect(data.success).toBe(true);
+    return data;
   }
-  return data;
 };
 
 export const expectSuccessfulCreation = async (response: Response, expectedData?: any) => {
@@ -124,23 +147,69 @@ export const expectSuccessfulCreation = async (response: Response, expectedData?
   return data;
 };
 
-// Common test patterns
-export const runAuthenticationTest = async (apiFunction: Function, ...args: any[]) => {
-  const request = createUnauthenticatedRequest('http://localhost:3000/api/test');
+// Common test patterns (NextAuth compatible)
+export const runAuthenticationTest = async (
+  apiFunction: Function,
+  mockAuth?: jest.MockedFunction<any>,
+  ...args: any[]
+) => {
+  const request = createUnauthenticatedRequest('http://localhost:3000/api/test', {}, mockAuth);
   const response = await apiFunction(request, ...args);
   await expectErrorResponse(response, 401, 'Unauthorized');
 };
 
-export const runNotFoundTest = async (apiFunction: Function, setupMock: Function, ...args: any[]) => {
+const runErrorTest = async (
+  apiFunction: Function,
+  setupMock: Function,
+  mockAuth: jest.MockedFunction<any> | undefined,
+  status: number,
+  message: string,
+  ...args: any[]
+) => {
   setupMock();
-  const request = createAuthenticatedRequest('http://localhost:3000/api/test');
+  const request = createAuthenticatedRequest('http://localhost:3000/api/test', {}, mockAuth);
   const response = await apiFunction(request, ...args);
-  await expectErrorResponse(response, 404, 'Character not found');
+  await expectErrorResponse(response, status, message);
 };
 
-export const runAccessDeniedTest = async (apiFunction: Function, setupMock: Function, ...args: any[]) => {
-  setupMock();
-  const request = createAuthenticatedRequest('http://localhost:3000/api/test');
-  const response = await apiFunction(request, ...args);
-  await expectErrorResponse(response, 403, 'Access denied');
+export const runNotFoundTest = async (
+  apiFunction: Function,
+  setupMock: Function,
+  mockAuth?: jest.MockedFunction<any>,
+  ...args: any[]
+) => {
+  await runErrorTest(apiFunction, setupMock, mockAuth, 404, 'Character not found', ...args);
+};
+
+export const runAccessDeniedTest = async (
+  apiFunction: Function,
+  setupMock: Function,
+  mockAuth?: jest.MockedFunction<any>,
+  ...args: any[]
+) => {
+  await runErrorTest(apiFunction, setupMock, mockAuth, 403, 'Access denied', ...args);
+};
+
+// Simplified test runners with standard params
+export const runNotFoundTestWithParams = async (
+  apiFunction: Function,
+  setupMock: Function,
+  mockAuth?: jest.MockedFunction<any>
+) => {
+  await runNotFoundTest(apiFunction, setupMock, mockAuth, createMockParamsObject());
+};
+
+export const runAccessDeniedTestWithParams = async (
+  apiFunction: Function,
+  setupMock: Function,
+  mockAuth?: jest.MockedFunction<any>
+) => {
+  await runAccessDeniedTest(apiFunction, setupMock, mockAuth, createMockParamsObject());
+};
+
+export const runAuthenticationTestWithParams = async (
+  apiFunction: Function,
+  mockAuth?: jest.MockedFunction<any>
+) => {
+  await runAuthenticationTest(apiFunction, mockAuth, createMockParamsObject());
 };

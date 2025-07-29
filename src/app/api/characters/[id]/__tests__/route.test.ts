@@ -3,7 +3,6 @@ import { GET, PUT, DELETE } from '../route';
 import {
   TEST_USER_ID,
   TEST_CHARACTER_ID,
-  createMockParams,
   createTestCharacter,
 } from '../../__tests__/test-helpers';
 import {
@@ -16,14 +15,24 @@ import {
   createCharacterRequest,
   createUpdateData,
   expectSuccessfulResponse,
-  runAuthenticationTest,
-  runNotFoundTest,
-  runAccessDeniedTest,
+  runAuthenticationTestWithParams,
+  runNotFoundTestWithParams,
+  runAccessDeniedTestWithParams,
+  executeApiTest,
 } from '../../__tests__/shared-test-utils';
 
 // Mock dependencies
 jest.mock('@/lib/services/CharacterService');
 jest.mock('@/lib/db');
+
+// Mock NextAuth for future compatibility
+jest.mock('@/lib/auth', () => ({
+  auth: jest.fn(),
+}));
+
+// Get the mocked auth function
+const { auth } = require('@/lib/auth');
+const mockAuth = auth as jest.MockedFunction<typeof auth>;
 
 describe('/api/characters/[id] API Route', () => {
   beforeEach(() => {
@@ -38,7 +47,7 @@ describe('/api/characters/[id] API Route', () => {
       const request = createCharacterRequest();
 
       // Act
-      const response = await GET(request, { params: createMockParams() });
+      const response = await executeApiTest(GET, request);
       const data = await expectSuccessfulResponse(response);
 
       // Assert
@@ -51,11 +60,11 @@ describe('/api/characters/[id] API Route', () => {
     });
 
     it('should return 404 when character does not exist', async () => {
-      await runNotFoundTest(GET, setupCharacterNotFound, { params: createMockParams() });
+      await runNotFoundTestWithParams(GET, setupCharacterNotFound, mockAuth);
     });
 
     it('should return 403 when user does not own character', async () => {
-      await runAccessDeniedTest(GET, setupAccessDeniedError, { params: createMockParams() });
+      await runAccessDeniedTestWithParams(GET, setupAccessDeniedError, mockAuth);
     });
 
     it('should return public character when not owned but public', async () => {
@@ -65,7 +74,7 @@ describe('/api/characters/[id] API Route', () => {
       const request = createCharacterRequest({ headers: { 'x-user-id': 'other-user-id' } });
 
       // Act
-      const response = await GET(request, { params: createMockParams() });
+      const response = await executeApiTest(GET, request);
       const data = await expectSuccessfulResponse(response);
 
       // Assert
@@ -73,7 +82,7 @@ describe('/api/characters/[id] API Route', () => {
     });
 
     it('should return 401 when user is not authenticated', async () => {
-      await runAuthenticationTest(GET, { params: createMockParams() });
+      await runAuthenticationTestWithParams(GET, mockAuth);
     });
   });
 
@@ -90,7 +99,7 @@ describe('/api/characters/[id] API Route', () => {
       });
 
       // Act
-      const response = await PUT(request, { params: createMockParams() });
+      const response = await executeApiTest(PUT, request);
       const data = await expectSuccessfulResponse(response);
 
       // Assert
@@ -104,11 +113,11 @@ describe('/api/characters/[id] API Route', () => {
     });
 
     it('should return 404 when character does not exist', async () => {
-      await runNotFoundTest(PUT, setupCharacterNotFound, { params: createMockParams() });
+      await runNotFoundTestWithParams(PUT, setupCharacterNotFound, mockAuth);
     });
 
     it('should return 403 when user does not own character', async () => {
-      await runAccessDeniedTest(PUT, setupAccessDeniedError, { params: createMockParams() });
+      await runAccessDeniedTestWithParams(PUT, setupAccessDeniedError, mockAuth);
     });
   });
 
@@ -119,7 +128,7 @@ describe('/api/characters/[id] API Route', () => {
       const request = createCharacterRequest({ method: 'DELETE' });
 
       // Act
-      const response = await DELETE(request, { params: createMockParams() });
+      const response = await executeApiTest(DELETE, request);
       const data = await expectSuccessfulResponse(response);
 
       // Assert
@@ -131,11 +140,11 @@ describe('/api/characters/[id] API Route', () => {
     });
 
     it('should return 404 when character does not exist', async () => {
-      await runNotFoundTest(DELETE, setupCharacterNotFound, { params: createMockParams() });
+      await runNotFoundTestWithParams(DELETE, setupCharacterNotFound, mockAuth);
     });
 
     it('should return 403 when user does not own character', async () => {
-      await runAccessDeniedTest(DELETE, setupAccessDeniedError, { params: createMockParams() });
+      await runAccessDeniedTestWithParams(DELETE, setupAccessDeniedError, mockAuth);
     });
   });
 });
