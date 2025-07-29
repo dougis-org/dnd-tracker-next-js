@@ -74,7 +74,7 @@ export const setupAccessDeniedError = () => {
 
 // Common request creators (NextAuth compatible with header fallback)
 export const createAuthenticatedRequest = (
-  url: string, 
+  url: string,
   options: any = {},
   mockAuth?: jest.MockedFunction<any>
 ) => {
@@ -90,7 +90,7 @@ export const createAuthenticatedRequest = (
       expires: '2024-12-31T23:59:59.999Z',
     });
   }
-  
+
   // For current character API routes that still use header-based auth
   return createMockRequest(url, {
     ...options,
@@ -99,7 +99,7 @@ export const createAuthenticatedRequest = (
 };
 
 export const createUnauthenticatedRequest = (
-  url: string, 
+  url: string,
   options: any = {},
   mockAuth?: jest.MockedFunction<any>
 ) => {
@@ -107,7 +107,7 @@ export const createUnauthenticatedRequest = (
   if (mockAuth) {
     mockAuth.mockResolvedValue(null);
   }
-  
+
   return createMockRequest(url, options);
 };
 
@@ -153,7 +153,7 @@ export const expectSuccessfulCreation = async (response: Response, expectedData?
 
 // Common test patterns (NextAuth compatible)
 export const runAuthenticationTest = async (
-  apiFunction: Function, 
+  apiFunction: Function,
   mockAuth?: jest.MockedFunction<any>,
   ...args: any[]
 ) => {
@@ -163,8 +163,8 @@ export const runAuthenticationTest = async (
 };
 
 export const runNotFoundTest = async (
-  apiFunction: Function, 
-  setupMock: Function, 
+  apiFunction: Function,
+  setupMock: Function,
   mockAuth?: jest.MockedFunction<any>,
   ...args: any[]
 ) => {
@@ -175,8 +175,8 @@ export const runNotFoundTest = async (
 };
 
 export const runAccessDeniedTest = async (
-  apiFunction: Function, 
-  setupMock: Function, 
+  apiFunction: Function,
+  setupMock: Function,
   mockAuth?: jest.MockedFunction<any>,
   ...args: any[]
 ) => {

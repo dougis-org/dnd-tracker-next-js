@@ -214,10 +214,10 @@ export const setupNextAuthMocks = (
   userId: string = SHARED_API_TEST_CONSTANTS.TEST_USER_ID
 ) => {
   setupAPITest();
-  
+
   // Mock the auth() function to return a session
   mockAuth.mockResolvedValue(createMockSession(userId));
-  
+
   // Mock getToken if provided
   if (mockGetToken) {
     mockGetToken.mockResolvedValue(createMockJwtToken(userId));
@@ -232,10 +232,10 @@ export const setupUnauthenticatedState = (
   mockGetToken?: jest.MockedFunction<any>
 ) => {
   setupAPITest();
-  
+
   // Mock no session
   mockAuth.mockResolvedValue(null);
-  
+
   // Mock no token if provided
   if (mockGetToken) {
     mockGetToken.mockResolvedValue(null);
@@ -264,7 +264,7 @@ export const executeTestRequest = async (
  * This replaces the old header-based authentication pattern
  */
 export const createAuthenticatedRequest = (
-  url: string, 
+  url: string,
   options: any = {},
   mockAuth?: jest.MockedFunction<any>,
   userId: string = SHARED_API_TEST_CONSTANTS.TEST_USER_ID
@@ -273,7 +273,7 @@ export const createAuthenticatedRequest = (
   if (mockAuth) {
     mockAuth.mockResolvedValue(createMockSession(userId));
   }
-  
+
   return createMockRequest(
     options.body || {},
     options.method || 'GET'
@@ -292,7 +292,7 @@ export const createUnauthenticatedRequest = (
   if (mockAuth) {
     mockAuth.mockResolvedValue(null);
   }
-  
+
   return createMockRequest(
     options.body || {},
     options.method || 'GET'

@@ -241,7 +241,7 @@ describe('Shared API Test Helpers - NextAuth Session Simulation', () => {
         );
 
         expect(request).toBeDefined();
-        
+
         const session = await mockAuth();
         expect(session).toEqual(
           expect.objectContaining({
@@ -254,7 +254,7 @@ describe('Shared API Test Helpers - NextAuth Session Simulation', () => {
 
       it('should use custom user ID when provided', async () => {
         const customUserId = '507f1f77bcf86cd799439999';
-        const request = createAuthenticatedRequest(
+        const _request = createAuthenticatedRequest(
           'http://localhost:3000/api/test',
           {},
           mockAuth,
@@ -300,7 +300,7 @@ describe('Shared API Test Helpers - NextAuth Session Simulation', () => {
         );
 
         expect(request).toBeDefined();
-        
+
         const session = await mockAuth();
         expect(session).toBeNull();
       });
