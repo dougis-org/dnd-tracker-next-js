@@ -49,10 +49,6 @@ export function createSuccessResponse<T>(
   );
 }
 
-export function validateAuth(request: Request): string | null {
-  const userId = request.headers.get('x-user-id');
-  return userId;
-}
 
 export function parseQueryParams(url: string) {
   const { searchParams } = new URL(url);

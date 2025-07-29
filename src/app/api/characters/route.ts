@@ -15,7 +15,7 @@ import {
 
 export async function GET(request: NextRequest) {
   try {
-    const { error, userId } = await initializeRoute(request);
+    const { error, userId } = await initializeRoute();
     if (error) return error;
 
     const { type, search, limit, page } = parseQueryParams(request.url);
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { error, userId } = await initializeRoute(request);
+    const { error, userId } = await initializeRoute();
     if (error) return error;
 
     const body = await request.json();

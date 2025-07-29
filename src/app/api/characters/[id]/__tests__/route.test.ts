@@ -44,7 +44,7 @@ describe('/api/characters/[id] API Route', () => {
       // Arrange
       const character = createTestCharacter();
       setupSuccessfulCharacterById(character);
-      const request = createCharacterRequest();
+      const request = createCharacterRequest({}, mockAuth);
 
       // Act
       const response = await executeApiTest(GET, request);
@@ -71,7 +71,7 @@ describe('/api/characters/[id] API Route', () => {
       // Arrange
       const publicCharacter = createTestCharacter({ name: 'Public Character', isPublic: true });
       setupSuccessfulCharacterById(publicCharacter);
-      const request = createCharacterRequest({ headers: { 'x-user-id': 'other-user-id' } });
+      const request = createCharacterRequest({ headers: { 'x-user-id': 'other-user-id' } }, mockAuth);
 
       // Act
       const response = await executeApiTest(GET, request);
@@ -96,7 +96,7 @@ describe('/api/characters/[id] API Route', () => {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: updateData
-      });
+      }, mockAuth);
 
       // Act
       const response = await executeApiTest(PUT, request);
@@ -125,7 +125,7 @@ describe('/api/characters/[id] API Route', () => {
     it('should delete character when user owns it', async () => {
       // Arrange
       setupSuccessfulCharacterDelete();
-      const request = createCharacterRequest({ method: 'DELETE' });
+      const request = createCharacterRequest({ method: 'DELETE' }, mockAuth);
 
       // Act
       const response = await executeApiTest(DELETE, request);

@@ -64,22 +64,19 @@ export const setupAccessDeniedError = () => {
   mockCharacterService.deleteCharacter.mockRejectedValue(accessError);
 };
 
-// Common request creators (NextAuth compatible with header fallback)
+// Common request creators (NextAuth compatible)
 export const createAuthenticatedRequest = (
   url: string,
   options: any = {},
   mockAuth?: jest.MockedFunction<any>
 ) => {
-  // Setup NextAuth mock if provided (for future API routes)
+  // Setup NextAuth mock - required for character API routes
   if (mockAuth) {
     setupNextAuthMocks(mockAuth, undefined, TEST_USER_ID);
   }
 
-  // For current character API routes that still use header-based auth
-  return createMockRequest(url, {
-    ...options,
-    headers: { 'x-user-id': TEST_USER_ID, ...options.headers }
-  });
+  // Character API routes now use NextAuth session validation
+  return createMockRequest(url, options);
 };
 
 export const createUnauthenticatedRequest = (
@@ -95,12 +92,12 @@ export const createUnauthenticatedRequest = (
   return createMockRequest(url, options);
 };
 
-export const createCharacterRequest = (overrides: any = {}) => {
-  return createAuthenticatedRequest(`http://localhost:3000/api/characters/${TEST_CHARACTER_ID}`, overrides);
+export const createCharacterRequest = (overrides: any = {}, mockAuth?: jest.MockedFunction<any>) => {
+  return createAuthenticatedRequest(`http://localhost:3000/api/characters/${TEST_CHARACTER_ID}`, overrides, mockAuth);
 };
 
-export const createCharacterListRequest = (queryParams: string = '') => {
-  return createAuthenticatedRequest(`http://localhost:3000/api/characters${queryParams}`);
+export const createCharacterListRequest = (queryParams: string = '', mockAuth?: jest.MockedFunction<any>) => {
+  return createAuthenticatedRequest(`http://localhost:3000/api/characters${queryParams}`, {}, mockAuth);
 };
 
 // Common test execution patterns

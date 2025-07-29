@@ -40,7 +40,7 @@ describe('/api/characters API Route', () => {
       // Arrange
       const characters = createTestCharacters();
       setupSuccessfulGetCharacters(characters);
-      const request = createCharacterListRequest();
+      const request = createCharacterListRequest('', mockAuth);
 
       // Act
       const response = await GET(request);
@@ -59,7 +59,7 @@ describe('/api/characters API Route', () => {
     it('should return empty array for user with no characters', async () => {
       // Arrange
       setupSuccessfulGetCharacters([]);
-      const request = createCharacterListRequest();
+      const request = createCharacterListRequest('', mockAuth);
 
       // Act
       const response = await GET(request);
@@ -77,7 +77,7 @@ describe('/api/characters API Route', () => {
       // Arrange
       const pcCharacters = [{ name: 'PC Character', type: 'pc' }];
       setupSuccessfulCharactersByType(pcCharacters);
-      const request = createCharacterListRequest('?type=pc');
+      const request = createCharacterListRequest('?type=pc', mockAuth);
 
       // Act
       const response = await GET(request);
@@ -102,7 +102,7 @@ describe('/api/characters API Route', () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: characterData
-      });
+      }, mockAuth);
 
       // Act
       const response = await POST(request);
@@ -128,7 +128,7 @@ describe('/api/characters API Route', () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: invalidCharacterData
-      });
+      }, mockAuth);
 
       // Act
       const response = await POST(request);
