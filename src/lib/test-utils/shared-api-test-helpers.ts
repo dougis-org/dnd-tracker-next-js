@@ -51,6 +51,16 @@ export const createMockSession = (
 };
 
 /**
+ * Creates a mock session expectation object for testing assertions
+ */
+export const createSessionExpectation = (userId: string = SHARED_API_TEST_CONSTANTS.TEST_USER_ID) =>
+  expect.objectContaining({
+    user: expect.objectContaining({
+      id: userId,
+    }),
+  });
+
+/**
  * Creates a realistic NextAuth JWT token for testing
  */
 export const createMockJwtToken = (
@@ -67,6 +77,14 @@ export const createMockJwtToken = (
   jti: 'test-jwt-id',
   ...overrides,
 });
+
+/**
+ * Creates a JWT token expectation object for testing assertions
+ */
+export const createTokenExpectation = (userId: string = SHARED_API_TEST_CONSTANTS.TEST_USER_ID) =>
+  expect.objectContaining({
+    sub: userId,
+  });
 
 /**
  * Creates mock parameters for API routes
@@ -331,4 +349,44 @@ export const createRouteTestExecutor = (
     const params = createMockParams(userId);
     return handler(mockRequest, { params });
   };
+};
+
+/**
+ * Executes a common auth test pattern and validates the response
+ */
+export const executeAuthTest = async (
+  apiFunction: Function,
+  mockAuth: jest.MockedFunction<any>,
+  expectedStatus: number,
+  expectedMessage: string,
+  ...args: any[]
+) => {
+  const request = createUnauthenticatedRequest('http://localhost:3000/api/test', {}, mockAuth);
+  const response = await apiFunction(request, ...args);
+  await expectErrorResponse(response, expectedStatus, expectedMessage);
+};
+
+/**
+ * Common test helper that executes a mock function and validates against expected result
+ */
+export const executeAndValidateMock = async (
+  mockFn: jest.MockedFunction<any>,
+  expectedResult: any
+) => {
+  const result = await mockFn();
+  expect(result).toEqual(expectedResult);
+  return result;
+};
+
+/**
+ * Common test helper for validating mock setup with both session and token
+ */
+export const validateMockSetup = async (
+  mockAuth: jest.MockedFunction<any>,
+  mockGetToken: jest.MockedFunction<any>,
+  userId: string = SHARED_API_TEST_CONSTANTS.TEST_USER_ID
+) => {
+  const session = await executeAndValidateMock(mockAuth, createSessionExpectation(userId));
+  const token = await executeAndValidateMock(mockGetToken, createTokenExpectation(userId));
+  return { session, token };
 };

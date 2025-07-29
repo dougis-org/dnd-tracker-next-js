@@ -5,7 +5,11 @@ import {
   createMockRequest,
   createTestCharacter,
   expectErrorResponse,
+  createMockParams,
 } from './test-helpers';
+import {
+  createMockSession,
+} from '@/lib/test-utils/shared-api-test-helpers';
 
 // Mock service utilities
 export const mockCharacterService = CharacterService as jest.Mocked<typeof CharacterService>;
@@ -80,15 +84,7 @@ export const createAuthenticatedRequest = (
 ) => {
   // Setup NextAuth mock if provided (for future API routes)
   if (mockAuth) {
-    mockAuth.mockResolvedValue({
-      user: {
-        id: TEST_USER_ID,
-        email: 'test@example.com',
-        name: 'John Doe',
-        subscriptionTier: 'free',
-      },
-      expires: '2024-12-31T23:59:59.999Z',
-    });
+    mockAuth.mockResolvedValue(createMockSession(TEST_USER_ID));
   }
 
   // For current character API routes that still use header-based auth
@@ -117,6 +113,17 @@ export const createCharacterRequest = (overrides: any = {}) => {
 
 export const createCharacterListRequest = (queryParams: string = '') => {
   return createAuthenticatedRequest(`http://localhost:3000/api/characters${queryParams}`);
+};
+
+// Common test execution patterns
+export const createMockParamsObject = () => ({ params: createMockParams() });
+
+export const executeApiTest = async (
+  apiFunction: Function,
+  request: any,
+  paramsObject: any = createMockParamsObject()
+) => {
+  return await apiFunction(request, paramsObject);
 };
 
 // Common test data creators
@@ -184,4 +191,28 @@ export const runAccessDeniedTest = async (
   const request = createAuthenticatedRequest('http://localhost:3000/api/test', {}, mockAuth);
   const response = await apiFunction(request, ...args);
   await expectErrorResponse(response, 403, 'Access denied');
+};
+
+// Simplified test runners with standard params
+export const runNotFoundTestWithParams = async (
+  apiFunction: Function,
+  setupMock: Function,
+  mockAuth?: jest.MockedFunction<any>
+) => {
+  await runNotFoundTest(apiFunction, setupMock, mockAuth, createMockParamsObject());
+};
+
+export const runAccessDeniedTestWithParams = async (
+  apiFunction: Function,
+  setupMock: Function,
+  mockAuth?: jest.MockedFunction<any>
+) => {
+  await runAccessDeniedTest(apiFunction, setupMock, mockAuth, createMockParamsObject());
+};
+
+export const runAuthenticationTestWithParams = async (
+  apiFunction: Function,
+  mockAuth?: jest.MockedFunction<any>
+) => {
+  await runAuthenticationTest(apiFunction, mockAuth, createMockParamsObject());
 };

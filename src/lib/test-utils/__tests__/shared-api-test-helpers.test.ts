@@ -7,6 +7,10 @@ import {
   setupNextAuthMocks,
   setupUnauthenticatedState,
   setupAPITestWithAuth,
+  createSessionExpectation,
+  createTokenExpectation,
+  executeAndValidateMock,
+  validateMockSetup,
 } from '../shared-api-test-helpers';
 
 // Mock NextAuth
@@ -112,28 +116,12 @@ describe('Shared API Test Helpers - NextAuth Session Simulation', () => {
     describe('setupNextAuthMocks', () => {
       it('should setup auth mock to return a session', async () => {
         setupNextAuthMocks(mockAuth, mockGetToken);
-
-        // Test that the mock returns the expected session
-        const session = await mockAuth();
-        expect(session).toEqual(
-          expect.objectContaining({
-            user: expect.objectContaining({
-              id: SHARED_API_TEST_CONSTANTS.TEST_USER_ID,
-            }),
-          })
-        );
+        await executeAndValidateMock(mockAuth, createSessionExpectation());
       });
 
       it('should setup getToken mock when provided', async () => {
         setupNextAuthMocks(mockAuth, mockGetToken);
-
-        // Test that the mock returns the expected token
-        const token = await mockGetToken();
-        expect(token).toEqual(
-          expect.objectContaining({
-            sub: SHARED_API_TEST_CONSTANTS.TEST_USER_ID,
-          })
-        );
+        await executeAndValidateMock(mockGetToken, createTokenExpectation());
       });
 
       it('should work without getToken mock', () => {
@@ -148,23 +136,7 @@ describe('Shared API Test Helpers - NextAuth Session Simulation', () => {
       it('should use custom user ID when provided', async () => {
         const customUserId = '507f1f77bcf86cd799439999';
         setupNextAuthMocks(mockAuth, mockGetToken, customUserId);
-
-        const session = await mockAuth();
-        const token = await mockGetToken();
-
-        expect(session).toEqual(
-          expect.objectContaining({
-            user: expect.objectContaining({
-              id: customUserId,
-            }),
-          })
-        );
-
-        expect(token).toEqual(
-          expect.objectContaining({
-            sub: customUserId,
-          })
-        );
+        await validateMockSetup(mockAuth, mockGetToken, customUserId);
       });
     });
 
@@ -196,29 +168,13 @@ describe('Shared API Test Helpers - NextAuth Session Simulation', () => {
     describe('setupAPITestWithAuth', () => {
       it('should setup auth mock and clear all mocks', async () => {
         setupAPITestWithAuth(mockAuth);
-
-        const session = await mockAuth();
-        expect(session).toEqual(
-          expect.objectContaining({
-            user: expect.objectContaining({
-              id: SHARED_API_TEST_CONSTANTS.TEST_USER_ID,
-            }),
-          })
-        );
+        await executeAndValidateMock(mockAuth, createSessionExpectation());
       });
 
       it('should use custom user ID when provided', async () => {
         const customUserId = '507f1f77bcf86cd799439999';
         setupAPITestWithAuth(mockAuth, undefined, customUserId);
-
-        const session = await mockAuth();
-        expect(session).toEqual(
-          expect.objectContaining({
-            user: expect.objectContaining({
-              id: customUserId,
-            }),
-          })
-        );
+        await executeAndValidateMock(mockAuth, createSessionExpectation(customUserId));
       });
     });
   });
@@ -241,15 +197,7 @@ describe('Shared API Test Helpers - NextAuth Session Simulation', () => {
         );
 
         expect(request).toBeDefined();
-
-        const session = await mockAuth();
-        expect(session).toEqual(
-          expect.objectContaining({
-            user: expect.objectContaining({
-              id: SHARED_API_TEST_CONSTANTS.TEST_USER_ID,
-            }),
-          })
-        );
+        await executeAndValidateMock(mockAuth, createSessionExpectation());
       });
 
       it('should use custom user ID when provided', async () => {
@@ -261,14 +209,7 @@ describe('Shared API Test Helpers - NextAuth Session Simulation', () => {
           customUserId
         );
 
-        const session = await mockAuth();
-        expect(session).toEqual(
-          expect.objectContaining({
-            user: expect.objectContaining({
-              id: customUserId,
-            }),
-          })
-        );
+        await executeAndValidateMock(mockAuth, createSessionExpectation(customUserId));
       });
 
       it('should handle method and body options', () => {
