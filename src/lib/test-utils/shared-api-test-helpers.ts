@@ -45,7 +45,7 @@ export const createMockSession = (
     ...overrides,
     user: {
       ...baseSession.user,
-      ...overrides.user,
+      ...(overrides.user || {}),
     },
   };
 };
