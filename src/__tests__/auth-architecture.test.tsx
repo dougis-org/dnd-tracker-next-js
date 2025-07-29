@@ -1,16 +1,10 @@
-/**
- * Authentication Architecture Tests
- */
-
 import { render, screen } from '@testing-library/react';
 import AuthenticatedClientWrapper from '@/components/layout/AuthenticatedClientWrapper';
 import AuthenticatedServerPage from '@/components/layout/AuthenticatedServerPage';
+import { useSession } from 'next-auth/react';
 import { auth } from '@/lib/auth';
 
 jest.mock('next-auth/react', () => ({
-  SessionProvider: ({ children }: { children: React.ReactNode }) => (
-    <div data-testid="session-provider">{children}</div>
-  ),
   useSession: jest.fn(),
 }));
 
@@ -22,7 +16,6 @@ jest.mock('next/navigation', () => ({
   redirect: jest.fn(),
 }));
 
-import { useSession } from 'next-auth/react';
 import { redirect } from 'next/navigation';
 
 describe('Authentication Architecture', () => {
@@ -31,30 +24,45 @@ describe('Authentication Architecture', () => {
   });
 
   describe('AuthenticatedClientWrapper', () => {
-    it('should render children when authenticated', () => {
+    it('renders children when authenticated', () => {
       (useSession as jest.Mock).mockReturnValue({
-        data: { user: { id: '123', email: 'test@example.com' } },
         status: 'authenticated',
+        data: { user: { id: '123' } },
       });
 
       render(
         <AuthenticatedClientWrapper>
-          <div data-testid="protected-content">Protected Content</div>
+          <div>Protected Content</div>
         </AuthenticatedClientWrapper>
       );
 
-      expect(screen.getByTestId('protected-content')).toBeInTheDocument();
+      expect(screen.getByText('Protected Content')).toBeInTheDocument();
     });
 
-    it('should show error when unauthenticated', () => {
+    it('shows loading state', () => {
       (useSession as jest.Mock).mockReturnValue({
+        status: 'loading',
         data: null,
-        status: 'unauthenticated',
       });
 
       render(
         <AuthenticatedClientWrapper>
-          <div data-testid="protected-content">Protected Content</div>
+          <div>Protected Content</div>
+        </AuthenticatedClientWrapper>
+      );
+
+      expect(screen.getByText('Loading...')).toBeInTheDocument();
+    });
+
+    it('shows sign in message when unauthenticated', () => {
+      (useSession as jest.Mock).mockReturnValue({
+        status: 'unauthenticated',
+        data: null,
+      });
+
+      render(
+        <AuthenticatedClientWrapper>
+          <div>Protected Content</div>
         </AuthenticatedClientWrapper>
       );
 
@@ -63,20 +71,18 @@ describe('Authentication Architecture', () => {
   });
 
   describe('AuthenticatedServerPage', () => {
-    it('should render children when session exists', async () => {
-      (auth as jest.Mock).mockResolvedValue({
-        user: { id: '123', email: 'test@example.com' },
-      });
+    it('renders children when session exists', async () => {
+      (auth as jest.Mock).mockResolvedValue({ user: { id: '123' } });
 
       const Component = await AuthenticatedServerPage({
-        children: <div data-testid="server-content">Server Content</div>,
+        children: <div>Server Content</div>,
       });
 
       render(Component);
-      expect(screen.getByTestId('server-content')).toBeInTheDocument();
+      expect(screen.getByText('Server Content')).toBeInTheDocument();
     });
 
-    it('should redirect when no session exists', async () => {
+    it('redirects when no session exists', async () => {
       (auth as jest.Mock).mockResolvedValue(null);
 
       try {

@@ -5,103 +5,27 @@ import { isProtectedApiRoute } from '@/lib/middleware';
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  const isProtectedPageRoute = checkProtectedPageRoute(pathname);
-  const isProtectedAPI = isProtectedApiRoute(pathname);
-
-  if (!isProtectedPageRoute && !isProtectedAPI) {
+  if (!isProtectedRoute(pathname)) {
     return NextResponse.next();
   }
 
-  try {
-    const token = await getToken({
-      req: request,
-      secret: process.env.NEXTAUTH_SECRET,
-    });
+  const token = await getToken({
+    req: request,
+    secret: process.env.NEXTAUTH_SECRET,
+  });
 
-    // Enhanced token validation for Issue #438: Better authentication state management
-    if (!token) {
-      console.log(`Middleware: No token found for ${pathname}, redirecting to signin`);
-      return handleUnauthenticatedRequest(request, isProtectedAPI);
-    }
-
-    // Check token expiration to prevent authentication bypass
-    if (token.exp && Date.now() >= token.exp * 1000) {
-      console.log(`Middleware: Expired token for ${pathname}, redirecting to signin`);
-      return handleUnauthenticatedRequest(request, isProtectedAPI);
-    }
-
-    // Validate token has required fields
-    if (!token.sub) {
-      console.warn(`Middleware: Token missing user ID for ${pathname}`);
-      return handleUnauthenticatedRequest(request, isProtectedAPI);
-    }
-
-    return NextResponse.next();
-  } catch (error) {
-    console.error(`Middleware: Token validation error for ${pathname}:`, error);
-    return handleUnauthenticatedRequest(request, isProtectedAPI);
+  if (!token || !token.sub) {
+    return isProtectedApiRoute(pathname)
+      ? NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+      : NextResponse.redirect(new URL('/signin', request.url));
   }
+
+  return NextResponse.next();
 }
 
-function checkProtectedPageRoute(pathname: string): boolean {
-  const protectedPaths = [
-    '/dashboard',
-    '/characters',
-    '/encounters',
-    '/parties',
-    '/combat',
-    '/settings'
-  ];
-
-  return protectedPaths.some(path => pathname.startsWith(path));
-}
-
-function handleUnauthenticatedRequest(request: NextRequest, isAPI: boolean): NextResponse {
-  if (isAPI) {
-    return NextResponse.json(
-      { error: 'Authentication required' },
-      { status: 401 }
-    );
-  }
-
-  try {
-    // Enhanced redirect handling for Issue #438: Prevent invalid redirects
-    const url = new URL('/signin', request.url);
-
-    // Validate the request URL before using it as callback
-    const requestUrl = request.url;
-    try {
-      const parsedRequestUrl = new URL(requestUrl);
-
-      // Only set callbackUrl if it's from a trusted origin and not already a signin page
-      if (parsedRequestUrl && parsedRequestUrl.origin === url.origin &&
-          parsedRequestUrl.pathname &&
-          !parsedRequestUrl.pathname.startsWith('/signin') &&
-          !parsedRequestUrl.pathname.startsWith('/signup') &&
-          !parsedRequestUrl.pathname.startsWith('/auth/')) {
-        url.searchParams.set('callbackUrl', encodeURI(requestUrl));
-      } else if (parsedRequestUrl && parsedRequestUrl.origin !== url.origin) {
-        console.warn(`Middleware: Blocked callback to external origin: ${parsedRequestUrl.origin}`);
-        // Don't set callbackUrl for external origins - security fix
-      }
-    } catch (urlError) {
-      console.warn(`Middleware: Invalid request URL: ${requestUrl}`, urlError);
-      // Don't set callbackUrl for invalid URLs
-    }
-
-    return NextResponse.redirect(url);
-  } catch (error) {
-    console.error('Middleware: Error handling unauthenticated request:', error);
-    // Fallback: construct a safe redirect URL manually to handle URL construction errors
-    try {
-      const fallbackUrl = `${new URL(request.url).origin}/signin`;
-      return NextResponse.redirect(fallbackUrl);
-    } catch (fallbackError) {
-      console.error('Middleware: Critical error in fallback redirect:', fallbackError);
-      // Final fallback - redirect to a hardcoded signin path
-      return NextResponse.redirect('http://localhost:3000/signin');
-    }
-  }
+function isProtectedRoute(pathname: string): boolean {
+  const protectedPaths = ['/dashboard', '/characters', '/encounters', '/parties', '/combat', '/settings'];
+  return protectedPaths.some(path => pathname.startsWith(path)) || isProtectedApiRoute(pathname);
 }
 
 export const config = {

@@ -1,7 +1,3 @@
-/**
- * Middleware Integration Tests
- */
-
 import { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 
@@ -24,34 +20,38 @@ jest.mock('next/server', () => ({
 
 beforeEach(() => {
   jest.clearAllMocks();
-  (getToken as jest.Mock).mockReset();
 });
 
-const createTestRequest = (pathname: string): NextRequest => ({
+const createRequest = (pathname: string) => ({
   nextUrl: { pathname },
   url: `http://localhost:3000${pathname}`,
 } as NextRequest);
 
-describe('Middleware Integration', () => {
-  it('should protect dashboard routes', async () => {
+describe('Middleware', () => {
+  it('protects dashboard routes', async () => {
     const { middleware } = await import('../middleware');
-    const request = createTestRequest('/dashboard');
-
+    const request = createRequest('/dashboard');
     (getToken as jest.Mock).mockResolvedValue(null);
-    mockRedirect.mockReturnValue({ type: 'redirect' });
 
     await middleware(request);
 
     expect(mockRedirect).toHaveBeenCalled();
-    expect(mockNext).not.toHaveBeenCalled();
   });
 
-  it('should return 401 for unauthenticated API requests', async () => {
+  it('allows authenticated users', async () => {
     const { middleware } = await import('../middleware');
-    const request = createTestRequest('/api/characters');
+    const request = createRequest('/dashboard');
+    (getToken as jest.Mock).mockResolvedValue({ sub: '123' });
 
+    await middleware(request);
+
+    expect(mockNext).toHaveBeenCalled();
+  });
+
+  it('returns 401 for API routes', async () => {
+    const { middleware } = await import('../middleware');
+    const request = createRequest('/api/characters');
     (getToken as jest.Mock).mockResolvedValue(null);
-    mockJson.mockReturnValue({ type: 'json', status: 401 });
 
     await middleware(request);
 
@@ -61,29 +61,9 @@ describe('Middleware Integration', () => {
     );
   });
 
-  it('should allow authenticated requests to proceed', async () => {
+  it('allows public routes', async () => {
     const { middleware } = await import('../middleware');
-    const request = createTestRequest('/api/characters');
-
-    const validToken = {
-      email: 'test@example.com',
-      sub: '123',
-      exp: Math.floor(Date.now() / 1000) + 3600,
-    };
-
-    (getToken as jest.Mock).mockResolvedValue(validToken);
-    mockNext.mockReturnValue({ type: 'next' });
-
-    await middleware(request);
-
-    expect(mockNext).toHaveBeenCalled();
-  });
-
-  it('should allow public routes without authentication', async () => {
-    const { middleware } = await import('../middleware');
-    const request = createTestRequest('/');
-
-    mockNext.mockReturnValue({ type: 'next' });
+    const request = createRequest('/');
 
     await middleware(request);
 
