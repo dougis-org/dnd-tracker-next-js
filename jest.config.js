@@ -8,8 +8,9 @@ const createJestConfig = nextJest({
 // Add any custom config to be passed to Jest
 const customJestConfig = {
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
-  globalSetup: '<rootDir>/jest.global-setup.js', // Added global setup for MongoDB
-  globalTeardown: '<rootDir>/jest.global-teardown.js', // Added global teardown for MongoDB
+  // Global MongoDB setup disabled - individual tests can start MongoDB when needed
+  // globalSetup: '<rootDir>/jest.global-setup.js',
+  // globalTeardown: '<rootDir>/jest.global-teardown.js',
   testEnvironment: 'jest-environment-jsdom',
   // Parallel execution configuration
   maxWorkers: process.env.CI ? 1 : '75%', // Use 1 worker in CI to prevent resource exhaustion, 75% of available cores locally

@@ -65,18 +65,20 @@ global.ResizeObserver = class ResizeObserver {
 
 // Mock window.matchMedia only in jsdom environment
 if (typeof window !== 'undefined') {
+  const mockMatchMedia = jest.fn().mockImplementation(query => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: jest.fn(),
+    removeListener: jest.fn(),
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+    dispatchEvent: jest.fn(),
+  }));
+  
   Object.defineProperty(window, 'matchMedia', {
     writable: true,
-    value: jest.fn().mockImplementation(query => ({
-      matches: false,
-      media: query,
-      onchange: null,
-      addListener: jest.fn(), // deprecated
-      removeListener: jest.fn(), // deprecated
-      addEventListener: jest.fn(),
-      removeEventListener: jest.fn(),
-      dispatchEvent: jest.fn(),
-    })),
+    value: mockMatchMedia,
   });
 }
 
@@ -89,26 +91,20 @@ if (typeof window !== 'undefined') {
   Element.prototype.hasPointerCapture = jest.fn(() => false);
   Element.prototype.setPointerCapture = jest.fn();
   Element.prototype.releasePointerCapture = jest.fn();
+  
   // Add getBoundingClientRect if not present
   if (!Element.prototype.getBoundingClientRect) {
-    Element.prototype.getBoundingClientRect = jest.fn(() => ({
-      width: 0,
-      height: 0,
-      top: 0,
-      left: 0,
-      bottom: 0,
-      right: 0,
-      x: 0,
-      y: 0,
-      toJSON: () => {},
-    }));
+    const mockBoundingRect = () => ({
+      width: 0, height: 0, top: 0, left: 0,
+      bottom: 0, right: 0, x: 0, y: 0, toJSON: () => {},
+    });
+    Element.prototype.getBoundingClientRect = jest.fn(mockBoundingRect);
   }
 
   // Mock getComputedStyle
   if (!window.getComputedStyle) {
-    window.getComputedStyle = jest.fn(() => ({
-      getPropertyValue: jest.fn(() => ''),
-    }));
+    const mockComputedStyle = () => ({ getPropertyValue: jest.fn(() => '') });
+    window.getComputedStyle = jest.fn(mockComputedStyle);
   }
 }
 
@@ -124,33 +120,30 @@ global.cancelAnimationFrame = function (id) {
 
 // Suppress React 18 console warnings in tests
 const originalConsoleError = console.error;
+const reactSchedulerWarnings = [
+  'Warning: An update to %s inside a test was not wrapped in act',
+  'The current testing environment is not configured to support act',
+];
+
+function shouldSuppressWarning(args) {
+  return args.some(
+    arg => typeof arg === 'string' && reactSchedulerWarnings.some(warning => arg.includes(warning))
+  );
+}
+
 console.error = (...args) => {
-  // Suppress React 18 scheduler errors (act warnings)
-  const reactSchedulerWarnings = [
-    'Warning: An update to %s inside a test was not wrapped in act',
-    'The current testing environment is not configured to support act',
-  ];
-
-  if (
-    args.some(
-      arg =>
-        typeof arg === 'string' &&
-        reactSchedulerWarnings.some(warning => arg.includes(warning))
-    )
-  ) {
-    return;
-  }
-
+  if (shouldSuppressWarning(args)) return;
   originalConsoleError(...args);
 };
 
-// Mock Mongoose and BSON globally to prevent import issues
+// Mock BSON to prevent import issues
 jest.mock('bson', () => ({
   ObjectId: jest
     .fn()
     .mockImplementation(id => ({ toString: () => id || 'mock-object-id' })),
 }));
 
+// Mock MongoDB to prevent import issues
 jest.mock('mongodb', () => ({
   MongoClient: jest.fn(),
   ObjectId: jest
@@ -158,27 +151,40 @@ jest.mock('mongodb', () => ({
     .mockImplementation(id => ({ toString: () => id || 'mock-object-id' })),
 }));
 
-jest.mock('mongoose', () => {
-  // Generate a proper ObjectId-like string (24 character hex)
-  const generateObjectId = () => {
-    const hex = '0123456789abcdef';
-    let result = '';
-    for (let i = 0; i < 24; i++) {
-      result += hex[Math.floor(Math.random() * 16)];
-    }
-    return result;
-  };
-  
-  const mockObjectId = jest
-    .fn()
-    .mockImplementation(id => {
-      const objectIdValue = id || generateObjectId();
-      return { 
-        toString: () => objectIdValue
-      };
-    });
+// Helper function to generate ObjectId-like strings for tests
+function generateTestObjectId() {
+  const hex = '0123456789abcdef';
+  let result = '';
+  for (let i = 0; i < 24; i++) {
+    result += hex[Math.floor(Math.random() * 16)];
+  }
+  return result;
+}
 
-  const SchemaTypes = {
+// Helper function to create mock ObjectId
+function createMockObjectId() {
+  return jest.fn().mockImplementation(id => ({
+    toString: () => id || generateTestObjectId()
+  }));
+}
+
+// Helper function to create mock Schema
+function createMockSchema() {
+  const MockSchema = jest.fn().mockImplementation(() => ({
+    pre: jest.fn(),
+    post: jest.fn(),
+    methods: {},
+    statics: {},
+    virtual: jest.fn().mockReturnValue({
+      get: jest.fn(),
+      set: jest.fn(),
+    }),
+    plugin: jest.fn(),
+    index: jest.fn(),
+  }));
+
+  const mockObjectId = createMockObjectId();
+  MockSchema.Types = {
     ObjectId: mockObjectId,
     String: String,
     Number: Number,
@@ -187,23 +193,13 @@ jest.mock('mongoose', () => {
     Date: Date,
   };
 
-  const MockSchema = jest.fn().mockImplementation(function (_definition) {
-    return {
-      pre: jest.fn(),
-      post: jest.fn(),
-      methods: {},
-      statics: {},
-      virtual: jest.fn().mockReturnValue({
-        get: jest.fn(),
-        set: jest.fn(),
-      }),
-      plugin: jest.fn(),
-      index: jest.fn(),
-    };
-  });
+  return MockSchema;
+}
 
-  // Add Schema.Types static property
-  MockSchema.Types = SchemaTypes;
+// Mock Mongoose to prevent schema registration conflicts and provide test isolation
+jest.mock('mongoose', () => {
+  const mockObjectId = createMockObjectId();
+  const MockSchema = createMockSchema();
 
   return {
     connect: jest.fn().mockResolvedValue({}),
@@ -211,6 +207,7 @@ jest.mock('mongoose', () => {
       readyState: 1,
       on: jest.fn(),
       once: jest.fn(),
+      close: jest.fn().mockResolvedValue({}),
     },
     Schema: MockSchema,
     model: jest.fn(),
@@ -220,3 +217,18 @@ jest.mock('mongoose', () => {
     },
   };
 });
+
+// Mock the database connection module to provide test isolation
+jest.mock('./src/lib/db', () => ({
+  connectToDatabase: jest.fn().mockResolvedValue({}),
+  disconnectFromDatabase: jest.fn().mockResolvedValue({}),
+  getConnectionStatus: jest.fn().mockReturnValue(true),
+  mongoose: {
+    connection: {
+      readyState: 1,
+      on: jest.fn(),
+      once: jest.fn(),
+      close: jest.fn().mockResolvedValue({}),
+    },
+  },
+}));

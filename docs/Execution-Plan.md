@@ -220,8 +220,8 @@ complexity explosion from previous "big bang" rewrite attempts.
 | Issue | Phase | Status | Assignee | Start Date | Est. Completion | Dependencies |
 |-------|-------|--------|----------|------------|-----------------|--------------|
 | #517  | Master| Open   | -        | -          | Week 4          | All child issues |
-| #522  | 1.1   | Open   | -        | -          | Day 3           | None |
-| #523  | 1.2   | Open   | -        | -          | Day 7           | #522 |
+| #522  | 1.1   | Completed | -        | 2025-07-29 | Day 3           | None |
+| #523  | 1.2   | Completed | -        | 2025-07-29 | Day 7           | #522 |
 | #524  | 1.3   | Open   | -        | -          | Day 10          | #523 |
 | #525  | 1.4   | Open   | -        | -          | Day 14          | #524 |
 | #534  | 1.4   | ✅ Completed | Claude   | 2025-07-29 | 2025-07-29      | #522 |
