@@ -72,13 +72,13 @@ export const setupAccessDeniedError = () => {
   mockCharacterService.deleteCharacter.mockRejectedValue(accessError);
 };
 
-// Common request creators (NextAuth compatible)
+// Common request creators (NextAuth compatible with header fallback)
 export const createAuthenticatedRequest = (
   url: string, 
   options: any = {},
   mockAuth?: jest.MockedFunction<any>
 ) => {
-  // Setup NextAuth mock if provided
+  // Setup NextAuth mock if provided (for future API routes)
   if (mockAuth) {
     mockAuth.mockResolvedValue({
       user: {
@@ -91,7 +91,11 @@ export const createAuthenticatedRequest = (
     });
   }
   
-  return createMockRequest(url, options);
+  // For current character API routes that still use header-based auth
+  return createMockRequest(url, {
+    ...options,
+    headers: { 'x-user-id': TEST_USER_ID, ...options.headers }
+  });
 };
 
 export const createUnauthenticatedRequest = (

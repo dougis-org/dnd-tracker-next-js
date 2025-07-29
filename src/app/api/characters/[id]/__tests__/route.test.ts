@@ -25,6 +25,15 @@ import {
 jest.mock('@/lib/services/CharacterService');
 jest.mock('@/lib/db');
 
+// Mock NextAuth for future compatibility
+jest.mock('@/lib/auth', () => ({
+  auth: jest.fn(),
+}));
+
+// Get the mocked auth function
+const { auth } = require('@/lib/auth');
+const mockAuth = auth as jest.MockedFunction<typeof auth>;
+
 describe('/api/characters/[id] API Route', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -51,11 +60,11 @@ describe('/api/characters/[id] API Route', () => {
     });
 
     it('should return 404 when character does not exist', async () => {
-      await runNotFoundTest(GET, setupCharacterNotFound, { params: createMockParams() });
+      await runNotFoundTest(GET, setupCharacterNotFound, mockAuth, { params: createMockParams() });
     });
 
     it('should return 403 when user does not own character', async () => {
-      await runAccessDeniedTest(GET, setupAccessDeniedError, { params: createMockParams() });
+      await runAccessDeniedTest(GET, setupAccessDeniedError, mockAuth, { params: createMockParams() });
     });
 
     it('should return public character when not owned but public', async () => {
@@ -73,7 +82,7 @@ describe('/api/characters/[id] API Route', () => {
     });
 
     it('should return 401 when user is not authenticated', async () => {
-      await runAuthenticationTest(GET, { params: createMockParams() });
+      await runAuthenticationTest(GET, mockAuth, { params: createMockParams() });
     });
   });
 
@@ -104,11 +113,11 @@ describe('/api/characters/[id] API Route', () => {
     });
 
     it('should return 404 when character does not exist', async () => {
-      await runNotFoundTest(PUT, setupCharacterNotFound, { params: createMockParams() });
+      await runNotFoundTest(PUT, setupCharacterNotFound, mockAuth, { params: createMockParams() });
     });
 
     it('should return 403 when user does not own character', async () => {
-      await runAccessDeniedTest(PUT, setupAccessDeniedError, { params: createMockParams() });
+      await runAccessDeniedTest(PUT, setupAccessDeniedError, mockAuth, { params: createMockParams() });
     });
   });
 
@@ -131,11 +140,11 @@ describe('/api/characters/[id] API Route', () => {
     });
 
     it('should return 404 when character does not exist', async () => {
-      await runNotFoundTest(DELETE, setupCharacterNotFound, { params: createMockParams() });
+      await runNotFoundTest(DELETE, setupCharacterNotFound, mockAuth, { params: createMockParams() });
     });
 
     it('should return 403 when user does not own character', async () => {
-      await runAccessDeniedTest(DELETE, setupAccessDeniedError, { params: createMockParams() });
+      await runAccessDeniedTest(DELETE, setupAccessDeniedError, mockAuth, { params: createMockParams() });
     });
   });
 });
