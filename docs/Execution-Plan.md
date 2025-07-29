@@ -264,6 +264,13 @@ complexity explosion from previous "big bang" rewrite attempts.
   NEXTAUTH_SECRET, AUTH_TRUST_HOST, and NEXTAUTH_COOKIE_DOMAIN. Verified all authentication endpoints
   are working correctly in production with MongoDB connection and JWT session storage.
 
+### 2025-07-29 - Issue #546 Completed
+- ✅ **Issue #546: Eliminate hardcoded mock session objects** - Successfully replaced hardcoded mock session
+  object in encounter test utilities with shared `createMockSession` factory function. Reduced code complexity
+  from 31 to within limits (≤20) by replacing nested object structure with simple function call. Eliminated
+  code duplication while maintaining full test compatibility. All tests continue to pass with cleaner,
+  more maintainable implementation using centralized session mocking patterns.
+
 <!-- Issue References -->
 [issue-517]: https://github.com/dougis-org/dnd-tracker-next-js/issues/517
 [issue-522]: https://github.com/dougis-org/dnd-tracker-next-js/issues/522
@@ -279,3 +286,4 @@ complexity explosion from previous "big bang" rewrite attempts.
 [issue-535]: https://github.com/dougis-org/dnd-tracker-next-js/issues/535
 [issue-536]: https://github.com/dougis-org/dnd-tracker-next-js/issues/536
 [issue-537]: https://github.com/dougis-org/dnd-tracker-next-js/issues/537
+[issue-546]: https://github.com/dougis-org/dnd-tracker-next-js/issues/546
