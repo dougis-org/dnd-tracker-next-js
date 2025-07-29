@@ -115,7 +115,7 @@ partySchema.virtual('memberCount', {
 
 // Virtual for player character count
 partySchema.virtual('playerCharacterCount').get(async function () {
-  const Character = getCharacterModel();
+  const Character = mongoose.models.Character as CharacterModel;
   const count = await Character.countDocuments({
     partyId: this._id,
     type: 'pc',
@@ -138,7 +138,7 @@ function calculateAverageLevel(members: any[]): number {
 
 // Virtual for average level
 partySchema.virtual('averageLevel').get(async function () {
-  const Character = getCharacterModel();
+  const Character = mongoose.models.Character as CharacterModel;
   const members = await Character.find({
     partyId: this._id,
     isDeleted: { $ne: true },
@@ -146,15 +146,9 @@ partySchema.virtual('averageLevel').get(async function () {
   return calculateAverageLevel(members);
 });
 
-// Helper function to safely get Character model
-function getCharacterModel(): CharacterModel {
-  return mongoose.models.Character as CharacterModel ||
-         (() => { throw new Error('Character model not registered'); })();
-}
-
 // Helper function to get current member count
 async function getCurrentMemberCount(partyId: Types.ObjectId): Promise<number> {
-  const Character = getCharacterModel();
+  const Character = mongoose.models.Character as CharacterModel;
   return await Character.countDocuments({
     partyId,
     isDeleted: { $ne: true },
@@ -163,7 +157,7 @@ async function getCurrentMemberCount(partyId: Types.ObjectId): Promise<number> {
 
 // Helper function to update character party membership
 async function updateCharacterParty(characterId: Types.ObjectId, partyId: Types.ObjectId): Promise<void> {
-  const Character = getCharacterModel();
+  const Character = mongoose.models.Character as CharacterModel;
   await Character.findByIdAndUpdate(characterId, { partyId });
 }
 
@@ -184,7 +178,7 @@ partySchema.methods.addMember = async function (characterId: Types.ObjectId): Pr
 
 // Helper function to remove character from party
 async function removeCharacterFromParty(characterId: Types.ObjectId): Promise<void> {
-  const Character = getCharacterModel();
+  const Character = mongoose.models.Character as CharacterModel;
   await Character.findByIdAndUpdate(characterId, {
     $unset: { partyId: 1 },
   });
@@ -198,7 +192,7 @@ partySchema.methods.removeMember = async function (characterId: Types.ObjectId):
 
 // Helper function to find party members
 async function findPartyMembers(partyId: Types.ObjectId): Promise<any[]> {
-  const Character = getCharacterModel();
+  const Character = mongoose.models.Character as CharacterModel;
   return await Character.find({
     partyId,
     isDeleted: { $ne: true },
