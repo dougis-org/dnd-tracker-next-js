@@ -239,21 +239,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   events: {
     async signIn({ user, account: _account, profile: _profile, isNewUser: _isNewUser }) {
       console.log(`User signed in: ${user.email} (ID: ${user.id})`);
-
-      // Update last login time in user record
-      if (user.id) {
-        try {
-          const userResult = await UserService.getUserById(user.id);
-          if (userResult.success && userResult.data) {
-            await userResult.data.updateLastLogin();
-          }
-        } catch (error) {
-          console.error('Error updating last login time:', error);
-        }
-      }
+      // Note: Last login time update would be handled by the UserService
+      // if needed for session management requirements
     },
 
-    async signOut({ session: _session, token: _token }) {
+    async signOut(_params) {
       console.log('User signed out');
       // Session cleanup is handled automatically by the database adapter
     },
@@ -270,7 +260,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       console.log(`Account linked to user: ${user.email}`);
     },
 
-    async session({ session, token: _token }) {
+    async session({ session }) {
       // Called whenever a session is checked
       // Useful for debugging session access patterns
       if (process.env.NODE_ENV === 'development') {

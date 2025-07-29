@@ -98,17 +98,20 @@ describe('Session Configuration System (Issue #524)', () => {
   });
 
   describe('Session Utilities', () => {
-    // Mock the auth functions
-    const mockAuth = jest.fn();
-    const mockSession = {
-      user: {
-        id: 'test-user-id',
-        email: 'test@example.com',
-        subscriptionTier: 'premium',
-      },
-    };
+    let mockAuth: jest.Mock;
+    let mockSession: any;
 
     beforeEach(() => {
+      // Create fresh mocks for each test
+      mockAuth = jest.fn();
+      mockSession = {
+        user: {
+          id: 'test-user-id',
+          email: 'test@example.com',
+          subscriptionTier: 'premium',
+        },
+      };
+
       // Mock the dynamic imports
       jest.doMock('@/lib/auth', () => ({
         handlers: {},
@@ -188,11 +191,19 @@ describe('Session Configuration System (Issue #524)', () => {
       // Mock console.log to capture output
       const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
 
+      // Mock database session enabled
+      jest.doMock('@/lib/session-config', () => ({
+        ...jest.requireActual('@/lib/session-config'),
+        isDatabaseSessionEnabled: () => true,
+      }));
+
       // Test with database strategy
       ensureSessionModelRegistration();
 
-      // Should not throw any errors
-      expect(consoleSpy).toHaveBeenCalled();
+      // Should log that database session strategy is enabled
+      expect(consoleSpy).toHaveBeenCalledWith(
+        'Database session strategy enabled - MongoDB adapter will handle model registration'
+      );
 
       consoleSpy.mockRestore();
     });

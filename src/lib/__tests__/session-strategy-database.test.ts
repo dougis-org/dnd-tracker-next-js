@@ -114,13 +114,13 @@ describe('Database Session Strategy (Issue #524)', () => {
       mockSessionCollection.findOne.mockResolvedValue(mockSession);
 
       // Simulate session retrieval
-      const result = await mockSessionCollection.findOne({ 
-        sessionToken: sessionData.sessionToken 
+      const result = await mockSessionCollection.findOne({
+        sessionToken: sessionData.sessionToken
       });
 
       // Assert: Session should be retrieved from sessions collection
-      expect(mockSessionCollection.findOne).toHaveBeenCalledWith({ 
-        sessionToken: sessionData.sessionToken 
+      expect(mockSessionCollection.findOne).toHaveBeenCalledWith({
+        sessionToken: sessionData.sessionToken
       });
       expect(result).toEqual(mockSession);
     });
@@ -146,13 +146,13 @@ describe('Database Session Strategy (Issue #524)', () => {
       const sessionData = createSessionData();
 
       // Simulate session deletion
-      await mockSessionCollection.deleteOne({ 
-        sessionToken: sessionData.sessionToken 
+      await mockSessionCollection.deleteOne({
+        sessionToken: sessionData.sessionToken
       });
 
       // Assert: Session should be deleted from sessions collection
-      expect(mockSessionCollection.deleteOne).toHaveBeenCalledWith({ 
-        sessionToken: sessionData.sessionToken 
+      expect(mockSessionCollection.deleteOne).toHaveBeenCalledWith({
+        sessionToken: sessionData.sessionToken
       });
     });
   });

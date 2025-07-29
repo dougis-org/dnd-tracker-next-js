@@ -1,10 +1,9 @@
 /**
  * Test utilities for session testing (Issue #524)
- * 
+ *
  * Common test setup and utilities to reduce duplication across session tests
  */
 
-import { MongoClient } from 'mongodb';
 import mongoose from 'mongoose';
 
 /**
