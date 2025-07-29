@@ -245,7 +245,9 @@ complexity explosion from previous "big bang" rewrite attempts.
 ## Recent Updates
 
 ### 2025-07-29 - Issue #535 Completed
-- ✅ **Phase 1.5: Update test helpers to use NextAuth session simulation** - Successfully implemented NextAuth-compatible test helpers with comprehensive session mocking, maintaining backward compatibility during transition period. All code duplications eliminated (12 → 0 clones).
+- ✅ **Phase 1.5: Update test helpers to use NextAuth session simulation** - Successfully implemented
+  NextAuth-compatible test helpers with comprehensive session mocking, maintaining backward compatibility
+  during transition period. All code duplications eliminated (12 → 0 clones).
 
 <!-- Issue References -->
 [issue-517]: https://github.com/dougis-org/dnd-tracker-next-js/issues/517
