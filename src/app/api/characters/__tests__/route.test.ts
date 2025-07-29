@@ -8,6 +8,7 @@ import {
   mockCharacterService,
   setupSuccessfulGetCharacters,
   setupSuccessfulCharacterCreate,
+  setupSuccessfulCharactersByType,
   createAuthenticatedRequest,
   createCharacterListRequest,
   createTestCharacters,
@@ -75,10 +76,7 @@ describe('/api/characters API Route', () => {
     it('should filter characters by type when specified', async () => {
       // Arrange
       const pcCharacters = [{ name: 'PC Character', type: 'pc' }];
-      mockCharacterService.getCharactersByType.mockResolvedValue({
-        success: true,
-        data: pcCharacters
-      });
+      setupSuccessfulCharactersByType(pcCharacters);
       const request = createCharacterListRequest('?type=pc');
 
       // Act

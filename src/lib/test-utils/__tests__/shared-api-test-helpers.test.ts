@@ -17,6 +17,13 @@ import {
 const mockAuth = jest.fn();
 const mockGetToken = jest.fn();
 
+// Test helper for validating object properties
+const validateObjectProperties = (obj: any, expectedProperties: Record<string, any>) => {
+  Object.entries(expectedProperties).forEach(([key, value]) => {
+    expect(obj[key]).toBe(value);
+  });
+};
+
 describe('Shared API Test Helpers - NextAuth Session Simulation', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -54,10 +61,12 @@ describe('Shared API Test Helpers - NextAuth Session Simulation', () => {
           },
         });
 
-        expect(session.user.email).toBe('custom@example.com');
-        expect(session.user.subscriptionTier).toBe('premium');
-        expect(session.user.id).toBe(SHARED_API_TEST_CONSTANTS.TEST_USER_ID);
-        expect(session.user.name).toBe(SHARED_API_TEST_CONSTANTS.TEST_USER_NAME);
+        validateObjectProperties(session.user, {
+          email: 'custom@example.com',
+          subscriptionTier: 'premium',
+          id: SHARED_API_TEST_CONSTANTS.TEST_USER_ID,
+          name: SHARED_API_TEST_CONSTANTS.TEST_USER_NAME
+        });
       });
 
       it('should allow overriding session properties', () => {
@@ -104,10 +113,12 @@ describe('Shared API Test Helpers - NextAuth Session Simulation', () => {
           firstName: 'Jane',
         });
 
-        expect(token.email).toBe('custom@example.com');
-        expect(token.subscriptionTier).toBe('enterprise');
-        expect(token.firstName).toBe('Jane');
-        expect(token.lastName).toBe('Doe'); // Should retain default
+        validateObjectProperties(token, {
+          email: 'custom@example.com',
+          subscriptionTier: 'enterprise',
+          firstName: 'Jane',
+          lastName: 'Doe' // Should retain default
+        });
       });
     });
   });
@@ -261,11 +272,17 @@ describe('Shared API Test Helpers - NextAuth Session Simulation', () => {
 
   describe('Constants', () => {
     it('should provide consistent test constants', () => {
-      expect(SHARED_API_TEST_CONSTANTS.TEST_USER_ID).toBe('507f1f77bcf86cd799439011');
-      expect(SHARED_API_TEST_CONSTANTS.TEST_EMAIL).toBe('test@example.com');
-      expect(SHARED_API_TEST_CONSTANTS.DEFAULT_USER_ID).toBe('507f1f77bcf86cd799439011');
-      expect(SHARED_API_TEST_CONSTANTS.TEST_SUBSCRIPTION_TIER).toBe('free');
-      expect(SHARED_API_TEST_CONSTANTS.TEST_USER_NAME).toBe('John Doe');
+      const expectedValues = {
+        TEST_USER_ID: '507f1f77bcf86cd799439011',
+        TEST_EMAIL: 'test@example.com',
+        DEFAULT_USER_ID: '507f1f77bcf86cd799439011',
+        TEST_SUBSCRIPTION_TIER: 'free',
+        TEST_USER_NAME: 'John Doe'
+      };
+
+      Object.entries(expectedValues).forEach(([key, value]) => {
+        expect(SHARED_API_TEST_CONSTANTS[key as keyof typeof SHARED_API_TEST_CONSTANTS]).toBe(value);
+      });
     });
   });
 });
