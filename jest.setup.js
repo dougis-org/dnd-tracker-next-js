@@ -144,13 +144,14 @@ console.error = (...args) => {
   originalConsoleError(...args);
 };
 
-// Mock Mongoose and BSON globally to prevent import issues
+// Mock BSON to prevent import issues
 jest.mock('bson', () => ({
   ObjectId: jest
     .fn()
     .mockImplementation(id => ({ toString: () => id || 'mock-object-id' })),
 }));
 
+// Mock MongoDB to prevent import issues
 jest.mock('mongodb', () => ({
   MongoClient: jest.fn(),
   ObjectId: jest
@@ -158,6 +159,7 @@ jest.mock('mongodb', () => ({
     .mockImplementation(id => ({ toString: () => id || 'mock-object-id' })),
 }));
 
+// Mock Mongoose to prevent schema registration conflicts and provide test isolation
 jest.mock('mongoose', () => {
   // Generate a proper ObjectId-like string (24 character hex)
   const generateObjectId = () => {
@@ -211,6 +213,7 @@ jest.mock('mongoose', () => {
       readyState: 1,
       on: jest.fn(),
       once: jest.fn(),
+      close: jest.fn().mockResolvedValue({}),
     },
     Schema: MockSchema,
     model: jest.fn(),
@@ -220,3 +223,18 @@ jest.mock('mongoose', () => {
     },
   };
 });
+
+// Mock the database connection module to provide test isolation
+jest.mock('./src/lib/db', () => ({
+  connectToDatabase: jest.fn().mockResolvedValue({}),
+  disconnectFromDatabase: jest.fn().mockResolvedValue({}),
+  getConnectionStatus: jest.fn().mockReturnValue(true),
+  mongoose: {
+    connection: {
+      readyState: 1,
+      on: jest.fn(),
+      once: jest.fn(),
+      close: jest.fn().mockResolvedValue({}),
+    },
+  },
+}));
