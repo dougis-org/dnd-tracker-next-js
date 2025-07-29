@@ -80,8 +80,7 @@ describe('Database Session Strategy (Issue #524)', () => {
   });
 
   describe('Database Session Operations', () => {
-    const testSessionOperation = async (operation: string, method: any, ...args: any[]) => {
-      const sessionData = createSessionData();
+    const testSessionOperation = async (_operation: string, method: any, ...args: any[]) => {
       await method(...args);
       expect(method).toHaveBeenCalledWith(...args);
     };
@@ -94,26 +93,26 @@ describe('Database Session Strategy (Issue #524)', () => {
     test('should retrieve session records from MongoDB', async () => {
       const sessionData = createSessionData();
       const mockSession = { _id: 'session-object-id', ...sessionData };
-      
+
       mockSessionCollection.findOne.mockResolvedValue(mockSession);
       const result = await mockSessionCollection.findOne({ sessionToken: sessionData.sessionToken });
-      
+
       expect(result).toEqual(mockSession);
     });
 
     test('should update session records in MongoDB', async () => {
       const sessionData = createSessionData();
       const newExpires = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000);
-      
-      await testSessionOperation('update', mockSessionCollection.updateOne, 
-        { sessionToken: sessionData.sessionToken }, 
+
+      await testSessionOperation('update', mockSessionCollection.updateOne,
+        { sessionToken: sessionData.sessionToken },
         { $set: { expires: newExpires } }
       );
     });
 
     test('should delete session records from MongoDB', async () => {
       const sessionData = createSessionData();
-      await testSessionOperation('delete', mockSessionCollection.deleteOne, 
+      await testSessionOperation('delete', mockSessionCollection.deleteOne,
         { sessionToken: sessionData.sessionToken }
       );
     });
@@ -137,7 +136,7 @@ describe('Database Session Strategy (Issue #524)', () => {
   describe('Session Cleanup and Expiration', () => {
     test('should handle expired session cleanup', async () => {
       mockSessionCollection.deleteOne.mockResolvedValue({ deletedCount: 1, acknowledged: true });
-      
+
       await mockSessionCollection.deleteOne({ expires: { $lt: new Date() } });
       expect(mockSessionCollection.deleteOne).toHaveBeenCalledWith({ expires: { $lt: expect.any(Date) } });
     });

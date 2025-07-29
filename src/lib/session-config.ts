@@ -95,7 +95,7 @@ export async function getAuthConfig() {
  * Create session utility with auth configuration
  */
 async function createSessionUtil<T>(
-  utilFn: (auth: any) => T,
+  utilFn: (authConfig: any) => T,
 ): Promise<T> {
   const { auth } = await getAuthConfig();
   return utilFn(auth);
@@ -163,7 +163,7 @@ export const sessionDebug = {
     isJWTEnabled: isJWTSessionEnabled(),
     config: getSessionConfig(),
   }),
-  
+
   testPersistence: async () => {
     const session = await sessionUtils.getCurrentSession();
     console.log('Current Session:', {

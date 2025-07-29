@@ -10,17 +10,7 @@ import {
 } from './shared-test-utilities';
 
 /**
- * Basic adapter creation test
+ * Test utilities for persistence operations
  */
-export function testAdapterCreation() {
-  const adapter = createTestAdapter();
-  validateAdapter(adapter);
-}
-
-/**
- * Basic session structure test
- */
-export function testSessionStructure() {
-  const sessionData = createTestSessionData();
-  validateSessionData(sessionData);
-}
+export const testAdapterCreation = () => validateAdapter(createTestAdapter());
+export const testSessionStructure = () => validateSessionData(createTestSessionData());
