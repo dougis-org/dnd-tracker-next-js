@@ -95,7 +95,7 @@ export async function getAuthConfig() {
  * Create session utility with auth configuration
  */
 async function createSessionUtil<T>(
-  utilFn: (authConfig: any) => T,
+  utilFn: (_authConfig: any) => T,
 ): Promise<T> {
   const { auth } = await getAuthConfig();
   return utilFn(auth);
