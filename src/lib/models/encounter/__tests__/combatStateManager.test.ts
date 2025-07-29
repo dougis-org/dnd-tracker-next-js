@@ -54,6 +54,7 @@ describe('Combat State Manager', () => {
 
       it('should log pause action', () => {
         encounter.combatState.isActive = true;
+        encounter.combatState.startedAt = new Date();
         encounter.combatState.currentRound = 2;
         pauseCombat(encounter);
         expectHistoryAction(encounter._id.toString(), 'combat_paused');
@@ -79,6 +80,7 @@ describe('Combat State Manager', () => {
       it('should log resume action', () => {
         encounter.combatState.isActive = false;
         encounter.combatState.pausedAt = new Date();
+        encounter.combatState.startedAt = new Date();
         encounter.combatState.currentRound = 3;
         encounter.status = 'active';
         resumeCombat(encounter);
