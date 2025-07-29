@@ -18,10 +18,14 @@ const mockAuth = jest.fn();
 const mockGetToken = jest.fn();
 
 // Test helper for validating object properties
-const validateObjectProperties = (obj: any, expectedProperties: Record<string, any>) => {
-  Object.entries(expectedProperties).forEach(([key, value]) => {
-    expect(obj[key]).toBe(value);
-  });
+const expectObjectToContain = (obj: any, expectedProperties: Record<string, any>) => {
+  expect(obj).toEqual(expect.objectContaining(expectedProperties));
+};
+
+// Test helper for validating basic request properties
+const validateBasicRequest = (request: any, expectedMethod: string = 'GET') => {
+  expect(request).toBeDefined();
+  expect(request.method).toBe(expectedMethod);
 };
 
 describe('Shared API Test Helpers - NextAuth Session Simulation', () => {
@@ -61,7 +65,7 @@ describe('Shared API Test Helpers - NextAuth Session Simulation', () => {
           },
         });
 
-        validateObjectProperties(session.user, {
+        expectObjectToContain(session.user, {
           email: 'custom@example.com',
           subscriptionTier: 'premium',
           id: SHARED_API_TEST_CONSTANTS.TEST_USER_ID,
@@ -113,7 +117,7 @@ describe('Shared API Test Helpers - NextAuth Session Simulation', () => {
           firstName: 'Jane',
         });
 
-        validateObjectProperties(token, {
+        expectObjectToContain(token, {
           email: 'custom@example.com',
           subscriptionTier: 'enterprise',
           firstName: 'Jane',
@@ -195,8 +199,7 @@ describe('Shared API Test Helpers - NextAuth Session Simulation', () => {
       it('should create a request without setting up mocks when no mockAuth provided', () => {
         const request = createAuthenticatedRequest('http://localhost:3000/api/test');
 
-        expect(request).toBeDefined();
-        expect(request.method).toBe('GET');
+        validateBasicRequest(request);
         expect(mockAuth).not.toHaveBeenCalled();
       });
 
@@ -207,7 +210,7 @@ describe('Shared API Test Helpers - NextAuth Session Simulation', () => {
           mockAuth
         );
 
-        expect(request).toBeDefined();
+        validateBasicRequest(request);
         await executeAndValidateMock(mockAuth, createSessionExpectation());
       });
 
@@ -231,7 +234,7 @@ describe('Shared API Test Helpers - NextAuth Session Simulation', () => {
           mockAuth
         );
 
-        expect(request.method).toBe('POST');
+        validateBasicRequest(request, 'POST');
       });
     });
 
@@ -239,8 +242,7 @@ describe('Shared API Test Helpers - NextAuth Session Simulation', () => {
       it('should create a request without setting up mocks when no mockAuth provided', () => {
         const request = createUnauthenticatedRequest('http://localhost:3000/api/test');
 
-        expect(request).toBeDefined();
-        expect(request.method).toBe('GET');
+        validateBasicRequest(request);
         expect(mockAuth).not.toHaveBeenCalled();
       });
 
@@ -251,7 +253,7 @@ describe('Shared API Test Helpers - NextAuth Session Simulation', () => {
           mockAuth
         );
 
-        expect(request).toBeDefined();
+        validateBasicRequest(request);
 
         const session = await mockAuth();
         expect(session).toBeNull();
@@ -280,9 +282,7 @@ describe('Shared API Test Helpers - NextAuth Session Simulation', () => {
         TEST_USER_NAME: 'John Doe'
       };
 
-      Object.entries(expectedValues).forEach(([key, value]) => {
-        expect(SHARED_API_TEST_CONSTANTS[key as keyof typeof SHARED_API_TEST_CONSTANTS]).toBe(value);
-      });
+      expect(SHARED_API_TEST_CONSTANTS).toEqual(expect.objectContaining(expectedValues));
     });
   });
 });

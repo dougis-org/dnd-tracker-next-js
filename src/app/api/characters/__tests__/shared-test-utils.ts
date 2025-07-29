@@ -8,7 +8,9 @@ import {
   createMockParams,
 } from './test-helpers';
 import {
-  createMockSession,
+  expectSuccessResponse,
+  setupNextAuthMocks,
+  setupUnauthenticatedState,
 } from '@/lib/test-utils/shared-api-test-helpers';
 
 // Mock service utilities
@@ -70,7 +72,7 @@ export const createAuthenticatedRequest = (
 ) => {
   // Setup NextAuth mock if provided (for future API routes)
   if (mockAuth) {
-    mockAuth.mockResolvedValue(createMockSession(TEST_USER_ID));
+    setupNextAuthMocks(mockAuth, undefined, TEST_USER_ID);
   }
 
   // For current character API routes that still use header-based auth
@@ -87,7 +89,7 @@ export const createUnauthenticatedRequest = (
 ) => {
   // Setup unauthenticated mock if provided
   if (mockAuth) {
-    mockAuth.mockResolvedValue(null);
+    setupUnauthenticatedState(mockAuth);
   }
 
   return createMockRequest(url, options);
@@ -125,13 +127,14 @@ export const createUpdateData = () => ({
 
 // Common assertion patterns
 export const expectSuccessfulResponse = async (response: Response, expectedData?: any) => {
-  const data = await response.json();
-  expect(response.status).toBe(200);
-  expect(data.success).toBe(true);
   if (expectedData) {
-    expect(data.data).toEqual(expect.objectContaining(expectedData));
+    return expectSuccessResponse(response, { data: expectedData });
+  } else {
+    const data = await response.json();
+    expect(response.status).toBe(200);
+    expect(data.success).toBe(true);
+    return data;
   }
-  return data;
 };
 
 export const expectSuccessfulCreation = async (response: Response, expectedData?: any) => {
@@ -155,16 +158,27 @@ export const runAuthenticationTest = async (
   await expectErrorResponse(response, 401, 'Unauthorized');
 };
 
+const runErrorTest = async (
+  apiFunction: Function,
+  setupMock: Function,
+  mockAuth: jest.MockedFunction<any> | undefined,
+  status: number,
+  message: string,
+  ...args: any[]
+) => {
+  setupMock();
+  const request = createAuthenticatedRequest('http://localhost:3000/api/test', {}, mockAuth);
+  const response = await apiFunction(request, ...args);
+  await expectErrorResponse(response, status, message);
+};
+
 export const runNotFoundTest = async (
   apiFunction: Function,
   setupMock: Function,
   mockAuth?: jest.MockedFunction<any>,
   ...args: any[]
 ) => {
-  setupMock();
-  const request = createAuthenticatedRequest('http://localhost:3000/api/test', {}, mockAuth);
-  const response = await apiFunction(request, ...args);
-  await expectErrorResponse(response, 404, 'Character not found');
+  await runErrorTest(apiFunction, setupMock, mockAuth, 404, 'Character not found', ...args);
 };
 
 export const runAccessDeniedTest = async (
@@ -173,10 +187,7 @@ export const runAccessDeniedTest = async (
   mockAuth?: jest.MockedFunction<any>,
   ...args: any[]
 ) => {
-  setupMock();
-  const request = createAuthenticatedRequest('http://localhost:3000/api/test', {}, mockAuth);
-  const response = await apiFunction(request, ...args);
-  await expectErrorResponse(response, 403, 'Access denied');
+  await runErrorTest(apiFunction, setupMock, mockAuth, 403, 'Access denied', ...args);
 };
 
 // Simplified test runners with standard params
