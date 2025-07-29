@@ -131,7 +131,7 @@ partySchema.virtual('averageLevel').get(async function () {
     partyId: this._id,
     isDeleted: { $ne: true },
   });
-  
+
   if (members.length === 0) return 0;
   const totalLevel = members.reduce((sum, character) => {
     return sum + character.classes.reduce((classSum: number, charClass: any) => classSum + charClass.level, 0);
