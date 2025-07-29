@@ -5,7 +5,7 @@
 describe('Database Module Basic Tests', () => {
   it('should have all required exports', () => {
     const db = require('../db');
-    
+
     expect(typeof db.connectToDatabase).toBe('function');
     expect(typeof db.disconnectFromDatabase).toBe('function');
     expect(typeof db.getConnectionStatus).toBe('function');
