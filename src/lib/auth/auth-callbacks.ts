@@ -76,7 +76,7 @@ export async function authorizeCredentials(credentials: any) {
     return {
       id: user.id,
       email: user.email,
-      name: user.name,
+      name: `${user.firstName} ${user.lastName}`.trim(),
       subscriptionTier: user.subscriptionTier,
     };
   } catch (error) {
