@@ -20,6 +20,15 @@ import {
 jest.mock('@/lib/services/CharacterService');
 jest.mock('@/lib/db');
 
+// Mock NextAuth for future compatibility
+jest.mock('@/lib/auth', () => ({
+  auth: jest.fn(),
+}));
+
+// Get the mocked auth function
+const { auth } = require('@/lib/auth');
+const mockAuth = auth as jest.MockedFunction<typeof auth>;
+
 describe('/api/characters API Route', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -60,7 +69,7 @@ describe('/api/characters API Route', () => {
     });
 
     it('should return 401 when user is not authenticated', async () => {
-      await runAuthenticationTest(GET);
+      await runAuthenticationTest(GET, mockAuth);
     });
 
     it('should filter characters by type when specified', async () => {
@@ -135,7 +144,7 @@ describe('/api/characters API Route', () => {
     });
 
     it('should return 401 when user is not authenticated', async () => {
-      await runAuthenticationTest(POST);
+      await runAuthenticationTest(POST, mockAuth);
     });
   });
 });
