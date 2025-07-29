@@ -1,0 +1,225 @@
+/**
+ * Session Strategy Configuration (Issue #524)
+ *
+ * This module provides configuration utilities to switch between JWT and database
+ * session strategies based on environment variables and application needs.
+ */
+
+/**
+ * Session strategy options
+ */
+export type SessionStrategy = 'jwt' | 'database';
+
+/**
+ * Session configuration interface
+ */
+export interface SessionConfig {
+  strategy: SessionStrategy;
+  maxAge: number;
+  updateAge: number;
+  generateSessionToken?: () => string;
+}
+
+/**
+ * Environment-based session configuration
+ */
+export const SESSION_STRATEGY: SessionStrategy =
+  (process.env.NEXTAUTH_SESSION_STRATEGY as SessionStrategy) || 'jwt';
+
+/**
+ * Get session configuration based on strategy
+ */
+export function getSessionConfig(strategy?: SessionStrategy): SessionConfig {
+  const selectedStrategy = strategy || SESSION_STRATEGY;
+
+  const baseConfig = {
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+    updateAge: 24 * 60 * 60, // 24 hours
+  };
+
+  switch (selectedStrategy) {
+    case 'database':
+      return {
+        ...baseConfig,
+        strategy: 'database',
+        generateSessionToken: () => crypto.randomUUID(),
+      };
+
+    case 'jwt':
+    default:
+      return {
+        ...baseConfig,
+        strategy: 'jwt',
+      };
+  }
+}
+
+/**
+ * Check if database sessions are enabled
+ */
+export function isDatabaseSessionEnabled(): boolean {
+  return SESSION_STRATEGY === 'database';
+}
+
+/**
+ * Check if JWT sessions are enabled
+ */
+export function isJWTSessionEnabled(): boolean {
+  return SESSION_STRATEGY === 'jwt';
+}
+
+/**
+ * Get the appropriate auth configuration based on session strategy
+ */
+export async function getAuthConfig() {
+  if (isDatabaseSessionEnabled()) {
+    // Import database session configuration
+    const { handlers, auth, signIn, signOut } = await import('./auth-database-session');
+    return { handlers, auth, signIn, signOut };
+  } else {
+    // Import JWT session configuration (current)
+    const { handlers, auth, signIn, signOut } = await import('./auth');
+    return { handlers, auth, signIn, signOut };
+  }
+}
+
+/**
+ * Session persistence utilities
+ */
+export const sessionUtils = {
+
+  /**
+   * Get current session regardless of strategy
+   */
+  async getCurrentSession() {
+    const { auth } = await getAuthConfig();
+    try {
+      return await auth();
+    } catch (error) {
+      console.error('Error getting current session:', error);
+      return null;
+    }
+  },
+
+  /**
+   * Check if user has valid session
+   */
+  async hasValidSession(): Promise<boolean> {
+    try {
+      const session = await this.getCurrentSession();
+      return Boolean(session?.user?.id);
+    } catch (error) {
+      console.error('Error checking session validity:', error);
+      return false;
+    }
+  },
+
+  /**
+   * Get user ID from session
+   */
+  async getSessionUserId(): Promise<string | null> {
+    try {
+      const session = await this.getCurrentSession();
+      return session?.user?.id || null;
+    } catch (error) {
+      console.error('Error getting session user ID:', error);
+      return null;
+    }
+  },
+
+  /**
+   * Get user subscription tier from session
+   */
+  async getSessionUserTier(): Promise<string> {
+    try {
+      const session = await this.getCurrentSession();
+      return session?.user?.subscriptionTier || 'free';
+    } catch (error) {
+      console.error('Error getting session user tier:', error);
+      return 'free';
+    }
+  },
+};
+
+/**
+ * Mongoose model registration fix for database sessions
+ *
+ * This ensures that NextAuth's MongoDB adapter doesn't conflict with
+ * existing mongoose models by following the same registration pattern.
+ */
+export function ensureSessionModelRegistration() {
+  if (!isDatabaseSessionEnabled()) {
+    return; // Only needed for database sessions
+  }
+
+  // The NextAuth MongoDB adapter handles model registration internally
+  // but we can add any custom session-related models here following
+  // the established pattern from User.ts and Party.ts
+
+  console.log('Database session strategy enabled - MongoDB adapter will handle model registration');
+}
+
+/**
+ * Migration utility to switch between session strategies
+ */
+export const sessionMigration = {
+
+  /**
+   * Migrate from JWT to database sessions
+   */
+  async migrateToDatabase() {
+    console.log('Starting migration from JWT to database sessions...');
+
+    // Implementation would involve:
+    // 1. Update environment variables
+    // 2. Clear existing JWT tokens (logout all users)
+    // 3. Restart application with database session strategy
+
+    console.warn('Session migration requires application restart');
+  },
+
+  /**
+   * Migrate from database to JWT sessions
+   */
+  async migrateToJWT() {
+    console.log('Starting migration from database to JWT sessions...');
+
+    // Implementation would involve:
+    // 1. Update environment variables
+    // 2. Clear database sessions
+    // 3. Restart application with JWT session strategy
+
+    console.warn('Session migration requires application restart');
+  },
+};
+
+/**
+ * Development utilities for testing session strategies
+ */
+export const sessionDebug = {
+
+  /**
+   * Log current session configuration
+   */
+  logConfig() {
+    console.log('Session Configuration:', {
+      strategy: SESSION_STRATEGY,
+      isDatabaseEnabled: isDatabaseSessionEnabled(),
+      isJWTEnabled: isJWTSessionEnabled(),
+      config: getSessionConfig(),
+    });
+  },
+
+  /**
+   * Test session persistence
+   */
+  async testPersistence() {
+    const session = await sessionUtils.getCurrentSession();
+    console.log('Current Session:', {
+      exists: Boolean(session),
+      userId: session?.user?.id,
+      email: session?.user?.email,
+      strategy: SESSION_STRATEGY,
+    });
+  },
+};
