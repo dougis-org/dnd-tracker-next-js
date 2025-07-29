@@ -5,6 +5,8 @@
  * session strategies based on environment variables and application needs.
  */
 
+import { SESSION_TIMEOUTS } from '@/lib/constants/session-constants';
+
 /**
  * Session strategy options
  */
@@ -33,8 +35,8 @@ export function getSessionConfig(strategy?: SessionStrategy): SessionConfig {
   const selectedStrategy = strategy || SESSION_STRATEGY;
 
   const baseConfig = {
-    maxAge: 30 * 24 * 60 * 60, // 30 days
-    updateAge: 24 * 60 * 60, // 24 hours
+    maxAge: SESSION_TIMEOUTS.MAX_AGE,
+    updateAge: SESSION_TIMEOUTS.UPDATE_AGE,
   };
 
   switch (selectedStrategy) {

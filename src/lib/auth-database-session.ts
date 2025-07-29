@@ -13,6 +13,12 @@ import { UserService } from './services/UserService';
 import {
   validateNextAuthUrl,
 } from './auth';
+import {
+  SESSION_TIMEOUTS,
+  NEXTAUTH_COLLECTION_NAMES,
+  TRUSTED_DOMAINS,
+  DEFAULT_DATABASE_NAME,
+} from '@/lib/constants/session-constants';
 
 const mongoUri = process.env.MONGODB_URI;
 if (!mongoUri) {
@@ -112,14 +118,7 @@ async function redirectCallback({ url, baseUrl }: { url: string; baseUrl: string
 
     // For production, only allow specific trusted domains
     if (process.env.NODE_ENV === 'production') {
-      const trustedDomains = [
-        'dnd-tracker-next-js.fly.dev',
-        'dnd-tracker.fly.dev',
-        'dndtracker.com',
-        'www.dndtracker.com',
-      ];
-
-      if (trustedDomains.includes(parsedUrl.hostname)) {
+      if (TRUSTED_DOMAINS.includes(parsedUrl.hostname)) {
         return url;
       }
     }
@@ -155,8 +154,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     strategy: 'database',
 
     // Session lifetime configuration
-    maxAge: 30 * 24 * 60 * 60, // 30 days
-    updateAge: 24 * 60 * 60, // 24 hours - how often to update session
+    maxAge: SESSION_TIMEOUTS.MAX_AGE,
+    updateAge: SESSION_TIMEOUTS.UPDATE_AGE,
 
     // Generate session token (optional customization)
     generateSessionToken: () => {
@@ -317,15 +316,10 @@ export const SESSION_CONFIG = {
   USE_DATABASE_SESSIONS: process.env.USE_DATABASE_SESSIONS === 'true',
 
   // Session lifetime settings
-  MAX_AGE: 30 * 24 * 60 * 60, // 30 days
-  UPDATE_AGE: 24 * 60 * 60, // 24 hours
+  MAX_AGE: SESSION_TIMEOUTS.MAX_AGE,
+  UPDATE_AGE: SESSION_TIMEOUTS.UPDATE_AGE,
 
   // Database settings
-  DATABASE_NAME: process.env.MONGODB_DB_NAME || 'dnd-tracker',
-  COLLECTION_NAMES: {
-    SESSIONS: 'sessions',
-    USERS: 'users',
-    ACCOUNTS: 'accounts',
-    VERIFICATION_TOKENS: 'verification_tokens',
-  },
+  DATABASE_NAME: process.env.MONGODB_DB_NAME || DEFAULT_DATABASE_NAME,
+  COLLECTION_NAMES: NEXTAUTH_COLLECTION_NAMES,
 } as const;

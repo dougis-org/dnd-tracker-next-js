@@ -13,6 +13,15 @@ import {
   sessionDebug,
   ensureSessionModelRegistration,
 } from '@/lib/session-config';
+import {
+  createMockSession,
+  setupAuthMocks,
+  setupConsoleSpy,
+  testSessionUtilitySuccess,
+  testSessionUtilityError,
+  validateSessionConfig,
+  validateUUIDFormat,
+} from './test-helpers/session-config-test-utils';
 
 // Mock environment variable
 const originalEnv = process.env;
@@ -61,20 +70,13 @@ describe('Session Configuration System (Issue #524)', () => {
   describe('Session Configuration', () => {
     test('should provide correct JWT configuration', () => {
       const config = getSessionConfig('jwt');
-
-      expect(config).toEqual({
-        strategy: 'jwt',
-        maxAge: 30 * 24 * 60 * 60, // 30 days
-        updateAge: 24 * 60 * 60, // 24 hours
-      });
+      validateSessionConfig(config, 'jwt');
+      expect(config.generateSessionToken).toBeUndefined();
     });
 
     test('should provide correct database configuration', () => {
       const config = getSessionConfig('database');
-
-      expect(config.strategy).toBe('database');
-      expect(config.maxAge).toBe(30 * 24 * 60 * 60); // 30 days
-      expect(config.updateAge).toBe(24 * 60 * 60); // 24 hours
+      validateSessionConfig(config, 'database');
       expect(config.generateSessionToken).toBeDefined();
     });
 
@@ -89,10 +91,8 @@ describe('Session Configuration System (Issue #524)', () => {
         expect(token2).toBeDefined();
         expect(token1).not.toBe(token2);
 
-        // Should be valid UUID format
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-        expect(token1).toMatch(uuidRegex);
-        expect(token2).toMatch(uuidRegex);
+        validateUUIDFormat(token1);
+        validateUUIDFormat(token2);
       }
     });
   });
@@ -104,92 +104,77 @@ describe('Session Configuration System (Issue #524)', () => {
     beforeEach(() => {
       // Create fresh mocks for each test
       mockAuth = jest.fn();
-      mockSession = {
-        user: {
-          id: 'test-user-id',
-          email: 'test@example.com',
-          subscriptionTier: 'premium',
-        },
-      };
-
-      // Mock the dynamic imports
-      jest.doMock('@/lib/auth', () => ({
-        handlers: {},
-        auth: mockAuth,
-        signIn: jest.fn(),
-        signOut: jest.fn(),
-      }));
-
-      jest.doMock('@/lib/auth-database-session', () => ({
-        handlers: {},
-        auth: mockAuth,
-        signIn: jest.fn(),
-        signOut: jest.fn(),
-      }));
+      mockSession = createMockSession();
+      setupAuthMocks(mockAuth);
     });
 
     test('should get current session successfully', async () => {
-      mockAuth.mockResolvedValue(mockSession);
-
-      const session = await sessionUtils.getCurrentSession();
-
-      expect(session).toEqual(mockSession);
+      await testSessionUtilitySuccess(
+        mockAuth,
+        mockSession,
+        () => sessionUtils.getCurrentSession(),
+        mockSession
+      );
       expect(mockAuth).toHaveBeenCalled();
     });
 
     test('should handle session retrieval errors gracefully', async () => {
-      mockAuth.mockRejectedValue(new Error('Session error'));
-
-      const session = await sessionUtils.getCurrentSession();
-
-      expect(session).toBeNull();
+      await testSessionUtilityError(
+        mockAuth,
+        () => sessionUtils.getCurrentSession(),
+        null
+      );
     });
 
     test('should check valid session correctly', async () => {
-      mockAuth.mockResolvedValue(mockSession);
-
-      const isValid = await sessionUtils.hasValidSession();
-
-      expect(isValid).toBe(true);
+      await testSessionUtilitySuccess(
+        mockAuth,
+        mockSession,
+        () => sessionUtils.hasValidSession(),
+        true
+      );
     });
 
     test('should return false for invalid session', async () => {
-      mockAuth.mockResolvedValue(null);
-
-      const isValid = await sessionUtils.hasValidSession();
-
-      expect(isValid).toBe(false);
+      await testSessionUtilitySuccess(
+        mockAuth,
+        null,
+        () => sessionUtils.hasValidSession(),
+        false
+      );
     });
 
     test('should get session user ID', async () => {
-      mockAuth.mockResolvedValue(mockSession);
-
-      const userId = await sessionUtils.getSessionUserId();
-
-      expect(userId).toBe('test-user-id');
+      await testSessionUtilitySuccess(
+        mockAuth,
+        mockSession,
+        () => sessionUtils.getSessionUserId(),
+        'test-user-id'
+      );
     });
 
     test('should get session user tier', async () => {
-      mockAuth.mockResolvedValue(mockSession);
-
-      const tier = await sessionUtils.getSessionUserTier();
-
-      expect(tier).toBe('premium');
+      await testSessionUtilitySuccess(
+        mockAuth,
+        mockSession,
+        () => sessionUtils.getSessionUserTier(),
+        'premium'
+      );
     });
 
     test('should return default tier for missing session', async () => {
-      mockAuth.mockResolvedValue(null);
-
-      const tier = await sessionUtils.getSessionUserTier();
-
-      expect(tier).toBe('free');
+      await testSessionUtilitySuccess(
+        mockAuth,
+        null,
+        () => sessionUtils.getSessionUserTier(),
+        'free'
+      );
     });
   });
 
   describe('Model Registration', () => {
     test('should handle model registration for database sessions', () => {
-      // Mock console.log to capture output
-      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+      const consoleSpy = setupConsoleSpy();
 
       // Mock database session enabled
       jest.doMock('@/lib/session-config', () => ({
@@ -197,10 +182,8 @@ describe('Session Configuration System (Issue #524)', () => {
         isDatabaseSessionEnabled: () => true,
       }));
 
-      // Test with database strategy
       ensureSessionModelRegistration();
 
-      // Should log that database session strategy is enabled
       expect(consoleSpy).toHaveBeenCalledWith(
         'Database session strategy enabled - MongoDB adapter will handle model registration'
       );
@@ -209,7 +192,7 @@ describe('Session Configuration System (Issue #524)', () => {
     });
 
     test('should skip model registration for JWT sessions', () => {
-      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+      const consoleSpy = setupConsoleSpy();
 
       // Force JWT strategy
       jest.doMock('@/lib/session-config', () => ({
@@ -227,8 +210,17 @@ describe('Session Configuration System (Issue #524)', () => {
   });
 
   describe('Debug Utilities', () => {
+    let mockAuth: jest.Mock;
+    let mockSession: any;
+
+    beforeEach(() => {
+      mockAuth = jest.fn();
+      mockSession = createMockSession();
+      setupAuthMocks(mockAuth);
+    });
+
     test('should log session configuration', () => {
-      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+      const consoleSpy = setupConsoleSpy();
 
       sessionDebug.logConfig();
 
@@ -246,7 +238,7 @@ describe('Session Configuration System (Issue #524)', () => {
     });
 
     test('should test session persistence', async () => {
-      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+      const consoleSpy = setupConsoleSpy();
       mockAuth.mockResolvedValue(mockSession);
 
       await sessionDebug.testPersistence();
@@ -311,19 +303,18 @@ describe('Session Configuration System (Issue #524)', () => {
     });
 
     test('should handle session utility errors gracefully', async () => {
-      // Mock auth to throw error
-      mockAuth.mockRejectedValue(new Error('Auth error'));
+      let mockAuth: jest.Mock;
 
-      // All utilities should handle errors gracefully
-      const session = await sessionUtils.getCurrentSession();
-      const isValid = await sessionUtils.hasValidSession();
-      const userId = await sessionUtils.getSessionUserId();
-      const tier = await sessionUtils.getSessionUserTier();
+      beforeEach(() => {
+        mockAuth = jest.fn();
+        setupAuthMocks(mockAuth);
+      });
 
-      expect(session).toBeNull();
-      expect(isValid).toBe(false);
-      expect(userId).toBeNull();
-      expect(tier).toBe('free');
+      // Test all utilities handle errors gracefully
+      await testSessionUtilityError(mockAuth, () => sessionUtils.getCurrentSession(), null);
+      await testSessionUtilityError(mockAuth, () => sessionUtils.hasValidSession(), false);
+      await testSessionUtilityError(mockAuth, () => sessionUtils.getSessionUserId(), null);
+      await testSessionUtilityError(mockAuth, () => sessionUtils.getSessionUserTier(), 'free');
     });
   });
 });
