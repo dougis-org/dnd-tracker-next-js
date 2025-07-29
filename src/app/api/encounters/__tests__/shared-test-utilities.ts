@@ -9,7 +9,7 @@ import { NextRequest } from 'next/server';
 import { Types } from 'mongoose';
 import { auth } from '@/lib/auth';
 import { EncounterServiceImportExport } from '@/lib/services/EncounterServiceImportExport';
-import { createMockSession, SHARED_API_TEST_CONSTANTS } from '../../../../lib/test-utils/shared-api-test-helpers';
+import { createMockSession } from '../../../../lib/test-utils/shared-api-test-helpers';
 
 // ============================================================================
 // AUTHENTICATION UTILITIES
@@ -19,8 +19,8 @@ import { createMockSession, SHARED_API_TEST_CONSTANTS } from '../../../../lib/te
  * Standard test user for consistent authentication testing
  */
 export const TEST_USER = {
-  id: SHARED_API_TEST_CONSTANTS.TEST_USER_ID,
-  email: SHARED_API_TEST_CONSTANTS.TEST_EMAIL,
+  id: 'test-user-123',
+  email: 'test@example.com',
 } as const;
 
 /**
