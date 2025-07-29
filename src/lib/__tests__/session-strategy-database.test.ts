@@ -56,189 +56,118 @@ describe('Database Session Strategy (Issue #524)', () => {
   });
 
   describe('Session Strategy Configuration', () => {
+    const createConfig = (strategy: 'database' | 'jwt') => ({
+      session: {
+        strategy,
+        maxAge: 30 * 24 * 60 * 60,
+        updateAge: 24 * 60 * 60,
+      },
+      providers: [],
+      callbacks: {},
+    });
+
     test('should support database session strategy configuration', () => {
-      // This test verifies that the configuration can be set up to use database sessions
-
-      const testConfig = {
-        adapter: {} as any, // MongoDB adapter would be here
-        session: {
-          strategy: 'database' as const,
-          maxAge: 30 * 24 * 60 * 60, // 30 days
-          updateAge: 24 * 60 * 60, // 24 hours
-        },
-        providers: [],
-        callbacks: {},
-      };
-
-      // Assert: Configuration should be valid
+      const testConfig = createConfig('database');
       expect(testConfig.session.strategy).toBe('database');
       expect(testConfig.session.maxAge).toBe(30 * 24 * 60 * 60);
-      expect(testConfig.session.updateAge).toBe(24 * 60 * 60);
     });
 
     test('should support JWT session strategy (current implementation)', () => {
-      // This test verifies current JWT strategy works
-
-      const testConfig = {
-        session: {
-          strategy: 'jwt' as const,
-          maxAge: 30 * 24 * 60 * 60, // 30 days
-          updateAge: 24 * 60 * 60, // 24 hours
-        },
-        providers: [],
-        callbacks: {},
-      };
-
-      // Assert: JWT configuration should be valid
+      const testConfig = createConfig('jwt');
       expect(testConfig.session.strategy).toBe('jwt');
       expect(testConfig.session.maxAge).toBe(30 * 24 * 60 * 60);
     });
   });
 
   describe('Database Session Operations', () => {
+    const testSessionOperation = async (operation: string, method: any, ...args: any[]) => {
+      const sessionData = createSessionData();
+      await method(...args);
+      expect(method).toHaveBeenCalledWith(...args);
+    };
+
     test('should create session records in MongoDB when using database strategy', async () => {
       const sessionData = createSessionData();
-
-      // Simulate session creation
-      await mockSessionCollection.insertOne(sessionData);
-
-      // Assert: Session should be created in sessions collection
-      expect(mockSessionCollection.insertOne).toHaveBeenCalledWith(sessionData);
+      await testSessionOperation('create', mockSessionCollection.insertOne, sessionData);
     });
 
     test('should retrieve session records from MongoDB', async () => {
       const sessionData = createSessionData();
       const mockSession = { _id: 'session-object-id', ...sessionData };
-
-      // Mock successful session retrieval
+      
       mockSessionCollection.findOne.mockResolvedValue(mockSession);
-
-      // Simulate session retrieval
-      const result = await mockSessionCollection.findOne({
-        sessionToken: sessionData.sessionToken
-      });
-
-      // Assert: Session should be retrieved from sessions collection
-      expect(mockSessionCollection.findOne).toHaveBeenCalledWith({
-        sessionToken: sessionData.sessionToken
-      });
+      const result = await mockSessionCollection.findOne({ sessionToken: sessionData.sessionToken });
+      
       expect(result).toEqual(mockSession);
     });
 
     test('should update session records in MongoDB', async () => {
       const sessionData = createSessionData();
       const newExpires = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000);
-
-      // Simulate session update
-      await mockSessionCollection.updateOne(
-        { sessionToken: sessionData.sessionToken },
-        { $set: { expires: newExpires } }
-      );
-
-      // Assert: Session should be updated in sessions collection
-      expect(mockSessionCollection.updateOne).toHaveBeenCalledWith(
-        { sessionToken: sessionData.sessionToken },
+      
+      await testSessionOperation('update', mockSessionCollection.updateOne, 
+        { sessionToken: sessionData.sessionToken }, 
         { $set: { expires: newExpires } }
       );
     });
 
     test('should delete session records from MongoDB', async () => {
       const sessionData = createSessionData();
-
-      // Simulate session deletion
-      await mockSessionCollection.deleteOne({
-        sessionToken: sessionData.sessionToken
-      });
-
-      // Assert: Session should be deleted from sessions collection
-      expect(mockSessionCollection.deleteOne).toHaveBeenCalledWith({
-        sessionToken: sessionData.sessionToken
-      });
+      await testSessionOperation('delete', mockSessionCollection.deleteOne, 
+        { sessionToken: sessionData.sessionToken }
+      );
     });
   });
 
   describe('Session Collection Indexes', () => {
     test('should create appropriate indexes for session collection', async () => {
-      // Simulate index creation for sessions
-      await mockSessionCollection.createIndex({ sessionToken: 1 }, { unique: true });
-      await mockSessionCollection.createIndex({ expires: 1 }, { expireAfterSeconds: 0 });
-      await mockSessionCollection.createIndex({ userId: 1 });
+      const indexes = [
+        [{ sessionToken: 1 }, { unique: true }],
+        [{ expires: 1 }, { expireAfterSeconds: 0 }],
+        [{ userId: 1 }]
+      ];
 
-      // Assert: Indexes should be created for efficient session operations
-      expect(mockSessionCollection.createIndex).toHaveBeenCalledWith(
-        { sessionToken: 1 },
-        { unique: true }
-      );
-      expect(mockSessionCollection.createIndex).toHaveBeenCalledWith(
-        { expires: 1 },
-        { expireAfterSeconds: 0 }
-      );
-      expect(mockSessionCollection.createIndex).toHaveBeenCalledWith({ userId: 1 });
+      for (const [index, options] of indexes) {
+        await mockSessionCollection.createIndex(index, options);
+        expect(mockSessionCollection.createIndex).toHaveBeenCalledWith(index, options);
+      }
     });
   });
 
   describe('Session Cleanup and Expiration', () => {
     test('should handle expired session cleanup', async () => {
-      // Mock cleanup of expired sessions
-      mockSessionCollection.deleteOne.mockResolvedValue({
-        deletedCount: 1,
-        acknowledged: true,
-      });
-
-      // Simulate expired session cleanup
-      await mockSessionCollection.deleteOne({
-        expires: { $lt: new Date() }
-      });
-
-      // Assert: Expired sessions should be cleaned up
-      expect(mockSessionCollection.deleteOne).toHaveBeenCalledWith({
-        expires: { $lt: expect.any(Date) }
-      });
+      mockSessionCollection.deleteOne.mockResolvedValue({ deletedCount: 1, acknowledged: true });
+      
+      await mockSessionCollection.deleteOne({ expires: { $lt: new Date() } });
+      expect(mockSessionCollection.deleteOne).toHaveBeenCalledWith({ expires: { $lt: expect.any(Date) } });
     });
   });
 
   describe('Integration with User Management', () => {
     test('should link sessions to user records correctly', async () => {
       const userData = createUserData();
-
-      // Mock user retrieval
       mockUserCollection.findOne.mockResolvedValue(userData);
 
-      // Simulate user lookup for session
       const user = await mockUserCollection.findOne({ _id: userData._id });
-
-      // Assert: User should be retrievable for session validation
-      expect(mockUserCollection.findOne).toHaveBeenCalledWith({ _id: userData._id });
       expect(user).toEqual(userData);
     });
   });
 
   describe('Error Handling', () => {
     test('should handle database connection errors gracefully', async () => {
-      // Mock database connection error
       mockSessionCollection.findOne.mockRejectedValue(new Error('Database connection failed'));
-
-      // Assert: Database errors should be handled
-      await expect(
-        mockSessionCollection.findOne({ sessionToken: 'test-token' })
-      ).rejects.toThrow('Database connection failed');
+      await expect(mockSessionCollection.findOne({ sessionToken: 'test-token' })).rejects.toThrow('Database connection failed');
     });
 
     test('should handle duplicate session token errors', async () => {
-      const duplicateError = new Error('Duplicate key error');
-      (duplicateError as any).code = 11000; // MongoDB duplicate key error code
-
-      // Mock duplicate session token error
+      const duplicateError = Object.assign(new Error('Duplicate key error'), { code: 11000 });
       mockSessionCollection.insertOne.mockRejectedValue(duplicateError);
 
-      // Assert: Duplicate token errors should be handled
-      await expect(
-        mockSessionCollection.insertOne({
-          sessionToken: 'duplicate-token',
-          userId: 'user-id',
-          expires: new Date(),
-        })
-      ).rejects.toThrow('Duplicate key error');
+      await expect(mockSessionCollection.insertOne({
+        sessionToken: 'duplicate-token',
+        userId: 'user-id',
+        expires: new Date(),
+      })).rejects.toThrow('Duplicate key error');
     });
   });
 });

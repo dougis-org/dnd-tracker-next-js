@@ -92,36 +92,22 @@ export async function getAuthConfig() {
 }
 
 /**
- * Get current session regardless of strategy
+ * Create session utility with auth configuration
  */
-async function getCurrentSession() {
+async function createSessionUtil<T>(
+  utilFn: (auth: any) => T,
+): Promise<T> {
   const { auth } = await getAuthConfig();
-  return baseGetCurrentSession(auth);
+  return utilFn(auth);
 }
 
 /**
- * Check if user has valid session
+ * Session utility functions
  */
-async function hasValidSession(): Promise<boolean> {
-  const { auth } = await getAuthConfig();
-  return baseHasValidSession(auth);
-}
-
-/**
- * Get user ID from session
- */
-async function getSessionUserId(): Promise<string | null> {
-  const { auth } = await getAuthConfig();
-  return baseGetSessionUserId(auth);
-}
-
-/**
- * Get user subscription tier from session
- */
-async function getSessionUserTier(): Promise<string> {
-  const { auth } = await getAuthConfig();
-  return baseGetSessionUserTier(auth);
-}
+const getCurrentSession = () => createSessionUtil(baseGetCurrentSession);
+const hasValidSession = () => createSessionUtil(baseHasValidSession);
+const getSessionUserId = () => createSessionUtil(baseGetSessionUserId);
+const getSessionUserTier = () => createSessionUtil(baseGetSessionUserTier);
 
 /**
  * Session persistence utilities
@@ -152,58 +138,39 @@ export function ensureSessionModelRegistration() {
 }
 
 /**
- * Migrate from JWT to database sessions
+ * Migrate between session strategies
  */
-async function migrateToDatabase() {
-  console.log('Starting migration from JWT to database sessions...');
+const createMigrationFn = (target: SessionStrategy) => () => {
+  console.log(`Starting migration from ${SESSION_STRATEGY} to ${target} sessions...`);
   console.warn('Session migration requires application restart');
-}
-
-/**
- * Migrate from database to JWT sessions
- */
-async function migrateToJWT() {
-  console.log('Starting migration from database to JWT sessions...');
-  console.warn('Session migration requires application restart');
-}
+};
 
 /**
  * Migration utility to switch between session strategies
  */
 export const sessionMigration = {
-  migrateToDatabase,
-  migrateToJWT,
+  migrateToDatabase: createMigrationFn('database'),
+  migrateToJWT: createMigrationFn('jwt'),
 };
-
-/**
- * Log current session configuration
- */
-function logConfig() {
-  console.log('Session Configuration:', {
-    strategy: SESSION_STRATEGY,
-    isDatabaseEnabled: isDatabaseSessionEnabled(),
-    isJWTEnabled: isJWTSessionEnabled(),
-    config: getSessionConfig(),
-  });
-}
-
-/**
- * Test session persistence
- */
-async function testPersistence() {
-  const session = await sessionUtils.getCurrentSession();
-  console.log('Current Session:', {
-    exists: Boolean(session),
-    userId: session?.user?.id,
-    email: session?.user?.email,
-    strategy: SESSION_STRATEGY,
-  });
-}
 
 /**
  * Development utilities for testing session strategies
  */
 export const sessionDebug = {
-  logConfig,
-  testPersistence,
+  logConfig: () => console.log('Session Configuration:', {
+    strategy: SESSION_STRATEGY,
+    isDatabaseEnabled: isDatabaseSessionEnabled(),
+    isJWTEnabled: isJWTSessionEnabled(),
+    config: getSessionConfig(),
+  }),
+  
+  testPersistence: async () => {
+    const session = await sessionUtils.getCurrentSession();
+    console.log('Current Session:', {
+      exists: Boolean(session),
+      userId: session?.user?.id,
+      email: session?.user?.email,
+      strategy: SESSION_STRATEGY,
+    });
+  },
 };
