@@ -5,18 +5,21 @@
  * and follows proper mongoose model registration patterns.
  */
 
-import { MongoDBAdapter } from '@auth/mongodb-adapter';
 import { MongoClient } from 'mongodb';
 import { connectToDatabase } from '@/lib/db';
-import mongoose from 'mongoose';
 import {
-  createMockCollection,
-  createMockDatabase,
-  createMockClient,
-  createSessionData,
+  setupPersistenceTestEnv,
+  testSessionDocumentCreation,
+  testSessionRetrieval,
+  testSessionUpdates,
+  testSessionDeletion,
+  testMongooseIntegration,
+  testDatabaseConnection,
+  testErrorHandling,
+} from './test-helpers/persistence-test-patterns';
+import {
   setupStandardMocks,
   clearAllMocks,
-  resetMongooseModels,
 } from './test-helpers/session-test-utils';
 
 // Mock the MongoDB client for testing
@@ -32,10 +35,10 @@ describe('Session Manager Database Persistence (Issue #524)', () => {
   let mockCollection: any;
 
   beforeEach(() => {
-    // Create mock MongoDB client and database using utilities
-    mockCollection = createMockCollection();
-    mockDb = createMockDatabase({ sessions: mockCollection });
-    mockClient = createMockClient(mockDb);
+    const env = setupPersistenceTestEnv();
+    mockClient = env.mockClient;
+    mockDb = env.mockDb;
+    mockCollection = env.mockCollection;
 
     MockedMongoClient.mockImplementation(() => mockClient);
     mockedConnectToDatabase.mockResolvedValue(undefined);
@@ -48,251 +51,95 @@ describe('Session Manager Database Persistence (Issue #524)', () => {
 
   describe('NextAuth MongoDB Adapter Session Persistence', () => {
     it('should create session documents in MongoDB with proper structure', async () => {
-      // Arrange: Create MongoDB adapter
-      const clientPromise = Promise.resolve(mockClient);
-      const adapter = MongoDBAdapter(clientPromise, {
-        databaseName: 'test-db',
-      });
+      const patterns = testSessionDocumentCreation(mockCollection);
+      await patterns.testCreateSession();
+    });
 
-      // Mock session data using utility
-      const sessionData = createSessionData();
-
-      // Act: Create session via adapter
-      if (adapter.createSession) {
-        const result = await adapter.createSession(sessionData);
-
-        // Assert: Verify session was created with correct structure
-        expect(mockCollection.insertOne).toHaveBeenCalledWith(
-          expect.objectContaining({
-            sessionToken: sessionData.sessionToken,
-            userId: sessionData.userId,
-            expires: sessionData.expires,
-          })
-        );
-        expect(result).toBeDefined();
-      }
+    it('should validate session document structure', async () => {
+      const patterns = testSessionDocumentCreation(mockCollection);
+      await patterns.testSessionStructure();
     });
 
     it('should retrieve session documents from MongoDB correctly', async () => {
-      // Arrange
-      const clientPromise = Promise.resolve(mockClient);
-      const adapter = MongoDBAdapter(clientPromise, {
-        databaseName: 'test-db',
-      });
+      const patterns = testSessionRetrieval(mockCollection);
+      await patterns.testGetSession();
+    });
 
-      const sessionData = createSessionData();
-      const mockSessionDoc = {
-        _id: new mongoose.Types.ObjectId(),
-        ...sessionData,
-      };
-
-      // Mock successful retrieval
-      mockCollection.findOne.mockResolvedValue(mockSessionDoc);
-
-      // Act: Get session via adapter
-      if (adapter.getSessionAndUser) {
-        const result = await adapter.getSessionAndUser(sessionData.sessionToken);
-
-        // Assert: Verify session was retrieved correctly
-        expect(mockCollection.findOne).toHaveBeenCalledWith({
-          sessionToken: sessionData.sessionToken,
-        });
-        expect(result).toBeDefined();
-      }
+    it('should handle non-existent session retrieval', async () => {
+      const patterns = testSessionRetrieval(mockCollection);
+      await patterns.testNonExistentSession();
     });
 
     it('should update session documents in MongoDB correctly', async () => {
-      // Arrange
-      const clientPromise = Promise.resolve(mockClient);
-      const adapter = MongoDBAdapter(clientPromise, {
-        databaseName: 'test-db',
-      });
+      const patterns = testSessionUpdates(mockCollection);
+      await patterns.testUpdateSession();
+    });
 
-      const sessionData = createSessionData({
-        expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-      });
-
-      // Act: Update session via adapter
-      if (adapter.updateSession) {
-        const result = await adapter.updateSession(sessionData);
-
-        // Assert: Verify session was updated correctly
-        expect(mockCollection.updateOne).toHaveBeenCalledWith(
-          { sessionToken: sessionData.sessionToken },
-          { $set: expect.objectContaining({ expires: sessionData.expires }) }
-        );
-        expect(result).toBeDefined();
-      }
+    it('should handle update of non-existent session', async () => {
+      const patterns = testSessionUpdates(mockCollection);
+      await patterns.testUpdateNonExistentSession();
     });
 
     it('should delete session documents from MongoDB correctly', async () => {
-      // Arrange
-      const clientPromise = Promise.resolve(mockClient);
-      const adapter = MongoDBAdapter(clientPromise, {
-        databaseName: 'test-db',
-      });
+      const patterns = testSessionDeletion(mockCollection);
+      await patterns.testDeleteSession();
+    });
 
-      const sessionData = createSessionData();
-
-      // Act: Delete session via adapter
-      if (adapter.deleteSession) {
-        await adapter.deleteSession(sessionData.sessionToken);
-
-        // Assert: Verify session was deleted correctly
-        expect(mockCollection.deleteOne).toHaveBeenCalledWith({
-          sessionToken: sessionData.sessionToken,
-        });
-      }
+    it('should handle deletion of non-existent session', async () => {
+      const patterns = testSessionDeletion(mockCollection);
+      await patterns.testDeleteNonExistentSession();
     });
   });
 
   describe('Mongoose Model Registration Issues', () => {
-    it('should not have "model already registered" errors when adapter initializes', async () => {
-      // This test verifies that NextAuth MongoDB adapter doesn't conflict
-      // with mongoose model registration patterns
-
-      // Arrange: Clear mongoose models to simulate fresh start
-      resetMongooseModels();
-
-      // Act: Create adapter multiple times (simulating test environment)
-      const clientPromise = Promise.resolve(mockClient);
-
-      const adapter1 = MongoDBAdapter(clientPromise, {
-        databaseName: 'test-db',
-      });
-
-      const adapter2 = MongoDBAdapter(clientPromise, {
-        databaseName: 'test-db',
-      });
-
-      // Assert: No errors should be thrown during adapter creation
-      expect(adapter1).toBeDefined();
-      expect(adapter2).toBeDefined();
+    it('should verify mongoose connection state', () => {
+      const patterns = testMongooseIntegration();
+      patterns.testConnectionState();
     });
 
-    it('should handle mongoose connection state properly', async () => {
-      // Arrange: Mock mongoose connection states
-      const originalModels = mongoose.models;
+    it('should handle model registration properly', () => {
+      const patterns = testMongooseIntegration();
+      patterns.testModelRegistration();
+    });
 
-      // Simulate models being registered
-      mongoose.models = {
-        User: {} as any,
-        Character: {} as any,
-        Party: {} as any,
-      };
+    it('should clean up models after tests', async () => {
+      const patterns = testMongooseIntegration();
+      await patterns.testModelCleanup();
+    });
 
-      // Act: Create adapter while mongoose models exist
-      const clientPromise = Promise.resolve(mockClient);
-      const adapter = MongoDBAdapter(clientPromise, {
-        databaseName: 'test-db',
-      });
+  });
 
-      // Assert: Adapter should work regardless of mongoose state
-      expect(adapter).toBeDefined();
+  describe('Database Connection', () => {
+    it('should handle successful database connection', async () => {
+      const patterns = testDatabaseConnection(mockClient, mockDb);
+      await patterns.testSuccessfulConnection();
+    });
 
-      // Cleanup
-      mongoose.models = originalModels;
+    it('should handle connection errors', async () => {
+      const patterns = testDatabaseConnection(mockClient, mockDb);
+      await patterns.testConnectionError();
+    });
+
+    it('should provide database access', async () => {
+      const patterns = testDatabaseConnection(mockClient, mockDb);
+      await patterns.testDatabaseAccess();
     });
   });
 
-  describe('Session CRUD Operations', () => {
-    it('should create, read, update, and delete sessions correctly', async () => {
-      // Arrange
-      const clientPromise = Promise.resolve(mockClient);
-      const adapter = MongoDBAdapter(clientPromise, {
-        databaseName: 'test-db',
-      });
-
-      const sessionData = createSessionData({
-        sessionToken: 'crud-test-token',
-      });
-
-      // Mock all operations
-      mockCollection.insertOne.mockResolvedValue({
-        insertedId: new mongoose.Types.ObjectId(),
-        acknowledged: true,
-      });
-
-      mockCollection.findOne.mockResolvedValue({
-        ...sessionData,
-        _id: new mongoose.Types.ObjectId(),
-      });
-
-      mockCollection.updateOne.mockResolvedValue({
-        matchedCount: 1,
-        modifiedCount: 1,
-        acknowledged: true,
-      });
-
-      mockCollection.deleteOne.mockResolvedValue({
-        deletedCount: 1,
-        acknowledged: true,
-      });
-
-      // Act & Assert: Test full CRUD cycle
-      if (adapter.createSession && adapter.getSessionAndUser &&
-          adapter.updateSession && adapter.deleteSession) {
-
-        // Create
-        const created = await adapter.createSession(sessionData);
-        expect(created).toBeDefined();
-        expect(mockCollection.insertOne).toHaveBeenCalled();
-
-        // Read
-        const retrieved = await adapter.getSessionAndUser(sessionData.sessionToken);
-        expect(retrieved).toBeDefined();
-        expect(mockCollection.findOne).toHaveBeenCalled();
-
-        // Update
-        const newExpires = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000);
-        const updated = await adapter.updateSession({
-          sessionToken: sessionData.sessionToken,
-          expires: newExpires,
-        });
-        expect(updated).toBeDefined();
-        expect(mockCollection.updateOne).toHaveBeenCalled();
-
-        // Delete
-        await adapter.deleteSession(sessionData.sessionToken);
-        expect(mockCollection.deleteOne).toHaveBeenCalled();
-      }
-    });
-  });
-
-  describe('Database Connection Issues', () => {
-    it('should handle database connection failures gracefully', async () => {
-      // Arrange: Mock connection failure
-      const failingClient = {
-        db: jest.fn().mockImplementation(() => {
-          throw new Error('Database connection failed');
-        }),
-      } as any;
-
-      const clientPromise = Promise.resolve(failingClient);
-
-      // Act & Assert: Should not throw during adapter creation
-      expect(() => {
-        MongoDBAdapter(clientPromise, {
-          databaseName: 'test-db',
-        });
-      }).not.toThrow();
+  describe('Error Handling', () => {
+    it('should handle database errors gracefully', async () => {
+      const patterns = testErrorHandling(mockCollection);
+      await patterns.testDatabaseErrors();
     });
 
-    it('should handle collection operation failures gracefully', async () => {
-      // Arrange: Mock collection operation failure
-      mockCollection.findOne.mockRejectedValue(new Error('Collection operation failed'));
+    it('should handle invalid session data', async () => {
+      const patterns = testErrorHandling(mockCollection);
+      await patterns.testInvalidSessionData();
+    });
 
-      const clientPromise = Promise.resolve(mockClient);
-      const adapter = MongoDBAdapter(clientPromise, {
-        databaseName: 'test-db',
-      });
-
-      // Act & Assert: Should handle operation failures
-      if (adapter.getSessionAndUser) {
-        await expect(
-          adapter.getSessionAndUser('test-token')
-        ).rejects.toThrow('Collection operation failed');
-      }
+    it('should handle connection failures', async () => {
+      const patterns = testErrorHandling(mockCollection);
+      await patterns.testConnectionFailure();
     });
   });
 });

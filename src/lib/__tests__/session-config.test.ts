@@ -6,22 +6,15 @@
  */
 
 import {
-  getSessionConfig,
-  isDatabaseSessionEnabled,
-  isJWTSessionEnabled,
-  sessionUtils,
-  sessionDebug,
-  ensureSessionModelRegistration,
-} from '@/lib/session-config';
-import {
-  createMockSession,
-  setupAuthMocks,
-  setupConsoleSpy,
-  testSessionUtilitySuccess,
-  testSessionUtilityError,
-  validateSessionConfig,
-  validateUUIDFormat,
-} from './test-helpers/session-config-test-utils';
+  testStrategyDetection,
+  testSessionConfiguration,
+  testSessionUtilities,
+  testModelRegistration,
+  testDebugUtilities,
+  testIntegrationPatterns,
+  testErrorHandling,
+  setupSessionTestEnv,
+} from './test-helpers/session-test-patterns';
 
 // Mock environment variable
 const originalEnv = process.env;
@@ -37,63 +30,34 @@ describe('Session Configuration System (Issue #524)', () => {
   });
 
   describe('Session Strategy Detection', () => {
+    const patterns = testStrategyDetection();
+
     test('should default to JWT strategy when no environment variable is set', () => {
-      delete process.env.NEXTAUTH_SESSION_STRATEGY;
-
-      const config = getSessionConfig();
-
-      expect(config.strategy).toBe('jwt');
-      expect(isJWTSessionEnabled()).toBe(true);
-      expect(isDatabaseSessionEnabled()).toBe(false);
+      patterns.testJWTDefault();
     });
 
     test('should use database strategy when environment variable is set', () => {
-      process.env.NEXTAUTH_SESSION_STRATEGY = 'database';
-
-      // Re-import module to pick up environment variable
-      jest.resetModules();
-
-      const config = getSessionConfig('database');
-
-      expect(config.strategy).toBe('database');
-      expect(config.generateSessionToken).toBeDefined();
+      patterns.testDatabaseStrategy();
     });
 
     test('should fallback to JWT for invalid strategy values', () => {
-      const config = getSessionConfig('invalid' as any);
-
-      expect(config.strategy).toBe('jwt');
-      expect(config.generateSessionToken).toBeUndefined();
+      patterns.testInvalidFallback();
     });
   });
 
   describe('Session Configuration', () => {
+    const patterns = testSessionConfiguration();
+
     test('should provide correct JWT configuration', () => {
-      const config = getSessionConfig('jwt');
-      validateSessionConfig(config, 'jwt');
-      expect(config.generateSessionToken).toBeUndefined();
+      patterns.testJWTConfig();
     });
 
     test('should provide correct database configuration', () => {
-      const config = getSessionConfig('database');
-      validateSessionConfig(config, 'database');
-      expect(config.generateSessionToken).toBeDefined();
+      patterns.testDatabaseConfig();
     });
 
     test('should generate unique session tokens for database strategy', () => {
-      const config = getSessionConfig('database');
-
-      if (config.generateSessionToken) {
-        const token1 = config.generateSessionToken();
-        const token2 = config.generateSessionToken();
-
-        expect(token1).toBeDefined();
-        expect(token2).toBeDefined();
-        expect(token1).not.toBe(token2);
-
-        validateUUIDFormat(token1);
-        validateUUIDFormat(token2);
-      }
+      patterns.testUniqueTokens();
     });
   });
 
@@ -102,110 +66,56 @@ describe('Session Configuration System (Issue #524)', () => {
     let mockSession: any;
 
     beforeEach(() => {
-      // Create fresh mocks for each test
-      mockAuth = jest.fn();
-      mockSession = createMockSession();
-      setupAuthMocks(mockAuth);
+      const env = setupSessionTestEnv();
+      mockAuth = env.mockAuth;
+      mockSession = env.mockSession;
     });
 
     test('should get current session successfully', async () => {
-      await testSessionUtilitySuccess(
-        mockAuth,
-        mockSession,
-        () => sessionUtils.getCurrentSession(),
-        mockSession
-      );
-      expect(mockAuth).toHaveBeenCalled();
+      const patterns = testSessionUtilities();
+      await patterns.testCurrentSession(mockAuth, mockSession);
     });
 
     test('should handle session retrieval errors gracefully', async () => {
-      await testSessionUtilityError(
-        mockAuth,
-        () => sessionUtils.getCurrentSession(),
-        null
-      );
+      const patterns = testSessionUtilities();
+      await patterns.testSessionError(mockAuth);
     });
 
     test('should check valid session correctly', async () => {
-      await testSessionUtilitySuccess(
-        mockAuth,
-        mockSession,
-        () => sessionUtils.hasValidSession(),
-        true
-      );
+      const patterns = testSessionUtilities();
+      await patterns.testValidSession(mockAuth, mockSession);
     });
 
     test('should return false for invalid session', async () => {
-      await testSessionUtilitySuccess(
-        mockAuth,
-        null,
-        () => sessionUtils.hasValidSession(),
-        false
-      );
+      const patterns = testSessionUtilities();
+      await patterns.testInvalidSession(mockAuth);
     });
 
     test('should get session user ID', async () => {
-      await testSessionUtilitySuccess(
-        mockAuth,
-        mockSession,
-        () => sessionUtils.getSessionUserId(),
-        'test-user-id'
-      );
+      const patterns = testSessionUtilities();
+      await patterns.testSessionUserId(mockAuth, mockSession);
     });
 
     test('should get session user tier', async () => {
-      await testSessionUtilitySuccess(
-        mockAuth,
-        mockSession,
-        () => sessionUtils.getSessionUserTier(),
-        'premium'
-      );
+      const patterns = testSessionUtilities();
+      await patterns.testSessionUserTier(mockAuth, mockSession);
     });
 
     test('should return default tier for missing session', async () => {
-      await testSessionUtilitySuccess(
-        mockAuth,
-        null,
-        () => sessionUtils.getSessionUserTier(),
-        'free'
-      );
+      const patterns = testSessionUtilities();
+      await patterns.testDefaultTier(mockAuth);
     });
   });
 
   describe('Model Registration', () => {
+    const patterns = testModelRegistration();
+
     test('should handle model registration for database sessions', () => {
-      const consoleSpy = setupConsoleSpy();
-
-      // Mock database session enabled
-      jest.doMock('@/lib/session-config', () => ({
-        ...jest.requireActual('@/lib/session-config'),
-        isDatabaseSessionEnabled: () => true,
-      }));
-
-      ensureSessionModelRegistration();
-
-      expect(consoleSpy).toHaveBeenCalledWith(
-        'Database session strategy enabled - MongoDB adapter will handle model registration'
-      );
-
-      consoleSpy.mockRestore();
+      patterns.testDatabaseRegistration();
     });
 
     test('should skip model registration for JWT sessions', () => {
-      const consoleSpy = setupConsoleSpy();
-
-      // Force JWT strategy
-      jest.doMock('@/lib/session-config', () => ({
-        ...jest.requireActual('@/lib/session-config'),
-        isDatabaseSessionEnabled: () => false,
-      }));
-
-      ensureSessionModelRegistration();
-
-      // Should not throw any errors and should skip registration
-      expect(true).toBe(true); // Test passes if no errors thrown
-
-      consoleSpy.mockRestore();
+      patterns.testJWTSkip();
     });
   });
 
@@ -214,107 +124,43 @@ describe('Session Configuration System (Issue #524)', () => {
     let mockSession: any;
 
     beforeEach(() => {
-      mockAuth = jest.fn();
-      mockSession = createMockSession();
-      setupAuthMocks(mockAuth);
+      const env = setupSessionTestEnv();
+      mockAuth = env.mockAuth;
+      mockSession = env.mockSession;
     });
 
     test('should log session configuration', () => {
-      const consoleSpy = setupConsoleSpy();
-
-      sessionDebug.logConfig();
-
-      expect(consoleSpy).toHaveBeenCalledWith(
-        'Session Configuration:',
-        expect.objectContaining({
-          strategy: expect.any(String),
-          isDatabaseEnabled: expect.any(Boolean),
-          isJWTEnabled: expect.any(Boolean),
-          config: expect.any(Object),
-        })
-      );
-
-      consoleSpy.mockRestore();
+      const patterns = testDebugUtilities();
+      patterns.testLogConfig();
     });
 
     test('should test session persistence', async () => {
-      const consoleSpy = setupConsoleSpy();
-      mockAuth.mockResolvedValue(mockSession);
-
-      await sessionDebug.testPersistence();
-
-      expect(consoleSpy).toHaveBeenCalledWith(
-        'Current Session:',
-        expect.objectContaining({
-          exists: expect.any(Boolean),
-          userId: expect.any(String),
-          email: expect.any(String),
-          strategy: expect.any(String),
-        })
-      );
-
-      consoleSpy.mockRestore();
+      const patterns = testDebugUtilities();
+      await patterns.testPersistence(mockAuth, mockSession);
     });
   });
 
   describe('Configuration Integration', () => {
+    const patterns = testIntegrationPatterns();
+
     test('should provide consistent session configuration across utilities', () => {
-      const config = getSessionConfig();
-      const isDatabase = isDatabaseSessionEnabled();
-      const isJWT = isJWTSessionEnabled();
-
-      // Should be mutually exclusive
-      expect(isDatabase).not.toBe(isJWT);
-
-      // Configuration should match detection
-      if (isDatabase) {
-        expect(config.strategy).toBe('database');
-      } else {
-        expect(config.strategy).toBe('jwt');
-      }
+      patterns.testConsistentConfig();
     });
 
     test('should handle environment variable changes', () => {
-      // Test with JWT
-      process.env.NEXTAUTH_SESSION_STRATEGY = 'jwt';
-      const jwtConfig = getSessionConfig('jwt');
-      expect(jwtConfig.strategy).toBe('jwt');
-
-      // Test with database
-      process.env.NEXTAUTH_SESSION_STRATEGY = 'database';
-      const dbConfig = getSessionConfig('database');
-      expect(dbConfig.strategy).toBe('database');
+      patterns.testEnvironmentChanges();
     });
   });
 
   describe('Error Handling', () => {
-    test('should handle missing environment variables gracefully', () => {
-      delete process.env.NEXTAUTH_SESSION_STRATEGY;
-      delete process.env.MONGODB_URI;
-      delete process.env.MONGODB_DB_NAME;
+    const patterns = testErrorHandling();
 
-      // Should not throw errors
-      expect(() => {
-        getSessionConfig();
-        isDatabaseSessionEnabled();
-        isJWTSessionEnabled();
-        ensureSessionModelRegistration();
-      }).not.toThrow();
+    test('should handle missing environment variables gracefully', () => {
+      patterns.testMissingEnvVars();
     });
 
     test('should handle session utility errors gracefully', async () => {
-      let mockAuth: jest.Mock;
-
-      beforeEach(() => {
-        mockAuth = jest.fn();
-        setupAuthMocks(mockAuth);
-      });
-
-      // Test all utilities handle errors gracefully
-      await testSessionUtilityError(mockAuth, () => sessionUtils.getCurrentSession(), null);
-      await testSessionUtilityError(mockAuth, () => sessionUtils.hasValidSession(), false);
-      await testSessionUtilityError(mockAuth, () => sessionUtils.getSessionUserId(), null);
-      await testSessionUtilityError(mockAuth, () => sessionUtils.getSessionUserTier(), 'free');
+      await patterns.testUtilityErrors();
     });
   });
 });

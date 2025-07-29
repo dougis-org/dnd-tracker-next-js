@@ -6,6 +6,12 @@
  */
 
 import { SESSION_TIMEOUTS } from '@/lib/constants/session-constants';
+import {
+  getCurrentSession as baseGetCurrentSession,
+  hasValidSession as baseHasValidSession,
+  getSessionUserId as baseGetSessionUserId,
+  getSessionUserTier as baseGetSessionUserTier,
+} from './session/session-utilities';
 
 /**
  * Session strategy options
@@ -90,51 +96,31 @@ export async function getAuthConfig() {
  */
 async function getCurrentSession() {
   const { auth } = await getAuthConfig();
-  try {
-    return await auth();
-  } catch (error) {
-    console.error('Error getting current session:', error);
-    return null;
-  }
+  return baseGetCurrentSession(auth);
 }
 
 /**
  * Check if user has valid session
  */
 async function hasValidSession(): Promise<boolean> {
-  try {
-    const session = await getCurrentSession();
-    return Boolean(session?.user?.id);
-  } catch (error) {
-    console.error('Error checking session validity:', error);
-    return false;
-  }
+  const { auth } = await getAuthConfig();
+  return baseHasValidSession(auth);
 }
 
 /**
  * Get user ID from session
  */
 async function getSessionUserId(): Promise<string | null> {
-  try {
-    const session = await getCurrentSession();
-    return session?.user?.id || null;
-  } catch (error) {
-    console.error('Error getting session user ID:', error);
-    return null;
-  }
+  const { auth } = await getAuthConfig();
+  return baseGetSessionUserId(auth);
 }
 
 /**
  * Get user subscription tier from session
  */
 async function getSessionUserTier(): Promise<string> {
-  try {
-    const session = await getCurrentSession();
-    return session?.user?.subscriptionTier || 'free';
-  } catch (error) {
-    console.error('Error getting session user tier:', error);
-    return 'free';
-  }
+  const { auth } = await getAuthConfig();
+  return baseGetSessionUserTier(auth);
 }
 
 /**
