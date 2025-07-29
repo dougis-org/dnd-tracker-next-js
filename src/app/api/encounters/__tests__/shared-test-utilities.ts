@@ -9,7 +9,6 @@ import { NextRequest } from 'next/server';
 import { Types } from 'mongoose';
 import { auth } from '@/lib/auth';
 import { EncounterServiceImportExport } from '@/lib/services/EncounterServiceImportExport';
-import { createMockSession } from '../../../../lib/test-utils/shared-api-test-helpers';
 
 // ============================================================================
 // AUTHENTICATION UTILITIES
@@ -24,15 +23,19 @@ export const TEST_USER = {
 } as const;
 
 /**
- * Pre-created mock session for TEST_USER to reduce complexity in mock functions
- */
-const TEST_USER_SESSION = createMockSession(TEST_USER.id);
-
-/**
  * Mock auth to return successful authentication
+ * Uses consistent session structure matching shared factory pattern
  */
 export const mockAuthSuccess = (mockAuth: jest.MockedFunction<typeof auth>) => {
-  mockAuth.mockResolvedValue(TEST_USER_SESSION);
+  mockAuth.mockResolvedValue({
+    user: {
+      id: TEST_USER.id,
+      email: TEST_USER.email,
+      name: 'John Doe',
+      subscriptionTier: 'free',
+    },
+    expires: '2024-12-31T23:59:59.999Z',
+  });
 };
 
 /**
