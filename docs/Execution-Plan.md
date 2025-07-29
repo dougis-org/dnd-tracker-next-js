@@ -194,7 +194,7 @@ complexity explosion from previous "big bang" rewrite attempts.
 - [ ] All test assumptions documented and corrected
 - [ ] Core infrastructure stable and properly configured
 - [ ] SessionManager working with database persistence
-- [ ] API routes using NextAuth session validation
+- [x] **API routes using NextAuth session validation** ✅ (#534 - Completed 2025-07-29)
 - [x] **Test helpers properly simulate authentication** ✅ (#535 - Completed 2025-07-29)
 
 ### Phase 2 Complete When
@@ -224,7 +224,7 @@ complexity explosion from previous "big bang" rewrite attempts.
 | #523  | 1.2   | Open   | -        | -          | Day 7           | #522 |
 | #524  | 1.3   | Open   | -        | -          | Day 10          | #523 |
 | #525  | 1.4   | Open   | -        | -          | Day 14          | #524 |
-| #534  | 1.4   | Open   | -        | -          | Day 8           | #522 |
+| #534  | 1.4   | ✅ Completed | Claude   | 2025-07-29 | 2025-07-29      | #522 |
 | #535  | 1.5   | ✅ Completed | Claude   | 2025-07-29 | 2025-07-29      | #522 |
 | #526  | 2.1   | Open   | -        | -          | Day 12          | #524 |
 | #527  | 2.2   | Open   | -        | -          | Day 15          | #526 |
@@ -244,8 +244,12 @@ complexity explosion from previous "big bang" rewrite attempts.
 
 ## Recent Updates
 
-### 2025-07-29 - Issue #535 Completed
-- ✅ **Phase 1.5: Update test helpers to use NextAuth session simulation** - Successfully implemented
+### 2025-07-29 - Issues #534 & #535 Completed
+- ✅ **Phase 1.4: Align API routes with NextAuth session validation** (#534) - Successfully migrated
+  character API routes from header-based authentication to NextAuth session validation, achieving
+  consistency across all API endpoints. All tests updated to use NextAuth session mocking.
+
+- ✅ **Phase 1.5: Update test helpers to use NextAuth session simulation** (#535) - Successfully implemented
   NextAuth-compatible test helpers with comprehensive session mocking, maintaining backward compatibility
   during transition period. All code duplications eliminated (12 → 0 clones).
 
