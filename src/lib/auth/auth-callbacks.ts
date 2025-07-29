@@ -63,15 +63,18 @@ export async function authorizeCredentials(credentials: any) {
   try {
     if (!credentials?.email || !credentials?.password) return null;
 
-    const user = await UserService.authenticateUser(
-      credentials.email,
-      credentials.password
-    );
+    const result = await UserService.authenticateUser({
+      email: credentials.email,
+      password: credentials.password,
+      rememberMe: Boolean(credentials.rememberMe),
+    });
 
-    if (!user) return null;
+    if (!result.success || !result.data) return null;
+
+    const { user } = result.data;
 
     return {
-      id: user._id.toString(),
+      id: user.id,
       email: user.email,
       name: user.name,
       subscriptionTier: user.subscriptionTier,
@@ -88,7 +91,6 @@ export async function authorizeCredentials(credentials: any) {
 export const authEventHandlers = {
   signIn: async ({ user }: { user: any }) => {
     console.log('User signed in:', user?.email);
-    return true;
   },
   signOut: async () => {
     console.log('User signed out');
