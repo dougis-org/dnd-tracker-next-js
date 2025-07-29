@@ -73,12 +73,16 @@ function handleUnauthenticatedRequest(request: NextRequest, isAPI: boolean): Nex
     try {
       const parsedRequestUrl = new URL(requestUrl);
 
-      // Only set callbackUrl if it's from a trusted origin
-      if (parsedRequestUrl.origin === url.origin) {
+      // Only set callbackUrl if it's from a trusted origin and not already a signin page
+      if (parsedRequestUrl && parsedRequestUrl.origin === url.origin &&
+          parsedRequestUrl.pathname &&
+          !parsedRequestUrl.pathname.startsWith('/signin') &&
+          !parsedRequestUrl.pathname.startsWith('/signup') &&
+          !parsedRequestUrl.pathname.startsWith('/auth/')) {
         url.searchParams.set('callbackUrl', encodeURI(requestUrl));
-      } else {
+      } else if (parsedRequestUrl && parsedRequestUrl.origin !== url.origin) {
         console.warn(`Middleware: Blocked callback to external origin: ${parsedRequestUrl.origin}`);
-        // Don't set callbackUrl for external origins
+        // Don't set callbackUrl for external origins - security fix
       }
     } catch (urlError) {
       console.warn(`Middleware: Invalid request URL: ${requestUrl}`, urlError);
@@ -88,8 +92,15 @@ function handleUnauthenticatedRequest(request: NextRequest, isAPI: boolean): Nex
     return NextResponse.redirect(url);
   } catch (error) {
     console.error('Middleware: Error handling unauthenticated request:', error);
-    // Fallback: simple redirect without callback
-    return NextResponse.redirect(new URL('/signin', request.url));
+    // Fallback: construct a safe redirect URL manually to handle URL construction errors
+    try {
+      const fallbackUrl = `${new URL(request.url).origin}/signin`;
+      return NextResponse.redirect(fallbackUrl);
+    } catch (fallbackError) {
+      console.error('Middleware: Critical error in fallback redirect:', fallbackError);
+      // Final fallback - redirect to a hardcoded signin path
+      return NextResponse.redirect('http://localhost:3000/signin');
+    }
   }
 }
 

@@ -9,18 +9,21 @@ const path = require('path');
 describe('Markdown Linting', () => {
   describe('Configuration', () => {
     test('should have .markdownlint.json configuration file', () => {
-      const configPath = path.resolve(process.cwd(), '.markdownlint.json');
+      // Use static known path instead of dynamic construction
+      const configPath = '.markdownlint.json';
       expect(fs.existsSync(configPath)).toBe(true);
     });
 
     test('should have valid JSON configuration', () => {
-      const configPath = path.resolve(process.cwd(), '.markdownlint.json');
+      // Use static known path instead of dynamic construction
+      const configPath = '.markdownlint.json';
       const configContent = fs.readFileSync(configPath, 'utf8');
       expect(() => JSON.parse(configContent)).not.toThrow();
     });
 
     test('should have reasonable line length configuration', () => {
-      const configPath = path.resolve(process.cwd(), '.markdownlint.json');
+      // Use static known path instead of dynamic construction
+      const configPath = '.markdownlint.json';
       const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
       expect(config.MD013).toBeDefined();
       expect(config.MD013.line_length).toBeGreaterThanOrEqual(120);
@@ -37,8 +40,13 @@ describe('Markdown Linting', () => {
     keyFiles.forEach(file => {
       test(`${file} should pass markdownlint`, () => {
         expect(() => {
+<<<<<<< HEAD
           // Use local markdownlint-cli installation to prevent npx issues
           const markdownlintPath = path.resolve(process.cwd(), 'node_modules', '.bin', 'markdownlint');
+=======
+          // Use static known path instead of dynamic construction
+          const markdownlintPath = 'node_modules/.bin/markdownlint';
+>>>>>>> bba1f1c (Phase 2.3: Ensure middleware respects authentication)
           const result = spawnSync(markdownlintPath, [file], { stdio: 'pipe' });
           if (result.status !== 0) {
             throw new Error(`markdownlint failed for ${file}: ${result.stderr?.toString()}`);

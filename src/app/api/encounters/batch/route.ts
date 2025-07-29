@@ -51,21 +51,23 @@ export async function POST(request: NextRequest) {
 
 
 async function executeBatchOperation(operation: string, encounterId: string, userId: string, options: any) {
-  const handlers = {
-    export: () => handleBatchExport(encounterId, userId, options),
-    template: () => handleBatchTemplate(encounterId, userId, options),
-    delete: () => handleBatchDelete(encounterId, userId),
-    archive: () => handleBatchArchive(encounterId, userId, options),
-    publish: () => handleBatchPublish(encounterId, userId, options),
-    duplicate: () => handleBatchDuplicate(encounterId, userId, options),
-  };
-
-  const handler = handlers[operation as keyof typeof handlers];
-  if (!handler) {
-    throw new Error(`Unsupported operation: ${operation}`);
+  // Use explicit mapping instead of dynamic property access to prevent command injection
+  switch (operation) {
+    case 'export':
+      return await handleBatchExport(encounterId, userId, options);
+    case 'template':
+      return await handleBatchTemplate(encounterId, userId, options);
+    case 'delete':
+      return await handleBatchDelete(encounterId, userId);
+    case 'archive':
+      return await handleBatchArchive(encounterId, userId, options);
+    case 'publish':
+      return await handleBatchPublish(encounterId, userId, options);
+    case 'duplicate':
+      return await handleBatchDuplicate(encounterId, userId, options);
+    default:
+      throw new Error(`Unsupported operation: ${operation}`);
   }
-
-  return await handler();
 }
 
 async function handleBatchExport(encounterId: string, userId: string, options: any) {
