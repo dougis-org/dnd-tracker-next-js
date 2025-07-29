@@ -65,18 +65,20 @@ global.ResizeObserver = class ResizeObserver {
 
 // Mock window.matchMedia only in jsdom environment
 if (typeof window !== 'undefined') {
+  const mockMatchMedia = jest.fn().mockImplementation(query => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: jest.fn(),
+    removeListener: jest.fn(),
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+    dispatchEvent: jest.fn(),
+  }));
+  
   Object.defineProperty(window, 'matchMedia', {
     writable: true,
-    value: jest.fn().mockImplementation(query => ({
-      matches: false,
-      media: query,
-      onchange: null,
-      addListener: jest.fn(), // deprecated
-      removeListener: jest.fn(), // deprecated
-      addEventListener: jest.fn(),
-      removeEventListener: jest.fn(),
-      dispatchEvent: jest.fn(),
-    })),
+    value: mockMatchMedia,
   });
 }
 
@@ -89,26 +91,20 @@ if (typeof window !== 'undefined') {
   Element.prototype.hasPointerCapture = jest.fn(() => false);
   Element.prototype.setPointerCapture = jest.fn();
   Element.prototype.releasePointerCapture = jest.fn();
+  
   // Add getBoundingClientRect if not present
   if (!Element.prototype.getBoundingClientRect) {
-    Element.prototype.getBoundingClientRect = jest.fn(() => ({
-      width: 0,
-      height: 0,
-      top: 0,
-      left: 0,
-      bottom: 0,
-      right: 0,
-      x: 0,
-      y: 0,
-      toJSON: () => {},
-    }));
+    const mockBoundingRect = () => ({
+      width: 0, height: 0, top: 0, left: 0,
+      bottom: 0, right: 0, x: 0, y: 0, toJSON: () => {},
+    });
+    Element.prototype.getBoundingClientRect = jest.fn(mockBoundingRect);
   }
 
   // Mock getComputedStyle
   if (!window.getComputedStyle) {
-    window.getComputedStyle = jest.fn(() => ({
-      getPropertyValue: jest.fn(() => ''),
-    }));
+    const mockComputedStyle = () => ({ getPropertyValue: jest.fn(() => '') });
+    window.getComputedStyle = jest.fn(mockComputedStyle);
   }
 }
 
@@ -124,23 +120,19 @@ global.cancelAnimationFrame = function (id) {
 
 // Suppress React 18 console warnings in tests
 const originalConsoleError = console.error;
+const reactSchedulerWarnings = [
+  'Warning: An update to %s inside a test was not wrapped in act',
+  'The current testing environment is not configured to support act',
+];
+
+function shouldSuppressWarning(args) {
+  return args.some(
+    arg => typeof arg === 'string' && reactSchedulerWarnings.some(warning => arg.includes(warning))
+  );
+}
+
 console.error = (...args) => {
-  // Suppress React 18 scheduler errors (act warnings)
-  const reactSchedulerWarnings = [
-    'Warning: An update to %s inside a test was not wrapped in act',
-    'The current testing environment is not configured to support act',
-  ];
-
-  if (
-    args.some(
-      arg =>
-        typeof arg === 'string' &&
-        reactSchedulerWarnings.some(warning => arg.includes(warning))
-    )
-  ) {
-    return;
-  }
-
+  if (shouldSuppressWarning(args)) return;
   originalConsoleError(...args);
 };
 

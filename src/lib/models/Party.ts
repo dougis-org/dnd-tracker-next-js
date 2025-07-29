@@ -124,18 +124,6 @@ partySchema.virtual('playerCharacterCount').get(async function () {
   return count;
 });
 
-// Helper function to calculate character total level
-function calculateCharacterLevel(character: any): number {
-  return character.classes.reduce((sum: number, charClass: any) => sum + charClass.level, 0);
-}
-
-// Helper function to calculate average level from members
-function calculateAverageLevel(members: any[]): number {
-  if (members.length === 0) return 0;
-  const totalLevel = members.reduce((sum, character) => sum + calculateCharacterLevel(character), 0);
-  return Math.round(totalLevel / members.length);
-}
-
 // Virtual for average level
 partySchema.virtual('averageLevel').get(async function () {
   const Character = mongoose.models.Character as CharacterModel;
@@ -143,7 +131,12 @@ partySchema.virtual('averageLevel').get(async function () {
     partyId: this._id,
     isDeleted: { $ne: true },
   });
-  return calculateAverageLevel(members);
+  
+  if (members.length === 0) return 0;
+  const totalLevel = members.reduce((sum, character) => {
+    return sum + character.classes.reduce((classSum: number, charClass: any) => classSum + charClass.level, 0);
+  }, 0);
+  return Math.round(totalLevel / members.length);
 });
 
 // Helper function to get current member count
@@ -210,20 +203,6 @@ partySchema.methods.updateActivity = function (): void {
   this.save();
 };
 
-// Helper function to apply party indexes
-function applyPartyIndexes(schema: Schema<any>): void {
-  // Apply common indexes
-  commonIndexes.ownerBased(schema);
-  commonIndexes.publicContent(schema);
-  commonIndexes.temporal(schema);
-
-  // Party-specific indexes
-  schema.index({ name: 'text', description: 'text' });
-  schema.index({ tags: 1 });
-  schema.index({ 'settings.allowJoining': 1 });
-  schema.index({ lastActivity: -1 });
-}
-
 // Static method: Find parties by owner ID
 partySchema.statics.findByOwnerId = function (ownerId: Types.ObjectId) {
   return this.find({ ownerId }).sort({ name: 1 });
@@ -279,8 +258,16 @@ partySchema.post('save', function (doc, next) {
   next();
 });
 
-// Apply all party indexes
-applyPartyIndexes(partySchema as Schema<any>);
+// Apply common indexes
+commonIndexes.ownerBased(partySchema);
+commonIndexes.publicContent(partySchema);
+commonIndexes.temporal(partySchema);
+
+// Party-specific indexes
+partySchema.index({ name: 'text', description: 'text' });
+partySchema.index({ tags: 1 });
+partySchema.index({ 'settings.allowJoining': 1 });
+partySchema.index({ lastActivity: -1 });
 
 // Create and export the model
 export const Party =
