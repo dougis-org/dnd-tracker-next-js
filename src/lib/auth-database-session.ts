@@ -11,8 +11,6 @@ import { MongoClient } from 'mongodb';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { UserService } from './services/UserService';
 import {
-  isLocalHostname,
-  isValidProductionHostname,
   validateNextAuthUrl,
 } from './auth';
 
@@ -35,6 +33,104 @@ const clientPromise = Promise.resolve(client);
 
 // Validate NEXTAUTH_URL to prevent invalid redirects (Issue #438)
 const validatedNextAuthUrl = validateNextAuthUrl();
+
+/**
+ * Enhanced session callback for database strategy
+ */
+async function enhancedSessionCallback({ session, user }: { session: any; user: any }) {
+  try {
+    if (!session?.user) {
+      console.warn('Database session callback: Missing session user data');
+      return session;
+    }
+
+    // With database strategy, user comes from the database
+    // Enhance session with additional user properties
+    if (user) {
+      session.user.id = user.id;
+      session.user.subscriptionTier = user.subscriptionTier || 'free';
+
+      // Ensure user has a valid name
+      if (!session.user.name && user.name) {
+        session.user.name = user.name;
+      }
+    }
+
+    return session;
+  } catch (error) {
+    console.error('Database session callback error:', error);
+    return null; // Force re-authentication on error
+  }
+}
+
+/**
+ * JWT callback - less important with database strategy but kept for compatibility
+ */
+async function jwtCallback({ token, user }: { token: any; user?: any }) {
+  try {
+    if (!token) {
+      token = {};
+    }
+
+    if (user) {
+      // Store additional user data in token
+      token.subscriptionTier = (user as any).subscriptionTier || 'free';
+      token.firstName = (user as any).firstName || '';
+      token.lastName = (user as any).lastName || '';
+      token.email = (user as any).email || token.email;
+    }
+
+    if (user?.id) {
+      token.sub = user.id;
+    }
+
+    return token;
+  } catch (error) {
+    console.error('JWT callback error:', error);
+    return token || {};
+  }
+}
+
+/**
+ * Enhanced redirect callback (same as JWT version)
+ */
+async function redirectCallback({ url, baseUrl }: { url: string; baseUrl: string }) {
+  try {
+    // If url is relative, make it absolute
+    if (url.startsWith('/')) {
+      return `${baseUrl}${url}`;
+    }
+
+    // If url is absolute, validate it's safe
+    const parsedUrl = new URL(url);
+    const parsedBaseUrl = new URL(baseUrl);
+
+    // Only allow redirects to the same origin
+    if (parsedUrl.origin === parsedBaseUrl.origin) {
+      return url;
+    }
+
+    // For production, only allow specific trusted domains
+    if (process.env.NODE_ENV === 'production') {
+      const trustedDomains = [
+        'dnd-tracker-next-js.fly.dev',
+        'dnd-tracker.fly.dev',
+        'dndtracker.com',
+        'www.dndtracker.com',
+      ];
+
+      if (trustedDomains.includes(parsedUrl.hostname)) {
+        return url;
+      }
+    }
+
+    console.warn(`Blocked redirect to untrusted URL: ${url}`);
+    return baseUrl;
+  } catch (error) {
+    console.error('Redirect callback error:', error);
+    return baseUrl;
+  }
+}
 
 /**
  * Enhanced NextAuth configuration with database session strategy
@@ -127,107 +223,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ],
 
   callbacks: {
-
-    /**
-     * Enhanced session callback for database strategy
-     *
-     * With database sessions, the session object comes from the database
-     * and includes both session and user data automatically.
-     */
-    async session({ session, user }: { session: any; user: any }) {
-      try {
-        if (!session?.user) {
-          console.warn('Database session callback: Missing session user data');
-          return session;
-        }
-
-        // With database strategy, user comes from the database
-        // Enhance session with additional user properties
-        if (user) {
-          session.user.id = user.id;
-          session.user.subscriptionTier = user.subscriptionTier || 'free';
-
-          // Ensure user has a valid name
-          if (!session.user.name && user.name) {
-            session.user.name = user.name;
-          }
-        }
-
-        return session;
-      } catch (error) {
-        console.error('Database session callback error:', error);
-        return null; // Force re-authentication on error
-      }
-    },
-
-    /**
-     * JWT callback - less important with database strategy but kept for compatibility
-     */
-    async jwt({ token, user }: { token: any; user?: any }) {
-      try {
-        if (!token) {
-          token = {};
-        }
-
-        if (user) {
-          // Store additional user data in token
-          token.subscriptionTier = (user as any).subscriptionTier || 'free';
-          token.firstName = (user as any).firstName || '';
-          token.lastName = (user as any).lastName || '';
-          token.email = (user as any).email || token.email;
-        }
-
-        if (user?.id) {
-          token.sub = user.id;
-        }
-
-        return token;
-      } catch (error) {
-        console.error('JWT callback error:', error);
-        return token || {};
-      }
-    },
-
-    /**
-     * Enhanced redirect callback (same as JWT version)
-     */
-    async redirect({ url, baseUrl }: { url: string; baseUrl: string }) {
-      try {
-        // If url is relative, make it absolute
-        if (url.startsWith('/')) {
-          return `${baseUrl}${url}`;
-        }
-
-        // If url is absolute, validate it's safe
-        const parsedUrl = new URL(url);
-        const parsedBaseUrl = new URL(baseUrl);
-
-        // Only allow redirects to the same origin
-        if (parsedUrl.origin === parsedBaseUrl.origin) {
-          return url;
-        }
-
-        // For production, only allow specific trusted domains
-        if (process.env.NODE_ENV === 'production') {
-          const trustedDomains = [
-            'dnd-tracker-next-js.fly.dev',
-            'dnd-tracker.fly.dev',
-            'dndtracker.com',
-            'www.dndtracker.com',
-          ];
-
-          if (trustedDomains.includes(parsedUrl.hostname)) {
-            return url;
-          }
-        }
-
-        console.warn(`Blocked redirect to untrusted URL: ${url}`);
-        return baseUrl;
-      } catch (error) {
-        console.error('Redirect callback error:', error);
-        return baseUrl;
-      }
-    },
+    session: enhancedSessionCallback,
+    jwt: jwtCallback,
+    redirect: redirectCallback,
   },
 
   pages: {
@@ -239,7 +237,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
   // Enhanced event handlers for database session management
   events: {
-    async signIn({ user, account, profile, isNewUser }) {
+    async signIn({ user, account: _account, profile: _profile, isNewUser: _isNewUser }) {
       console.log(`User signed in: ${user.email} (ID: ${user.id})`);
 
       // Update last login time in user record
@@ -255,7 +253,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
     },
 
-    async signOut({ session, token }) {
+    async signOut({ session: _session, token: _token }) {
       console.log('User signed out');
       // Session cleanup is handled automatically by the database adapter
     },
@@ -268,11 +266,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       console.log(`User updated: ${user.email} (ID: ${user.id})`);
     },
 
-    async linkAccount({ user, account, profile }) {
+    async linkAccount({ user, account: _account, profile: _profile }) {
       console.log(`Account linked to user: ${user.email}`);
     },
 
-    async session({ session, token }) {
+    async session({ session, token: _token }) {
       // Called whenever a session is checked
       // Useful for debugging session access patterns
       if (process.env.NODE_ENV === 'development') {

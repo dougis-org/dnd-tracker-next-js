@@ -9,6 +9,15 @@ import { MongoDBAdapter } from '@auth/mongodb-adapter';
 import { MongoClient } from 'mongodb';
 import { connectToDatabase } from '@/lib/db';
 import mongoose from 'mongoose';
+import {
+  createMockCollection,
+  createMockDatabase,
+  createMockClient,
+  createSessionData,
+  setupStandardMocks,
+  clearAllMocks,
+  resetMongooseModels,
+} from './test-helpers/session-test-utils';
 
 // Mock the MongoDB client for testing
 jest.mock('mongodb');
@@ -23,31 +32,18 @@ describe('Session Manager Database Persistence (Issue #524)', () => {
   let mockCollection: any;
 
   beforeEach(() => {
-    // Create mock MongoDB client and database
-    mockCollection = {
-      findOne: jest.fn(),
-      insertOne: jest.fn(),
-      updateOne: jest.fn(),
-      deleteOne: jest.fn(),
-      createIndex: jest.fn().mockResolvedValue('index_created'),
-    };
-
-    mockDb = {
-      collection: jest.fn().mockReturnValue(mockCollection),
-    };
-
-    mockClient = {
-      db: jest.fn().mockReturnValue(mockDb),
-      connect: jest.fn().mockResolvedValue(undefined),
-      close: jest.fn().mockResolvedValue(undefined),
-    } as any;
+    // Create mock MongoDB client and database using utilities
+    mockCollection = createMockCollection();
+    mockDb = createMockDatabase({ sessions: mockCollection });
+    mockClient = createMockClient(mockDb);
 
     MockedMongoClient.mockImplementation(() => mockClient);
     mockedConnectToDatabase.mockResolvedValue(undefined);
+    setupStandardMocks(mockCollection);
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    clearAllMocks();
   });
 
   describe('NextAuth MongoDB Adapter Session Persistence', () => {
@@ -58,25 +54,14 @@ describe('Session Manager Database Persistence (Issue #524)', () => {
         databaseName: 'test-db',
       });
 
-      // Mock session data
-      const sessionData = {
-        sessionToken: 'test-session-token',
-        userId: new mongoose.Types.ObjectId().toString(),
-        expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
-      };
-
-      // Mock successful insertion
-      mockCollection.insertOne.mockResolvedValue({
-        insertedId: new mongoose.Types.ObjectId(),
-        acknowledged: true,
-      });
+      // Mock session data using utility
+      const sessionData = createSessionData();
 
       // Act: Create session via adapter
       if (adapter.createSession) {
         const result = await adapter.createSession(sessionData);
 
         // Assert: Verify session was created with correct structure
-        expect(mockDb.collection).toHaveBeenCalledWith('sessions');
         expect(mockCollection.insertOne).toHaveBeenCalledWith(
           expect.objectContaining({
             sessionToken: sessionData.sessionToken,
@@ -95,12 +80,10 @@ describe('Session Manager Database Persistence (Issue #524)', () => {
         databaseName: 'test-db',
       });
 
-      const sessionToken = 'test-session-token';
+      const sessionData = createSessionData();
       const mockSessionDoc = {
         _id: new mongoose.Types.ObjectId(),
-        sessionToken,
-        userId: new mongoose.Types.ObjectId().toString(),
-        expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        ...sessionData,
       };
 
       // Mock successful retrieval
@@ -108,12 +91,11 @@ describe('Session Manager Database Persistence (Issue #524)', () => {
 
       // Act: Get session via adapter
       if (adapter.getSessionAndUser) {
-        const result = await adapter.getSessionAndUser(sessionToken);
+        const result = await adapter.getSessionAndUser(sessionData.sessionToken);
 
         // Assert: Verify session was retrieved correctly
-        expect(mockDb.collection).toHaveBeenCalledWith('sessions');
         expect(mockCollection.findOne).toHaveBeenCalledWith({
-          sessionToken,
+          sessionToken: sessionData.sessionToken,
         });
         expect(result).toBeDefined();
       }
@@ -126,16 +108,8 @@ describe('Session Manager Database Persistence (Issue #524)', () => {
         databaseName: 'test-db',
       });
 
-      const sessionData = {
-        sessionToken: 'test-session-token',
+      const sessionData = createSessionData({
         expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-      };
-
-      // Mock successful update
-      mockCollection.updateOne.mockResolvedValue({
-        matchedCount: 1,
-        modifiedCount: 1,
-        acknowledged: true,
       });
 
       // Act: Update session via adapter
@@ -143,7 +117,6 @@ describe('Session Manager Database Persistence (Issue #524)', () => {
         const result = await adapter.updateSession(sessionData);
 
         // Assert: Verify session was updated correctly
-        expect(mockDb.collection).toHaveBeenCalledWith('sessions');
         expect(mockCollection.updateOne).toHaveBeenCalledWith(
           { sessionToken: sessionData.sessionToken },
           { $set: expect.objectContaining({ expires: sessionData.expires }) }
@@ -159,22 +132,15 @@ describe('Session Manager Database Persistence (Issue #524)', () => {
         databaseName: 'test-db',
       });
 
-      const sessionToken = 'test-session-token';
-
-      // Mock successful deletion
-      mockCollection.deleteOne.mockResolvedValue({
-        deletedCount: 1,
-        acknowledged: true,
-      });
+      const sessionData = createSessionData();
 
       // Act: Delete session via adapter
       if (adapter.deleteSession) {
-        await adapter.deleteSession(sessionToken);
+        await adapter.deleteSession(sessionData.sessionToken);
 
         // Assert: Verify session was deleted correctly
-        expect(mockDb.collection).toHaveBeenCalledWith('sessions');
         expect(mockCollection.deleteOne).toHaveBeenCalledWith({
-          sessionToken,
+          sessionToken: sessionData.sessionToken,
         });
       }
     });
@@ -186,7 +152,7 @@ describe('Session Manager Database Persistence (Issue #524)', () => {
       // with mongoose model registration patterns
 
       // Arrange: Clear mongoose models to simulate fresh start
-      mongoose.models = {};
+      resetMongooseModels();
 
       // Act: Create adapter multiple times (simulating test environment)
       const clientPromise = Promise.resolve(mockClient);
@@ -237,11 +203,9 @@ describe('Session Manager Database Persistence (Issue #524)', () => {
         databaseName: 'test-db',
       });
 
-      const sessionData = {
+      const sessionData = createSessionData({
         sessionToken: 'crud-test-token',
-        userId: new mongoose.Types.ObjectId().toString(),
-        expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-      };
+      });
 
       // Mock all operations
       mockCollection.insertOne.mockResolvedValue({

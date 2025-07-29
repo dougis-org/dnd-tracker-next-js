@@ -84,61 +84,65 @@ export async function getAuthConfig() {
 }
 
 /**
+ * Get current session regardless of strategy
+ */
+async function getCurrentSession() {
+  const { auth } = await getAuthConfig();
+  try {
+    return await auth();
+  } catch (error) {
+    console.error('Error getting current session:', error);
+    return null;
+  }
+}
+
+/**
+ * Check if user has valid session
+ */
+async function hasValidSession(): Promise<boolean> {
+  try {
+    const session = await getCurrentSession();
+    return Boolean(session?.user?.id);
+  } catch (error) {
+    console.error('Error checking session validity:', error);
+    return false;
+  }
+}
+
+/**
+ * Get user ID from session
+ */
+async function getSessionUserId(): Promise<string | null> {
+  try {
+    const session = await getCurrentSession();
+    return session?.user?.id || null;
+  } catch (error) {
+    console.error('Error getting session user ID:', error);
+    return null;
+  }
+}
+
+/**
+ * Get user subscription tier from session
+ */
+async function getSessionUserTier(): Promise<string> {
+  try {
+    const session = await getCurrentSession();
+    return session?.user?.subscriptionTier || 'free';
+  } catch (error) {
+    console.error('Error getting session user tier:', error);
+    return 'free';
+  }
+}
+
+/**
  * Session persistence utilities
  */
 export const sessionUtils = {
-
-  /**
-   * Get current session regardless of strategy
-   */
-  async getCurrentSession() {
-    const { auth } = await getAuthConfig();
-    try {
-      return await auth();
-    } catch (error) {
-      console.error('Error getting current session:', error);
-      return null;
-    }
-  },
-
-  /**
-   * Check if user has valid session
-   */
-  async hasValidSession(): Promise<boolean> {
-    try {
-      const session = await this.getCurrentSession();
-      return Boolean(session?.user?.id);
-    } catch (error) {
-      console.error('Error checking session validity:', error);
-      return false;
-    }
-  },
-
-  /**
-   * Get user ID from session
-   */
-  async getSessionUserId(): Promise<string | null> {
-    try {
-      const session = await this.getCurrentSession();
-      return session?.user?.id || null;
-    } catch (error) {
-      console.error('Error getting session user ID:', error);
-      return null;
-    }
-  },
-
-  /**
-   * Get user subscription tier from session
-   */
-  async getSessionUserTier(): Promise<string> {
-    try {
-      const session = await this.getCurrentSession();
-      return session?.user?.subscriptionTier || 'free';
-    } catch (error) {
-      console.error('Error getting session user tier:', error);
-      return 'free';
-    }
-  },
+  getCurrentSession,
+  hasValidSession,
+  getSessionUserId,
+  getSessionUserTier,
 };
 
 /**
@@ -160,66 +164,58 @@ export function ensureSessionModelRegistration() {
 }
 
 /**
+ * Migrate from JWT to database sessions
+ */
+async function migrateToDatabase() {
+  console.log('Starting migration from JWT to database sessions...');
+  console.warn('Session migration requires application restart');
+}
+
+/**
+ * Migrate from database to JWT sessions
+ */
+async function migrateToJWT() {
+  console.log('Starting migration from database to JWT sessions...');
+  console.warn('Session migration requires application restart');
+}
+
+/**
  * Migration utility to switch between session strategies
  */
 export const sessionMigration = {
-
-  /**
-   * Migrate from JWT to database sessions
-   */
-  async migrateToDatabase() {
-    console.log('Starting migration from JWT to database sessions...');
-
-    // Implementation would involve:
-    // 1. Update environment variables
-    // 2. Clear existing JWT tokens (logout all users)
-    // 3. Restart application with database session strategy
-
-    console.warn('Session migration requires application restart');
-  },
-
-  /**
-   * Migrate from database to JWT sessions
-   */
-  async migrateToJWT() {
-    console.log('Starting migration from database to JWT sessions...');
-
-    // Implementation would involve:
-    // 1. Update environment variables
-    // 2. Clear database sessions
-    // 3. Restart application with JWT session strategy
-
-    console.warn('Session migration requires application restart');
-  },
+  migrateToDatabase,
+  migrateToJWT,
 };
+
+/**
+ * Log current session configuration
+ */
+function logConfig() {
+  console.log('Session Configuration:', {
+    strategy: SESSION_STRATEGY,
+    isDatabaseEnabled: isDatabaseSessionEnabled(),
+    isJWTEnabled: isJWTSessionEnabled(),
+    config: getSessionConfig(),
+  });
+}
+
+/**
+ * Test session persistence
+ */
+async function testPersistence() {
+  const session = await sessionUtils.getCurrentSession();
+  console.log('Current Session:', {
+    exists: Boolean(session),
+    userId: session?.user?.id,
+    email: session?.user?.email,
+    strategy: SESSION_STRATEGY,
+  });
+}
 
 /**
  * Development utilities for testing session strategies
  */
 export const sessionDebug = {
-
-  /**
-   * Log current session configuration
-   */
-  logConfig() {
-    console.log('Session Configuration:', {
-      strategy: SESSION_STRATEGY,
-      isDatabaseEnabled: isDatabaseSessionEnabled(),
-      isJWTEnabled: isJWTSessionEnabled(),
-      config: getSessionConfig(),
-    });
-  },
-
-  /**
-   * Test session persistence
-   */
-  async testPersistence() {
-    const session = await sessionUtils.getCurrentSession();
-    console.log('Current Session:', {
-      exists: Boolean(session),
-      userId: session?.user?.id,
-      email: session?.user?.email,
-      strategy: SESSION_STRATEGY,
-    });
-  },
+  logConfig,
+  testPersistence,
 };

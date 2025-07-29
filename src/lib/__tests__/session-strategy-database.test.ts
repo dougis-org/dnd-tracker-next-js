@@ -5,8 +5,16 @@
  * and that session persistence works correctly with MongoDB.
  */
 
-import { auth } from '@/lib/auth';
 import { MongoClient } from 'mongodb';
+import {
+  createMockCollection,
+  createMockDatabase,
+  createMockClient,
+  createSessionData,
+  createUserData,
+  setupStandardMocks,
+  clearAllMocks,
+} from './test-helpers/session-test-utils';
 
 // Mock MongoDB and NextAuth dependencies
 jest.mock('mongodb');
@@ -23,63 +31,28 @@ describe('Database Session Strategy (Issue #524)', () => {
   let mockAccountCollection: any;
 
   beforeEach(() => {
-    // Setup mock collections
-    mockSessionCollection = {
-      findOne: jest.fn(),
-      insertOne: jest.fn(),
-      updateOne: jest.fn(),
-      deleteOne: jest.fn(),
-      createIndex: jest.fn().mockResolvedValue('sessions_index'),
+    // Setup mock collections using utilities
+    mockSessionCollection = createMockCollection();
+    mockUserCollection = createMockCollection();
+    mockAccountCollection = createMockCollection();
+
+    const collections = {
+      sessions: mockSessionCollection,
+      users: mockUserCollection,
+      accounts: mockAccountCollection,
     };
 
-    mockUserCollection = {
-      findOne: jest.fn(),
-      insertOne: jest.fn(),
-      updateOne: jest.fn(),
-      deleteOne: jest.fn(),
-      createIndex: jest.fn().mockResolvedValue('users_index'),
-    };
-
-    mockAccountCollection = {
-      findOne: jest.fn(),
-      insertOne: jest.fn(),
-      updateOne: jest.fn(),
-      deleteOne: jest.fn(),
-      createIndex: jest.fn().mockResolvedValue('accounts_index'),
-    };
-
-    mockDb = {
-      collection: jest.fn().mockImplementation((name: string) => {
-        switch (name) {
-          case 'sessions':
-            return mockSessionCollection;
-          case 'users':
-            return mockUserCollection;
-          case 'accounts':
-            return mockAccountCollection;
-          default:
-            return {
-              findOne: jest.fn(),
-              insertOne: jest.fn(),
-              updateOne: jest.fn(),
-              deleteOne: jest.fn(),
-              createIndex: jest.fn(),
-            };
-        }
-      }),
-    };
-
-    mockClient = {
-      db: jest.fn().mockReturnValue(mockDb),
-      connect: jest.fn().mockResolvedValue(undefined),
-      close: jest.fn().mockResolvedValue(undefined),
-    } as any;
+    mockDb = createMockDatabase(collections);
+    mockClient = createMockClient(mockDb);
 
     MockedMongoClient.mockImplementation(() => mockClient);
+    setupStandardMocks(mockSessionCollection);
+    setupStandardMocks(mockUserCollection);
+    setupStandardMocks(mockAccountCollection);
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    clearAllMocks();
   });
 
   describe('Session Strategy Configuration', () => {
@@ -124,86 +97,63 @@ describe('Database Session Strategy (Issue #524)', () => {
 
   describe('Database Session Operations', () => {
     test('should create session records in MongoDB when using database strategy', async () => {
-      // Mock session data that would be created
-      const sessionData = {
-        sessionToken: 'test-session-token-123',
-        userId: 'user-id-456',
-        expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
-      };
-
-      // Mock successful session creation
-      mockSessionCollection.insertOne.mockResolvedValue({
-        insertedId: 'session-object-id',
-        acknowledged: true,
-      });
+      const sessionData = createSessionData();
 
       // Simulate session creation
       await mockSessionCollection.insertOne(sessionData);
 
       // Assert: Session should be created in sessions collection
-      expect(mockDb.collection).toHaveBeenCalledWith('sessions');
       expect(mockSessionCollection.insertOne).toHaveBeenCalledWith(sessionData);
     });
 
     test('should retrieve session records from MongoDB', async () => {
-      const sessionToken = 'test-session-token-123';
-      const mockSession = {
-        _id: 'session-object-id',
-        sessionToken,
-        userId: 'user-id-456',
-        expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-      };
+      const sessionData = createSessionData();
+      const mockSession = { _id: 'session-object-id', ...sessionData };
 
       // Mock successful session retrieval
       mockSessionCollection.findOne.mockResolvedValue(mockSession);
 
       // Simulate session retrieval
-      const result = await mockSessionCollection.findOne({ sessionToken });
+      const result = await mockSessionCollection.findOne({ 
+        sessionToken: sessionData.sessionToken 
+      });
 
       // Assert: Session should be retrieved from sessions collection
-      expect(mockDb.collection).toHaveBeenCalledWith('sessions');
-      expect(mockSessionCollection.findOne).toHaveBeenCalledWith({ sessionToken });
+      expect(mockSessionCollection.findOne).toHaveBeenCalledWith({ 
+        sessionToken: sessionData.sessionToken 
+      });
       expect(result).toEqual(mockSession);
     });
 
     test('should update session records in MongoDB', async () => {
-      const sessionToken = 'test-session-token-123';
-      const newExpires = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000); // 60 days
-
-      // Mock successful session update
-      mockSessionCollection.updateOne.mockResolvedValue({
-        matchedCount: 1,
-        modifiedCount: 1,
-        acknowledged: true,
-      });
+      const sessionData = createSessionData();
+      const newExpires = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000);
 
       // Simulate session update
       await mockSessionCollection.updateOne(
-        { sessionToken },
+        { sessionToken: sessionData.sessionToken },
         { $set: { expires: newExpires } }
       );
 
       // Assert: Session should be updated in sessions collection
       expect(mockSessionCollection.updateOne).toHaveBeenCalledWith(
-        { sessionToken },
+        { sessionToken: sessionData.sessionToken },
         { $set: { expires: newExpires } }
       );
     });
 
     test('should delete session records from MongoDB', async () => {
-      const sessionToken = 'test-session-token-123';
-
-      // Mock successful session deletion
-      mockSessionCollection.deleteOne.mockResolvedValue({
-        deletedCount: 1,
-        acknowledged: true,
-      });
+      const sessionData = createSessionData();
 
       // Simulate session deletion
-      await mockSessionCollection.deleteOne({ sessionToken });
+      await mockSessionCollection.deleteOne({ 
+        sessionToken: sessionData.sessionToken 
+      });
 
       // Assert: Session should be deleted from sessions collection
-      expect(mockSessionCollection.deleteOne).toHaveBeenCalledWith({ sessionToken });
+      expect(mockSessionCollection.deleteOne).toHaveBeenCalledWith({ 
+        sessionToken: sessionData.sessionToken 
+      });
     });
   });
 
@@ -229,8 +179,6 @@ describe('Database Session Strategy (Issue #524)', () => {
 
   describe('Session Cleanup and Expiration', () => {
     test('should handle expired session cleanup', async () => {
-      const expiredDate = new Date(Date.now() - 24 * 60 * 60 * 1000); // 1 day ago
-
       // Mock cleanup of expired sessions
       mockSessionCollection.deleteOne.mockResolvedValue({
         deletedCount: 1,
@@ -251,22 +199,17 @@ describe('Database Session Strategy (Issue #524)', () => {
 
   describe('Integration with User Management', () => {
     test('should link sessions to user records correctly', async () => {
-      const userId = 'user-id-456';
-      const mockUser = {
-        _id: userId,
-        email: 'test@example.com',
-        name: 'Test User',
-      };
+      const userData = createUserData();
 
       // Mock user retrieval
-      mockUserCollection.findOne.mockResolvedValue(mockUser);
+      mockUserCollection.findOne.mockResolvedValue(userData);
 
       // Simulate user lookup for session
-      const user = await mockUserCollection.findOne({ _id: userId });
+      const user = await mockUserCollection.findOne({ _id: userData._id });
 
       // Assert: User should be retrievable for session validation
-      expect(mockUserCollection.findOne).toHaveBeenCalledWith({ _id: userId });
-      expect(user).toEqual(mockUser);
+      expect(mockUserCollection.findOne).toHaveBeenCalledWith({ _id: userData._id });
+      expect(user).toEqual(userData);
     });
   });
 

@@ -12,7 +12,6 @@ import {
   sessionUtils,
   sessionDebug,
   ensureSessionModelRegistration,
-  SESSION_STRATEGY,
 } from '@/lib/session-config';
 
 // Mock environment variable
