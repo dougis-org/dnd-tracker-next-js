@@ -37,8 +37,9 @@ describe('Markdown Linting', () => {
     keyFiles.forEach(file => {
       test(`${file} should pass markdownlint`, () => {
         expect(() => {
-          // Use spawnSync with array arguments to prevent command injection
-          const result = spawnSync('npx', ['markdownlint', file], { stdio: 'pipe' });
+          // Use local markdownlint-cli installation to prevent npx issues
+          const markdownlintPath = path.join(process.cwd(), 'node_modules', '.bin', 'markdownlint');
+          const result = spawnSync(markdownlintPath, [file], { stdio: 'pipe' });
           if (result.status !== 0) {
             throw new Error(`markdownlint failed for ${file}: ${result.stderr?.toString()}`);
           }
@@ -54,8 +55,9 @@ describe('Markdown Linting', () => {
       fs.writeFileSync(tempFile, testMarkdown);
 
       expect(() => {
-        // Use spawnSync with array arguments to prevent command injection
-        const result = spawnSync('npx', ['markdownlint', tempFile], { stdio: 'pipe' });
+        // Use local markdownlint-cli installation to prevent npx issues
+        const markdownlintPath = path.join(process.cwd(), 'node_modules', '.bin', 'markdownlint');
+        const result = spawnSync(markdownlintPath, [tempFile], { stdio: 'pipe' });
         if (result.status !== 0) {
           throw new Error(`markdownlint failed: ${result.stderr?.toString()}`);
         }
@@ -70,8 +72,9 @@ describe('Markdown Linting', () => {
       fs.writeFileSync(tempFile, testMarkdown);
 
       expect(() => {
-        // Use spawnSync with array arguments to prevent command injection
-        const result = spawnSync('npx', ['markdownlint', tempFile], { stdio: 'pipe' });
+        // Use local markdownlint-cli installation to prevent npx issues
+        const markdownlintPath = path.join(process.cwd(), 'node_modules', '.bin', 'markdownlint');
+        const result = spawnSync(markdownlintPath, [tempFile], { stdio: 'pipe' });
         if (result.status !== 0) {
           throw new Error(`markdownlint failed: ${result.stderr?.toString()}`);
         }
