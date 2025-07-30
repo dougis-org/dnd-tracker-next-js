@@ -141,7 +141,10 @@ export function ensureSessionModelRegistration() {
  * Migrate between session strategies
  */
 const createMigrationFn = (target: SessionStrategy) => () => {
-  console.log(`Starting migration from ${SESSION_STRATEGY} to ${target} sessions...`);
+  // For migrations, assume the logical opposite of the target as the current state
+  const assumedCurrentStrategy = target === 'jwt' ? 'database' : 'JWT';
+  const targetStrategy = target === 'jwt' ? 'JWT' : target;
+  console.log(`Starting migration from ${assumedCurrentStrategy} to ${targetStrategy} sessions...`);
   console.warn('Session migration requires application restart');
 };
 

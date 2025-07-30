@@ -1,45 +1,10 @@
-engine_configuration:
-    - enabled: false
-      tool: spellcheck
-    - exclude_patterns:
-        - eslint.config.mjs
-        - .next/**
-        - .next/**/*
-      tool: eslint
-exclude_paths:
-    - node_modules/**
-    - .next/**
-    - dist/**
-    - build/**
-    - coverage/**
-    - out/**
-    - .vercel/**
-    - .git/**
-    - public/**
-    - plato_report/**
-    - eslint.config.mjs
-    - postcss.config.mjs
-    - next.config.js
-    - jest.config.js
-    - jest.setup.js
-    - jest.global-setup.js
-    - jest.global-teardown.js
-    - jest.sequencer.js
-    - tailwind.config.ts
-    - docker-entrypoint.js
-    - '**/*.config.js'
-    - '**/*.config.mjs'
-    - '**/*.config.ts'
-    - '**/*.test.ts'
-    - '**/*.test.tsx'
-    - '**/*.test.js'
-    - '**/*.test.jsx'
-    - '**/__tests__/**/*'
-    - '**/__mocks__/**/*'
 runtimes:
+    - java@17.0.10
     - node@22.2.0
     - python@3.11.11
 tools:
-    - eslint@8.57.0
+    - eslint@9.26.0
+    - lizard@1.17.19
+    - pmd@6.55.0
     - semgrep@1.78.0
     - trivy@0.59.1

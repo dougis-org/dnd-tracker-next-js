@@ -153,10 +153,12 @@ jest.mock('mongodb', () => ({
 
 // Helper function to generate ObjectId-like strings for tests
 function generateTestObjectId() {
+  const crypto = require('crypto');
   const hex = '0123456789abcdef';
   let result = '';
   for (let i = 0; i < 24; i++) {
-    result += hex[Math.floor(Math.random() * 16)];
+    const randomBytes = crypto.randomBytes(1);
+    result += hex[randomBytes[0] % 16];
   }
   return result;
 }
