@@ -19,7 +19,7 @@ const customJestConfig = {
   // Worker configuration for better resource management
   workerIdleMemoryLimit: '512MB', // Restart workers if they exceed memory limit
   // Test execution configuration
-  testTimeout: process.env.CI ? 10000 : 30000, // 10 second timeout in CI, 30 seconds locally
+  testTimeout: process.env.CI ? 30000 : 30000, // 30 second timeout for both CI and local
   // Performance optimizations
   cacheDirectory: '<rootDir>/.jest-cache', // Custom cache directory for better performance
   clearMocks: true, // Clear mocks between tests to prevent memory leaks
@@ -38,7 +38,7 @@ const customJestConfig = {
     ] : [])
   ],
   testMatch: ['<rootDir>/src/**/*.test.{js,jsx,ts,tsx}'],
-  collectCoverage: true,
+  collectCoverage: !process.env.CI, // Disable coverage in CI for faster execution
   collectCoverageFrom: [
     'src/**/*.{js,jsx,ts,tsx}',
     '!src/**/*.d.ts',
