@@ -45,6 +45,58 @@ const MockedMongoClient = MongoClient as jest.MockedClass<typeof MongoClient>;
 const mockedConnectToDatabase = connectToDatabase as jest.MockedFunction<typeof connectToDatabase>;
 const mockedUserService = UserService as jest.Mocked<typeof UserService>;
 
+// Test utilities to reduce duplication
+const createMockCollection = () => ({
+  findOne: jest.fn(),
+  insertOne: jest.fn(),
+  updateOne: jest.fn(),
+  deleteOne: jest.fn(),
+  find: jest.fn().mockReturnValue({
+    toArray: jest.fn().mockResolvedValue([])
+  }),
+  createIndex: jest.fn(),
+  deleteMany: jest.fn(),
+});
+
+const createMockDatabase = (usersCollection: any, sessionsCollection: any) => ({
+  collection: jest.fn((name: string) => {
+    if (name === 'users') return usersCollection;
+    if (name === 'sessions') return sessionsCollection;
+    return createMockCollection();
+  }),
+  createCollection: jest.fn(),
+  listCollections: jest.fn().mockReturnValue({
+    toArray: jest.fn().mockResolvedValue([]),
+  }),
+});
+
+const createMockClient = (db: any) => ({
+  db: jest.fn().mockReturnValue(db),
+  connect: jest.fn().mockResolvedValue(undefined),
+  close: jest.fn().mockResolvedValue(undefined),
+  on: jest.fn(),
+} as any);
+
+const createSessionData = (mockUser: any, sessionToken: string) => ({
+  sessionToken,
+  userId: mockUser.id?.toString(),
+  expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+});
+
+const createStoredSession = (mockUser: any, sessionToken: string) => ({
+  _id: 'session-id',
+  sessionToken,
+  userId: mockUser.id?.toString(),
+  expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+});
+
+const createNextAuthUser = (mockUser: any) => ({
+  _id: mockUser.id,
+  email: mockUser.email,
+  name: `${mockUser.firstName} ${mockUser.lastName}`,
+  emailVerified: null,
+});
+
 describe('Database Session Integration', () => {
   let mockClient: jest.Mocked<MongoClient>;
   let mockDb: any;
@@ -53,149 +105,87 @@ describe('Database Session Integration', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-
-    // Mock collection methods
-    const createMockCollection = () => ({
-      findOne: jest.fn(),
-      insertOne: jest.fn(),
-      updateOne: jest.fn(),
-      deleteOne: jest.fn(),
-      find: jest.fn().mockReturnValue({
-        toArray: jest.fn().mockResolvedValue([])
-      }),
-      createIndex: jest.fn(),
-      deleteMany: jest.fn(),
-    });
-
     mockUsersCollection = createMockCollection();
     mockSessionsCollection = createMockCollection();
-
-    // Mock MongoDB database
-    mockDb = {
-      collection: jest.fn((name: string) => {
-        if (name === 'users') return mockUsersCollection;
-        if (name === 'sessions') return mockSessionsCollection;
-        return createMockCollection();
-      }),
-      createCollection: jest.fn(),
-      listCollections: jest.fn().mockReturnValue({
-        toArray: jest.fn().mockResolvedValue([]),
-      }),
-    };
-
-    // Mock MongoDB client
-    mockClient = {
-      db: jest.fn().mockReturnValue(mockDb),
-      connect: jest.fn().mockResolvedValue(undefined),
-      close: jest.fn().mockResolvedValue(undefined),
-      on: jest.fn(),
-    } as any;
-
+    mockDb = createMockDatabase(mockUsersCollection, mockSessionsCollection);
+    mockClient = createMockClient(mockDb);
     MockedMongoClient.mockImplementation(() => mockClient);
     mockedConnectToDatabase.mockResolvedValue();
   });
 
   describe('Database Session Configuration', () => {
-    it('should configure NextAuth with database session strategy', async () => {
-      // Arrange
-      const { SESSION_CONFIG } = await import('@/lib/auth-database-session');
+    const validateSessionConfig = (config: any) => {
+      expect(config.USE_DATABASE_SESSIONS).toBe(true);
+      expect(config.MAX_AGE).toBe(30 * 24 * 60 * 60);
+      expect(config.UPDATE_AGE).toBe(24 * 60 * 60);
+      expect(config.DATABASE_NAME).toBe('test-dnd-tracker');
+    };
 
-      // Assert
-      expect(SESSION_CONFIG.USE_DATABASE_SESSIONS).toBe(true);
-      expect(SESSION_CONFIG.MAX_AGE).toBe(30 * 24 * 60 * 60); // 30 days
-      expect(SESSION_CONFIG.UPDATE_AGE).toBe(24 * 60 * 60); // 24 hours
-      expect(SESSION_CONFIG.DATABASE_NAME).toBe('test-dnd-tracker');
-    });
-
-    it('should use correct MongoDB collections for NextAuth', async () => {
-      // Arrange
-      const { SESSION_CONFIG } = await import('@/lib/auth-database-session');
-
-      // Assert
-      expect(SESSION_CONFIG.COLLECTION_NAMES).toEqual({
+    const validateCollectionNames = (collectionNames: any) => {
+      expect(collectionNames).toEqual({
         Users: 'users',
         Sessions: 'sessions',
         Accounts: 'accounts',
         VerificationTokens: 'verification_tokens',
       });
-    });
+    };
 
-    it('should initialize MongoDB adapter with database session support', async () => {
-      // This test verifies that the adapter is properly configured
-      // The actual adapter configuration is tested in mongodb-adapter-config.test.ts
-
-      // Arrange & Act
-      const config = await import('@/lib/auth-database-session');
-
-      // Assert
+    const validateAuthHandlers = (config: any) => {
       expect(config.handlers).toBeDefined();
       expect(config.auth).toBeDefined();
       expect(config.signIn).toBeDefined();
       expect(config.signOut).toBeDefined();
+    };
+
+    it('should configure NextAuth with database session strategy', async () => {
+      const { SESSION_CONFIG } = await import('@/lib/auth-database-session');
+      validateSessionConfig(SESSION_CONFIG);
+    });
+
+    it('should use correct MongoDB collections for NextAuth', async () => {
+      const { SESSION_CONFIG } = await import('@/lib/auth-database-session');
+      validateCollectionNames(SESSION_CONFIG.COLLECTION_NAMES);
+    });
+
+    it('should initialize MongoDB adapter with database session support', async () => {
+      const config = await import('@/lib/auth-database-session');
+      validateAuthHandlers(config);
     });
   });
 
   describe('Session Persistence', () => {
     it('should persist user sessions in MongoDB', async () => {
-      // Arrange
       const mockUser = createMockUser();
       const sessionToken = 'test-database-session-token';
-      const sessionData = {
-        sessionToken,
-        userId: mockUser.id?.toString(),
-        expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
-      };
+      const sessionData = createSessionData(mockUser, sessionToken);
 
       mockSessionsCollection.insertOne.mockResolvedValue({ insertedId: 'session-id' });
-      mockUsersCollection.findOne.mockResolvedValue({
-        _id: mockUser.id,
-        email: mockUser.email,
-        name: `${mockUser.firstName} ${mockUser.lastName}`,
-      });
+      mockUsersCollection.findOne.mockResolvedValue(createNextAuthUser(mockUser));
 
-      // Act - Simulate session creation via adapter
       await mockSessionsCollection.insertOne(sessionData);
-
-      // Assert
       expect(mockSessionsCollection.insertOne).toHaveBeenCalledWith(sessionData);
     });
 
     it('should retrieve user sessions from MongoDB', async () => {
-      // Arrange
       const mockUser = createMockUser();
       const sessionToken = 'test-database-session-token';
-      const storedSession = {
-        _id: 'session-id',
-        sessionToken,
-        userId: mockUser.id?.toString(),
-        expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-      };
+      const storedSession = createStoredSession(mockUser, sessionToken);
 
       mockSessionsCollection.findOne.mockResolvedValue(storedSession);
 
-      // Act - Simulate session retrieval via adapter
       const result = await mockSessionsCollection.findOne({ sessionToken });
-
-      // Assert
       expect(mockSessionsCollection.findOne).toHaveBeenCalledWith({ sessionToken });
       expect(result).toEqual(storedSession);
     });
 
     it('should update session expiration in MongoDB', async () => {
-      // Arrange
       const sessionToken = 'test-database-session-token';
-      const newExpires = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000); // 60 days
+      const newExpires = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000);
       const updateData = { expires: newExpires };
 
       mockSessionsCollection.updateOne.mockResolvedValue({ modifiedCount: 1 });
 
-      // Act - Simulate session update via adapter
-      await mockSessionsCollection.updateOne(
-        { sessionToken },
-        { $set: updateData }
-      );
-
-      // Assert
+      await mockSessionsCollection.updateOne({ sessionToken }, { $set: updateData });
       expect(mockSessionsCollection.updateOne).toHaveBeenCalledWith(
         { sessionToken },
         { $set: updateData }
@@ -203,25 +193,16 @@ describe('Database Session Integration', () => {
     });
 
     it('should delete expired sessions from MongoDB', async () => {
-      // Arrange
       const sessionToken = 'expired-session-token';
       mockSessionsCollection.deleteOne.mockResolvedValue({ deletedCount: 1 });
 
-      // Act - Simulate session deletion via adapter
       await mockSessionsCollection.deleteOne({ sessionToken });
-
-      // Assert
       expect(mockSessionsCollection.deleteOne).toHaveBeenCalledWith({ sessionToken });
     });
   });
 
   describe('User Management Integration', () => {
-    it('should synchronize user data between NextAuth and UserService', async () => {
-      // Arrange
-      const mockUser = createMockUser();
-      const mockCredentials = createMockCredentials();
-
-      // Mock UserService authentication
+    const setupUserServiceMocks = (mockUser: any) => {
       mockedUserService.authenticateUser.mockResolvedValue({
         success: true,
         data: {
@@ -232,27 +213,23 @@ describe('Database Session Integration', () => {
           },
         },
       });
+    };
 
-      // Mock NextAuth user in database
-      mockUsersCollection.findOne.mockResolvedValue({
-        _id: mockUser.id,
-        email: mockUser.email,
-        name: `${mockUser.firstName} ${mockUser.lastName}`,
-        emailVerified: null,
-      });
+    it('should synchronize user data between NextAuth and UserService', async () => {
+      const mockUser = createMockUser();
+      const mockCredentials = createMockCredentials();
 
-      // Act
+      setupUserServiceMocks(mockUser);
+      mockUsersCollection.findOne.mockResolvedValue(createNextAuthUser(mockUser));
+
       const userServiceAuth = await UserService.authenticateUser({
         email: mockUser.email,
         password: mockCredentials.password,
         rememberMe: false,
       });
 
-      const nextAuthUser = await mockUsersCollection.findOne({
-        email: mockUser.email,
-      });
+      const nextAuthUser = await mockUsersCollection.findOne({ email: mockUser.email });
 
-      // Assert - Data should be consistent
       expect(userServiceAuth.success).toBe(true);
       expect(userServiceAuth.data?.user.email).toBe(mockUser.email);
       expect(nextAuthUser?.email).toBe(mockUser.email);
@@ -260,143 +237,100 @@ describe('Database Session Integration', () => {
     });
 
     it('should handle user creation via NextAuth adapter', async () => {
-      // Arrange
       const mockUser = createMockUser();
-      const newUserData = {
-        email: mockUser.email,
-        name: `${mockUser.firstName} ${mockUser.lastName}`,
-        emailVerified: null,
-      };
+      const newUserData = createNextAuthUser(mockUser);
 
       mockUsersCollection.insertOne.mockResolvedValue({ insertedId: mockUser.id });
-      mockUsersCollection.findOne.mockResolvedValue({
-        _id: mockUser.id,
-        ...newUserData,
-      });
+      mockUsersCollection.findOne.mockResolvedValue({ _id: mockUser.id, ...newUserData });
 
-      // Act - Simulate user creation via adapter
       await mockUsersCollection.insertOne(newUserData);
       const createdUser = await mockUsersCollection.findOne({ email: mockUser.email });
 
-      // Assert
       expect(mockUsersCollection.insertOne).toHaveBeenCalledWith(newUserData);
       expect(createdUser).toMatchObject(newUserData);
     });
   });
 
   describe('Session Cleanup and Maintenance', () => {
+    const createIndexTest = (indexSpec: any, expectedCall: any) => async () => {
+      mockSessionsCollection.createIndex.mockResolvedValue(`${Object.keys(indexSpec)[0]}_1`);
+      await mockSessionsCollection.createIndex(indexSpec);
+      expect(mockSessionsCollection.createIndex).toHaveBeenCalledWith(expectedCall);
+    };
+
     it('should handle session cleanup for expired sessions', async () => {
-      // Arrange
       mockSessionsCollection.deleteMany.mockResolvedValue({ deletedCount: 3 });
-
-      // Act - Simulate cleanup of expired sessions
-      await mockSessionsCollection.deleteMany({
-        expires: { $lt: new Date() },
-      });
-
-      // Assert
+      await mockSessionsCollection.deleteMany({ expires: { $lt: new Date() } });
       expect(mockSessionsCollection.deleteMany).toHaveBeenCalledWith({
         expires: { $lt: expect.any(Date) },
       });
     });
 
     it('should maintain session indexes for performance', async () => {
-      // Arrange
-      mockSessionsCollection.createIndex.mockResolvedValue('sessionToken_1');
-
-      // Act - Simulate index creation for session performance
-      await mockSessionsCollection.createIndex({ sessionToken: 1 });
-      await mockSessionsCollection.createIndex({ expires: 1 });
-
-      // Assert
-      expect(mockSessionsCollection.createIndex).toHaveBeenCalledWith({ sessionToken: 1 });
-      expect(mockSessionsCollection.createIndex).toHaveBeenCalledWith({ expires: 1 });
+      await createIndexTest({ sessionToken: 1 }, { sessionToken: 1 })();
+      await createIndexTest({ expires: 1 }, { expires: 1 })();
     });
   });
 
   describe('Error Handling and Recovery', () => {
     it('should handle MongoDB connection failures gracefully', async () => {
-      // Arrange
       const connectionError = new Error('MongoDB connection failed');
       mockSessionsCollection.findOne.mockRejectedValue(connectionError);
 
-      // Act & Assert
       await expect(
         mockSessionsCollection.findOne({ sessionToken: 'test-token' })
       ).rejects.toThrow('MongoDB connection failed');
     });
 
     it('should handle session corruption scenarios', async () => {
-      // Arrange
-      const corruptedSession = {
-        sessionToken: 'test-token',
-        // Missing required fields like userId or expires
-      };
-
+      const corruptedSession = { sessionToken: 'test-token' };
       mockSessionsCollection.findOne.mockResolvedValue(corruptedSession);
 
-      // Act
       const result = await mockSessionsCollection.findOne({ sessionToken: 'test-token' });
-
-      // Assert - Should still return the session for NextAuth to handle
       expect(result).toEqual(corruptedSession);
     });
 
     it('should handle concurrent session operations', async () => {
-      // Arrange
       const sessionToken = 'concurrent-test-token';
       const updateData = { expires: new Date() };
-
       mockSessionsCollection.updateOne.mockResolvedValue({ modifiedCount: 1 });
 
-      // Act - Simulate concurrent session updates
       const promises = Array.from({ length: 3 }, () =>
         mockSessionsCollection.updateOne({ sessionToken }, { $set: updateData })
       );
-
       await Promise.all(promises);
 
-      // Assert
       expect(mockSessionsCollection.updateOne).toHaveBeenCalledTimes(3);
     });
   });
 
   describe('Configuration Validation', () => {
-    it('should validate required environment variables', () => {
-      // Arrange
-      const originalMongoUri = process.env.MONGODB_URI;
-      const originalDbName = process.env.MONGODB_DB_NAME;
+    const testEnvironmentVariable = (envVar: string, expectedError: string) => {
+      const original = process.env[envVar];
+      delete process.env[envVar];
 
-      // Test missing MONGODB_URI
-      delete process.env.MONGODB_URI;
-
-      // Act & Assert
-      // In production, this should throw an error
       if (process.env.NODE_ENV === 'production' && process.env.CI !== 'true') {
         expect(() => {
           require('@/lib/auth-database-session');
-        }).toThrow('MONGODB_URI environment variable is not set');
+        }).toThrow(expectedError);
       }
 
-      // Cleanup
-      process.env.MONGODB_URI = originalMongoUri;
-      process.env.MONGODB_DB_NAME = originalDbName;
+      process.env[envVar] = original;
+    };
+
+    it('should validate required environment variables', () => {
+      testEnvironmentVariable('MONGODB_URI', 'MONGODB_URI environment variable is not set');
     });
 
     it('should use fallback configurations for development', () => {
-      // Arrange
       const originalEnv = process.env.NODE_ENV;
       process.env.NODE_ENV = 'development';
 
-      // Act
       const { SESSION_CONFIG } = require('@/lib/auth-database-session');
-
-      // Assert
       expect(SESSION_CONFIG).toBeDefined();
       expect(SESSION_CONFIG.MAX_AGE).toBeGreaterThan(0);
       expect(SESSION_CONFIG.UPDATE_AGE).toBeGreaterThan(0);
 
-      // Cleanup
       process.env.NODE_ENV = originalEnv;
     });
   });

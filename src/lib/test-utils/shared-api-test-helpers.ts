@@ -245,12 +245,18 @@ export const setupNextAuthMocks = (
   userId: string = SHARED_API_TEST_CONSTANTS.TEST_USER_ID
 ) => {
   setupAPITest();
+  setupSessionMock(mockAuth, userId);
+  setupTokenMock(mockGetToken, userId);
+};
 
-  // Mock the auth() function to return a session
+// Helper function to reduce complexity
+const setupSessionMock = (mockAuth: jest.MockedFunction<any>, userId: string) => {
   mockAuth.mockResolvedValue(createMockSession(userId));
+};
 
-  // Mock getToken if provided
-  if (mockGetToken) {
+// Helper function to reduce complexity
+const setupTokenMock = (mockGetToken?: jest.MockedFunction<any>, userId?: string) => {
+  if (mockGetToken && userId) {
     mockGetToken.mockResolvedValue(createMockJwtToken(userId));
   }
 };
@@ -263,11 +269,17 @@ export const setupUnauthenticatedState = (
   mockGetToken?: jest.MockedFunction<any>
 ) => {
   setupAPITest();
+  setupNullSessionMock(mockAuth);
+  setupNullTokenMock(mockGetToken);
+};
 
-  // Mock no session
+// Helper function to reduce complexity
+const setupNullSessionMock = (mockAuth: jest.MockedFunction<any>) => {
   mockAuth.mockResolvedValue(null);
+};
 
-  // Mock no token if provided
+// Helper function to reduce complexity
+const setupNullTokenMock = (mockGetToken?: jest.MockedFunction<any>) => {
   if (mockGetToken) {
     mockGetToken.mockResolvedValue(null);
   }
@@ -300,15 +312,15 @@ export const createAuthenticatedRequest = (
   mockAuth?: jest.MockedFunction<any>,
   userId: string = SHARED_API_TEST_CONSTANTS.TEST_USER_ID
 ) => {
-  // If mockAuth is provided, set up the mock
-  if (mockAuth) {
+  setupAuthMockIfProvided(mockAuth, userId);
+  return createMockRequest(options.body || {}, options.method || 'GET');
+};
+
+// Helper function to reduce complexity
+const setupAuthMockIfProvided = (mockAuth?: jest.MockedFunction<any>, userId?: string) => {
+  if (mockAuth && userId) {
     mockAuth.mockResolvedValue(createMockSession(userId));
   }
-
-  return createMockRequest(
-    options.body || {},
-    options.method || 'GET'
-  );
 };
 
 /**
@@ -319,15 +331,15 @@ export const createUnauthenticatedRequest = (
   options: any = {},
   mockAuth?: jest.MockedFunction<any>
 ) => {
-  // If mockAuth is provided, set up the mock to return null
+  setupNullAuthMockIfProvided(mockAuth);
+  return createMockRequest(options.body || {}, options.method || 'GET');
+};
+
+// Helper function to reduce complexity
+const setupNullAuthMockIfProvided = (mockAuth?: jest.MockedFunction<any>) => {
   if (mockAuth) {
     mockAuth.mockResolvedValue(null);
   }
-
-  return createMockRequest(
-    options.body || {},
-    options.method || 'GET'
-  );
 };
 
 // ============================================================================
@@ -346,22 +358,30 @@ export const createRouteTestExecutor = (
     requestData?: any,
     method: 'GET' | 'PATCH' | 'POST' | 'DELETE' = 'GET'
   ) => {
-    const mockRequest = new NextRequest(`http://localhost:3000${baseUrl}/${userId}/profile`, {
-      method,
-      body: requestData ? JSON.stringify(requestData) : undefined,
-      headers: {
-        'content-type': 'application/json',
-      },
-    });
-
-    // Mock the json() method for requests with body data
-    if (requestData) {
-      (mockRequest as any).json = jest.fn().mockResolvedValue(requestData);
-    }
-
+    const mockRequest = createTestRequest(baseUrl, userId, method, requestData);
     const params = createMockParams(userId);
     return handler(mockRequest, { params });
   };
+};
+
+// Helper function to reduce complexity
+const createTestRequest = (
+  baseUrl: string,
+  userId: string,
+  method: string,
+  requestData?: any
+) => {
+  const mockRequest = new NextRequest(`http://localhost:3000${baseUrl}/${userId}/profile`, {
+    method,
+    body: requestData ? JSON.stringify(requestData) : undefined,
+    headers: { 'content-type': 'application/json' },
+  });
+
+  if (requestData) {
+    (mockRequest as any).json = jest.fn().mockResolvedValue(requestData);
+  }
+
+  return mockRequest;
 };
 
 /**
