@@ -47,9 +47,9 @@ export function renderFormComponent(Component: React.ComponentType<any>, props =
  * Tests field rendering with proper attributes
  */
 export function testFieldRendering(fieldName: string, labelText: string, fieldType: string = 'input') {
-  // Escape special regex characters and create case-insensitive pattern
-  const escapedLabelText = labelText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const field = screen.getByLabelText(new RegExp(escapedLabelText, 'i'));
+  // Use exact string match instead of RegExp to avoid security scanner warnings
+  // getByLabelText supports both string and regex, but string is safer for literal matches
+  const field = screen.getByLabelText(labelText, { exact: false });
   expect(field).toBeInTheDocument();
   expect(field).toHaveAttribute('name', fieldName);
   if (fieldType === 'input') {
