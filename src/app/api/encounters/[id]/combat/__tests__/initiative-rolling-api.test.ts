@@ -6,7 +6,6 @@ import { POST as rerollInitiativePost } from '../reroll-initiative/route';
 import {
   setupBasicMocks,
   setupRerollMocks,
-  setupCombatTestAuth,
   createMockParams,
   createBasicInitiativeEntries,
   buildRollAllScenario,
@@ -62,7 +61,7 @@ describe('Initiative Rolling API Endpoints', () => {
     mockAuth.mockResolvedValue({
       user: { id: 'user123' }
     } as any);
-    
+
     const mocks = setupBasicMocks();
     mockEncounter = mocks.mockEncounter;
     mockEncounter.ownerId = 'user123'; // Ensure ownership matches auth

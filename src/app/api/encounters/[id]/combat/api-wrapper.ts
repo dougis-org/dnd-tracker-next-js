@@ -38,7 +38,7 @@ export type CombatHandler = (
  */
 interface ValidationStep {
   name: string;
-  validator: (context: ValidationContext) => Promise<NextResponse | null> | NextResponse | null;
+  validator: (_context: ValidationContext) => Promise<NextResponse | null> | NextResponse | null;
 }
 
 interface ValidationContext {
@@ -112,7 +112,7 @@ async function validateAuthentication(context: ValidationContext): Promise<NextR
  */
 async function validateAndParseBody(context: ValidationContext): Promise<NextResponse | null> {
   const { config, request } = context;
-  
+
   if (config.requireBody || config.requiredFields || request.headers.get('content-length') !== '0') {
     try {
       context.body = await request.json();
@@ -138,7 +138,7 @@ async function validateAndParseBody(context: ValidationContext): Promise<NextRes
 async function validateEncounterAccess(context: ValidationContext): Promise<NextResponse | null> {
   const { encounter, errorResponse } = await validateAndGetEncounter(context.encounterId);
   if (errorResponse) return errorResponse;
-  
+
   if (!encounter) {
     return NextResponse.json(
       { success: false, message: 'Encounter not found' },
@@ -152,7 +152,7 @@ async function validateEncounterAccess(context: ValidationContext): Promise<Next
       { status: 403 }
     );
   }
-  
+
   context.encounter = encounter;
   return null;
 }
@@ -167,7 +167,7 @@ function validateCombatState(context: ValidationContext): NextResponse | null {
       { status: 404 }
     );
   }
-  
+
   const combatError = validateCombatActive(context.encounter);
   if (combatError) return combatError;
   return null;
@@ -179,7 +179,7 @@ function validateCombatState(context: ValidationContext): NextResponse | null {
 function performAdditionalValidations(context: ValidationContext): NextResponse | null {
   const { encounter, config } = context;
   if (!encounter) return null; // Skip if no encounter
-  
+
   const { combatState } = encounter;
 
   // Validate pause state
@@ -203,7 +203,7 @@ function performAdditionalValidations(context: ValidationContext): NextResponse 
  */
 function validateParticipant(context: ValidationContext): NextResponse | null {
   const { config, body, encounter } = context;
-  
+
   if (config.findParticipant && body?.participantId && encounter) {
     context.participant = findParticipantInInitiative(encounter, body.participantId);
     if (!context.participant) {
@@ -217,18 +217,18 @@ function validateParticipant(context: ValidationContext): NextResponse | null {
  * Execute handler and process result
  */
 async function executeHandlerAndProcessResult(
-  context: ValidationContext, 
+  context: ValidationContext,
   handler: CombatHandler
 ): Promise<NextResponse> {
   const { encounter, body, participant, config } = context;
-  
+
   if (!encounter) {
     return NextResponse.json(
       { success: false, message: 'Encounter not found' },
       { status: 404 }
     );
   }
-  
+
   const result = await handler(encounter, body, participant);
 
   // Handle different return types

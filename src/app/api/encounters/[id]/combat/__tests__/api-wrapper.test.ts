@@ -2,7 +2,6 @@ import { NextRequest } from 'next/server';
 import { withCombatValidation } from '../api-wrapper';
 import { auth } from '@/lib/auth';
 import { validateAndGetEncounter, validateCombatActive, validateRequiredFields, createSuccessResponse } from '../utils';
-import { setupCombatTestAuth } from './api-test-helpers';
 
 // Mock dependencies
 jest.mock('@/lib/auth');
@@ -62,7 +61,7 @@ describe('withCombatValidation', () => {
     // Data-driven authentication tests
     ['unauthenticated', 'missingUserId'].forEach(configKey => {
       const config = testConfigurations[configKey as keyof typeof testConfigurations];
-      
+
       it(`should return ${config.expectedStatus} when ${configKey}`, async () => {
         config.setupAuth();
 
