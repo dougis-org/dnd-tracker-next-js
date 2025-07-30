@@ -59,7 +59,7 @@ export async function authorizeCredentials(credentials: any) {
     const result = await UserService.authenticateUser({
       email: credentials.email,
       password: credentials.password,
-      rememberMe: Boolean(credentials.rememberMe),
+      rememberMe: credentials.rememberMe === 'true' || false,
     });
 
     if (!result.success || !result.data) return null;
@@ -71,7 +71,8 @@ export async function authorizeCredentials(credentials: any) {
       name: `${user.firstName} ${user.lastName}`.trim(),
       subscriptionTier: user.subscriptionTier,
     };
-  } catch {
+  } catch (error) {
+    console.error('Authentication error:', error);
     return null;
   }
 }
