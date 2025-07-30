@@ -1,5 +1,6 @@
 import { Types } from 'mongoose';
 import { Character } from '@/lib/models/Character';
+import { auth } from '@/lib/auth';
 import { POST as rollInitiativePost } from '../roll-initiative/route';
 import { POST as rerollInitiativePost } from '../reroll-initiative/route';
 import {
@@ -27,6 +28,8 @@ import {
 } from './api-test-helpers';
 
 // Mock the dependencies
+jest.mock('@/lib/auth');
+
 jest.mock('@/lib/models/Character', () => ({
   Character: {
     find: jest.fn(),
@@ -47,14 +50,21 @@ jest.mock('@/lib/models/encounter/initiative-rolling', () => ({
 }));
 
 const { rollBulkInitiative, rollSingleInitiative, rerollInitiative } = mockInitiativeRollingFunctions();
+const mockAuth = auth as jest.MockedFunction<typeof auth>;
 
 describe('Initiative Rolling API Endpoints', () => {
   let mockEncounter: any;
 
   beforeEach(() => {
     cleanupApiTest();
+    // Set up authentication mock
+    mockAuth.mockResolvedValue({
+      user: { id: 'user123' }
+    } as any);
+
     const mocks = setupBasicMocks();
     mockEncounter = mocks.mockEncounter;
+    mockEncounter.ownerId = 'user123'; // Ensure ownership matches auth
   });
 
   describe('POST /roll-initiative', () => {
@@ -125,6 +135,7 @@ describe('Initiative Rolling API Endpoints', () => {
       // Set up existing initiative order using helper
       const mocks = setupRerollMocks();
       mockEncounter = mocks.mockEncounter;
+      mockEncounter.ownerId = 'user123'; // Ensure ownership matches auth
     });
 
     it('should reroll initiative for specific participant', async () => {

@@ -1,5 +1,6 @@
 import { PATCH } from '../route';
 import { EncounterService } from '@/lib/services/EncounterService';
+import { auth } from '@/lib/auth';
 import {
   TEST_SETTINGS,
   TEST_INVALID_SETTINGS,
@@ -12,6 +13,11 @@ import {
   expectSuccessResponse,
   expectErrorResponse,
 } from '@/__test-utils__/encounter-settings-test-utils';
+import {
+  mockAuthSuccess,
+  mockAuthFailure,
+  TEST_USER,
+} from '@/app/api/encounters/__tests__/shared-test-utilities';
 
 // Configure Jest to use our mocks
 jest.mock('next/server');
@@ -26,10 +32,22 @@ jest.mock('@/lib/services/EncounterService', () => {
   };
 });
 
+// Mock the auth
+jest.mock('@/lib/auth');
+
+const mockAuth = auth as jest.MockedFunction<typeof auth>;
+
 describe('PATCH /api/encounters/[id]/settings', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    // Default to successful authentication
+    mockAuthSuccess(mockAuth);
+    // Mock successful encounter access by default
+    EncounterService.getEncounterById = jest.fn().mockResolvedValue({
+      success: true,
+      data: { ownerId: TEST_USER.id }
+    });
   });
 
   it('successfully updates encounter settings', async () => {
@@ -119,5 +137,45 @@ describe('PATCH /api/encounters/[id]/settings', () => {
     // This should still be valid as the schema allows optional lairActionInitiative
     // The business logic for enforcing the dependency should be in the service layer
     expect(response.status).toBe(200);
+  });
+
+  describe('Authentication', () => {
+    it('returns 401 when user is not authenticated', async () => {
+      mockAuthFailure(mockAuth);
+
+      const request = createTestRequest(TEST_SETTINGS);
+      const response = await PATCH(request, createTestParams());
+
+      await expectErrorResponse(response, 401, 'Authentication required');
+      expect(EncounterService.updateEncounter).not.toHaveBeenCalled();
+      expect(EncounterService.getEncounterById).not.toHaveBeenCalled();
+    });
+
+    it('returns 403 when user does not own the encounter', async () => {
+      // Mock encounter owned by different user
+      EncounterService.getEncounterById = jest.fn().mockResolvedValue({
+        success: true,
+        data: { ownerId: 'different-user-id' }
+      });
+
+      const request = createTestRequest(TEST_SETTINGS);
+      const response = await PATCH(request, createTestParams());
+
+      await expectErrorResponse(response, 403, 'Insufficient permissions');
+      expect(EncounterService.updateEncounter).not.toHaveBeenCalled();
+    });
+
+    it('returns 404 when encounter is not found', async () => {
+      EncounterService.getEncounterById = jest.fn().mockResolvedValue({
+        success: false,
+        error: { message: 'Encounter not found', statusCode: 404 }
+      });
+
+      const request = createTestRequest(TEST_SETTINGS);
+      const response = await PATCH(request, createTestParams());
+
+      await expectErrorResponse(response, 404, 'Encounter not found');
+      expect(EncounterService.updateEncounter).not.toHaveBeenCalled();
+    });
   });
 });

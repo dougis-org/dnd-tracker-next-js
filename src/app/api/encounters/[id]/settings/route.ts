@@ -3,6 +3,48 @@ import { EncounterService } from '@/lib/services/EncounterService';
 import { encounterSettingsPartialSchema } from '@/lib/validations/encounter';
 import { objectIdSchema } from '@/lib/validations/base';
 import { ZodError } from 'zod';
+import { auth } from '@/lib/auth';
+
+async function validateAuth() {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return {
+      success: false as const,
+      error: NextResponse.json(
+        { success: false, message: 'Authentication required' },
+        { status: 401 }
+      ),
+    };
+  }
+  return { success: true as const, userId: session.user.id };
+}
+
+async function validateEncounterAccess(encounterId: string, userId: string) {
+  const existingResult = await EncounterService.getEncounterById(encounterId);
+  if (!existingResult.success) {
+    return {
+      success: false as const,
+      error: createErrorResponse(
+        existingResult.error?.message || 'Encounter not found',
+        formatErrorDetails(existingResult.error?.details),
+        existingResult.error?.statusCode || 404
+      ),
+    };
+  }
+
+  if (existingResult.data?.ownerId.toString() !== userId) {
+    return {
+      success: false as const,
+      error: createErrorResponse(
+        'Insufficient permissions',
+        ['You do not have permission to modify this encounter'],
+        403
+      ),
+    };
+  }
+
+  return { success: true as const, data: existingResult.data };
+}
 
 function createErrorResponse(message: string, errors: string[], status: number) {
   return NextResponse.json(
@@ -101,11 +143,25 @@ export async function PATCH(
   context: { params: Promise<{ id: string }> }
 ): Promise<Response> {
   try {
+    // Validate authentication
+    const authValidation = await validateAuth();
+    if (!authValidation.success) {
+      return authValidation.error;
+    }
+
+    // Validate encounter ID
     const idValidation = await validateEncounterId(context.params);
     if (!idValidation.success) {
       return idValidation.error;
     }
 
+    // Validate user has access to the encounter
+    const accessValidation = await validateEncounterAccess(idValidation.data, authValidation.userId);
+    if (!accessValidation.success) {
+      return accessValidation.error;
+    }
+
+    // Validate request body
     const bodyValidation = await validateRequestBody(request);
     if (!bodyValidation.success) {
       return bodyValidation.error;
