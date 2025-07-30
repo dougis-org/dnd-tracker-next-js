@@ -38,6 +38,7 @@ exclude_paths:
     - '**/__mocks__/**/*'
 runtimes:
     - node@22.2.0
+    - python@3.11.11
 tools:
     - eslint@8.57.0
     - semgrep@1.78.0
