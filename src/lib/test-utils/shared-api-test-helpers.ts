@@ -113,11 +113,24 @@ export const createMockRequest = (data: any, method: 'PATCH' | 'GET' | 'POST' | 
 export const createMockUser = (overrides: Partial<any> = {}) => ({
   id: SHARED_API_TEST_CONSTANTS.TEST_USER_ID,
   email: SHARED_API_TEST_CONSTANTS.TEST_EMAIL,
+  firstName: 'John',
+  lastName: 'Doe',
   displayName: 'John Doe',
   timezone: 'America/New_York',
   dndEdition: 'Pathfinder 2e',
   experienceLevel: 'experienced' as const,
   primaryRole: 'dm' as const,
+  subscriptionTier: SHARED_API_TEST_CONSTANTS.TEST_SUBSCRIPTION_TIER,
+  ...overrides,
+});
+
+/**
+ * Creates a mock credentials object for testing authentication
+ */
+export const createMockCredentials = (overrides: Partial<any> = {}) => ({
+  email: SHARED_API_TEST_CONSTANTS.TEST_EMAIL,
+  password: 'test-password-123',
+  rememberMe: false,
   ...overrides,
 });
 
