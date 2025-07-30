@@ -177,8 +177,8 @@ get_deployment_status() {
     fi
     
     # Export for use by calling functions
-    APP_HEALTHY="$app_healthy"
-    MIGRATION_ACCESSIBLE="$migration_accessible"
+    export APP_HEALTHY="$app_healthy"
+    export MIGRATION_ACCESSIBLE="$migration_accessible"
 }
 
 # Main rollback logic
