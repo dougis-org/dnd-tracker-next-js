@@ -53,13 +53,8 @@ describe('Markdown Linting', () => {
     keyFiles.forEach(file => {
       test(`${file} should pass markdownlint`, () => {
         expect(() => {
-<<<<<<< HEAD
-          // Use local markdownlint-cli installation to prevent npx issues
-          const markdownlintPath = path.resolve(process.cwd(), 'node_modules', '.bin', 'markdownlint');
-=======
           // Use static known path instead of dynamic construction
           const markdownlintPath = 'node_modules/.bin/markdownlint';
->>>>>>> bba1f1c (Phase 2.3: Ensure middleware respects authentication)
           const result = spawnSync(markdownlintPath, [file], { stdio: 'pipe' });
           if (result.status !== 0) {
             throw new Error(`markdownlint failed for ${file}: ${result.stderr?.toString()}`);

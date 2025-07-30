@@ -208,7 +208,7 @@ const deletionTestActions = {
           expect(screen.getByText(createSafeTestRegExp(msg.trim()))).toBeInTheDocument();
           found = true;
           break;
-        } catch (e) {
+        } catch {
           // Continue to next message
         }
       }
