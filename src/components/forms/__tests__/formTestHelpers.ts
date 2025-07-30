@@ -47,7 +47,9 @@ export function renderFormComponent(Component: React.ComponentType<any>, props =
  * Tests field rendering with proper attributes
  */
 export function testFieldRendering(fieldName: string, labelText: string, fieldType: string = 'input') {
-  const field = screen.getByLabelText(new RegExp(labelText, 'i'));
+  // Escape special regex characters and create case-insensitive pattern
+  const escapedLabelText = labelText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const field = screen.getByLabelText(new RegExp(escapedLabelText, 'i'));
   expect(field).toBeInTheDocument();
   expect(field).toHaveAttribute('name', fieldName);
   if (fieldType === 'input') {
@@ -139,7 +141,9 @@ export namespace CharacterFormHelpers {
   }
 
   export function testAbilityScoreField(abilityName: string, value: number, mockOnChange: jest.Mock) {
-    const field = screen.getByLabelText(new RegExp(abilityName, 'i'));
+    // Escape special regex characters and create case-insensitive pattern
+    const escapedAbilityName = abilityName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const field = screen.getByLabelText(new RegExp(escapedAbilityName, 'i'));
     fireEvent.change(field, { target: { value: value.toString() } });
     expect(mockOnChange).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -218,7 +222,9 @@ export namespace UITestHelpers {
   }
 
   export function testButtonInteraction(buttonText: string, onClick: jest.Mock) {
-    const button = screen.getByRole('button', { name: new RegExp(buttonText, 'i') });
+    // Escape special regex characters and create case-insensitive pattern
+    const escapedButtonText = buttonText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const button = screen.getByRole('button', { name: new RegExp(escapedButtonText, 'i') });
     fireEvent.click(button);
     expect(onClick).toHaveBeenCalled();
   }

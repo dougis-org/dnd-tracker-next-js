@@ -86,7 +86,9 @@ describe('Docker Optimization Tests', () => {
     test('should have distinct base, build, and production stages', () => {
       const stages = ['FROM node:.*-slim AS base', 'FROM base AS build', 'FROM base AS production'];
       stages.forEach(stage => {
-        expect(dockerfileContent).toMatch(new RegExp(stage, 'm'));
+        // Escape special regex characters to prevent ReDoS attacks
+        const escapedStage = stage.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        expect(dockerfileContent).toMatch(new RegExp(escapedStage, 'm'));
       });
     });
 

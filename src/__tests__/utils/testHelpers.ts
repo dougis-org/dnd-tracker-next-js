@@ -315,23 +315,29 @@ export namespace ServiceTesting {
 export namespace InteractionTesting {
   export function clickElement(selector: string) {
     const { fireEvent, screen } = require('@testing-library/react');
-    const element = screen.getByRole('button', { name: new RegExp(selector, 'i') }) ||
+    // Escape special regex characters to prevent ReDoS attacks
+    const escapedSelector = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const element = screen.getByRole('button', { name: new RegExp(escapedSelector, 'i') }) ||
                    screen.getByTestId(selector) ||
-                   screen.getByText(new RegExp(selector, 'i'));
+                   screen.getByText(new RegExp(escapedSelector, 'i'));
     fireEvent.click(element);
     return element;
   }
 
   export function typeInInput(labelText: string, value: string) {
     const { fireEvent, screen } = require('@testing-library/react');
-    const input = screen.getByLabelText(new RegExp(labelText, 'i'));
+    // Escape special regex characters to prevent ReDoS attacks
+    const escapedLabelText = labelText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const input = screen.getByLabelText(new RegExp(escapedLabelText, 'i'));
     fireEvent.change(input, { target: { value } });
     return input;
   }
 
   export function selectOption(labelText: string, optionText: string) {
     const { fireEvent, screen } = require('@testing-library/react');
-    const select = screen.getByLabelText(new RegExp(labelText, 'i'));
+    // Escape special regex characters to prevent ReDoS attacks
+    const escapedLabelText = labelText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const select = screen.getByLabelText(new RegExp(escapedLabelText, 'i'));
     fireEvent.change(select, { target: { value: optionText } });
     return select;
   }
