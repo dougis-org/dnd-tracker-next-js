@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@/lib/auth';
 import {
   validateAndGetEncounter,
   validateCombatActive,
@@ -46,6 +47,16 @@ export function withCombatValidation(
     try {
       const { id: encounterId } = await context.params;
 
+      // Validate authentication
+      const session = await auth();
+      if (!session?.user?.id) {
+        return NextResponse.json(
+          { success: false, message: 'Authentication required' },
+          { status: 401 }
+        );
+      }
+      const userId = session.user.id;
+
       // Parse body if required or if there's content
       let body;
       if (config.requireBody || config.requiredFields || request.headers.get('content-length') !== '0') {
@@ -70,6 +81,14 @@ export function withCombatValidation(
       // Validate and get encounter
       const { encounter, errorResponse } = await validateAndGetEncounter(encounterId);
       if (errorResponse) return errorResponse;
+
+      // Validate encounter ownership
+      if (encounter!.ownerId.toString() !== userId) {
+        return NextResponse.json(
+          { success: false, message: 'Access denied: You do not own this encounter' },
+          { status: 403 }
+        );
+      }
 
       // Validate combat is active
       const combatError = validateCombatActive(encounter!);

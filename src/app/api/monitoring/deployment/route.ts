@@ -5,8 +5,36 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { DeploymentMonitor, AlertConfig } from '@/lib/monitoring/deployment-monitor';
+import { auth } from '@/lib/auth';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+
+/**
+ * Validate that the user is authenticated and has admin privileges
+ * Only admins should access monitoring endpoints
+ */
+async function validateAdminAuth(): Promise<NextResponse | null> {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    return NextResponse.json(
+      { success: false, error: 'Authentication required' },
+      { status: 401 }
+    );
+  }
+
+  // Check if user has admin role - monitoring data should be admin-only
+  // This assumes the session contains role information from the JWT token
+  const userRole = (session as any)?.user?.role || 'user';
+  if (userRole !== 'admin') {
+    return NextResponse.json(
+      { success: false, error: 'Admin access required for monitoring endpoints' },
+      { status: 403 }
+    );
+  }
+
+  return null; // Authentication successful
+}
 
 // Deployment monitor singleton - uses proper singleton pattern for production environments
 class MonitorSingleton {
@@ -121,6 +149,12 @@ class GetRequestHandler {
  */
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
+    // Validate authentication and admin access
+    const authError = await validateAdminAuth();
+    if (authError) {
+      return authError;
+    }
+
     const { searchParams } = new URL(request.url);
     const environment = searchParams.get('environment');
     const action = searchParams.get('action') || 'stats';
@@ -191,6 +225,12 @@ class PostRequestHandler {
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
+    // Validate authentication and admin access
+    const authError = await validateAdminAuth();
+    if (authError) {
+      return authError;
+    }
+
     const body = await request.json();
     const { action, data } = body;
 
