@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { withCombatValidation } from '../api-wrapper';
 import { auth } from '@/lib/auth';
 import { validateAndGetEncounter, validateCombatActive, validateRequiredFields, createSuccessResponse } from '../utils';
+import { setupCombatTestAuth } from './api-test-helpers';
 
 // Mock dependencies
 jest.mock('@/lib/auth');
@@ -13,7 +14,27 @@ const mockValidateCombatActive = validateCombatActive as jest.MockedFunction<typ
 const mockValidateRequiredFields = validateRequiredFields as jest.MockedFunction<typeof validateRequiredFields>;
 const mockCreateSuccessResponse = createSuccessResponse as jest.MockedFunction<typeof createSuccessResponse>;
 
-// Helper to create mock encounter
+// Test data configurations - data-driven approach
+const testConfigurations = {
+  unauthenticated: {
+    setupAuth: () => mockAuth.mockResolvedValue(null),
+    expectedStatus: 401,
+    expectedMessage: 'Authentication required'
+  },
+  missingUserId: {
+    setupAuth: () => mockAuth.mockResolvedValue({ user: {} } as any),
+    expectedStatus: 401,
+    expectedMessage: 'Authentication required'
+  },
+  wrongOwner: {
+    setupAuth: () => mockAuth.mockResolvedValue({ user: { id: 'user123' } } as any),
+    encounterOwner: 'different-user',
+    expectedStatus: 403,
+    expectedMessage: 'Access denied: You do not own this encounter'
+  }
+};
+
+// Helper to create mock encounter - centralized
 function createMockEncounter(overrides: any = {}) {
   return {
     _id: 'encounter123',
@@ -38,42 +59,28 @@ describe('withCombatValidation', () => {
   });
 
   describe('Authentication', () => {
-    it('should return 401 when user is not authenticated', async () => {
-      mockAuth.mockResolvedValue(null);
+    // Data-driven authentication tests
+    ['unauthenticated', 'missingUserId'].forEach(configKey => {
+      const config = testConfigurations[configKey as keyof typeof testConfigurations];
+      
+      it(`should return ${config.expectedStatus} when ${configKey}`, async () => {
+        config.setupAuth();
 
-      const wrappedHandler = withCombatValidation(
-        { operation: 'test operation' },
-        mockHandler
-      );
+        const wrappedHandler = withCombatValidation(
+          { operation: 'test operation' },
+          mockHandler
+        );
 
-      const response = await wrappedHandler(mockRequest, mockParams);
-      const body = await response.json();
+        const response = await wrappedHandler(mockRequest, mockParams);
+        const body = await response.json();
 
-      expect(response.status).toBe(401);
-      expect(body).toEqual({
-        success: false,
-        message: 'Authentication required'
+        expect(response.status).toBe(config.expectedStatus);
+        expect(body).toEqual({
+          success: false,
+          message: config.expectedMessage
+        });
+        expect(mockHandler).not.toHaveBeenCalled();
       });
-      expect(mockHandler).not.toHaveBeenCalled();
-    });
-
-    it('should return 401 when session exists but user ID is missing', async () => {
-      mockAuth.mockResolvedValue({ user: {} } as any);
-
-      const wrappedHandler = withCombatValidation(
-        { operation: 'test operation' },
-        mockHandler
-      );
-
-      const response = await wrappedHandler(mockRequest, mockParams);
-      const body = await response.json();
-
-      expect(response.status).toBe(401);
-      expect(body).toEqual({
-        success: false,
-        message: 'Authentication required'
-      });
-      expect(mockHandler).not.toHaveBeenCalled();
     });
   });
 
@@ -85,8 +92,9 @@ describe('withCombatValidation', () => {
     });
 
     it('should return 403 when user does not own the encounter', async () => {
+      const config = testConfigurations.wrongOwner;
       const mockEncounter = createMockEncounter({
-        ownerId: 'different-user',
+        ownerId: config.encounterOwner,
         combatState: { isActive: true }
       });
 
@@ -103,10 +111,10 @@ describe('withCombatValidation', () => {
       const response = await wrappedHandler(mockRequest, mockParams);
       const body = await response.json();
 
-      expect(response.status).toBe(403);
+      expect(response.status).toBe(config.expectedStatus);
       expect(body).toEqual({
         success: false,
-        message: 'Access denied: You do not own this encounter'
+        message: config.expectedMessage
       });
       expect(mockHandler).not.toHaveBeenCalled();
     });

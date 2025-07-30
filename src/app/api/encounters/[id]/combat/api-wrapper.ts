@@ -34,7 +34,26 @@ export type CombatHandler = (
 ) => Promise<boolean | NextResponse> | boolean | NextResponse;
 
 /**
+ * Data-driven validation pipeline for combat operations
+ */
+interface ValidationStep {
+  name: string;
+  validator: (context: ValidationContext) => Promise<NextResponse | null> | NextResponse | null;
+}
+
+interface ValidationContext {
+  config: CombatApiConfig;
+  request: NextRequest;
+  encounterId: string;
+  userId?: string;
+  body?: any;
+  encounter?: IEncounter;
+  participant?: any;
+}
+
+/**
  * Higher-order function that wraps combat API endpoints with common validation and error handling
+ * Uses a data-driven validation pipeline to reduce complexity
  */
 export function withCombatValidation(
   config: CombatApiConfig,
@@ -46,82 +65,26 @@ export function withCombatValidation(
   ): Promise<NextResponse> {
     try {
       const { id: encounterId } = await context.params;
+      const validationContext: ValidationContext = { config, request, encounterId };
 
-      // Validate authentication
-      const session = await auth();
-      if (!session?.user?.id) {
-        return NextResponse.json(
-          { success: false, message: 'Authentication required' },
-          { status: 401 }
-        );
-      }
-      const userId = session.user.id;
+      // Define validation pipeline - data-driven approach
+      const validationSteps: ValidationStep[] = [
+        { name: 'authentication', validator: validateAuthentication },
+        { name: 'body', validator: validateAndParseBody },
+        { name: 'encounter', validator: validateEncounterAccess },
+        { name: 'combat', validator: validateCombatState },
+        { name: 'additional', validator: performAdditionalValidations },
+        { name: 'participant', validator: validateParticipant }
+      ];
 
-      // Parse body if required or if there's content
-      let body;
-      if (config.requireBody || config.requiredFields || request.headers.get('content-length') !== '0') {
-        try {
-          body = await request.json();
-        } catch (error) {
-          // If parsing fails and body is not required, set to empty object
-          if (!config.requireBody) {
-            body = {};
-          } else {
-            throw error;
-          }
-        }
-
-        // Validate required fields
-        if (config.requiredFields) {
-          const fieldsError = validateRequiredFields(body, config.requiredFields);
-          if (fieldsError) return fieldsError;
-        }
+      // Execute validation pipeline
+      for (const step of validationSteps) {
+        const error = await step.validator(validationContext);
+        if (error) return error;
       }
 
-      // Validate and get encounter
-      const { encounter, errorResponse } = await validateAndGetEncounter(encounterId);
-      if (errorResponse) return errorResponse;
-
-      // Validate encounter ownership
-      if (encounter!.ownerId.toString() !== userId) {
-        return NextResponse.json(
-          { success: false, message: 'Access denied: You do not own this encounter' },
-          { status: 403 }
-        );
-      }
-
-      // Validate combat is active
-      const combatError = validateCombatActive(encounter!);
-      if (combatError) return combatError;
-
-      // Additional validations based on config
-      const validationError = performAdditionalValidations(encounter!, config);
-      if (validationError) return validationError;
-
-      // Find participant if required
-      let participant;
-      if (config.findParticipant && body?.participantId) {
-        participant = findParticipantInInitiative(encounter!, body.participantId);
-        if (!participant) {
-          return createErrorResponse('Participant not found', 400);
-        }
-      }
-
-      // Execute the handler
-      const result = await handler(encounter!, body, participant);
-
-      // Handle different return types
-      if (result instanceof Response) {
-        return result as NextResponse;
-      }
-
-      if (typeof result === 'boolean' && !result) {
-        return createErrorResponse(`Unable to ${config.operation}`, 400);
-      }
-
-      // Save and return success
-      await encounter!.save();
-      return createSuccessResponse(encounter!);
+      // Execute handler and process result
+      return await executeHandlerAndProcessResult(validationContext, handler);
 
     } catch (error) {
       return handleAsyncError(error, config.operation);
@@ -130,12 +93,93 @@ export function withCombatValidation(
 }
 
 /**
+ * Authentication validator
+ */
+async function validateAuthentication(context: ValidationContext): Promise<NextResponse | null> {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json(
+      { success: false, message: 'Authentication required' },
+      { status: 401 }
+    );
+  }
+  context.userId = session.user.id;
+  return null;
+}
+
+/**
+ * Body parsing and field validation
+ */
+async function validateAndParseBody(context: ValidationContext): Promise<NextResponse | null> {
+  const { config, request } = context;
+  
+  if (config.requireBody || config.requiredFields || request.headers.get('content-length') !== '0') {
+    try {
+      context.body = await request.json();
+    } catch (error) {
+      if (!config.requireBody) {
+        context.body = {};
+      } else {
+        throw error;
+      }
+    }
+
+    if (config.requiredFields) {
+      const fieldsError = validateRequiredFields(context.body, config.requiredFields);
+      if (fieldsError) return fieldsError;
+    }
+  }
+  return null;
+}
+
+/**
+ * Encounter validation and ownership check
+ */
+async function validateEncounterAccess(context: ValidationContext): Promise<NextResponse | null> {
+  const { encounter, errorResponse } = await validateAndGetEncounter(context.encounterId);
+  if (errorResponse) return errorResponse;
+  
+  if (!encounter) {
+    return NextResponse.json(
+      { success: false, message: 'Encounter not found' },
+      { status: 404 }
+    );
+  }
+
+  if (encounter.ownerId.toString() !== context.userId) {
+    return NextResponse.json(
+      { success: false, message: 'Access denied: You do not own this encounter' },
+      { status: 403 }
+    );
+  }
+  
+  context.encounter = encounter;
+  return null;
+}
+
+/**
+ * Combat state validation
+ */
+function validateCombatState(context: ValidationContext): NextResponse | null {
+  if (!context.encounter) {
+    return NextResponse.json(
+      { success: false, message: 'Encounter not found' },
+      { status: 404 }
+    );
+  }
+  
+  const combatError = validateCombatActive(context.encounter);
+  if (combatError) return combatError;
+  return null;
+}
+
+/**
  * Perform additional validations based on configuration
  */
-function performAdditionalValidations(
-  encounter: IEncounter,
-  config: CombatApiConfig
-): NextResponse | null {
+function performAdditionalValidations(context: ValidationContext): NextResponse | null {
+  const { encounter, config } = context;
+  if (!encounter) return null; // Skip if no encounter
+  
   const { combatState } = encounter;
 
   // Validate pause state
@@ -152,6 +196,53 @@ function performAdditionalValidations(
   }
 
   return null;
+}
+
+/**
+ * Participant validation
+ */
+function validateParticipant(context: ValidationContext): NextResponse | null {
+  const { config, body, encounter } = context;
+  
+  if (config.findParticipant && body?.participantId && encounter) {
+    context.participant = findParticipantInInitiative(encounter, body.participantId);
+    if (!context.participant) {
+      return createErrorResponse('Participant not found', 400);
+    }
+  }
+  return null;
+}
+
+/**
+ * Execute handler and process result
+ */
+async function executeHandlerAndProcessResult(
+  context: ValidationContext, 
+  handler: CombatHandler
+): Promise<NextResponse> {
+  const { encounter, body, participant, config } = context;
+  
+  if (!encounter) {
+    return NextResponse.json(
+      { success: false, message: 'Encounter not found' },
+      { status: 404 }
+    );
+  }
+  
+  const result = await handler(encounter, body, participant);
+
+  // Handle different return types
+  if (result instanceof Response) {
+    return result as NextResponse;
+  }
+
+  if (typeof result === 'boolean' && !result) {
+    return createErrorResponse(`Unable to ${config.operation}`, 400);
+  }
+
+  // Save and return success
+  await encounter.save();
+  return createSuccessResponse(encounter);
 }
 
 /**
