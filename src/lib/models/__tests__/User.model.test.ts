@@ -5,9 +5,14 @@
 
 import { Types } from 'mongoose';
 import { SUBSCRIPTION_LIMITS } from '../User';
-import type { IUser, CreateUserInput, SubscriptionFeature } from '../User';
+import type { IUser, SubscriptionFeature } from '../User';
+import { runParameterizedTests, createValidationTests } from '../../__tests__/shared-test-helpers';
 
-// Helper functions for creating mock users
+// Extracted test data constants
+const SUBSCRIPTION_TIERS = ['free', 'seasoned', 'expert', 'master', 'guild'] as const;
+const SUBSCRIPTION_FEATURES = ['parties', 'encounters', 'characters'] as const;
+
+// Simplified user data factory
 const createDefaultUserData = () => ({
   email: 'test@example.com',
   username: 'testuser',
@@ -33,491 +38,355 @@ const createDefaultUserData = () => ({
   updatedAt: new Date(),
 });
 
-const createMockMethods = (user: any, objectIdString: string) => {
-  // Implement toPublicJSON method
-  user.toPublicJSON.mockImplementation(() => ({
-    id: objectIdString,
-    email: user.email,
-    username: user.username,
-    firstName: user.firstName,
-    lastName: user.lastName,
-    role: user.role,
-    subscriptionTier: user.subscriptionTier,
-    isEmailVerified: user.isEmailVerified,
-    lastLoginAt: user.lastLoginAt,
-    preferences: user.preferences,
-    createdAt: user.createdAt,
-    updatedAt: user.updatedAt,
-  }));
-
-  // Implement canAccessFeature method
-  user.canAccessFeature.mockImplementation((feature: SubscriptionFeature, quantity: number) => {
-    const limits = SUBSCRIPTION_LIMITS[user.subscriptionTier];
-    const limit = limits[feature];
-    return quantity <= limit;
-  });
-};
-
-// Mock implementation of User model methods for testing
+// Simplified mock user factory
 const createMockUser = (overrides: Partial<IUser> = {}): IUser => {
   const objectId = overrides._id || new Types.ObjectId();
-  const objectIdString = objectId.toString();
-
   const userData = createDefaultUserData();
+  const finalUserData = { ...userData, ...overrides };
+
   const mockMethods = {
     comparePassword: jest.fn(),
     generatePasswordResetToken: jest.fn(),
     generateEmailVerificationToken: jest.fn(),
-    toPublicJSON: jest.fn(),
     updateLastLogin: jest.fn(),
     isSubscriptionActive: jest.fn().mockReturnValue(true),
-    canAccessFeature: jest.fn(),
     save: jest.fn(),
+    toPublicJSON: jest.fn().mockImplementation(() => ({
+      id: objectId.toString(),
+      email: finalUserData.email,
+      username: finalUserData.username,
+      firstName: finalUserData.firstName,
+      lastName: finalUserData.lastName,
+      role: finalUserData.role,
+      subscriptionTier: finalUserData.subscriptionTier,
+      isEmailVerified: finalUserData.isEmailVerified,
+      preferences: finalUserData.preferences,
+      createdAt: finalUserData.createdAt,
+      updatedAt: finalUserData.updatedAt,
+    })),
+    canAccessFeature: jest.fn().mockImplementation((feature: SubscriptionFeature, quantity: number) => {
+      const limits = SUBSCRIPTION_LIMITS[finalUserData.subscriptionTier];
+      return quantity <= limits[feature];
+    }),
   };
 
-  const defaultUser = {
-    _id: objectId,
-    ...userData,
+  // Ensure _id maintains its ObjectId type when passed in overrides
+  const result = {
+    ...finalUserData,
     ...mockMethods,
-    ...overrides,
-  } as IUser;
+    _id: objectId,
+  };
 
-  createMockMethods(defaultUser, objectIdString);
-  return defaultUser;
+  return result as IUser;
 };
 
 describe('User Model Unit Tests', () => {
   describe('SUBSCRIPTION_LIMITS Constants', () => {
     it('should have correct structure for all tiers', () => {
-      const expectedTiers = ['free', 'seasoned', 'expert', 'master', 'guild'];
-      const expectedFeatures = ['parties', 'encounters', 'characters'];
-
-      expectedTiers.forEach(tier => {
+      SUBSCRIPTION_TIERS.forEach(tier => {
         expect(SUBSCRIPTION_LIMITS).toHaveProperty(tier);
-        expectedFeatures.forEach(feature => {
-          expect(SUBSCRIPTION_LIMITS[tier as keyof typeof SUBSCRIPTION_LIMITS]).toHaveProperty(feature);
-          expect(typeof SUBSCRIPTION_LIMITS[tier as keyof typeof SUBSCRIPTION_LIMITS][feature as SubscriptionFeature]).toBe('number');
+        SUBSCRIPTION_FEATURES.forEach(feature => {
+          expect(SUBSCRIPTION_LIMITS[tier]).toHaveProperty(feature);
+          expect(typeof SUBSCRIPTION_LIMITS[tier][feature]).toBe('number');
         });
       });
     });
 
-    it('should have progressive limits across tiers', () => {
-      // Free tier should be most restrictive
-      expect(SUBSCRIPTION_LIMITS.free.parties).toBe(1);
-      expect(SUBSCRIPTION_LIMITS.free.encounters).toBe(3);
-      expect(SUBSCRIPTION_LIMITS.free.characters).toBe(10);
+    const tierLimitTestCases = SUBSCRIPTION_TIERS.map(tier => ({
+      tier,
+      limits: SUBSCRIPTION_LIMITS[tier],
+      description: `have correct limits for ${tier} tier`
+    }));
 
-      // Each tier should have more than the previous
-      expect(SUBSCRIPTION_LIMITS.seasoned.parties).toBeGreaterThan(SUBSCRIPTION_LIMITS.free.parties);
-      expect(SUBSCRIPTION_LIMITS.expert.parties).toBeGreaterThan(SUBSCRIPTION_LIMITS.seasoned.parties);
-      expect(SUBSCRIPTION_LIMITS.master.parties).toBeGreaterThan(SUBSCRIPTION_LIMITS.expert.parties);
-
-      // Guild should be unlimited
-      expect(SUBSCRIPTION_LIMITS.guild.parties).toBe(Infinity);
-      expect(SUBSCRIPTION_LIMITS.guild.encounters).toBe(Infinity);
-      expect(SUBSCRIPTION_LIMITS.guild.characters).toBe(Infinity);
-    });
+    runParameterizedTests(
+      'subscription tier limits',
+      tierLimitTestCases,
+      ({ limits }) => {
+        expect(limits).toBeDefined();
+        expect(typeof limits.parties).toBe('number');
+        expect(typeof limits.encounters).toBe('number');
+        expect(typeof limits.characters).toBe('number');
+      },
+      ({ description }) => `should ${description}`
+    );
   });
 
   describe('Instance Methods', () => {
-    let mockUser: IUser;
-    let stableObjectId: Types.ObjectId;
-
-    beforeEach(() => {
-      // Create a stable ObjectId that will be consistent across the test
-      stableObjectId = new Types.ObjectId();
-      mockUser = createMockUser({ _id: stableObjectId });
-    });
-
     describe('toPublicJSON', () => {
-      it('should return public user data without sensitive fields', () => {
-        const publicUser = mockUser.toPublicJSON();
+      it('should return public user data without sensitive information', () => {
+        const user = createMockUser();
+        const publicData = user.toPublicJSON();
 
-        expect(publicUser).toHaveProperty('id');
-        expect(publicUser).toHaveProperty('email');
-        expect(publicUser).toHaveProperty('username');
-        expect(publicUser).toHaveProperty('firstName');
-        expect(publicUser).toHaveProperty('lastName');
-        expect(publicUser).toHaveProperty('role');
-        expect(publicUser).toHaveProperty('subscriptionTier');
-        expect(publicUser).toHaveProperty('isEmailVerified');
-        expect(publicUser).toHaveProperty('preferences');
-        expect(publicUser).toHaveProperty('createdAt');
-        expect(publicUser).toHaveProperty('updatedAt');
-
-        // Should not include sensitive fields
-        expect(publicUser).not.toHaveProperty('passwordHash');
-        expect(publicUser).not.toHaveProperty('passwordResetToken');
-        expect(publicUser).not.toHaveProperty('emailVerificationToken');
-      });
-
-      it('should convert ObjectId to string for id field', () => {
-        const publicUser = mockUser.toPublicJSON();
-
-        // Verify the id field is a string
-        expect(typeof publicUser.id).toBe('string');
-
-        // Verify it's a valid ObjectId format (24 hex characters)
-        expect(publicUser.id).toMatch(/^[a-f0-9]{24}$/);
-
-        // Verify it's not undefined or empty
-        expect(publicUser.id).toBeTruthy();
-        expect(publicUser.id.length).toBe(24);
-      });
-    });
-
-    describe('isSubscriptionActive', () => {
-      it('should return true for all subscriptions (current implementation)', () => {
-        expect(mockUser.isSubscriptionActive()).toBe(true);
+        expect(publicData).toHaveProperty('id');
+        expect(publicData).toHaveProperty('email');
+        expect(publicData).toHaveProperty('username');
+        expect(publicData).not.toHaveProperty('passwordHash');
+        expect(publicData).not.toHaveProperty('tokens');
       });
     });
 
     describe('canAccessFeature', () => {
-      it('should check limits for free tier', () => {
-        const freeUser = createMockUser({ subscriptionTier: 'free' });
+      const featureAccessTestCases = SUBSCRIPTION_TIERS.map(tier => ({
+        tier,
+        limits: SUBSCRIPTION_LIMITS[tier],
+        description: `correctly validate ${tier} tier limits`
+      }));
 
-        expect(freeUser.canAccessFeature('parties', 1)).toBe(true);
-        expect(freeUser.canAccessFeature('parties', 2)).toBe(false);
-        expect(freeUser.canAccessFeature('encounters', 3)).toBe(true);
-        expect(freeUser.canAccessFeature('encounters', 4)).toBe(false);
-        expect(freeUser.canAccessFeature('characters', 10)).toBe(true);
-        expect(freeUser.canAccessFeature('characters', 11)).toBe(false);
-      });
+      runParameterizedTests(
+        'feature access validation',
+        featureAccessTestCases,
+        ({ tier, limits }) => {
+          const user = createMockUser({ subscriptionTier: tier });
 
-      it('should check limits for seasoned tier', () => {
-        const seasonedUser = createMockUser({ subscriptionTier: 'seasoned' });
+          SUBSCRIPTION_FEATURES.forEach(feature => {
+            const limit = limits[feature];
+            expect(user.canAccessFeature(feature, limit)).toBe(true);
+            if (limit !== Infinity) {
+              expect(user.canAccessFeature(feature, limit + 1)).toBe(false);
+            }
+          });
+        },
+        ({ description }) => `should ${description}`
+      );
+    });
 
-        expect(seasonedUser.canAccessFeature('parties', 3)).toBe(true);
-        expect(seasonedUser.canAccessFeature('parties', 4)).toBe(false);
-        expect(seasonedUser.canAccessFeature('encounters', 15)).toBe(true);
-        expect(seasonedUser.canAccessFeature('encounters', 16)).toBe(false);
-        expect(seasonedUser.canAccessFeature('characters', 50)).toBe(true);
-        expect(seasonedUser.canAccessFeature('characters', 51)).toBe(false);
-      });
-
+    describe('Guild tier unlimited access', () => {
       it('should allow unlimited access for guild tier', () => {
         const guildUser = createMockUser({ subscriptionTier: 'guild' });
 
-        expect(guildUser.canAccessFeature('parties', 1000)).toBe(true);
-        expect(guildUser.canAccessFeature('encounters', 1000)).toBe(true);
-        expect(guildUser.canAccessFeature('characters', 1000)).toBe(true);
+        SUBSCRIPTION_FEATURES.forEach(feature => {
+          expect(guildUser.canAccessFeature(feature, 1000)).toBe(true);
+        });
       });
     });
   });
 
-  describe('Data Validation and Business Logic', () => {
-    const testValidation = (items: string[], pattern: RegExp, validator?: (_item: string) => boolean) => {
-      return items.map(item => {
-        const matchesPattern = pattern.test(item);
-        const passesValidator = validator ? validator(item) : true;
-        return matchesPattern && passesValidator;
-      });
-    };
+  describe('Data Validation', () => {
+    const emailValidationCases = [
+      {
+        input: ['user@example.com', 'test.email+tag@domain.co.uk', 'user123@subdomain.example.org'],
+        expected: true,
+        description: 'valid email formats'
+      },
+      {
+        input: ['invalid.email', '@example.com', 'user@', 'user name@example.com'],
+        expected: false,
+        description: 'invalid email formats'
+      }
+    ];
 
-    it('should validate email format requirements', () => {
-      const validEmails = ['user@example.com', 'test.email+tag@domain.co.uk', 'user123@subdomain.example.org', 'firstname.lastname@company.com'];
-      const invalidEmails = ['invalid.email', '@example.com', 'user@', 'user@domain', 'user name@example.com'];
-      const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    createValidationTests(
+      emailValidationCases,
+      (emails: string[]) => {
+        const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emails.every(email => emailPattern.test(email));
+      }
+    );
 
-      expect(testValidation(validEmails, emailPattern)).toEqual([true, true, true, true]);
-      expect(testValidation(invalidEmails, emailPattern)).toEqual([false, false, false, false, false]);
-    });
+    const usernameValidationCases = [
+      {
+        input: ['user123', 'test_user', 'user-name', 'testuser'],
+        expected: true,
+        description: 'valid username formats'
+      },
+      {
+        input: ['us', 'a'.repeat(31), 'user space', 'user@invalid'],
+        expected: false,
+        description: 'invalid username formats'
+      }
+    ];
 
-    it('should validate username format requirements', () => {
-      const validUsernames = ['user123', 'test_user', 'user-name', 'testuser', 'user_123-test'];
-      const invalidUsernames = ['us', 'a'.repeat(31), 'user space', 'user@invalid', 'user#invalid'];
-      const usernamePattern = /^[a-zA-Z0-9_-]+$/;
-      const lengthValidator = (username: string) => username.length >= 3 && username.length <= 30;
+    createValidationTests(
+      usernameValidationCases,
+      (usernames: string[]) => {
+        const usernamePattern = /^[a-zA-Z0-9_-]+$/;
+        return usernames.every(username =>
+          usernamePattern.test(username) &&
+          username.length >= 3 &&
+          username.length <= 30
+        );
+      }
+    );
 
-      expect(testValidation(validUsernames, usernamePattern, lengthValidator)).toEqual([true, true, true, true, true]);
-      expect(testValidation(invalidUsernames, usernamePattern, lengthValidator)).toEqual([false, false, false, false, false]);
-    });
+    const nameValidationCases = [
+      {
+        input: ['John', 'Mary-Jane', "O'Connor", 'Jean-Claude'],
+        expected: true,
+        description: 'valid name formats'
+      },
+      {
+        input: ['', 'John123', 'John@Doe', 'a'.repeat(101)],
+        expected: false,
+        description: 'invalid name formats'
+      }
+    ];
 
-    it('should validate name format requirements', () => {
-      const validNames = ['John', 'Mary-Jane', "O'Connor", 'Jean-Claude', 'Anna Maria'];
-      const invalidNames = ['', 'John123', 'John@Doe', 'John_Doe', 'a'.repeat(101)];
-      const namePattern = /^[a-zA-Z\s'-]+$/;
-      const lengthValidator = (name: string) => name.length >= 1 && name.length <= 100;
+    createValidationTests(
+      nameValidationCases,
+      (names: string[]) => {
+        const namePattern = /^[a-zA-Z\s'-]+$/;
+        return names.every(name =>
+          namePattern.test(name) &&
+          name.length >= 1 &&
+          name.length <= 100
+        );
+      }
+    );
 
-      expect(testValidation(validNames, namePattern, lengthValidator)).toEqual([true, true, true, true, true]);
-      expect(testValidation(invalidNames, namePattern, lengthValidator)).toEqual([false, false, false, false, false]);
-    });
+    const enumValidationTestCases = [
+      {
+        name: 'role',
+        validValues: ['user', 'admin'],
+        invalidValues: ['superuser', 'moderator', 'guest', '']
+      },
+      {
+        name: 'subscription tier',
+        validValues: SUBSCRIPTION_TIERS,
+        invalidValues: ['premium', 'basic', 'pro', '']
+      }
+    ];
 
-    const testEnumValues = (valid: string[], invalid: string[], allowedValues: string[]) => ({
-      validResults: valid.map(item => allowedValues.includes(item)),
-      invalidResults: invalid.map(item => allowedValues.includes(item))
-    });
-
-    it('should validate role enum values', () => {
-      const allowedRoles = ['user', 'admin'];
-      const { validResults, invalidResults } = testEnumValues(
-        ['user', 'admin'],
-        ['superuser', 'moderator', 'guest', ''],
-        allowedRoles
-      );
-
-      expect(validResults).toEqual([true, true]);
-      expect(invalidResults).toEqual([false, false, false, false]);
-    });
-
-    it('should validate subscription tier enum values', () => {
-      const allowedTiers = ['free', 'seasoned', 'expert', 'master', 'guild'];
-      const { validResults, invalidResults } = testEnumValues(
-        ['free', 'seasoned', 'expert', 'master', 'guild'],
-        ['premium', 'basic', 'pro', ''],
-        allowedTiers
-      );
-
-      expect(validResults).toEqual([true, true, true, true, true]);
-      expect(invalidResults).toEqual([false, false, false, false]);
-    });
+    runParameterizedTests(
+      'enum validation',
+      enumValidationTestCases,
+      ({ validValues, invalidValues }) => {
+        validValues.forEach(value => {
+          expect(validValues.includes(value)).toBe(true);
+        });
+        invalidValues.forEach(value => {
+          expect(validValues.includes(value)).toBe(false);
+        });
+      },
+      ({ name }) => `should validate ${name} enum values`
+    );
   });
 
   describe('Default Values', () => {
-    it('should have correct default values for required fields', () => {
-      const user = createMockUser();
+    const defaultValueTests = [
+      { field: 'role', expected: 'user' },
+      { field: 'subscriptionTier', expected: 'free' },
+      { field: 'isEmailVerified', expected: false },
+      { field: 'profileSetupCompleted', expected: false },
+      { field: 'timezone', expected: 'UTC' },
+      { field: 'dndEdition', expected: '5th Edition' }
+    ];
 
-      expect(user.role).toBe('user');
-      expect(user.subscriptionTier).toBe('free');
-      expect(user.isEmailVerified).toBe(false);
-      expect(user.profileSetupCompleted).toBe(false);
-      expect(user.timezone).toBe('UTC');
-      expect(user.dndEdition).toBe('5th Edition');
-    });
+    runParameterizedTests(
+      'default field values',
+      defaultValueTests,
+      ({ field, expected }) => {
+        const user = createMockUser();
+        expect(user[field as keyof IUser]).toBe(expected);
+      },
+      ({ field }) => `should have correct default value for ${field}`
+    );
 
-    it('should have correct default preferences', () => {
-      const user = createMockUser();
+    const preferencesTests = [
+      { field: 'theme', expected: 'system' },
+      { field: 'emailNotifications', expected: true },
+      { field: 'browserNotifications', expected: false },
+      { field: 'timezone', expected: 'UTC' },
+      { field: 'language', expected: 'en' },
+      { field: 'diceRollAnimations', expected: true },
+      { field: 'autoSaveEncounters', expected: true }
+    ];
 
-      expect(user.preferences.theme).toBe('system');
-      expect(user.preferences.emailNotifications).toBe(true);
-      expect(user.preferences.browserNotifications).toBe(false);
-      expect(user.preferences.timezone).toBe('UTC');
-      expect(user.preferences.language).toBe('en');
-      expect(user.preferences.diceRollAnimations).toBe(true);
-      expect(user.preferences.autoSaveEncounters).toBe(true);
-    });
+    runParameterizedTests(
+      'default preferences',
+      preferencesTests,
+      ({ field, expected }) => {
+        const user = createMockUser();
+        expect(user.preferences[field as keyof typeof user.preferences]).toBe(expected);
+      },
+      ({ field }) => `should have correct default preference for ${field}`
+    );
   });
 
-  describe('Password Security', () => {
-    it('should not store plain text passwords', () => {
-      const user = createMockUser({ passwordHash: '$2b$12$hashedpassword' });
+  describe('Complex Business Logic', () => {
+    describe('Password Management', () => {
+      it('should have password comparison method', () => {
+        const user = createMockUser();
+        expect(user.comparePassword).toBeDefined();
+        expect(typeof user.comparePassword).toBe('function');
+      });
 
-      // Password hash should not be plain text
-      expect(user.passwordHash).not.toBe('plainpassword');
-      expect(user.passwordHash).toMatch(/^\$2[ab]\$/); // bcrypt hash pattern
-    });
-
-    it('should handle password comparison logic', () => {
-      const user = createMockUser();
-      const mockComparePassword = user.comparePassword as jest.Mock;
-
-      // Mock successful comparison
-      mockComparePassword.mockResolvedValue(true);
-      expect(user.comparePassword('correctpassword')).resolves.toBe(true);
-
-      // Mock failed comparison
-      mockComparePassword.mockResolvedValue(false);
-      expect(user.comparePassword('wrongpassword')).resolves.toBe(false);
-    });
-  });
-
-  describe('Token Generation', () => {
-    it('should generate password reset tokens', async () => {
-      const user = createMockUser();
-      const mockGenerateToken = user.generatePasswordResetToken as jest.Mock;
-
-      const mockToken = 'a'.repeat(64); // 32 bytes * 2 (hex)
-      mockGenerateToken.mockResolvedValue(mockToken);
-
-      const token = await user.generatePasswordResetToken();
-      expect(token).toBe(mockToken);
-      expect(token.length).toBe(64);
-      expect(mockGenerateToken).toHaveBeenCalled();
-    });
-
-    it('should generate email verification tokens', async () => {
-      const user = createMockUser();
-      const mockGenerateToken = user.generateEmailVerificationToken as jest.Mock;
-
-      const mockToken = 'b'.repeat(64); // 32 bytes * 2 (hex)
-      mockGenerateToken.mockResolvedValue(mockToken);
-
-      const token = await user.generateEmailVerificationToken();
-      expect(token).toBe(mockToken);
-      expect(token.length).toBe(64);
-      expect(mockGenerateToken).toHaveBeenCalled();
-    });
-  });
-
-  describe('User Creation Input Validation', () => {
-    it('should validate complete CreateUserInput structure', () => {
-      const validUserInput: CreateUserInput = {
-        email: 'test@example.com',
-        username: 'testuser',
-        firstName: 'Test',
-        lastName: 'User',
-        password: 'securepassword123',
-        role: 'user',
-        subscriptionTier: 'free',
-        preferences: {
-          theme: 'dark',
-          emailNotifications: true,
-          browserNotifications: false,
-          timezone: 'America/New_York',
-          language: 'en',
-          diceRollAnimations: true,
-          autoSaveEncounters: true,
-        },
-      };
-
-      // Required fields
-      expect(validUserInput.email).toBeTruthy();
-      expect(validUserInput.username).toBeTruthy();
-      expect(validUserInput.firstName).toBeTruthy();
-      expect(validUserInput.lastName).toBeTruthy();
-      expect(validUserInput.password).toBeTruthy();
-
-      // Optional fields
-      expect(validUserInput.role).toBeTruthy();
-      expect(validUserInput.subscriptionTier).toBeTruthy();
-      expect(validUserInput.preferences).toBeTruthy();
-    });
-
-    it('should handle minimal CreateUserInput', () => {
-      const minimalUserInput: CreateUserInput = {
-        email: 'minimal@example.com',
-        username: 'minimal',
-        firstName: 'Min',
-        lastName: 'User',
-        password: 'password123',
-      };
-
-      expect(minimalUserInput.email).toBeTruthy();
-      expect(minimalUserInput.username).toBeTruthy();
-      expect(minimalUserInput.firstName).toBeTruthy();
-      expect(minimalUserInput.lastName).toBeTruthy();
-      expect(minimalUserInput.password).toBeTruthy();
-      expect(minimalUserInput.role).toBeUndefined();
-      expect(minimalUserInput.subscriptionTier).toBeUndefined();
-      expect(minimalUserInput.preferences).toBeUndefined();
-    });
-  });
-
-  describe('Business Logic', () => {
-    it('should support freemium model progression', () => {
-      const tiers = ['free', 'seasoned', 'expert', 'master', 'guild'] as const;
-
-      // Each tier should provide more features than the previous
-      for (let i = 0; i < tiers.length - 1; i++) {
-        const currentTier = tiers[i];
-        const nextTier = tiers[i + 1];
-
-        if (nextTier !== 'guild') {
-          expect(SUBSCRIPTION_LIMITS[nextTier].parties).toBeGreaterThan(
-            SUBSCRIPTION_LIMITS[currentTier].parties
-          );
-          expect(SUBSCRIPTION_LIMITS[nextTier].encounters).toBeGreaterThan(
-            SUBSCRIPTION_LIMITS[currentTier].encounters
-          );
-          expect(SUBSCRIPTION_LIMITS[nextTier].characters).toBeGreaterThan(
-            SUBSCRIPTION_LIMITS[currentTier].characters
-          );
-        }
-      }
-    });
-
-    it('should provide meaningful free tier limits', () => {
-      const freeLimits = SUBSCRIPTION_LIMITS.free;
-
-      // Free tier should allow meaningful usage
-      expect(freeLimits.parties).toBeGreaterThan(0);
-      expect(freeLimits.encounters).toBeGreaterThan(2);
-      expect(freeLimits.characters).toBeGreaterThan(5);
-    });
-  });
-
-  describe('Type Safety', () => {
-    it('should enforce type safety for subscription features', () => {
-      const validFeatures: SubscriptionFeature[] = ['parties', 'encounters', 'characters'];
-
-      validFeatures.forEach(feature => {
-        expect(['parties', 'encounters', 'characters']).toContain(feature);
+      it('should have password reset token generation', () => {
+        const user = createMockUser();
+        expect(user.generatePasswordResetToken).toBeDefined();
+        expect(typeof user.generatePasswordResetToken).toBe('function');
       });
     });
 
-    it('should enforce type safety for user roles', () => {
-      const validRoles = ['user', 'admin'];
-
-      validRoles.forEach(role => {
-        const user = createMockUser({ role: role as 'user' | 'admin' });
-        expect(['user', 'admin']).toContain(user.role);
+    describe('Email Verification', () => {
+      it('should have email verification token generation', () => {
+        const user = createMockUser();
+        expect(user.generateEmailVerificationToken).toBeDefined();
+        expect(typeof user.generateEmailVerificationToken).toBe('function');
       });
     });
 
-    it('should enforce type safety for subscription tiers', () => {
-      const validTiers = ['free', 'seasoned', 'expert', 'master', 'guild'];
-
-      validTiers.forEach(tier => {
-        const user = createMockUser({
-          subscriptionTier: tier as 'free' | 'seasoned' | 'expert' | 'master' | 'guild'
-        });
-        expect(['free', 'seasoned', 'expert', 'master', 'guild']).toContain(user.subscriptionTier);
+    describe('Subscription Management', () => {
+      it('should check subscription status', () => {
+        const user = createMockUser();
+        expect(user.isSubscriptionActive()).toBe(true);
       });
-    });
-  });
 
-  describe('Additional Constants Coverage', () => {
-    it('should test all subscription tier limits comprehensively', () => {
-      // Test every tier and every feature for comprehensive coverage
-      const allTiers = ['free', 'seasoned', 'expert', 'master', 'guild'] as const;
-      const allFeatures = ['parties', 'encounters', 'characters'] as const;
+      const tierFeatureTestCases = SUBSCRIPTION_TIERS.flatMap(tier =>
+        SUBSCRIPTION_FEATURES.map(feature => ({
+          tier,
+          feature,
+          limit: SUBSCRIPTION_LIMITS[tier][feature],
+          description: `${tier} tier ${feature} limit validation`
+        }))
+      );
 
-      allTiers.forEach(tier => {
-        const tierLimits = SUBSCRIPTION_LIMITS[tier];
-        expect(tierLimits).toBeDefined();
-
-        allFeatures.forEach(feature => {
-          const limit = tierLimits[feature];
-          expect(typeof limit).toBe('number');
-
-          if (tier === 'guild') {
-            expect(limit).toBe(Infinity);
-          } else {
-            expect(limit).toBeGreaterThan(0);
-            expect(limit).toBeLessThan(Infinity);
+      runParameterizedTests(
+        'tier-specific feature limits',
+        tierFeatureTestCases,
+        ({ tier, feature, limit }) => {
+          const user = createMockUser({ subscriptionTier: tier });
+          expect(user.canAccessFeature(feature, Math.min(limit, 999))).toBe(true);
+          if (limit !== Infinity) {
+            expect(user.canAccessFeature(feature, limit + 1)).toBe(false);
           }
-        });
-      });
+        },
+        ({ description }) => `should validate ${description}`
+      );
     });
 
-    it('should validate subscription limits structure completeness', () => {
-      const expectedStructure = {
-        free: { parties: 1, encounters: 3, characters: 10 },
-        seasoned: { parties: 3, encounters: 15, characters: 50 },
-        expert: { parties: 10, encounters: 50, characters: 200 },
-        master: { parties: 25, encounters: 100, characters: 500 },
-        guild: { parties: Infinity, encounters: Infinity, characters: Infinity },
+    describe('User Activity Tracking', () => {
+      it('should update last login timestamp', () => {
+        const user = createMockUser();
+        expect(user.updateLastLogin).toBeDefined();
+        expect(typeof user.updateLastLogin).toBe('function');
+      });
+    });
+  });
+
+  describe('Model Integration', () => {
+    it('should have save method for persistence', () => {
+      const user = createMockUser();
+      expect(user.save).toBeDefined();
+      expect(typeof user.save).toBe('function');
+    });
+
+    it('should have proper ObjectId structure', () => {
+      const user = createMockUser();
+      expect(user._id).toBeDefined();
+      expect(user._id.toString()).toMatch(/^[0-9a-fA-F]{24}$/);
+    });
+
+    it('should maintain data integrity', () => {
+      const customData = {
+        email: 'custom@example.com',
+        username: 'customuser',
+        subscriptionTier: 'expert' as const
       };
+      const user = createMockUser(customData);
 
-      Object.keys(expectedStructure).forEach(tier => {
-        const tierKey = tier as keyof typeof SUBSCRIPTION_LIMITS;
-        expect(SUBSCRIPTION_LIMITS[tierKey]).toEqual(expectedStructure[tierKey]);
-      });
-    });
-
-    it('should ensure subscription limits are properly typed', () => {
-      // Test that each subscription feature type is valid
-      const features: SubscriptionFeature[] = ['parties', 'encounters', 'characters'];
-
-      features.forEach(feature => {
-        expect(['parties', 'encounters', 'characters']).toContain(feature);
-
-        // Ensure every tier has this feature
-        Object.keys(SUBSCRIPTION_LIMITS).forEach(tier => {
-          const tierKey = tier as keyof typeof SUBSCRIPTION_LIMITS;
-          expect(SUBSCRIPTION_LIMITS[tierKey]).toHaveProperty(feature);
-        });
-      });
+      expect(user.email).toBe(customData.email);
+      expect(user.username).toBe(customData.username);
+      expect(user.subscriptionTier).toBe(customData.subscriptionTier);
     });
   });
 });

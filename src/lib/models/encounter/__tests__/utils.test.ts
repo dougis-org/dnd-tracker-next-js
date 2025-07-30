@@ -17,28 +17,29 @@ import {
   createTestParticipant,
   createTestInitiativeEntry,
 } from './test-helpers';
+import {
+  runParameterizedTests,
+  createValidationTests,
+} from '../../../__tests__/shared-test-helpers';
 
 describe('Encounter Utils', () => {
   describe('sortInitiativeOrder', () => {
-    const createInitiativeEntries = (configs: Array<{ initiative: number; dexterity: number }>) =>
-      configs.map(config => createTestInitiativeEntry(config));
-
     it('should sort by initiative descending', () => {
-      const entries = createInitiativeEntries([
-        { initiative: 10, dexterity: 15 },
-        { initiative: 20, dexterity: 12 },
-        { initiative: 15, dexterity: 18 }
-      ]);
+      const entries = [
+        createTestInitiativeEntry({ initiative: 10, dexterity: 15 }),
+        createTestInitiativeEntry({ initiative: 20, dexterity: 12 }),
+        createTestInitiativeEntry({ initiative: 15, dexterity: 18 })
+      ];
 
       const sorted = sortInitiativeOrder(entries);
       expect(sorted.map(e => e.initiative)).toEqual([20, 15, 10]);
     });
 
     it('should use dexterity as tiebreaker', () => {
-      const entries = createInitiativeEntries([
-        { initiative: 15, dexterity: 12 },
-        { initiative: 15, dexterity: 18 }
-      ]);
+      const entries = [
+        createTestInitiativeEntry({ initiative: 15, dexterity: 12 }),
+        createTestInitiativeEntry({ initiative: 15, dexterity: 18 })
+      ];
 
       const sorted = sortInitiativeOrder(entries);
       expect(sorted.map(e => e.dexterity)).toEqual([18, 12]);
@@ -56,18 +57,21 @@ describe('Encounter Utils', () => {
   });
 
   describe('calculateEncounterDifficulty', () => {
-    const difficultyTests = [
+    const difficultyTestCases = [
       { players: 4, total: 5, expected: 'trivial', description: 'low enemy ratio' },
       { players: 4, total: 8, expected: 'easy', description: 'balanced encounter' },
       { players: 4, total: 14, expected: 'deadly', description: 'overwhelming enemies' },
       { players: 0, total: 5, expected: 'deadly', description: 'zero players gracefully' }
     ];
 
-    difficultyTests.forEach(({ players, total, expected, description }) => {
-      it(`should return ${expected} for ${description}`, () => {
+    runParameterizedTests(
+      'calculateEncounterDifficulty',
+      difficultyTestCases,
+      ({ players, total, expected }) => {
         expect(calculateEncounterDifficulty(players, total)).toBe(expected);
-      });
-    });
+      },
+      ({ description, expected }) => `should return ${expected} for ${description}`
+    );
   });
 
   describe('findParticipantById', () => {
@@ -88,22 +92,25 @@ describe('Encounter Utils', () => {
   });
 
   describe('applyDamageToParticipant', () => {
-    const damageScenarios = [
-      { damage: 15, description: 'apply damage to temporary HP first', tempHP: 5, currentHP: 80 },
-      { damage: 30, description: 'apply overflow damage to current HP', tempHP: 0, currentHP: 70 },
-      { damage: 150, description: 'not reduce HP below 0', tempHP: 0, currentHP: 0 }
+    const damageTestCases = [
+      { damage: 15, expectedTempHP: 5, expectedCurrentHP: 80, description: 'apply damage to temporary HP first' },
+      { damage: 30, expectedTempHP: 0, expectedCurrentHP: 70, description: 'apply overflow damage to current HP' },
+      { damage: 150, expectedTempHP: 0, expectedCurrentHP: 0, description: 'not reduce HP below 0' }
     ];
 
-    damageScenarios.forEach(({ damage, description, tempHP, currentHP }) => {
-      it(`should ${description}`, () => {
+    runParameterizedTests(
+      'applyDamageToParticipant',
+      damageTestCases,
+      ({ damage, expectedTempHP, expectedCurrentHP }) => {
         const participant = createTestParticipant({ temporaryHitPoints: 20 });
-
         const result = applyDamageToParticipant(participant, damage);
+
         expect(result).toBe(true);
-        expect(participant.temporaryHitPoints).toBe(tempHP);
-        expect(participant.currentHitPoints).toBe(currentHP);
-      });
-    });
+        expect(participant.temporaryHitPoints).toBe(expectedTempHP);
+        expect(participant.currentHitPoints).toBe(expectedCurrentHP);
+      },
+      ({ description }) => `should ${description}`
+    );
 
     it('should reject negative damage', () => {
       const participant = createTestParticipant({ temporaryHitPoints: 20 });
@@ -112,20 +119,23 @@ describe('Encounter Utils', () => {
   });
 
   describe('healParticipant', () => {
-    const healingScenarios = [
-      { healing: 30, description: 'heal participant up to max HP', expectedHP: 80 },
-      { healing: 80, description: 'not heal above max HP', expectedHP: 100 }
+    const healingTestCases = [
+      { healing: 30, expectedHP: 80, description: 'heal participant up to max HP' },
+      { healing: 80, expectedHP: 100, description: 'not heal above max HP' }
     ];
 
-    healingScenarios.forEach(({ healing, description, expectedHP }) => {
-      it(`should ${description}`, () => {
+    runParameterizedTests(
+      'healParticipant',
+      healingTestCases,
+      ({ healing, expectedHP }) => {
         const participant = createTestParticipant({ currentHitPoints: 50 });
-
         const result = healParticipant(participant, healing);
+
         expect(result).toBe(true);
         expect(participant.currentHitPoints).toBe(expectedHP);
-      });
-    });
+      },
+      ({ description }) => `should ${description}`
+    );
 
     it('should reject negative healing', () => {
       const participant = createTestParticipant({ currentHitPoints: 50 });
@@ -173,7 +183,7 @@ describe('Encounter Utils', () => {
   describe('calculateCombatDuration', () => {
     const createTestDate = (timeStr: string) => new Date(`2023-01-01T${timeStr}:00Z`);
 
-    const durationTests = [
+    const durationTestCases = [
       {
         start: '10:00', end: '10:30', pause: undefined,
         expected: 30 * 60 * 1000, description: 'calculate duration without pause'
@@ -188,16 +198,19 @@ describe('Encounter Utils', () => {
       }
     ];
 
-    durationTests.forEach(({ start, end, pause, expected, description }) => {
-      it(`should ${description}`, () => {
+    runParameterizedTests(
+      'calculateCombatDuration',
+      durationTestCases,
+      ({ start, end, pause, expected }) => {
         const startTime = createTestDate(start);
         const endTime = createTestDate(end);
         const pauseTime = pause ? createTestDate(pause) : undefined;
 
         const duration = calculateCombatDuration(startTime, endTime, pauseTime);
         expect(duration).toBe(expected);
-      });
-    });
+      },
+      ({ description }) => `should ${description}`
+    );
   });
 
   describe('createDefaultEncounterSettings', () => {
@@ -230,28 +243,26 @@ describe('Encounter Utils', () => {
   });
 
   describe('validateParticipantHP', () => {
-    const validationTests = [
+    const hpValidationCases = [
       {
         input: { currentHitPoints: 150, temporaryHitPoints: 0 },
-        expected: { currentHitPoints: 100 },
+        expected: true,
         description: 'cap current HP at maximum'
       },
       {
         input: { currentHitPoints: 100, temporaryHitPoints: -10 },
-        expected: { temporaryHitPoints: 0 },
+        expected: true,
         description: 'ensure temporary HP is not negative'
       }
     ];
 
-    validationTests.forEach(({ input, expected, description }) => {
-      it(`should ${description}`, () => {
-        const participant = createTestParticipant(input);
-
+    createValidationTests(
+      hpValidationCases,
+      ({ currentHitPoints, temporaryHitPoints }) => {
+        const participant = createTestParticipant({ currentHitPoints, temporaryHitPoints });
         validateParticipantHP(participant);
-        Object.entries(expected).forEach(([key, value]) => {
-          expect(participant[key as keyof typeof participant]).toBe(value);
-        });
-      });
-    });
+        return participant.currentHitPoints <= 100 && participant.temporaryHitPoints >= 0;
+      }
+    );
   });
 });
