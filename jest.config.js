@@ -47,7 +47,7 @@ const customJestConfig = {
     ] : [])
   ],
   testMatch: ['<rootDir>/src/**/*.test.{js,jsx,ts,tsx}'],
-  collectCoverage: process.env.COVERAGE_ENABLED === 'true' || (!process.env.CI && !process.env.COVERAGE_DISABLED), // Enable coverage when explicitly requested or in local dev
+  collectCoverage: process.env.COVERAGE_ENABLED === 'true' && !process.env.CI || (!process.env.CI && !process.env.COVERAGE_DISABLED), // Temporarily disable coverage in CI to prevent timeouts
   collectCoverageFrom: [
     'src/**/*.{js,jsx,ts,tsx}',
     '!src/**/*.d.ts',
