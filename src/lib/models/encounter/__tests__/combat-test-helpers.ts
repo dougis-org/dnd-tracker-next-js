@@ -20,7 +20,7 @@ export const PARTICIPANT_IDS = {
 
 // Mock encounter factory
 export const createTestEncounter = (): IEncounter => ({
-  _id: new Types.ObjectId(),
+  _id: new Types.ObjectId('507f1f77bcf86cd799439999'),
   ownerId: new Types.ObjectId(),
   name: 'Test Encounter',
   description: 'Test description',

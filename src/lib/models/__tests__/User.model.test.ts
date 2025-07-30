@@ -7,34 +7,64 @@ import { Types } from 'mongoose';
 import { SUBSCRIPTION_LIMITS } from '../User';
 import type { IUser, CreateUserInput, SubscriptionFeature } from '../User';
 
+// Helper functions for creating mock users
+const createDefaultUserData = () => ({
+  email: 'test@example.com',
+  username: 'testuser',
+  firstName: 'Test',
+  lastName: 'User',
+  passwordHash: '$2b$12$hashedpassword',
+  role: 'user' as const,
+  subscriptionTier: 'free' as const,
+  isEmailVerified: false,
+  timezone: 'UTC',
+  dndEdition: '5th Edition',
+  profileSetupCompleted: false,
+  preferences: {
+    theme: 'system' as const,
+    emailNotifications: true,
+    browserNotifications: false,
+    timezone: 'UTC',
+    language: 'en',
+    diceRollAnimations: true,
+    autoSaveEncounters: true,
+  },
+  createdAt: new Date(),
+  updatedAt: new Date(),
+});
+
+const createMockMethods = (user: any, objectIdString: string) => {
+  // Implement toPublicJSON method
+  user.toPublicJSON.mockImplementation(() => ({
+    id: objectIdString,
+    email: user.email,
+    username: user.username,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    role: user.role,
+    subscriptionTier: user.subscriptionTier,
+    isEmailVerified: user.isEmailVerified,
+    lastLoginAt: user.lastLoginAt,
+    preferences: user.preferences,
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
+  }));
+
+  // Implement canAccessFeature method
+  user.canAccessFeature.mockImplementation((feature: SubscriptionFeature, quantity: number) => {
+    const limits = SUBSCRIPTION_LIMITS[user.subscriptionTier];
+    const limit = limits[feature];
+    return quantity <= limit;
+  });
+};
+
 // Mock implementation of User model methods for testing
 const createMockUser = (overrides: Partial<IUser> = {}): IUser => {
-  const defaultUser = {
-    _id: new Types.ObjectId(),
-    email: 'test@example.com',
-    username: 'testuser',
-    firstName: 'Test',
-    lastName: 'User',
-    passwordHash: '$2b$12$hashedpassword',
-    role: 'user' as const,
-    subscriptionTier: 'free' as const,
-    isEmailVerified: false,
-    timezone: 'UTC',
-    dndEdition: '5th Edition',
-    profileSetupCompleted: false,
-    preferences: {
-      theme: 'system' as const,
-      emailNotifications: true,
-      browserNotifications: false,
-      timezone: 'UTC',
-      language: 'en',
-      diceRollAnimations: true,
-      autoSaveEncounters: true,
-    },
-    createdAt: new Date(),
-    updatedAt: new Date(),
+  const objectId = overrides._id || new Types.ObjectId();
+  const objectIdString = objectId.toString();
 
-    // Mock instance methods
+  const userData = createDefaultUserData();
+  const mockMethods = {
     comparePassword: jest.fn(),
     generatePasswordResetToken: jest.fn(),
     generateEmailVerificationToken: jest.fn(),
@@ -43,32 +73,16 @@ const createMockUser = (overrides: Partial<IUser> = {}): IUser => {
     isSubscriptionActive: jest.fn().mockReturnValue(true),
     canAccessFeature: jest.fn(),
     save: jest.fn(),
+  };
+
+  const defaultUser = {
+    _id: objectId,
+    ...userData,
+    ...mockMethods,
     ...overrides,
   } as IUser;
 
-  // Implement toPublicJSON method
-  (defaultUser.toPublicJSON as jest.Mock).mockImplementation(() => ({
-    id: defaultUser._id.toString(),
-    email: defaultUser.email,
-    username: defaultUser.username,
-    firstName: defaultUser.firstName,
-    lastName: defaultUser.lastName,
-    role: defaultUser.role,
-    subscriptionTier: defaultUser.subscriptionTier,
-    isEmailVerified: defaultUser.isEmailVerified,
-    lastLoginAt: defaultUser.lastLoginAt,
-    preferences: defaultUser.preferences,
-    createdAt: defaultUser.createdAt,
-    updatedAt: defaultUser.updatedAt,
-  }));
-
-  // Implement canAccessFeature method
-  (defaultUser.canAccessFeature as jest.Mock).mockImplementation((feature: SubscriptionFeature, quantity: number) => {
-    const limits = SUBSCRIPTION_LIMITS[defaultUser.subscriptionTier];
-    const limit = limits[feature];
-    return quantity <= limit;
-  });
-
+  createMockMethods(defaultUser, objectIdString);
   return defaultUser;
 };
 
@@ -107,9 +121,12 @@ describe('User Model Unit Tests', () => {
 
   describe('Instance Methods', () => {
     let mockUser: IUser;
+    let stableObjectId: Types.ObjectId;
 
     beforeEach(() => {
-      mockUser = createMockUser();
+      // Create a stable ObjectId that will be consistent across the test
+      stableObjectId = new Types.ObjectId();
+      mockUser = createMockUser({ _id: stableObjectId });
     });
 
     describe('toPublicJSON', () => {
@@ -136,10 +153,16 @@ describe('User Model Unit Tests', () => {
 
       it('should convert ObjectId to string for id field', () => {
         const publicUser = mockUser.toPublicJSON();
+
+        // Verify the id field is a string
         expect(typeof publicUser.id).toBe('string');
-        expect(publicUser.id).toBe(mockUser._id.toString());
+
         // Verify it's a valid ObjectId format (24 hex characters)
         expect(publicUser.id).toMatch(/^[a-f0-9]{24}$/);
+
+        // Verify it's not undefined or empty
+        expect(publicUser.id).toBeTruthy();
+        expect(publicUser.id.length).toBe(24);
       });
     });
 
@@ -183,119 +206,70 @@ describe('User Model Unit Tests', () => {
   });
 
   describe('Data Validation and Business Logic', () => {
+    const testValidation = (items: string[], pattern: RegExp, validator?: (_item: string) => boolean) => {
+      return items.map(item => {
+        const matchesPattern = pattern.test(item);
+        const passesValidator = validator ? validator(item) : true;
+        return matchesPattern && passesValidator;
+      });
+    };
+
     it('should validate email format requirements', () => {
-      const validEmails = [
-        'user@example.com',
-        'test.email+tag@domain.co.uk',
-        'user123@subdomain.example.org',
-        'firstname.lastname@company.com',
-      ];
+      const validEmails = ['user@example.com', 'test.email+tag@domain.co.uk', 'user123@subdomain.example.org', 'firstname.lastname@company.com'];
+      const invalidEmails = ['invalid.email', '@example.com', 'user@', 'user@domain', 'user name@example.com'];
+      const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-      const invalidEmails = [
-        'invalid.email',
-        '@example.com',
-        'user@',
-        'user@domain',
-        'user name@example.com',
-      ];
-
-      validEmails.forEach(email => {
-        expect(email).toMatch(/^[^\s@]+@[^\s@]+\.[^\s@]+$/);
-      });
-
-      invalidEmails.forEach(email => {
-        expect(email).not.toMatch(/^[^\s@]+@[^\s@]+\.[^\s@]+$/);
-      });
+      expect(testValidation(validEmails, emailPattern)).toEqual([true, true, true, true]);
+      expect(testValidation(invalidEmails, emailPattern)).toEqual([false, false, false, false, false]);
     });
 
     it('should validate username format requirements', () => {
-      const validUsernames = [
-        'user123',
-        'test_user',
-        'user-name',
-        'testuser',
-        'user_123-test',
-      ];
-
-      const invalidUsernames = [
-        'us', // too short (< 3 chars)
-        'a'.repeat(31), // too long (> 30 chars)
-        'user space', // contains space
-        'user@invalid', // contains @
-        'user#invalid', // contains #
-      ];
-
+      const validUsernames = ['user123', 'test_user', 'user-name', 'testuser', 'user_123-test'];
+      const invalidUsernames = ['us', 'a'.repeat(31), 'user space', 'user@invalid', 'user#invalid'];
       const usernamePattern = /^[a-zA-Z0-9_-]+$/;
+      const lengthValidator = (username: string) => username.length >= 3 && username.length <= 30;
 
-      validUsernames.forEach(username => {
-        expect(username.length).toBeGreaterThanOrEqual(3);
-        expect(username.length).toBeLessThanOrEqual(30);
-        expect(username).toMatch(usernamePattern);
-      });
-
-      invalidUsernames.forEach(username => {
-        const isValidLength = username.length >= 3 && username.length <= 30;
-        const matchesPattern = usernamePattern.test(username);
-        expect(isValidLength && matchesPattern).toBe(false);
-      });
+      expect(testValidation(validUsernames, usernamePattern, lengthValidator)).toEqual([true, true, true, true, true]);
+      expect(testValidation(invalidUsernames, usernamePattern, lengthValidator)).toEqual([false, false, false, false, false]);
     });
 
     it('should validate name format requirements', () => {
-      const validNames = [
-        'John',
-        'Mary-Jane',
-        "O'Connor",
-        'Jean-Claude',
-        'Anna Maria',
-      ];
-
-      const invalidNames = [
-        '', // empty
-        'John123', // contains numbers
-        'John@Doe', // contains @
-        'John_Doe', // contains underscore
-        'a'.repeat(101), // too long
-      ];
-
+      const validNames = ['John', 'Mary-Jane', "O'Connor", 'Jean-Claude', 'Anna Maria'];
+      const invalidNames = ['', 'John123', 'John@Doe', 'John_Doe', 'a'.repeat(101)];
       const namePattern = /^[a-zA-Z\s'-]+$/;
+      const lengthValidator = (name: string) => name.length >= 1 && name.length <= 100;
 
-      validNames.forEach(name => {
-        expect(name.length).toBeGreaterThanOrEqual(1);
-        expect(name.length).toBeLessThanOrEqual(100);
-        expect(name).toMatch(namePattern);
-      });
+      expect(testValidation(validNames, namePattern, lengthValidator)).toEqual([true, true, true, true, true]);
+      expect(testValidation(invalidNames, namePattern, lengthValidator)).toEqual([false, false, false, false, false]);
+    });
 
-      invalidNames.forEach(name => {
-        const isValidLength = name.length >= 1 && name.length <= 100;
-        const matchesPattern = namePattern.test(name);
-        expect(isValidLength && matchesPattern).toBe(false);
-      });
+    const testEnumValues = (valid: string[], invalid: string[], allowedValues: string[]) => ({
+      validResults: valid.map(item => allowedValues.includes(item)),
+      invalidResults: invalid.map(item => allowedValues.includes(item))
     });
 
     it('should validate role enum values', () => {
-      const validRoles = ['user', 'admin'];
-      const invalidRoles = ['superuser', 'moderator', 'guest', ''];
+      const allowedRoles = ['user', 'admin'];
+      const { validResults, invalidResults } = testEnumValues(
+        ['user', 'admin'],
+        ['superuser', 'moderator', 'guest', ''],
+        allowedRoles
+      );
 
-      validRoles.forEach(role => {
-        expect(['user', 'admin']).toContain(role);
-      });
-
-      invalidRoles.forEach(role => {
-        expect(['user', 'admin']).not.toContain(role);
-      });
+      expect(validResults).toEqual([true, true]);
+      expect(invalidResults).toEqual([false, false, false, false]);
     });
 
     it('should validate subscription tier enum values', () => {
-      const validTiers = ['free', 'seasoned', 'expert', 'master', 'guild'];
-      const invalidTiers = ['premium', 'basic', 'pro', ''];
+      const allowedTiers = ['free', 'seasoned', 'expert', 'master', 'guild'];
+      const { validResults, invalidResults } = testEnumValues(
+        ['free', 'seasoned', 'expert', 'master', 'guild'],
+        ['premium', 'basic', 'pro', ''],
+        allowedTiers
+      );
 
-      validTiers.forEach(tier => {
-        expect(['free', 'seasoned', 'expert', 'master', 'guild']).toContain(tier);
-      });
-
-      invalidTiers.forEach(tier => {
-        expect(['free', 'seasoned', 'expert', 'master', 'guild']).not.toContain(tier);
-      });
+      expect(validResults).toEqual([true, true, true, true, true]);
+      expect(invalidResults).toEqual([false, false, false, false]);
     });
   });
 

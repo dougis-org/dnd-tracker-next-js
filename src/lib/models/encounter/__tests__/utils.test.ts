@@ -12,7 +12,6 @@ import {
   createDefaultCombatState,
   validateParticipantHP,
 } from '../utils';
-import { IInitiativeEntry, IParticipantReference } from '../interfaces';
 import { Types } from 'mongoose';
 import {
   createTestParticipant,
@@ -21,178 +20,150 @@ import {
 
 describe('Encounter Utils', () => {
   describe('sortInitiativeOrder', () => {
+    const createInitiativeEntries = (configs: Array<{ initiative: number; dexterity: number }>) =>
+      configs.map(config => createTestInitiativeEntry(config));
+
     it('should sort by initiative descending', () => {
-      const entries: IInitiativeEntry[] = [
-        createTestInitiativeEntry({ initiative: 10, dexterity: 15 }),
-        createTestInitiativeEntry({ initiative: 20, dexterity: 12 }),
-        createTestInitiativeEntry({ initiative: 15, dexterity: 18 }),
-      ];
+      const entries = createInitiativeEntries([
+        { initiative: 10, dexterity: 15 },
+        { initiative: 20, dexterity: 12 },
+        { initiative: 15, dexterity: 18 }
+      ]);
 
       const sorted = sortInitiativeOrder(entries);
-      expect(sorted[0].initiative).toBe(20);
-      expect(sorted[1].initiative).toBe(15);
-      expect(sorted[2].initiative).toBe(10);
+      expect(sorted.map(e => e.initiative)).toEqual([20, 15, 10]);
     });
 
     it('should use dexterity as tiebreaker', () => {
-      const entries: IInitiativeEntry[] = [
-        createTestInitiativeEntry({ initiative: 15, dexterity: 12 }),
-        createTestInitiativeEntry({ initiative: 15, dexterity: 18 }),
-      ];
+      const entries = createInitiativeEntries([
+        { initiative: 15, dexterity: 12 },
+        { initiative: 15, dexterity: 18 }
+      ]);
 
       const sorted = sortInitiativeOrder(entries);
-      expect(sorted[0].dexterity).toBe(18);
-      expect(sorted[1].dexterity).toBe(12);
+      expect(sorted.map(e => e.dexterity)).toEqual([18, 12]);
     });
   });
 
   describe('rollInitiative', () => {
     it('should return a value between 1 and 20', () => {
-      for (let i = 0; i < 100; i++) {
-        const roll = rollInitiative();
+      const rolls = Array.from({ length: 100 }, () => rollInitiative());
+      rolls.forEach(roll => {
         expect(roll).toBeGreaterThanOrEqual(1);
         expect(roll).toBeLessThanOrEqual(20);
-      }
+      });
     });
   });
 
   describe('calculateEncounterDifficulty', () => {
-    it('should return trivial for low enemy ratio', () => {
-      const difficulty = calculateEncounterDifficulty(4, 5); // 1 enemy vs 4 players
-      expect(difficulty).toBe('trivial');
-    });
+    const difficultyTests = [
+      { players: 4, total: 5, expected: 'trivial', description: 'low enemy ratio' },
+      { players: 4, total: 8, expected: 'easy', description: 'balanced encounter' },
+      { players: 4, total: 14, expected: 'deadly', description: 'overwhelming enemies' },
+      { players: 0, total: 5, expected: 'deadly', description: 'zero players gracefully' }
+    ];
 
-    it('should return easy for balanced encounter', () => {
-      const difficulty = calculateEncounterDifficulty(4, 8); // 4 enemies vs 4 players
-      expect(difficulty).toBe('easy');
-    });
-
-    it('should return deadly for overwhelming enemies', () => {
-      const difficulty = calculateEncounterDifficulty(4, 14); // 10 enemies vs 4 players
-      expect(difficulty).toBe('deadly');
-    });
-
-    it('should handle zero players gracefully', () => {
-      const difficulty = calculateEncounterDifficulty(0, 5);
-      expect(difficulty).toBe('deadly');
+    difficultyTests.forEach(({ players, total, expected, description }) => {
+      it(`should return ${expected} for ${description}`, () => {
+        expect(calculateEncounterDifficulty(players, total)).toBe(expected);
+      });
     });
   });
 
   describe('findParticipantById', () => {
-    it('should find participant by ID', () => {
-      const characterId = new Types.ObjectId();
-      const participants: IParticipantReference[] = [
-        createTestParticipant({ characterId }),
-      ];
+    const testCharacterId = '507f1f77bcf86cd799439013';
 
-      const found = findParticipantById(participants, characterId.toString());
+    it('should find participant by ID', () => {
+      const participants = [createTestParticipant({ characterId: new Types.ObjectId(testCharacterId) })];
+
+      const found = findParticipantById(participants, testCharacterId);
       expect(found).toBeTruthy();
       expect(found?.name).toBe('Test Character');
     });
 
     it('should return null for non-existent ID', () => {
-      const participants: IParticipantReference[] = [];
-
-      const found = findParticipantById(
-        participants,
-        new Types.ObjectId().toString()
-      );
+      const found = findParticipantById([], '507f1f77bcf86cd799439999');
       expect(found).toBeNull();
     });
   });
 
   describe('applyDamageToParticipant', () => {
-    let participant: IParticipantReference;
+    const damageScenarios = [
+      { damage: 15, description: 'apply damage to temporary HP first', tempHP: 5, currentHP: 80 },
+      { damage: 30, description: 'apply overflow damage to current HP', tempHP: 0, currentHP: 70 },
+      { damage: 150, description: 'not reduce HP below 0', tempHP: 0, currentHP: 0 }
+    ];
 
-    beforeEach(() => {
-      participant = createTestParticipant({ temporaryHitPoints: 20 });
-    });
+    damageScenarios.forEach(({ damage, description, tempHP, currentHP }) => {
+      it(`should ${description}`, () => {
+        const participant = createTestParticipant({ temporaryHitPoints: 20 });
 
-    it('should apply damage to temporary HP first', () => {
-      const result = applyDamageToParticipant(participant, 15);
-      expect(result).toBe(true);
-      expect(participant.temporaryHitPoints).toBe(5);
-      expect(participant.currentHitPoints).toBe(80);
-    });
-
-    it('should apply overflow damage to current HP', () => {
-      const result = applyDamageToParticipant(participant, 30);
-      expect(result).toBe(true);
-      expect(participant.temporaryHitPoints).toBe(0);
-      expect(participant.currentHitPoints).toBe(70);
-    });
-
-    it('should not reduce HP below 0', () => {
-      const result = applyDamageToParticipant(participant, 150);
-      expect(result).toBe(true);
-      expect(participant.currentHitPoints).toBe(0);
+        const result = applyDamageToParticipant(participant, damage);
+        expect(result).toBe(true);
+        expect(participant.temporaryHitPoints).toBe(tempHP);
+        expect(participant.currentHitPoints).toBe(currentHP);
+      });
     });
 
     it('should reject negative damage', () => {
-      const result = applyDamageToParticipant(participant, -5);
-      expect(result).toBe(false);
+      const participant = createTestParticipant({ temporaryHitPoints: 20 });
+      expect(applyDamageToParticipant(participant, -5)).toBe(false);
     });
   });
 
   describe('healParticipant', () => {
-    let participant: IParticipantReference;
+    const healingScenarios = [
+      { healing: 30, description: 'heal participant up to max HP', expectedHP: 80 },
+      { healing: 80, description: 'not heal above max HP', expectedHP: 100 }
+    ];
 
-    beforeEach(() => {
-      participant = createTestParticipant({ currentHitPoints: 50 });
-    });
+    healingScenarios.forEach(({ healing, description, expectedHP }) => {
+      it(`should ${description}`, () => {
+        const participant = createTestParticipant({ currentHitPoints: 50 });
 
-    it('should heal participant up to max HP', () => {
-      const result = healParticipant(participant, 30);
-      expect(result).toBe(true);
-      expect(participant.currentHitPoints).toBe(80);
-    });
-
-    it('should not heal above max HP', () => {
-      const result = healParticipant(participant, 80);
-      expect(result).toBe(true);
-      expect(participant.currentHitPoints).toBe(100);
+        const result = healParticipant(participant, healing);
+        expect(result).toBe(true);
+        expect(participant.currentHitPoints).toBe(expectedHP);
+      });
     });
 
     it('should reject negative healing', () => {
-      const result = healParticipant(participant, -10);
-      expect(result).toBe(false);
+      const participant = createTestParticipant({ currentHitPoints: 50 });
+      expect(healParticipant(participant, -10)).toBe(false);
     });
   });
 
   describe('condition management', () => {
-    let participant: IParticipantReference;
-
-    beforeEach(() => {
-      participant = createTestParticipant({
-        currentHitPoints: 100,
-        conditions: ['poisoned'],
-      });
-    });
-
     describe('addConditionToParticipant', () => {
       it('should add new condition', () => {
+        const participant = createTestParticipant({ conditions: ['poisoned'] });
+
         const result = addConditionToParticipant(participant, 'stunned');
         expect(result).toBe(true);
         expect(participant.conditions).toContain('stunned');
       });
 
       it('should not add duplicate condition', () => {
+        const participant = createTestParticipant({ conditions: ['poisoned'] });
+
         const result = addConditionToParticipant(participant, 'poisoned');
         expect(result).toBe(false);
-        expect(
-          participant.conditions.filter(c => c === 'poisoned')
-        ).toHaveLength(1);
+        expect(participant.conditions.filter(c => c === 'poisoned')).toHaveLength(1);
       });
     });
 
     describe('removeConditionFromParticipant', () => {
       it('should remove existing condition', () => {
+        const participant = createTestParticipant({ conditions: ['poisoned'] });
+
         const result = removeConditionFromParticipant(participant, 'poisoned');
         expect(result).toBe(true);
         expect(participant.conditions).not.toContain('poisoned');
       });
 
       it('should return false for non-existent condition', () => {
+        const participant = createTestParticipant({ conditions: ['poisoned'] });
+
         const result = removeConditionFromParticipant(participant, 'stunned');
         expect(result).toBe(false);
       });
@@ -200,73 +171,87 @@ describe('Encounter Utils', () => {
   });
 
   describe('calculateCombatDuration', () => {
-    it('should calculate duration without pause', () => {
-      const startTime = new Date('2023-01-01T10:00:00Z');
-      const endTime = new Date('2023-01-01T10:30:00Z');
+    const createTestDate = (timeStr: string) => new Date(`2023-01-01T${timeStr}:00Z`);
 
-      const duration = calculateCombatDuration(startTime, endTime);
-      expect(duration).toBe(30 * 60 * 1000); // 30 minutes in milliseconds
-    });
+    const durationTests = [
+      {
+        start: '10:00', end: '10:30', pause: undefined,
+        expected: 30 * 60 * 1000, description: 'calculate duration without pause'
+      },
+      {
+        start: '10:00', end: '10:30', pause: '10:10',
+        expected: 20 * 60 * 1000, description: 'account for pause time'
+      },
+      {
+        start: '10:30', end: '10:00', pause: undefined,
+        expected: 0, description: 'not return negative duration'
+      }
+    ];
 
-    it('should account for pause time', () => {
-      const startTime = new Date('2023-01-01T10:00:00Z');
-      const endTime = new Date('2023-01-01T10:30:00Z');
-      const pauseTime = new Date('2023-01-01T10:10:00Z');
+    durationTests.forEach(({ start, end, pause, expected, description }) => {
+      it(`should ${description}`, () => {
+        const startTime = createTestDate(start);
+        const endTime = createTestDate(end);
+        const pauseTime = pause ? createTestDate(pause) : undefined;
 
-      const duration = calculateCombatDuration(startTime, endTime, pauseTime);
-      expect(duration).toBe(20 * 60 * 1000); // 20 minutes in milliseconds
-    });
-
-    it('should not return negative duration', () => {
-      const startTime = new Date('2023-01-01T10:30:00Z');
-      const endTime = new Date('2023-01-01T10:00:00Z');
-
-      const duration = calculateCombatDuration(startTime, endTime);
-      expect(duration).toBe(0);
+        const duration = calculateCombatDuration(startTime, endTime, pauseTime);
+        expect(duration).toBe(expected);
+      });
     });
   });
 
   describe('createDefaultEncounterSettings', () => {
     it('should return default settings', () => {
-      const settings = createDefaultEncounterSettings();
-      expect(settings.allowPlayerVisibility).toBe(true);
-      expect(settings.autoRollInitiative).toBe(false);
-      expect(settings.trackResources).toBe(true);
-      expect(settings.enableLairActions).toBe(false);
-      expect(settings.enableGridMovement).toBe(false);
-      expect(settings.gridSize).toBe(5);
+      const expectedSettings = {
+        allowPlayerVisibility: true,
+        autoRollInitiative: false,
+        trackResources: true,
+        enableLairActions: false,
+        enableGridMovement: false,
+        gridSize: 5
+      };
+
+      expect(createDefaultEncounterSettings()).toEqual(expectedSettings);
     });
   });
 
   describe('createDefaultCombatState', () => {
     it('should return default combat state', () => {
-      const state = createDefaultCombatState();
-      expect(state.isActive).toBe(false);
-      expect(state.currentRound).toBe(0);
-      expect(state.currentTurn).toBe(0);
-      expect(state.initiativeOrder).toEqual([]);
-      expect(state.totalDuration).toBe(0);
+      const expectedState = {
+        isActive: false,
+        currentRound: 0,
+        currentTurn: 0,
+        initiativeOrder: [],
+        totalDuration: 0
+      };
+
+      expect(createDefaultCombatState()).toEqual(expectedState);
     });
   });
 
   describe('validateParticipantHP', () => {
-    it('should cap current HP at maximum', () => {
-      const participant: IParticipantReference = createTestParticipant({
-        currentHitPoints: 150,
+    const validationTests = [
+      {
+        input: { currentHitPoints: 150, temporaryHitPoints: 0 },
+        expected: { currentHitPoints: 100 },
+        description: 'cap current HP at maximum'
+      },
+      {
+        input: { currentHitPoints: 100, temporaryHitPoints: -10 },
+        expected: { temporaryHitPoints: 0 },
+        description: 'ensure temporary HP is not negative'
+      }
+    ];
+
+    validationTests.forEach(({ input, expected, description }) => {
+      it(`should ${description}`, () => {
+        const participant = createTestParticipant(input);
+
+        validateParticipantHP(participant);
+        Object.entries(expected).forEach(([key, value]) => {
+          expect(participant[key as keyof typeof participant]).toBe(value);
+        });
       });
-
-      validateParticipantHP(participant);
-      expect(participant.currentHitPoints).toBe(100);
-    });
-
-    it('should ensure temporary HP is not negative', () => {
-      const participant: IParticipantReference = createTestParticipant({
-        currentHitPoints: 100,
-        temporaryHitPoints: -10,
-      });
-
-      validateParticipantHP(participant);
-      expect(participant.temporaryHitPoints).toBe(0);
     });
   });
 });
