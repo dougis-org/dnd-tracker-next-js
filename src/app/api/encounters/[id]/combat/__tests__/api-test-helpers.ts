@@ -12,8 +12,9 @@ import {
 } from '@/lib/models/encounter/__tests__/base-test-helpers';
 
 /**
- * API Test Helpers for Initiative Rolling
+ * API Test Helpers for Combat API Tests
  * Built on unified base helpers to eliminate duplication
+ * Provides centralized authentication and test setup patterns
  */
 
 // Re-export for backward compatibility
@@ -261,4 +262,34 @@ export const createMockWithParticipant = (participantId: string) => {
 export const expectResponseWithStatus = (status: number) => (response: any, result: any) => {
   expect(response.status).toBeGreaterThanOrEqual(status);
   expect(result).toBeDefined();
+};
+
+/**
+ * Centralized authentication setup for combat API tests
+ * Reduces duplication across test files
+ */
+export const setupCombatAuthentication = (userId: string = 'user123') => {
+  const auth = require('@/lib/auth').auth as jest.MockedFunction<any>;
+  auth.mockResolvedValue({
+    user: { id: userId }
+  } as any);
+  return { userId, mockAuth: auth };
+};
+
+/**
+ * Setup encounter with proper ownership for authenticated user
+ */
+export const setupAuthenticatedEncounter = (userId: string = 'user123', encounterOverrides: any = {}) => {
+  const { encounter } = setupTestMocks();
+  encounter.ownerId = userId;
+  return { ...encounter, ...encounterOverrides };
+};
+
+/**
+ * Complete authentication and encounter setup for combat tests
+ */
+export const setupCombatTestAuth = (userId: string = 'user123', encounterOverrides: any = {}) => {
+  const { userId: authUserId, mockAuth } = setupCombatAuthentication(userId);
+  const encounter = setupAuthenticatedEncounter(authUserId, encounterOverrides);
+  return { userId: authUserId, mockAuth, encounter };
 };
