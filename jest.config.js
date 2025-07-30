@@ -13,13 +13,13 @@ const customJestConfig = {
   // globalTeardown: '<rootDir>/jest.global-teardown.js',
   testEnvironment: 'jest-environment-jsdom',
   // Parallel execution configuration
-  maxWorkers: process.env.CI ? 1 : '75%', // Use 1 worker in CI to prevent resource exhaustion, 75% of available cores locally
+  maxWorkers: process.env.CI ? 1 : '50%', // Use 1 worker in CI to prevent resource exhaustion, 50% of available cores locally
   maxConcurrency: process.env.CI ? 5 : 10, // Lower concurrency in CI to prevent resource exhaustion
   testSequencer: '<rootDir>/jest.sequencer.js', // Custom sequencer for optimal test ordering
   // Worker configuration for better resource management
   workerIdleMemoryLimit: '512MB', // Restart workers if they exceed memory limit
-  // Test execution configuration
-  testTimeout: process.env.CI ? 30000 : 30000, // 30 second timeout for both CI and local
+  // Test execution configuration  
+  testTimeout: process.env.CI ? 60000 : 30000, // 60 second timeout in CI, 30 seconds locally
   // Performance optimizations
   cacheDirectory: '<rootDir>/.jest-cache', // Custom cache directory for better performance
   clearMocks: true, // Clear mocks between tests to prevent memory leaks

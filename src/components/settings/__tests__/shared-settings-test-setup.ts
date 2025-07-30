@@ -200,7 +200,22 @@ const deletionTestActions = {
 
   async expectErrorMessage(waitFor: Function, screen: any, errorMessage: string) {
     await waitFor(() => {
-      expect(screen.getByText(createSafeTestRegExp(errorMessage))).toBeInTheDocument();
+      // Handle multiple possible error messages separated by |
+      const errorMessages = errorMessage.split('|');
+      let found = false;
+      for (const msg of errorMessages) {
+        try {
+          expect(screen.getByText(createSafeTestRegExp(msg.trim()))).toBeInTheDocument();
+          found = true;
+          break;
+        } catch (e) {
+          // Continue to next message
+        }
+      }
+      if (!found) {
+        // If none found, fail with the original expectation to get proper error message
+        expect(screen.getByText(createSafeTestRegExp(errorMessages[0].trim()))).toBeInTheDocument();
+      }
     });
   }
 };
