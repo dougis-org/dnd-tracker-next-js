@@ -9,21 +9,32 @@ import { NextRequest } from 'next/server';
 export const SHARED_API_TEST_CONSTANTS = {
   TEST_USER_ID: '507f1f77bcf86cd799439011',
   TEST_EMAIL: 'test@example.com',
+  DEFAULT_USER_ID: '507f1f77bcf86cd799439011',
   TEST_SUBSCRIPTION_TIER: 'free' as const,
   TEST_USER_NAME: 'John Doe',
 } as const;
 
-export const createMockSession = (userId = SHARED_API_TEST_CONSTANTS.TEST_USER_ID) => ({
-  user: {
-    id: userId,
-    email: SHARED_API_TEST_CONSTANTS.TEST_EMAIL,
-    name: SHARED_API_TEST_CONSTANTS.TEST_USER_NAME,
-    subscriptionTier: SHARED_API_TEST_CONSTANTS.TEST_SUBSCRIPTION_TIER,
-  },
-  expires: '2024-12-31T23:59:59.999Z',
-});
+export const createMockSession = (userId = SHARED_API_TEST_CONSTANTS.TEST_USER_ID, overrides: Partial<any> = {}) => {
+  const baseSession = {
+    user: {
+      id: userId,
+      email: SHARED_API_TEST_CONSTANTS.TEST_EMAIL,
+      name: SHARED_API_TEST_CONSTANTS.TEST_USER_NAME,
+      subscriptionTier: SHARED_API_TEST_CONSTANTS.TEST_SUBSCRIPTION_TIER,
+    },
+    expires: '2024-12-31T23:59:59.999Z',
+  };
+  return {
+    ...baseSession,
+    ...overrides,
+    user: {
+      ...baseSession.user,
+      ...(overrides.user || {}),
+    },
+  };
+};
 
-export const createMockJwtToken = (userId = SHARED_API_TEST_CONSTANTS.TEST_USER_ID) => ({
+export const createMockJwtToken = (userId = SHARED_API_TEST_CONSTANTS.TEST_USER_ID, overrides: Partial<any> = {}) => ({
   sub: userId,
   email: SHARED_API_TEST_CONSTANTS.TEST_EMAIL,
   subscriptionTier: SHARED_API_TEST_CONSTANTS.TEST_SUBSCRIPTION_TIER,
@@ -32,6 +43,7 @@ export const createMockJwtToken = (userId = SHARED_API_TEST_CONSTANTS.TEST_USER_
   iat: Math.floor(Date.now() / 1000),
   exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 30,
   jti: 'test-jwt-id',
+  ...overrides,
 });
 
 export const createMockRequest = (data: any, method = 'PATCH') => ({
@@ -72,4 +84,80 @@ export const expectErrorResponse = async (response: Response, status: number, me
   expect(response.status).toBe(status);
   expect(data.success).toBe(false);
   expect(data.error || data.message).toBe(message);
+};
+
+// Essential functions that other tests depend on
+export const createMockParams = (id = SHARED_API_TEST_CONSTANTS.TEST_USER_ID) => Promise.resolve({ id });
+
+export const setupNextAuthMocks = (mockAuth: jest.MockedFunction<any>, mockGetToken?: jest.MockedFunction<any>, userId = SHARED_API_TEST_CONSTANTS.TEST_USER_ID) => {
+  jest.clearAllMocks();
+  mockAuth.mockResolvedValue(createMockSession(userId));
+  if (mockGetToken) {
+    mockGetToken.mockResolvedValue(createMockJwtToken(userId));
+  }
+};
+
+export const setupUnauthenticatedState = (mockAuth: jest.MockedFunction<any>, mockGetToken?: jest.MockedFunction<any>) => {
+  jest.clearAllMocks();
+  mockAuth.mockResolvedValue(null);
+  if (mockGetToken) {
+    mockGetToken.mockResolvedValue(null);
+  }
+};
+
+export const createUnauthenticatedRequest = (url: string, options: any = {}, mockAuth?: jest.MockedFunction<any>) => {
+  if (mockAuth) {
+    mockAuth.mockResolvedValue(null);
+  }
+  return createMockRequest(options.body || {}, options.method || 'GET');
+};
+
+export const createAuthenticatedRequest = (url: string, options: any = {}, mockAuth?: jest.MockedFunction<any>, userId = SHARED_API_TEST_CONSTANTS.TEST_USER_ID) => {
+  if (mockAuth) {
+    mockAuth.mockResolvedValue(createMockSession(userId));
+  }
+  return createMockRequest(options.body || {}, options.method || 'GET');
+};
+
+export const expectAuthenticationError = async (response: Response) => {
+  await expectErrorResponse(response, 401, 'Authentication required');
+};
+
+export const expectValidationError = async (response: Response, expectedField?: string) => {
+  expect(response.status).toBe(400);
+  const data = await response.json();
+  expect(data.success).toBe(false);
+  if (expectedField) {
+    expect(data.message || data.error).toContain(expectedField);
+  }
+};
+
+// Additional functions that tests depend on
+export const createSessionExpectation = (userId = SHARED_API_TEST_CONSTANTS.TEST_USER_ID) =>
+  expect.objectContaining({
+    user: expect.objectContaining({
+      id: userId,
+    }),
+  });
+
+export const createTokenExpectation = (userId = SHARED_API_TEST_CONSTANTS.TEST_USER_ID) =>
+  expect.objectContaining({
+    sub: userId,
+  });
+
+export const setupAPITestWithAuth = (mockAuth: jest.MockedFunction<any>, mockUserService?: jest.Mocked<any>, userId = SHARED_API_TEST_CONSTANTS.TEST_USER_ID) => {
+  jest.clearAllMocks();
+  mockAuth.mockResolvedValue(createMockSession(userId));
+};
+
+export const executeAndValidateMock = async (mockFn: jest.MockedFunction<any>, expectedResult: any) => {
+  const result = await mockFn();
+  expect(result).toEqual(expectedResult);
+  return result;
+};
+
+export const validateMockSetup = async (mockAuth: jest.MockedFunction<any>, mockGetToken: jest.MockedFunction<any>, userId = SHARED_API_TEST_CONSTANTS.TEST_USER_ID) => {
+  const session = await executeAndValidateMock(mockAuth, createSessionExpectation(userId));
+  const token = await executeAndValidateMock(mockGetToken, createTokenExpectation(userId));
+  return { session, token };
 };
