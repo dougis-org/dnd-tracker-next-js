@@ -1,6 +1,5 @@
 import { describe, it, expect } from '@jest/globals';
 import fs from 'fs';
-import path from 'path';
 
 describe('Production Deployment Configuration', () => {
   describe('Public Assets', () => {

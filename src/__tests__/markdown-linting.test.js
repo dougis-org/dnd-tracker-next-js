@@ -4,7 +4,6 @@
 
 const { spawnSync } = require('child_process');
 const fs = require('fs');
-const path = require('path');
 
 describe('Markdown Linting', () => {
   describe('Configuration', () => {
