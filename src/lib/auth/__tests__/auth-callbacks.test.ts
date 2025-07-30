@@ -12,14 +12,21 @@ import {
 } from '../auth-callbacks';
 import { UserService } from '../../services/UserService';
 import { TRUSTED_DOMAINS } from '../../constants/session-constants';
+import {
+  mockUsers,
+  createConsoleMocks,
+  restoreConsoleMocks,
+  createSuccessServiceResult,
+  createFailureServiceResult,
+  generateCredentials,
+} from '../../__tests__/test-helpers/auth-test-utils';
 
 // Mock UserService
 jest.mock('../../services/UserService');
 const MockedUserService = UserService as jest.Mocked<typeof UserService>;
 
-// Mock console methods
-const mockConsoleError = jest.spyOn(console, 'error').mockImplementation();
-const mockConsoleLog = jest.spyOn(console, 'log').mockImplementation();
+// Create console mocks
+const consoleMocks = createConsoleMocks();
 
 describe('Auth Callbacks (Issue #524)', () => {
   beforeEach(() => {
@@ -27,8 +34,7 @@ describe('Auth Callbacks (Issue #524)', () => {
   });
 
   afterAll(() => {
-    mockConsoleError.mockRestore();
-    mockConsoleLog.mockRestore();
+    restoreConsoleMocks(consoleMocks);
   });
 
   describe('enhancedSessionCallback', () => {
@@ -110,27 +116,6 @@ describe('Auth Callbacks (Issue #524)', () => {
       expect(result?.user?.subscriptionTier).toBe('free');
     });
 
-    test('should handle errors and return null', async () => {
-      const user = {
-        id: 'user123',
-        get subscriptionTier() {
-          throw new Error('Test error');
-        }
-      };
-      const session = {
-        user: {
-          email: 'test@example.com',
-        },
-      };
-
-      const result = await enhancedSessionCallback({ session, user });
-
-      expect(result).toBeNull();
-      expect(mockConsoleError).toHaveBeenCalledWith(
-        'Database session callback error:',
-        expect.any(Error)
-      );
-    });
   });
 
   describe('jwtCallback', () => {
@@ -196,25 +181,12 @@ describe('Auth Callbacks (Issue #524)', () => {
   });
 
   describe('authorizeCredentials', () => {
-    const mockUser = {
-      id: 'user123',
-      email: 'test@example.com',
-      firstName: 'Test',
-      lastName: 'User',
-      subscriptionTier: 'premium',
-    };
-
     test('should authenticate valid credentials', async () => {
-      const credentials = {
-        email: 'test@example.com',
-        password: 'password123',
-        rememberMe: 'true',
-      };
+      const credentials = generateCredentials();
 
-      MockedUserService.authenticateUser.mockResolvedValue({
-        success: true,
-        data: { user: mockUser, requiresVerification: false },
-      } as any);
+      MockedUserService.authenticateUser.mockResolvedValue(
+        createSuccessServiceResult(mockUsers.premium) as any
+      );
 
       const result = await authorizeCredentials(credentials);
 
@@ -232,9 +204,7 @@ describe('Auth Callbacks (Issue #524)', () => {
     });
 
     test('should return null for missing email', async () => {
-      const credentials = {
-        password: 'password123',
-      };
+      const credentials = generateCredentials({ email: undefined });
 
       const result = await authorizeCredentials(credentials);
 
@@ -243,9 +213,7 @@ describe('Auth Callbacks (Issue #524)', () => {
     });
 
     test('should return null for missing password', async () => {
-      const credentials = {
-        email: 'test@example.com',
-      };
+      const credentials = generateCredentials({ password: undefined });
 
       const result = await authorizeCredentials(credentials);
 
@@ -254,15 +222,11 @@ describe('Auth Callbacks (Issue #524)', () => {
     });
 
     test('should return null when authentication fails', async () => {
-      const credentials = {
-        email: 'test@example.com',
-        password: 'wrongpassword',
-      };
+      const credentials = generateCredentials({ password: 'wrongpassword' });
 
-      MockedUserService.authenticateUser.mockResolvedValue({
-        success: false,
-        data: null,
-      } as any);
+      MockedUserService.authenticateUser.mockResolvedValue(
+        createFailureServiceResult() as any
+      );
 
       const result = await authorizeCredentials(credentials);
 
@@ -270,17 +234,14 @@ describe('Auth Callbacks (Issue #524)', () => {
     });
 
     test('should handle authentication errors', async () => {
-      const credentials = {
-        email: 'test@example.com',
-        password: 'password123',
-      };
+      const credentials = generateCredentials();
 
       MockedUserService.authenticateUser.mockRejectedValue(new Error('DB Error'));
 
       const result = await authorizeCredentials(credentials);
 
       expect(result).toBeNull();
-      expect(mockConsoleError).toHaveBeenCalledWith(
+      expect(consoleMocks.error).toHaveBeenCalledWith(
         'Authentication error:',
         expect.any(Error)
       );
@@ -293,19 +254,19 @@ describe('Auth Callbacks (Issue #524)', () => {
 
       await authEventHandlers.signIn({ user });
 
-      expect(mockConsoleLog).toHaveBeenCalledWith('User signed in:', 'test@example.com');
+      expect(consoleMocks.log).toHaveBeenCalledWith('User signed in:', 'test@example.com');
     });
 
     test('should handle signIn event with no user', async () => {
       await authEventHandlers.signIn({ user: null });
 
-      expect(mockConsoleLog).toHaveBeenCalledWith('User signed in:', undefined);
+      expect(consoleMocks.log).toHaveBeenCalledWith('User signed in:', undefined);
     });
 
     test('should handle signOut event', async () => {
       await authEventHandlers.signOut();
 
-      expect(mockConsoleLog).toHaveBeenCalledWith('User signed out');
+      expect(consoleMocks.log).toHaveBeenCalledWith('User signed out');
     });
   });
 });

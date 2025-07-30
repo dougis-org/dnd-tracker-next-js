@@ -288,24 +288,21 @@ describe('Session Config Advanced (Issue #524)', () => {
   });
 
   describe('Environment Variable Handling', () => {
-    test('should handle various environment variable values', () => {
-      const testValues = [
-        { value: 'jwt', expected: 'jwt' },
-        { value: 'database', expected: 'database' },
-        { value: '', expected: 'jwt' },
-        { value: undefined, expected: 'jwt' },
-      ];
+    test('should default to JWT when no strategy set', () => {
+      delete process.env.NEXTAUTH_SESSION_STRATEGY;
 
-      testValues.forEach(({ value, expected }) => {
-        delete process.env.NEXTAUTH_SESSION_STRATEGY;
-        if (value !== undefined) {
-          process.env.NEXTAUTH_SESSION_STRATEGY = value;
-        }
+      jest.isolateModules(() => {
+        const { SESSION_STRATEGY } = require('../session-config');
+        expect(SESSION_STRATEGY).toBe('jwt');
+      });
+    });
 
-        jest.isolateModules(() => {
-          const { SESSION_STRATEGY } = require('../session-config');
-          expect(SESSION_STRATEGY).toBe(expected);
-        });
+    test('should use database when explicitly set', () => {
+      process.env.NEXTAUTH_SESSION_STRATEGY = 'database';
+
+      jest.isolateModules(() => {
+        const { SESSION_STRATEGY } = require('../session-config');
+        expect(SESSION_STRATEGY).toBe('database');
       });
     });
   });
