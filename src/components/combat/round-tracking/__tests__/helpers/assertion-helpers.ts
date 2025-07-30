@@ -1,5 +1,6 @@
 import { screen } from '@testing-library/react';
 import { MockEffect, MockTrigger, MockSessionSummary } from './test-data';
+import { createSafeTestRegExp } from '../../../../../test-utils/secure-regexp';
 
 /**
  * Assertion utilities for round tracking tests
@@ -23,7 +24,7 @@ export function expectTriggerDisplay(trigger: MockTrigger) {
 }
 
 export function expectDurationDisplay(formatted: string) {
-  expect(screen.getByText(new RegExp(formatted, 'i'))).toBeInTheDocument();
+  expect(screen.getByText(createSafeTestRegExp(formatted))).toBeInTheDocument();
 }
 
 export function expectHistoryEntry(round: number, event: string) {
@@ -70,7 +71,7 @@ export function expectAccessibleRoundControls() {
 
 export function expectAccessibleEffectLabels(effects: MockEffect[]) {
   effects.forEach(effect => {
-    const labelRegex = new RegExp(`${effect.name} effect`, 'i');
+    const labelRegex = createSafeTestRegExp(`${effect.name} effect`);
     expect(screen.getByLabelText(labelRegex)).toBeInTheDocument();
   });
 }
@@ -78,7 +79,7 @@ export function expectAccessibleEffectLabels(effects: MockEffect[]) {
 export function expectAccessibleTriggerLabels(triggers: MockTrigger[]) {
   triggers.forEach(trigger => {
     if (trigger.isActive) {
-      const buttonRegex = new RegExp(`activate ${trigger.name}`, 'i');
+      const buttonRegex = createSafeTestRegExp(`activate ${trigger.name}`);
       expect(screen.getByRole('button', { name: buttonRegex })).toBeInTheDocument();
     }
   });

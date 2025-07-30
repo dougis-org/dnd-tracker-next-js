@@ -4,6 +4,7 @@
  */
 
 import { render, screen, fireEvent } from '@testing-library/react';
+import { createSafeTestRegExp } from '../../../test-utils/secure-regexp';
 
 /**
  * Standard form props factory
@@ -141,9 +142,8 @@ export namespace CharacterFormHelpers {
   }
 
   export function testAbilityScoreField(abilityName: string, value: number, mockOnChange: jest.Mock) {
-    // Escape special regex characters and create case-insensitive pattern
-    const escapedAbilityName = abilityName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const field = screen.getByLabelText(new RegExp(escapedAbilityName, 'i'));
+    // Use secure RegExp helper to prevent ReDoS vulnerabilities
+    const field = screen.getByLabelText(createSafeTestRegExp(abilityName));
     fireEvent.change(field, { target: { value: value.toString() } });
     expect(mockOnChange).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -222,9 +222,8 @@ export namespace UITestHelpers {
   }
 
   export function testButtonInteraction(buttonText: string, onClick: jest.Mock) {
-    // Escape special regex characters and create case-insensitive pattern
-    const escapedButtonText = buttonText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const button = screen.getByRole('button', { name: new RegExp(escapedButtonText, 'i') });
+    // Use secure RegExp helper to prevent ReDoS vulnerabilities
+    const button = screen.getByRole('button', { name: createSafeTestRegExp(buttonText) });
     fireEvent.click(button);
     expect(onClick).toHaveBeenCalled();
   }

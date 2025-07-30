@@ -1,5 +1,6 @@
 import React from 'react';
 import { useSession, signOut } from 'next-auth/react';
+import { createSafeTestRegExp } from '../../../test-utils/secure-regexp';
 
 /**
  * Shared Settings Test Setup
@@ -199,7 +200,7 @@ const deletionTestActions = {
 
   async expectErrorMessage(waitFor: Function, screen: any, errorMessage: string) {
     await waitFor(() => {
-      expect(screen.getByText(new RegExp(errorMessage, 'i'))).toBeInTheDocument();
+      expect(screen.getByText(createSafeTestRegExp(errorMessage))).toBeInTheDocument();
     });
   }
 };

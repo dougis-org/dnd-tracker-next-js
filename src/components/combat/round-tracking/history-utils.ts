@@ -1,4 +1,5 @@
 // History utility functions
+import { createSafeTestRegExp } from '../../../test-utils/secure-regexp';
 
 export interface HistoryEvent {
   text: string;
@@ -39,8 +40,7 @@ export function createTextParts(text: string, query: string): Array<{ text: stri
     return [{ text, isHighlight: false }];
   }
 
-  const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const regex = new RegExp(`(${escapedQuery})`, 'gi');
+  const regex = createSafeTestRegExp(`(${query})`);
   const parts = text.split(regex);
 
   return parts.filter(part => part !== '').map((part) => ({

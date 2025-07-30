@@ -1,6 +1,7 @@
 import { screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { testDataFactories } from '@/lib/services/__tests__/testDataFactories';
+import { createSafeTestRegExp } from '../../../test-utils/secure-regexp';
 
 // Default participant data
 const DEFAULT_PARTICIPANT = {
@@ -55,7 +56,7 @@ export const formActions = {
   },
 
   async submit(user: ReturnType<typeof userEvent.setup>, buttonName: string) {
-    await user.click(screen.getByRole('button', { name: new RegExp(buttonName, 'i') }));
+    await user.click(screen.getByRole('button', { name: createSafeTestRegExp(buttonName) }));
   }
 };
 
@@ -71,13 +72,13 @@ export const testExpectations = {
 
   formElements() {
     ['Character Name', 'Hit Points', 'Armor Class'].forEach(label =>
-      expect(screen.getByLabelText(new RegExp(label, 'i'))).toBeInTheDocument()
+      expect(screen.getByLabelText(createSafeTestRegExp(label))).toBeInTheDocument()
     );
   },
 
   async validationErrors(errors: string[]) {
     for (const error of errors) {
-      await waitForElement(new RegExp(error, 'i'));
+      await waitForElement(createSafeTestRegExp(error));
     }
   },
 

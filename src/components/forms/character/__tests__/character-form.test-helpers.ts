@@ -5,6 +5,7 @@ import {
   createHighLevelTestCharacter as createHighLevelTestCharacterBase,
   createInvalidTestCharacter as createInvalidTestCharacterBase
 } from '../constants';
+import { createSafeTestRegExp } from '../../../../test-utils/secure-regexp';
 
 export interface TestCharacterData {
   name: string;
@@ -105,7 +106,7 @@ export const createFormTestHelpers = (
       const customRaceField = screen.getByLabelText(/custom race name/i);
       await userEvent.type(customRaceField, _character.customRace);
     } else {
-      const raceOption = screen.getByText(new RegExp(_character.race as string, 'i'));
+      const raceOption = screen.getByText(createSafeTestRegExp(_character.race as string));
       await userEvent.click(raceOption);
     }
   },
@@ -121,7 +122,7 @@ export const createFormTestHelpers = (
     ];
 
     for (const ability of abilities) {
-      const field = screen.getByLabelText(new RegExp(ability.name, 'i'));
+      const field = screen.getByLabelText(createSafeTestRegExp(ability.name));
       await userEvent.clear(field);
       await userEvent.type(field, ability.value.toString());
     }
@@ -132,7 +133,7 @@ export const createFormTestHelpers = (
     if (_classes.length > 0) {
       const classField = screen.getAllByLabelText(/character class/i)[0];
       await userEvent.click(classField);
-      await userEvent.click(screen.getByText(new RegExp(_classes[0].className, 'i')));
+      await userEvent.click(screen.getByText(createSafeTestRegExp(_classes[0].className)));
 
       const levelField = screen.getAllByLabelText(/level/i)[0];
       await userEvent.clear(levelField);
@@ -146,7 +147,7 @@ export const createFormTestHelpers = (
 
       const classField = screen.getAllByLabelText(/character class/i)[i];
       await userEvent.click(classField);
-      await userEvent.click(screen.getByText(new RegExp(_classes[i].className, 'i')));
+      await userEvent.click(screen.getByText(createSafeTestRegExp(_classes[i].className)));
 
       const levelField = screen.getAllByLabelText(/level/i)[i];
       await userEvent.clear(levelField);
@@ -180,7 +181,7 @@ export const createFormTestHelpers = (
   },
 
   expectValidationError(_fieldName: string, _errorMessage: string) {
-    const errorElement = screen.getByText(new RegExp(_errorMessage, 'i'));
+    const errorElement = screen.getByText(createSafeTestRegExp(_errorMessage));
     expect(errorElement).toBeInTheDocument();
     expect(errorElement).toHaveAttribute('role', 'alert');
   },
@@ -229,13 +230,13 @@ export const expectFormToBeInLoadingState = (screen: any) => {
 };
 
 export const expectFormToShowError = (screen: any, errorMessage: string) => {
-  expect(screen.getByText(new RegExp(errorMessage, 'i'))).toBeInTheDocument();
+  expect(screen.getByText(createSafeTestRegExp(errorMessage))).toBeInTheDocument();
 };
 
 export const expectCharacterPreviewToShow = (screen: any, character: TestCharacterData) => {
   expect(screen.getByText('Character Preview')).toBeInTheDocument();
   expect(screen.getByText(character.name)).toBeInTheDocument();
-  expect(screen.getByText(new RegExp(character.race as string, 'i'))).toBeInTheDocument();
+  expect(screen.getByText(createSafeTestRegExp(character.race as string))).toBeInTheDocument();
 
   // Check ability scores in preview
   Object.entries(character.abilityScores).forEach(([_ability, score]) => {

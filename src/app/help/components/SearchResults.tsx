@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Search, X } from 'lucide-react';
+import { createSafeTestRegExp } from '@/test-utils/secure-regexp';
 
 interface SearchResultsProps {
   query: string;
@@ -59,7 +60,7 @@ export default function SearchResults({ query, onClearSearch }: SearchResultsPro
   const highlightText = (text: string, query: string) => {
     if (!query) return text;
 
-    const regex = new RegExp(`(${query})`, 'gi');
+    const regex = createSafeTestRegExp(`(${query})`);
     const parts = text.split(regex);
 
     return parts.map((part, index) =>

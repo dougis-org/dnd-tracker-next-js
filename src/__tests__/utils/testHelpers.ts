@@ -4,6 +4,7 @@
  */
 
 import { jest } from '@jest/globals';
+import { createSafeTestRegExp } from '../test-utils/secure-regexp';
 
 /**
  * Standard mock factory functions
@@ -315,29 +316,26 @@ export namespace ServiceTesting {
 export namespace InteractionTesting {
   export function clickElement(selector: string) {
     const { fireEvent, screen } = require('@testing-library/react');
-    // Escape special regex characters to prevent ReDoS attacks
-    const escapedSelector = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const element = screen.getByRole('button', { name: new RegExp(escapedSelector, 'i') }) ||
+    // Use secure RegExp helper to prevent ReDoS vulnerabilities
+    const element = screen.getByRole('button', { name: createSafeTestRegExp(selector) }) ||
                    screen.getByTestId(selector) ||
-                   screen.getByText(new RegExp(escapedSelector, 'i'));
+                   screen.getByText(createSafeTestRegExp(selector));
     fireEvent.click(element);
     return element;
   }
 
   export function typeInInput(labelText: string, value: string) {
     const { fireEvent, screen } = require('@testing-library/react');
-    // Escape special regex characters to prevent ReDoS attacks
-    const escapedLabelText = labelText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const input = screen.getByLabelText(new RegExp(escapedLabelText, 'i'));
+    // Use secure RegExp helper to prevent ReDoS vulnerabilities
+    const input = screen.getByLabelText(createSafeTestRegExp(labelText));
     fireEvent.change(input, { target: { value } });
     return input;
   }
 
   export function selectOption(labelText: string, optionText: string) {
     const { fireEvent, screen } = require('@testing-library/react');
-    // Escape special regex characters to prevent ReDoS attacks
-    const escapedLabelText = labelText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const select = screen.getByLabelText(new RegExp(escapedLabelText, 'i'));
+    // Use secure RegExp helper to prevent ReDoS vulnerabilities
+    const select = screen.getByLabelText(createSafeTestRegExp(labelText));
     fireEvent.change(select, { target: { value: optionText } });
     return select;
   }

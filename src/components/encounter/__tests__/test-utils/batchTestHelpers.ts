@@ -6,6 +6,7 @@
 import { createMockToast } from './mockSetup';
 import { COMMON_TEST_ENCOUNTERS } from './batchActionsSharedMocks';
 import { expectCallbacksInvoked, expectErrorToast } from './testSetup';
+import { createSafeTestRegExp } from '../../../../test-utils/secure-regexp';
 
 // === SHARED MOCK SETUP ===
 
@@ -152,7 +153,7 @@ export const clickOperation = async (
     await clickButtonFn(/delete/i);
     await clickButtonFn('Delete');
   } else {
-    await clickButtonFn(new RegExp(operation, 'i'));
+    await clickButtonFn(createSafeTestRegExp(operation));
   }
 };
 
