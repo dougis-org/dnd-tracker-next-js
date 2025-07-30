@@ -4,7 +4,7 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { createSafeTestRegExp } from '../../../../test-utils/secure-regexp';
+import { createSafeTestRegExp } from '../../../../../test-utils/secure-regexp';
 
 // Basic form interactions - consolidates field manipulation
 export const fillCharacterName = async (user: any, name: string) => {

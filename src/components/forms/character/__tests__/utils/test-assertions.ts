@@ -2,7 +2,7 @@
  * Shared test assertion utilities to reduce duplication across test files
  */
 import { screen } from '@testing-library/react';
-import { createSafeTestRegExp } from '../../../../test-utils/secure-regexp';
+import { createSafeTestRegExp } from '../../../../../test-utils/secure-regexp';
 
 // Field validation assertions - replaces repeated field checking patterns
 export const expectFieldToBeRequired = (field: HTMLElement) => {
