@@ -1,18 +1,16 @@
 /**
  * NextAuth MongoDB Integration Tests
- * 
+ *
  * Tests for Issue #526: Configure MongoDB adapter for NextAuth
  * Verifies that NextAuth is properly configured with MongoDB adapter
  * and can handle database sessions correctly.
  */
 
-import { NextAuthConfig } from 'next-auth';
-import { MongoClient } from 'mongodb';
 import { UserService } from '../services/UserService';
-import { 
-  isLocalHostname, 
-  isValidProductionHostname, 
-  validateNextAuthUrl 
+import {
+  isLocalHostname,
+  isValidProductionHostname,
+  validateNextAuthUrl
 } from '../auth';
 
 // Mock UserService to prevent actual database calls during testing
@@ -21,7 +19,7 @@ jest.mock('../services/UserService');
 describe('NextAuth MongoDB Integration', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Set test environment variables
     process.env.MONGODB_URI = 'mongodb://localhost:27017/test';
     process.env.MONGODB_DB_NAME = 'dnd_tracker_test';
@@ -150,14 +148,14 @@ describe('NextAuth MongoDB Integration', () => {
     describe('isValidProductionHostname', () => {
       it('should validate production hostnames correctly', () => {
         const originalEnv = process.env.NODE_ENV;
-        
+
         process.env.NODE_ENV = 'production';
         expect(isValidProductionHostname('example.com')).toBe(true);
         expect(isValidProductionHostname('localhost')).toBe(false);
-        
+
         process.env.NODE_ENV = 'development';
         expect(isValidProductionHostname('localhost')).toBe(true);
-        
+
         process.env.NODE_ENV = originalEnv;
       });
     });
@@ -170,10 +168,10 @@ describe('NextAuth MongoDB Integration', () => {
       it('should reject invalid URLs in production', () => {
         const originalEnv = process.env.NODE_ENV;
         process.env.NODE_ENV = 'production';
-        
+
         expect(validateNextAuthUrl('http://localhost:3000')).toBeUndefined();
         expect(validateNextAuthUrl('invalid-url')).toBeUndefined();
-        
+
         process.env.NODE_ENV = originalEnv;
       });
 
@@ -181,10 +179,10 @@ describe('NextAuth MongoDB Integration', () => {
         // Temporarily clear the environment variable to test the fallback
         const originalUrl = process.env.NEXTAUTH_URL;
         delete process.env.NEXTAUTH_URL;
-        
+
         expect(validateNextAuthUrl()).toBeUndefined();
         expect(validateNextAuthUrl('')).toBeUndefined();
-        
+
         // Restore the environment variable
         process.env.NEXTAUTH_URL = originalUrl;
       });
