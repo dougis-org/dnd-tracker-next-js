@@ -67,9 +67,10 @@ const testServiceCall = async (
   character: ICharacter,
   expectedArgs: any[]
 ) => {
+  const { SecureHookMethodCaller } = require('../../../../test-utils/secure-method-calls');
   const { result } = renderHookWithDefaults();
   await act(async () => {
-    await result.current[hookMethod](character);
+    await SecureHookMethodCaller.callHookMethod(result.current, hookMethod, character);
   });
   expect(serviceMethod).toHaveBeenCalledWith(...expectedArgs);
 };

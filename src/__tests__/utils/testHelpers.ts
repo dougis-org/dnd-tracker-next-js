@@ -4,7 +4,7 @@
  */
 
 import { jest } from '@jest/globals';
-import { createSafeTestRegExp } from '../test-utils/secure-regexp';
+import { containsTextIgnoreCase } from '../test-utils/secure-regexp';
 
 /**
  * Standard mock factory functions
@@ -317,9 +317,9 @@ export namespace InteractionTesting {
   export function clickElement(selector: string) {
     const { fireEvent, screen } = require('@testing-library/react');
     // Use secure RegExp helper to prevent ReDoS vulnerabilities
-    const element = screen.getByRole('button', { name: createSafeTestRegExp(selector) }) ||
+    const element = screen.getByRole('button', { name: (content) => containsTextIgnoreCase(content, selector) }) ||
                    screen.getByTestId(selector) ||
-                   screen.getByText(createSafeTestRegExp(selector));
+                   screen.getByText((content) => containsTextIgnoreCase(content, selector));
     fireEvent.click(element);
     return element;
   }
@@ -327,7 +327,7 @@ export namespace InteractionTesting {
   export function typeInInput(labelText: string, value: string) {
     const { fireEvent, screen } = require('@testing-library/react');
     // Use secure RegExp helper to prevent ReDoS vulnerabilities
-    const input = screen.getByLabelText(createSafeTestRegExp(labelText));
+    const input = screen.getByLabelText((content) => containsTextIgnoreCase(content, labelText));
     fireEvent.change(input, { target: { value } });
     return input;
   }
@@ -335,7 +335,7 @@ export namespace InteractionTesting {
   export function selectOption(labelText: string, optionText: string) {
     const { fireEvent, screen } = require('@testing-library/react');
     // Use secure RegExp helper to prevent ReDoS vulnerabilities
-    const select = screen.getByLabelText(createSafeTestRegExp(labelText));
+    const select = screen.getByLabelText((content) => containsTextIgnoreCase(content, labelText));
     fireEvent.change(select, { target: { value: optionText } });
     return select;
   }

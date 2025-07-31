@@ -1,7 +1,8 @@
 import { screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { testDataFactories } from '@/lib/services/__tests__/testDataFactories';
-import { createSafeTestRegExp } from '../../../test-utils/secure-regexp';
+// Import removed - containsTextIgnoreCase not used in this file currently
+// import { containsTextIgnoreCase } from '../../../test-utils/secure-regexp';
 
 // Default participant data
 const DEFAULT_PARTICIPANT = {

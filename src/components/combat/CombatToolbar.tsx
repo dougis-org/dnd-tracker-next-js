@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useCallback, useMemo } from 'react';
+import { SecureKeyboardActionHandler } from '../../test-utils/secure-method-calls';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -202,7 +203,7 @@ export function CombatToolbar({
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
     if (isInputElement(event.target)) return;
 
-    const action = keyActions[event.code as keyof typeof keyActions];
+    const action = SecureKeyboardActionHandler.getKeyAction(keyActions, event.code);
     if (action) {
       event.preventDefault();
       action();

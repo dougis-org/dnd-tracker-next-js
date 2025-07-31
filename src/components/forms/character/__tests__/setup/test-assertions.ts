@@ -3,7 +3,7 @@
  */
 
 import { screen, waitFor } from '@testing-library/react';
-import { createSafeTestRegExp } from '../../../../../test-utils/secure-regexp';
+import { containsTextIgnoreCase } from '../../../../../test-utils/secure-regexp';
 
 // Common field validation assertions
 export const expectFieldToBeRendered = (labelText: string | RegExp) => {
@@ -60,7 +60,7 @@ export const expectSectionToBeRendered = (sectionTitle: string) => {
 };
 
 export const expectSectionToHaveHeading = (headingText: string, level: string = '3') => {
-  const heading = screen.getByRole('heading', { name: createSafeTestRegExp(headingText) });
+  const heading = screen.getByRole('heading', { name: (content) => containsTextIgnoreCase(content, headingText) });
   expect(heading).toHaveAttribute('aria-level', level);
   return heading;
 };
@@ -69,7 +69,7 @@ export const expectSectionToHaveHeading = (headingText: string, level: string = 
 export const expectAbilityScoreFieldsToBeRendered = () => {
   const abilities = ['Strength', 'Dexterity', 'Constitution', 'Intelligence', 'Wisdom', 'Charisma'];
   const fields = abilities.map(ability =>
-    expectFieldToBeRendered(createSafeTestRegExp(ability))
+    expectFieldToBeRendered((content) => containsTextIgnoreCase(content, ability))
   );
   return fields;
 };
@@ -83,7 +83,7 @@ export const expectAbilityScoreModifiersToBeDisplayed = (modifiers: Record<strin
 export const expectAbilityScoreFieldsToHaveNumberAttributes = () => {
   const abilities = ['Strength', 'Dexterity', 'Constitution', 'Intelligence', 'Wisdom', 'Charisma'];
   abilities.forEach(ability => {
-    const field = screen.getByLabelText(createSafeTestRegExp(ability));
+    const field = screen.getByLabelText((content) => containsTextIgnoreCase(content, ability));
     expect(field).toHaveAttribute('type', 'number');
     expect(field).toHaveAttribute('min', '1');
     expect(field).toHaveAttribute('max', '30');

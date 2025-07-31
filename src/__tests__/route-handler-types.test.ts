@@ -8,8 +8,7 @@
  */
 
 import { describe, it, expect } from '@jest/globals';
-import fs from 'fs';
-import path from 'path';
+// Removed unused fs and path imports - using secure utilities instead
 
 describe('Route Handler Parameter Types', () => {
   const routeFiles = [
@@ -24,8 +23,8 @@ describe('Route Handler Parameter Types', () => {
   describe('Next.js 15 App Router compatibility', () => {
     routeFiles.forEach(filePath => {
       it(`should use Promise wrapper for dynamic route params in ${filePath}`, () => {
-        const fullPath = path.join(process.cwd(), filePath);
-        const content = fs.readFileSync(fullPath, 'utf-8');
+        const { safeReadTestFile } = require('../test-utils/secure-filesystem');
+        const content = safeReadTestFile(filePath);
 
         // Next.js 15 App Router requires Promise<{ id: string }> for dynamic routes
         expect(content).toMatch(/params.*Promise<\s*{\s*id:\s*string\s*}\s*>/);

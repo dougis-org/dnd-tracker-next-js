@@ -1,5 +1,5 @@
 import { screen, fireEvent, waitFor } from '@testing-library/react';
-import { createSafeTestRegExp } from '../../../../../test-utils/secure-regexp';
+import { containsTextIgnoreCase } from '../../../../../test-utils/secure-regexp';
 
 /**
  * User interaction utilities for round tracking tests
@@ -38,7 +38,7 @@ export async function clickEffectButton(effectName: string, action: 'remove' | '
 
 export async function activateTrigger(triggerName: string) {
   const activateButton = screen.getByRole('button', {
-    name: createSafeTestRegExp(`activate ${triggerName}`)
+    name: (content) => containsTextIgnoreCase(content, `activate ${triggerName}`)
   });
   fireEvent.click(activateButton);
   await waitFor(() => {

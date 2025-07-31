@@ -5,7 +5,7 @@ describe('Production Deployment Configuration', () => {
   describe('Public Assets', () => {
     it('should ensure all feature icons exist in public directory', () => {
       // Use static path construction to prevent path traversal
-      const publicDir = 'public/features';
+      const _publicDir = 'public/features'; // Prefixed with _ to indicate intentionally unused
       const expectedIcons = [
         'initiative-tracker.svg',
         'hp-management.svg',
@@ -20,8 +20,9 @@ describe('Production Deployment Configuration', () => {
         if (!/^[a-zA-Z0-9-_.]+\.svg$/.test(iconFile)) {
           throw new Error(`Invalid icon filename: ${iconFile}`);
         }
-        const iconPath = `${publicDir}/${iconFile}`;
-        expect(fs.existsSync(iconPath)).toBe(true);
+        const { safeTestFileExists } = require('../../../test-utils/secure-filesystem');
+        const iconPath = `public/${iconFile}`;
+        expect(safeTestFileExists(iconPath)).toBe(true);
       });
     });
 

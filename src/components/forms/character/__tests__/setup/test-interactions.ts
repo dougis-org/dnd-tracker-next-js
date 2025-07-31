@@ -4,7 +4,7 @@
 
 import { screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { createSafeTestRegExp } from '../../../../../test-utils/secure-regexp';
+import { containsTextIgnoreCase } from '../../../../../test-utils/secure-regexp';
 
 // Common form interaction patterns
 export const fillCharacterName = async (name: string) => {
@@ -27,7 +27,7 @@ export const selectRace = async (race: string) => {
   if (race === 'custom') {
     await userEvent.click(screen.getByText('Custom'));
   } else {
-    const raceOption = screen.getByText(createSafeTestRegExp(race));
+    const raceOption = screen.getByText((content) => containsTextIgnoreCase(content, race));
     await userEvent.click(raceOption);
   }
   return raceField;
@@ -43,13 +43,13 @@ export const fillCustomRace = async (customRaceName: string) => {
 export const selectSize = async (size: string) => {
   const sizeField = screen.getByLabelText(/size/i);
   await userEvent.click(sizeField);
-  await userEvent.click(screen.getByText(createSafeTestRegExp(size)));
+  await userEvent.click(screen.getByText((content) => containsTextIgnoreCase(content, size)));
   return sizeField;
 };
 
 // Ability score interactions
 export const fillAbilityScore = async (abilityName: string, value: number) => {
-  const field = screen.getByLabelText(createSafeTestRegExp(abilityName));
+  const field = screen.getByLabelText((content) => containsTextIgnoreCase(content, abilityName));
   // Use fireEvent.change for number inputs to avoid concatenation issues
   fireEvent.change(field, { target: { value: value.toString() } });
   return field;
@@ -94,7 +94,7 @@ export const selectCharacterClass = async (className: string, index: number = 0)
   const classFields = screen.getAllByLabelText(/character class/i);
   const classField = classFields[index];
   await userEvent.click(classField);
-  await userEvent.click(screen.getByText(createSafeTestRegExp(className)));
+  await userEvent.click(screen.getByText((content) => containsTextIgnoreCase(content, className)));
   return classField;
 };
 

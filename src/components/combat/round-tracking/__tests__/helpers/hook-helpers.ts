@@ -31,8 +31,9 @@ export function setupRoundTrackingTest(
 }
 
 export function performRoundAction(result: any, action: string, ...args: any[]) {
+  const { SecureActionDispatcher } = require('../../../../../test-utils/secure-method-calls');
   act(() => {
-    result.current[action](...args);
+    SecureActionDispatcher.dispatchAction(result.current, action, ...args);
   });
 }
 

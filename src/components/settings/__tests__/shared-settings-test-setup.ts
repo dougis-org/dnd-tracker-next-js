@@ -1,6 +1,6 @@
 import React from 'react';
 import { useSession, signOut } from 'next-auth/react';
-import { createSafeTestRegExp } from '../../../test-utils/secure-regexp';
+import { containsTextIgnoreCase } from '../../../test-utils/secure-regexp';
 
 /**
  * Shared Settings Test Setup
@@ -205,7 +205,7 @@ const deletionTestActions = {
       let found = false;
       for (const msg of errorMessages) {
         try {
-          expect(screen.getByText(createSafeTestRegExp(msg.trim()))).toBeInTheDocument();
+          expect(screen.getByText((content) => containsTextIgnoreCase(content, msg.trim()))).toBeInTheDocument();
           found = true;
           break;
         } catch {
@@ -214,7 +214,7 @@ const deletionTestActions = {
       }
       if (!found) {
         // If none found, fail with the original expectation to get proper error message
-        expect(screen.getByText(createSafeTestRegExp(errorMessages[0].trim()))).toBeInTheDocument();
+        expect(screen.getByText((content) => containsTextIgnoreCase(content, errorMessages[0].trim()))).toBeInTheDocument();
       }
     });
   }
