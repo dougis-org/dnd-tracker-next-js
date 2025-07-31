@@ -132,6 +132,19 @@ export const expectValidationError = async (response: Response, expectedField?: 
   }
 };
 
+export const expectAuthorizationError = async (response: Response, message = 'You can only access your own profile') => {
+  await expectErrorResponse(response, 403, message);
+};
+
+export const createRequestBody = (overrides: Partial<any> = {}) => ({
+  displayName: 'John Doe',
+  timezone: 'America/New_York',
+  dndEdition: 'Pathfinder 2e',
+  experienceLevel: 'experienced',
+  primaryRole: 'dm',
+  ...overrides,
+});
+
 // Additional functions that tests depend on
 export const createSessionExpectation = (userId = SHARED_API_TEST_CONSTANTS.TEST_USER_ID) =>
   expect.objectContaining({
@@ -160,4 +173,21 @@ export const validateMockSetup = async (mockAuth: jest.MockedFunction<any>, mock
   const session = await executeAndValidateMock(mockAuth, createSessionExpectation(userId));
   const token = await executeAndValidateMock(mockGetToken, createTokenExpectation(userId));
   return { session, token };
+};
+
+export const createRouteTestExecutor = (handler: Function, baseUrl = '/api/users') => {
+  return async (userId = SHARED_API_TEST_CONSTANTS.TEST_USER_ID, requestData?: any, method: 'GET' | 'PATCH' | 'POST' | 'DELETE' = 'GET') => {
+    const mockRequest = new NextRequest(`http://localhost:3000${baseUrl}/${userId}/profile`, {
+      method,
+      body: requestData ? JSON.stringify(requestData) : undefined,
+      headers: { 'content-type': 'application/json' },
+    });
+    
+    if (requestData) {
+      (mockRequest as any).json = jest.fn().mockResolvedValue(requestData);
+    }
+    
+    const params = createMockParams(userId);
+    return handler(mockRequest, { params });
+  };
 };
