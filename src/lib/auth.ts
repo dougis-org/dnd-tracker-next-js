@@ -142,32 +142,37 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   session: {
-    strategy: 'jwt',
+    strategy: 'database',
     maxAge: 30 * 24 * 60 * 60, // 30 days
     updateAge: 24 * 60 * 60, // 24 hours
   },
   callbacks: {
-    async session({ session, token }: { session: any; token: any }) {
+    async session({ session, user }: { session: any; user: any }) {
       try {
         // Enhanced session callback for Issue #438: Better authentication state management
-        if (!session?.user || !token) {
-          console.warn('Session callback: Missing session or token data');
+        if (!session?.user || !user) {
+          console.warn('Session callback: Missing session or user data');
           return session;
         }
 
-        // Validate token expiration to prevent authentication bypass
-        if (token.exp && Date.now() >= token.exp * 1000) {
-          console.warn('Session callback: Token has expired');
-          return null; // Force re-authentication
-        }
+        // Add user data to session from database user
+        session.user.id = user.id ?? '';
+        session.user.subscriptionTier = user.subscriptionTier || 'free';
 
-        // Add user ID and subscription tier to session from JWT token
-        session.user.id = token.sub ?? '';
-        session.user.subscriptionTier = token.subscriptionTier || 'free';
-
-        // Ensure user has a valid name
-        if (!session.user.name && token.firstName && token.lastName) {
-          session.user.name = `${token.firstName} ${token.lastName}`;
+        // Get additional user data from UserService if needed
+        if (user.email && (!session.user.name || !session.user.subscriptionTier)) {
+          try {
+            const userResult = await UserService.getUserByEmail(user.email);
+            if (userResult.success && userResult.data) {
+              const userData = userResult.data;
+              session.user.subscriptionTier = userData.subscriptionTier || 'free';
+              if (!session.user.name) {
+                session.user.name = `${userData.firstName} ${userData.lastName}`;
+              }
+            }
+          } catch (error) {
+            console.warn('Failed to fetch additional user data:', error);
+          }
         }
 
         return session;
@@ -176,31 +181,30 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         return null; // Force re-authentication on error
       }
     },
-    async jwt({ token, user }: { token: any; user?: any }) {
+    async signIn({ user, account, profile: _profile, email: _email, credentials: _credentials }) {
       try {
-        // Enhanced JWT callback for Issue #438: Better token management
-        // Handle null/undefined token by creating a minimal token object
-        if (!token) {
-          token = {};
+        // Enhanced signIn callback for database session management
+        if (!user?.email) {
+          console.warn('SignIn callback: Missing user email');
+          return false;
         }
 
-        if (user) {
-          // Store additional user data in token for session persistence
-          token.subscriptionTier = (user as any).subscriptionTier || 'free';
-          token.firstName = (user as any).firstName || '';
-          token.lastName = (user as any).lastName || '';
-          token.email = (user as any).email || token.email;
+        // For credentials provider, user is already authenticated by authorize function
+        if (account?.provider === 'credentials') {
+          return true;
         }
 
-        // Ensure token has required fields and update sub when user is provided
-        if (user?.id) {
-          token.sub = user.id;
+        // For other providers, validate user exists in our system
+        const userResult = await UserService.getUserByEmail(user.email);
+        if (!userResult.success) {
+          console.warn(`SignIn callback: User not found in system: ${user.email}`);
+          return false;
         }
 
-        return token;
+        return true;
       } catch (error) {
-        console.error('JWT callback error:', error);
-        return token || {}; // Return existing token or empty object to prevent complete failure
+        console.error('SignIn callback error:', error);
+        return false;
       }
     },
     async redirect({ url, baseUrl }: { url: string; baseUrl: string }) {
