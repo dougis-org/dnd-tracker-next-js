@@ -20,6 +20,59 @@ export function isLocalHostname(hostname: string): boolean {
 }
 
 /**
+ * Helper function to enhance session user data
+ * Reduces complexity in session callback (Issue #526)
+ */
+async function enhanceSessionUserData(session: any, user: any): Promise<any> {
+  // Add user data to session from database user
+  session.user.id = user.id ?? '';
+  session.user.subscriptionTier = user.subscriptionTier || 'free';
+
+  // Get additional user data from UserService if needed
+  if (user.email && (!session.user.name || !session.user.subscriptionTier)) {
+    try {
+      const userResult = await UserService.getUserByEmail(user.email);
+      if (userResult.success && userResult.data) {
+        const userData = userResult.data;
+        session.user.subscriptionTier = userData.subscriptionTier || 'free';
+        if (!session.user.name) {
+          session.user.name = `${userData.firstName} ${userData.lastName}`;
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to fetch additional user data:', error);
+    }
+  }
+
+  return session;
+}
+
+/**
+ * Helper function to validate user sign in
+ * Reduces complexity in signIn callback (Issue #526)
+ */
+async function validateUserSignIn(user: any, account: any): Promise<boolean> {
+  if (!user?.email) {
+    console.warn('SignIn callback: Missing user email');
+    return false;
+  }
+
+  // For credentials provider, user is already authenticated by authorize function
+  if (account?.provider === 'credentials') {
+    return true;
+  }
+
+  // For other providers, validate user exists in our system
+  const userResult = await UserService.getUserByEmail(user.email);
+  if (!userResult.success) {
+    console.warn(`SignIn callback: User not found in system: ${user.email}`);
+    return false;
+  }
+
+  return true;
+}
+
+/**
  * Validates hostname for production environment
  * Exported for reuse in test files to prevent code duplication (Issue #499)
  */
@@ -155,27 +208,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return session;
         }
 
-        // Add user data to session from database user
-        session.user.id = user.id ?? '';
-        session.user.subscriptionTier = user.subscriptionTier || 'free';
-
-        // Get additional user data from UserService if needed
-        if (user.email && (!session.user.name || !session.user.subscriptionTier)) {
-          try {
-            const userResult = await UserService.getUserByEmail(user.email);
-            if (userResult.success && userResult.data) {
-              const userData = userResult.data;
-              session.user.subscriptionTier = userData.subscriptionTier || 'free';
-              if (!session.user.name) {
-                session.user.name = `${userData.firstName} ${userData.lastName}`;
-              }
-            }
-          } catch (error) {
-            console.warn('Failed to fetch additional user data:', error);
-          }
-        }
-
-        return session;
+        return await enhanceSessionUserData(session, user);
       } catch (error) {
         console.error('Session callback error:', error);
         return null; // Force re-authentication on error
@@ -183,25 +216,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
     async signIn({ user, account, profile: _profile, email: _email, credentials: _credentials }) {
       try {
-        // Enhanced signIn callback for database session management
-        if (!user?.email) {
-          console.warn('SignIn callback: Missing user email');
-          return false;
-        }
-
-        // For credentials provider, user is already authenticated by authorize function
-        if (account?.provider === 'credentials') {
-          return true;
-        }
-
-        // For other providers, validate user exists in our system
-        const userResult = await UserService.getUserByEmail(user.email);
-        if (!userResult.success) {
-          console.warn(`SignIn callback: User not found in system: ${user.email}`);
-          return false;
-        }
-
-        return true;
+        return await validateUserSignIn(user, account);
       } catch (error) {
         console.error('SignIn callback error:', error);
         return false;
