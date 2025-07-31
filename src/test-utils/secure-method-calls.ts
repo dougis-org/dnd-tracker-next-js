@@ -28,6 +28,7 @@ export class SecureHookMethodCaller {
       'addCharacter': 'addCharacter',
       'updateCharacter': 'updateCharacter',
       'deleteCharacter': 'deleteCharacter',
+      'duplicateCharacter': 'duplicateCharacter',
       'saveCharacter': 'saveCharacter',
       'loadCharacter': 'loadCharacter',
       'validateCharacter': 'validateCharacter',
@@ -107,6 +108,19 @@ export class SecureActionDispatcher {
       'next': 'next',
       'previous': 'previous',
       'update': 'update',
+      // Round tracking actions
+      'nextRound': 'nextRound',
+      'previousRound': 'previousRound',
+      'setRound': 'setRound',
+      // History actions
+      'addHistoryEvent': 'addHistoryEvent',
+      'clearHistory': 'clearHistory',
+      // Effect actions
+      'addEffect': 'addEffect',
+      'removeEffect': 'removeEffect',
+      // Trigger actions
+      'addTrigger': 'addTrigger',
+      'activateTrigger': 'activateTrigger',
     };
 
     const safeName = actionMap[actionName];
