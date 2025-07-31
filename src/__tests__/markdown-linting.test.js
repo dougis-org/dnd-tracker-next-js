@@ -7,18 +7,33 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
-// Secure temporary file creation to avoid Codacy path security warnings
+// Secure temporary file creation using crypto module for security
 function createSecureTempFile(content) {
+  const crypto = require('crypto');
   const tempDir = os.tmpdir();
-  const fileName = `markdownlint-test-${Date.now()}-${Math.random().toString(36).substr(2, 9)}.md`;
-  const filePath = path.join(tempDir, fileName);
+  // Use crypto.randomBytes for secure random generation instead of Math.random()
+  const randomSuffix = crypto.randomBytes(8).toString('hex');
+  const fileName = `markdownlint-test-${Date.now()}-${randomSuffix}.md`;
+  // Validate tempDir is safe before creating path
+  const safeTempDir = path.resolve(tempDir);
+  const filePath = path.join(safeTempDir, fileName);
+  // Validate the final path is still within tempDir to prevent path traversal
+  if (!filePath.startsWith(safeTempDir)) {
+    throw new Error('Invalid file path detected');
+  }
   fs.writeFileSync(filePath, content);
   return filePath;
 }
 
 function cleanupTempFile(filePath) {
-  if (filePath && fs.existsSync(filePath)) {
-    fs.unlinkSync(filePath);
+  if (filePath && typeof filePath === 'string') {
+    // Validate the path is safe before attempting cleanup
+    const safeTempDir = path.resolve(os.tmpdir());
+    const resolvedPath = path.resolve(filePath);
+    // Only clean up files that are in the temp directory
+    if (resolvedPath.startsWith(safeTempDir) && fs.existsSync(resolvedPath)) {
+      fs.unlinkSync(resolvedPath);
+    }
   }
 }
 

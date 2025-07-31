@@ -9,18 +9,36 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const token = await getToken({
-    req: request,
-    secret: process.env.NEXTAUTH_SECRET,
-  });
+  try {
+    const token = await getToken({
+      req: request,
+      secret: process.env.NEXTAUTH_SECRET,
+    });
 
-  if (!token || !token.sub) {
-    return isProtectedApiRoute(pathname)
-      ? NextResponse.json({ error: 'Authentication required' }, { status: 401 })
-      : NextResponse.redirect(new URL('/signin', request.url));
+    if (!token || !token.sub) {
+      if (isProtectedApiRoute(pathname)) {
+        return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+      }
+
+      // Create signin URL with callback parameter
+      const signinUrl = new URL('/signin', request.url);
+      signinUrl.searchParams.set('callbackUrl', encodeURI(request.url));
+
+      return NextResponse.redirect(signinUrl);
+    }
+
+    return NextResponse.next();
+  } catch (error) {
+    console.error('Middleware authentication error:', error);
+
+    if (isProtectedApiRoute(pathname)) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    }
+
+    // Redirect to signin on any authentication error
+    const signinUrl = new URL('/signin', request.url);
+    return NextResponse.redirect(signinUrl);
   }
-
-  return NextResponse.next();
 }
 
 function isProtectedRoute(pathname: string): boolean {
