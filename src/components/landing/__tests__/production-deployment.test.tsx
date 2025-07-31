@@ -21,7 +21,7 @@ describe('Production Deployment Configuration', () => {
           throw new Error(`Invalid icon filename: ${iconFile}`);
         }
         const { safeTestFileExists } = require('../../../test-utils/secure-filesystem');
-        const iconPath = `public/${iconFile}`;
+        const iconPath = `public/features/${iconFile}`;
         expect(safeTestFileExists(iconPath)).toBe(true);
       });
     });
