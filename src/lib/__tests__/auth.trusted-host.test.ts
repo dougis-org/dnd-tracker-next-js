@@ -156,12 +156,11 @@ describe('NextAuth Trusted Host Configuration', () => {
       expect(config.providers.length).toBeGreaterThan(0);
 
       expect(config.session).toBeDefined();
-      expect(config.session.strategy).toBe('jwt');
+      expect(config.session.strategy).toBe('database');
       expect(config.session.maxAge).toBe(30 * 24 * 60 * 60); // 30 days
 
       expect(config.callbacks).toBeDefined();
       expect(config.callbacks.session).toBeDefined();
-      expect(config.callbacks.jwt).toBeDefined();
 
       expect(config.pages).toBeDefined();
       expect(config.pages.signIn).toBe('/signin');
