@@ -2,7 +2,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { CharacterListView } from '../CharacterListView';
 import { CharacterService } from '@/lib/services/CharacterService';
-import { createSafeTestRegExp } from '../../../test-utils/secure-regexp';
+import { containsTextIgnoreCase } from '../../../test-utils/secure-regexp';
 import {
   mockCharacters,
   createMockPaginatedResponse,
@@ -162,7 +162,7 @@ describe('CharacterListView', () => {
       render(<CharacterListView {...defaultProps} />);
       await waitForCharacterToLoad();
 
-      const actionButtons = screen.getAllByRole('button', { name: createSafeTestRegExp(actionName) });
+      const actionButtons = screen.getAllByRole('button', { name: (content) => containsTextIgnoreCase(content, actionName) });
       fireEvent.click(actionButtons[0]);
 
       expect(defaultProps[callbackProp as keyof typeof defaultProps]).toHaveBeenCalledWith(mockCharacters[0]);

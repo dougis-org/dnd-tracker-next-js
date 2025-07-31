@@ -4,7 +4,7 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { createSafeTestRegExp } from '../../../../../test-utils/secure-regexp';
+import { containsTextIgnoreCase } from '../../../../../test-utils/secure-regexp';
 
 // Basic form interactions - consolidates field manipulation
 export const fillCharacterName = async (user: any, name: string) => {
@@ -21,7 +21,7 @@ export const selectCharacterType = async (user: any, type: string) => {
 export const selectCharacterRace = async (user: any, race: string) => {
   const raceField = screen.getByLabelText(/race/i);
   await user.click(raceField);
-  const raceOption = screen.getByText(createSafeTestRegExp(race));
+  const raceOption = screen.getByText((content) => containsTextIgnoreCase(content, race));
   await user.click(raceOption);
 };
 
@@ -33,7 +33,7 @@ export const fillCustomRace = async (user: any, customRace: string) => {
 
 // Ability score interactions - consolidates ability score manipulation
 export const fillAbilityScore = async (user: any, ability: string, value: number) => {
-  const field = screen.getByLabelText(createSafeTestRegExp(ability));
+  const field = screen.getByLabelText((content) => containsTextIgnoreCase(content, ability));
   await user.clear(field);
   await user.type(field, value.toString());
 };
@@ -58,7 +58,7 @@ export const rollRandomScores = async (user: any) => {
 export const selectCharacterClass = async (user: any, className: string, index = 0) => {
   const classFields = screen.getAllByLabelText(/character class/i);
   await user.click(classFields[index]);
-  const classOption = screen.getByText(createSafeTestRegExp(className));
+  const classOption = screen.getByText((content) => containsTextIgnoreCase(content, className));
   await user.click(classOption);
 };
 
@@ -403,7 +403,7 @@ export function testSectionLayout(
         render(React.createElement(Component, props));
         expect(screen.getByText(sectionConfig.title)).toBeInTheDocument();
         if (sectionConfig.description) {
-          expect(screen.getByText(createSafeTestRegExp(sectionConfig.description))).toBeInTheDocument();
+          expect(screen.getByText((content) => containsTextIgnoreCase(content, sectionConfig.description))).toBeInTheDocument();
         }
       }
     }
@@ -445,7 +445,7 @@ export function testSectionAccessibility(
       test: () => {
         render(React.createElement(Component, props));
         const heading = screen.getByRole('heading', {
-          name: createSafeTestRegExp(accessibilityConfig.headingText)
+          name: (content) => containsTextIgnoreCase(content, accessibilityConfig.headingText)
         });
         expect(heading).toHaveAttribute('aria-level', accessibilityConfig.headingLevel.toString());
       }

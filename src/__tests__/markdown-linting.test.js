@@ -4,8 +4,6 @@
 
 const { spawnSync } = require('child_process');
 const fs = require('fs');
-const path = require('path');
-const os = require('os');
 
 // Test utilities for markdown validation without filesystem operations
 
@@ -55,12 +53,12 @@ describe('Markdown Linting', () => {
     test('should validate markdown content rules', () => {
       // Test multiple consecutive blank lines rule using static approach
       const testMarkdown = 'Header\n\n\n\nContent';
-      
+
       // Count consecutive blank lines to validate the rule without filesystem operations
       const lines = testMarkdown.split('\n');
       let consecutiveBlankLines = 0;
       let maxConsecutiveBlankLines = 0;
-      
+
       for (const line of lines) {
         if (line.trim() === '') {
           consecutiveBlankLines++;
@@ -69,17 +67,17 @@ describe('Markdown Linting', () => {
           consecutiveBlankLines = 0;
         }
       }
-      
+
       // This should fail our rule (more than 1 consecutive blank line)
       expect(maxConsecutiveBlankLines).toBeGreaterThan(1);
     });
 
     test('should validate newline requirements', () => {
       const testMarkdown = 'Content without newline';
-      
+
       // Check if content ends with newline
       const endsWithNewline = testMarkdown.endsWith('\n');
-      
+
       // This should fail our rule (no ending newline)
       expect(endsWithNewline).toBe(false);
     });

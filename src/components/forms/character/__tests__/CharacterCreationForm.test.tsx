@@ -2,7 +2,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { CharacterCreationForm } from '../CharacterCreationForm';
 import { CharacterService } from '@/lib/services/CharacterService';
-import { createSafeTestRegExp } from '../../../../test-utils/secure-regexp';
+import { containsTextIgnoreCase } from '../../../../test-utils/secure-regexp';
 
 // Mock the CharacterService
 jest.mock('@/lib/services/CharacterService');
@@ -57,7 +57,7 @@ describe('CharacterCreationForm', () => {
 
       const abilityScores = ['Strength', 'Dexterity', 'Constitution', 'Intelligence', 'Wisdom', 'Charisma'];
       abilityScores.forEach(ability => {
-        expect(screen.getByLabelText(createSafeTestRegExp(ability))).toBeInTheDocument();
+        expect(screen.getByLabelText((content) => containsTextIgnoreCase(content, ability))).toBeInTheDocument();
       });
     });
 
@@ -224,7 +224,7 @@ describe('CharacterCreationForm', () => {
       // Fill ability scores
       const abilityFields = ['Strength', 'Dexterity', 'Constitution', 'Intelligence', 'Wisdom', 'Charisma'];
       for (const ability of abilityFields) {
-        const field = screen.getByLabelText(createSafeTestRegExp(ability));
+        const field = screen.getByLabelText((content) => containsTextIgnoreCase(content, ability));
         await user.clear(field);
         await user.type(field, '15');
       }
@@ -253,7 +253,7 @@ describe('CharacterCreationForm', () => {
       // Fill ability scores
       const abilityFields = ['Strength', 'Dexterity', 'Constitution', 'Intelligence', 'Wisdom', 'Charisma'];
       for (const ability of abilityFields) {
-        const field = screen.getByLabelText(createSafeTestRegExp(ability));
+        const field = screen.getByLabelText((content) => containsTextIgnoreCase(content, ability));
         await user.clear(field);
         await user.type(field, '15');
       }
