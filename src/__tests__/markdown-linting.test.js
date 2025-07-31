@@ -27,12 +27,16 @@ function createSecureTempFile(content) {
 
 function cleanupTempFile(filePath) {
   if (filePath && typeof filePath === 'string') {
-    // Validate the path is safe before attempting cleanup
-    const safeTempDir = path.resolve(os.tmpdir());
-    const resolvedPath = path.resolve(filePath);
-    // Only clean up files that are in the temp directory
-    if (resolvedPath.startsWith(safeTempDir) && fs.existsSync(resolvedPath)) {
-      fs.unlinkSync(resolvedPath);
+    // Only clean up files with our specific test file pattern to avoid security issues
+    const fileName = path.basename(filePath);
+    const isValidTestFile = /^markdownlint-test-\d+-[a-f0-9]+\.md$/.test(fileName);
+    
+    if (isValidTestFile && fs.existsSync(filePath)) {
+      try {
+        fs.unlinkSync(filePath);
+      } catch (error) {
+        // Ignore cleanup errors in tests
+      }
     }
   }
 }
