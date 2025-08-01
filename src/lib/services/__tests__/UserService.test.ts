@@ -18,7 +18,6 @@ import { UserServiceAuth } from '../UserServiceAuth';
 import { UserServiceProfile } from '../UserServiceProfile';
 import { UserServiceStats } from '../UserServiceStats';
 import type { PublicUser, SubscriptionTier } from '../../validations/user';
-import type { UserStats, PaginatedResult } from '../UserServiceStats';
 import {
   createMockPublicUser,
   createMockUserRegistration,
@@ -32,11 +31,9 @@ import {
   createMockUserStats,
   createMockPaginatedResult,
   createSuccessResult,
-  createDatabaseError,
   createValidationError,
   createUserAlreadyExistsError,
   createInvalidCredentialsError,
-  createInvalidTokenError,
   createUserNotFoundError,
   setupMockClearance,
   expectDelegationCall,

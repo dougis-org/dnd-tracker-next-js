@@ -17,7 +17,6 @@ import {
   testAuthWithEnvAndSpy,
   testEnvWithConditionalImport,
   testWithTemporaryEnv,
-  testCallbackWithSpy,
   getAuthConfigAsync,
   createMockAuthData,
   testAuthorize,
