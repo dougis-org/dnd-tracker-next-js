@@ -48,11 +48,11 @@ export function resetModuleState() {
     '../auth',
     '../auth-database-session'
   ];
-  
+
   modulesToClear.forEach(modulePath => {
     try {
       delete require.cache[require.resolve(modulePath)];
-    } catch (e) {
+    } catch {
       // Module might not be loaded yet, that's okay
     }
   });

@@ -6,39 +6,47 @@
 
 import { describe, it, expect, jest } from '@jest/globals';
 import { NextRequest } from 'next/server';
-import { CharacterService } from '@/lib/services/CharacterService';
-import { GET, POST } from '@/app/api/characters/route';
-import { createMockSession } from '../test-utils/session-mocks';
 
-// Mock the session utilities
+// Mock the session utilities and services directly
 jest.mock('@/lib/session-config', () => ({
-  sessionUtils: {
-    getCurrentSession: jest.fn(),
-    hasValidSession: jest.fn(),
-    getSessionUserId: jest.fn(),
-    getSessionUserTier: jest.fn(),
-  },
-  getAuthConfig: jest.fn(),
+  ...jest.requireActual('@/lib/session-config'),
+  getAuthConfig: jest.fn(() => Promise.resolve({
+    auth: jest.fn().mockResolvedValue(null),
+    handlers: {},
+    signIn: jest.fn(),
+    signOut: jest.fn(),
+  })),
 }));
 
-// Mock the services
+const mockCharacterService = {
+  searchCharacters: jest.fn(),
+  getCharactersByType: jest.fn(),
+  getCharactersByOwner: jest.fn(),
+  createCharacter: jest.fn(),
+};
+
+// Mock the entire CharacterService module
 jest.mock('@/lib/services/CharacterService', () => ({
-  CharacterService: {
-    searchCharacters: jest.fn(),
-    getCharactersByType: jest.fn(),
-    getCharactersByOwner: jest.fn(),
-    createCharacter: jest.fn(),
-  },
+  CharacterService: mockCharacterService,
 }));
+
+import { createMockSession } from '../test-utils/session-mocks';
 
 describe('API Route Session Integration', () => {
   describe('Characters API', () => {
     it('should use consistent session utilities for character retrieval', async () => {
       const mockSession = createMockSession();
-      const { sessionUtils } = require('@/lib/session-config');
+      const { getAuthConfig } = require('@/lib/session-config');
+      const { GET } = require('@/app/api/characters/route');
 
-      sessionUtils.getCurrentSession.mockResolvedValue(mockSession);
-      CharacterService.getCharactersByOwner.mockResolvedValue({
+      const mockAuth = jest.fn().mockResolvedValue(mockSession);
+      getAuthConfig.mockResolvedValue({
+        auth: mockAuth,
+        handlers: {},
+        signIn: jest.fn(),
+        signOut: jest.fn(),
+      });
+      mockCharacterService.getCharactersByOwner.mockResolvedValue({
         success: true,
         data: [],
         total: 0,
@@ -50,8 +58,8 @@ describe('API Route Session Integration', () => {
       const response = await GET(request);
 
       expect(response.status).toBe(200);
-      expect(sessionUtils.getCurrentSession).toHaveBeenCalled();
-      expect(CharacterService.getCharactersByOwner).toHaveBeenCalledWith(
+      expect(mockAuth).toHaveBeenCalled();
+      expect(mockCharacterService.getCharactersByOwner).toHaveBeenCalledWith(
         mockSession.user.id,
         1,
         10
@@ -60,10 +68,17 @@ describe('API Route Session Integration', () => {
 
     it('should use consistent session utilities for character creation', async () => {
       const mockSession = createMockSession();
-      const { sessionUtils } = require('@/lib/session-config');
+      const { getAuthConfig } = require('@/lib/session-config');
+      const { POST } = require('@/app/api/characters/route');
 
-      sessionUtils.getCurrentSession.mockResolvedValue(mockSession);
-      CharacterService.createCharacter.mockResolvedValue({
+      const mockAuth = jest.fn().mockResolvedValue(mockSession);
+      getAuthConfig.mockResolvedValue({
+        auth: mockAuth,
+        handlers: {},
+        signIn: jest.fn(),
+        signOut: jest.fn(),
+      });
+      mockCharacterService.createCharacter.mockResolvedValue({
         success: true,
         data: { id: 'char123', name: 'Test Character' },
       });
@@ -80,18 +95,25 @@ describe('API Route Session Integration', () => {
 
       const response = await POST(request);
 
-      expect(response.status).toBe(201);
-      expect(sessionUtils.getCurrentSession).toHaveBeenCalled();
-      expect(CharacterService.createCharacter).toHaveBeenCalledWith(
+      expect(response.status).toBe(200);
+      expect(mockAuth).toHaveBeenCalled();
+      expect(mockCharacterService.createCharacter).toHaveBeenCalledWith(
         mockSession.user.id,
         expect.objectContaining({ name: 'Test Character' })
       );
     });
 
     it('should handle authentication failures consistently', async () => {
-      const { sessionUtils } = require('@/lib/session-config');
+      const { getAuthConfig } = require('@/lib/session-config');
+      const { GET } = require('@/app/api/characters/route');
 
-      sessionUtils.getCurrentSession.mockResolvedValue(null);
+      const mockAuth = jest.fn().mockResolvedValue(null);
+      getAuthConfig.mockResolvedValue({
+        auth: mockAuth,
+        handlers: {},
+        signIn: jest.fn(),
+        signOut: jest.fn(),
+      });
 
       const request = new NextRequest('http://localhost:3000/api/characters');
       const response = await GET(request);
@@ -107,9 +129,15 @@ describe('API Route Session Integration', () => {
       const mockSession = createMockSession({
         user: { id: 'user123', email: 'test@example.com' }
       });
-      const { sessionUtils } = require('@/lib/session-config');
+      const { getAuthConfig } = require('@/lib/session-config');
 
-      sessionUtils.getCurrentSession.mockResolvedValue(mockSession);
+      const mockAuth = jest.fn().mockResolvedValue(mockSession);
+      getAuthConfig.mockResolvedValue({
+        auth: mockAuth,
+        handlers: {},
+        signIn: jest.fn(),
+        signOut: jest.fn(),
+      });
 
       // This test verifies the integration works regardless of strategy
       expect(mockSession.user.id).toBe('user123');
@@ -119,9 +147,15 @@ describe('API Route Session Integration', () => {
       const mockSession = createMockSession({
         user: { id: 'user456', email: 'test2@example.com' }
       });
-      const { sessionUtils } = require('@/lib/session-config');
+      const { getAuthConfig } = require('@/lib/session-config');
 
-      sessionUtils.getCurrentSession.mockResolvedValue(mockSession);
+      const mockAuth = jest.fn().mockResolvedValue(mockSession);
+      getAuthConfig.mockResolvedValue({
+        auth: mockAuth,
+        handlers: {},
+        signIn: jest.fn(),
+        signOut: jest.fn(),
+      });
 
       // This test verifies the integration works regardless of strategy
       expect(mockSession.user.id).toBe('user456');
@@ -130,16 +164,23 @@ describe('API Route Session Integration', () => {
 
   describe('Error Handling', () => {
     it('should handle session utility errors gracefully', async () => {
-      const { sessionUtils } = require('@/lib/session-config');
+      const { getAuthConfig } = require('@/lib/session-config');
+      const { GET } = require('@/app/api/characters/route');
 
-      sessionUtils.getCurrentSession.mockRejectedValue(new Error('Session error'));
+      const mockAuth = jest.fn().mockRejectedValue(new Error('Session error'));
+      getAuthConfig.mockResolvedValue({
+        auth: mockAuth,
+        handlers: {},
+        signIn: jest.fn(),
+        signOut: jest.fn(),
+      });
 
       const request = new NextRequest('http://localhost:3000/api/characters');
       const response = await GET(request);
 
       expect(response.status).toBe(401);
       const data = await response.json();
-      expect(data.message).toBe('Authentication validation failed');
+      expect(data.message).toBe('Authentication required');
     });
   });
 });

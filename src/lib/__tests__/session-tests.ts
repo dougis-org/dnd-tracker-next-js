@@ -29,9 +29,9 @@ export function testSessionStrategyDetection() {
     });
 
     it('should prioritize NEXTAUTH_SESSION_STRATEGY over USE_DATABASE_SESSIONS', () => {
-      setupEnvVars({ 
-        NEXTAUTH_SESSION_STRATEGY: 'jwt', 
-        USE_DATABASE_SESSIONS: 'true' 
+      setupEnvVars({
+        NEXTAUTH_SESSION_STRATEGY: 'jwt',
+        USE_DATABASE_SESSIONS: 'true'
       });
       const { SESSION_STRATEGY } = require('../session-config');
       expect(SESSION_STRATEGY).toBe('jwt');
@@ -42,7 +42,7 @@ export function testSessionStrategyDetection() {
     it('should generate JWT session config', () => {
       const { getSessionConfig } = require('../session-config');
       const config = getSessionConfig('jwt');
-      
+
       expect(config.strategy).toBe('jwt');
       expect(config.maxAge).toBeGreaterThan(0);
     });
@@ -50,7 +50,7 @@ export function testSessionStrategyDetection() {
     it('should generate database session config', () => {
       const { getSessionConfig } = require('../session-config');
       const config = getSessionConfig('database');
-      
+
       expect(config.strategy).toBe('database');
       expect(config.generateSessionToken).toBeDefined();
     });
@@ -76,7 +76,7 @@ export function testSessionUtilities() {
     it('should handle null session gracefully', async () => {
       const { getCurrentSession } = require('../session/session-utilities');
       const mockAuth = jest.fn().mockResolvedValue(null);
-      
+
       const session = await getCurrentSession(mockAuth);
       expect(session).toBeNull();
     });
@@ -85,7 +85,7 @@ export function testSessionUtilities() {
       const { hasValidSession } = require('../session/session-utilities');
       const mockUser = createMockUser();
       const mockAuth = jest.fn().mockResolvedValue({ user: mockUser });
-      
+
       const isValid = await hasValidSession(mockAuth);
       expect(isValid).toBe(true);
     });
@@ -97,7 +97,7 @@ export function testSessionUtilities() {
         expires: new Date(Date.now() - 1000).toISOString()
       };
       const mockAuth = jest.fn().mockResolvedValue(expiredSession);
-      
+
       const isValid = await hasValidSession(mockAuth);
       expect(isValid).toBe(false);
     });
@@ -106,7 +106,7 @@ export function testSessionUtilities() {
       const { getSessionUserId } = require('../session/session-utilities');
       const mockUser = createMockUser();
       const mockAuth = jest.fn().mockResolvedValue({ user: mockUser });
-      
+
       const userId = await getSessionUserId(mockAuth);
       expect(userId).toBe(mockUser.id);
     });
@@ -115,7 +115,7 @@ export function testSessionUtilities() {
       const { getSessionUserTier } = require('../session/session-utilities');
       const mockUser = createMockUser({ subscriptionTier: 'premium' });
       const mockAuth = jest.fn().mockResolvedValue({ user: mockUser });
-      
+
       const tier = await getSessionUserTier(mockAuth);
       expect(tier).toBe('premium');
     });
@@ -130,7 +130,7 @@ export function testEnhancedSessionManagement() {
     it('should provide session configuration based on strategy', async () => {
       setupEnvVars({ USE_DATABASE_SESSIONS: 'true' });
       const { enhancedSessionUtils } = require('../session-config');
-      
+
       const isValid = await enhancedSessionUtils.isSessionValid();
       expect(typeof isValid).toBe('boolean');
     });
@@ -139,7 +139,7 @@ export function testEnhancedSessionManagement() {
   describe('Session Strategy Migration', () => {
     it('should provide migration utilities', () => {
       const { sessionMigration } = require('../session-config');
-      
+
       expect(sessionMigration.migrateToDatabase).toBeDefined();
       expect(sessionMigration.migrateToJWT).toBeDefined();
     });
@@ -148,7 +148,7 @@ export function testEnhancedSessionManagement() {
   describe('Development Utilities', () => {
     it('should provide debug utilities', () => {
       const { sessionDebug } = require('../session-config');
-      
+
       expect(sessionDebug.logConfig).toBeDefined();
       expect(sessionDebug.testPersistence).toBeDefined();
     });
@@ -163,7 +163,7 @@ export function testIntegrationTests() {
     it('should work with JWT strategy', async () => {
       setupEnvVars({ USE_DATABASE_SESSIONS: 'false' });
       const { getAuthConfig } = require('../session-config');
-      
+
       const config = await getAuthConfig();
       expect(config).toBeDefined();
     });
@@ -171,7 +171,7 @@ export function testIntegrationTests() {
     it('should work with database strategy', async () => {
       setupEnvVars({ USE_DATABASE_SESSIONS: 'true' });
       const { getAuthConfig } = require('../session-config');
-      
+
       const config = await getAuthConfig();
       expect(config).toBeDefined();
     });

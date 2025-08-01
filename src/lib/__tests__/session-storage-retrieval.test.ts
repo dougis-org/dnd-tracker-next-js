@@ -3,22 +3,22 @@
  *
  * Comprehensive tests for ensuring session storage and retrieval works correctly
  * with both JWT and database session strategies.
- * 
+ *
  * This file has been refactored to use modular test utilities to reduce complexity
  * and eliminate duplication with other test files.
  */
 
 import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
-import { 
-  setupTestEnvironment, 
-  resetTestEnvironment, 
-  cleanupTestEnvironment 
+import {
+  setupTestEnvironment,
+  resetTestEnvironment,
+  cleanupTestEnvironment
 } from '../test-utils/session-test-helpers';
-import { 
+import {
   testSessionStrategyDetection,
   testSessionUtilities,
   testEnhancedSessionManagement,
-  testIntegrationTests 
+  testIntegrationTests
 } from './session-tests';
 
 beforeAll(async () => {

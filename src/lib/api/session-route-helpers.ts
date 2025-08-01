@@ -9,8 +9,7 @@
 
 import { NextResponse } from 'next/server';
 import { sessionUtils } from '@/lib/session-config';
-import { validateAuth, validateUserAccess, withAuthAndAccess } from './route-helpers';
-import { getAuthConfig } from '@/lib/session-config';
+import { validateAuth } from './route-helpers';
 
 
 /**
@@ -89,4 +88,6 @@ export {
   createGetRouteHandler,
   createDeleteRouteHandler,
   handleServiceResult,
+  withAuth,
+  withAuthAndAccess,
 } from './route-helpers';
