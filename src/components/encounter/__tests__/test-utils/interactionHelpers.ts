@@ -9,7 +9,15 @@ export const clickButton = async (buttonText: string | RegExp) => {
   const user = userEvent.setup();
   // Use string-based matching instead of RegExp for security
   const searchPattern = typeof buttonText === 'string' ? buttonText : buttonText;
-  const element = screen.getByRole('button', { name: searchPattern });
+
+  // Try to find button with role "button" first, fallback to "menuitem"
+  let element;
+  try {
+    element = screen.getByRole('button', { name: searchPattern });
+  } catch {
+    element = screen.getByRole('menuitem', { name: searchPattern });
+  }
+
   await user.click(element);
   return element;
 };
