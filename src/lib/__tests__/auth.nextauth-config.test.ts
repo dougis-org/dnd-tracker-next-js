@@ -77,14 +77,13 @@ describe('NextAuth Configuration Tests', () => {
       expect(config.providers[0].name).toBe('credentials');
 
       // Test session configuration (lines 126-130)
-      expect(config.session.strategy).toBe('jwt');
+      expect(config.session.strategy).toBe('database');
       expect(config.session.maxAge).toBe(30 * 24 * 60 * 60);
       expect(config.session.updateAge).toBe(24 * 60 * 60);
 
       // Test callbacks configuration (lines 131-222)
       expect(config.callbacks).toBeDefined();
       expect(config.callbacks.session).toBeDefined();
-      expect(config.callbacks.jwt).toBeDefined();
       expect(config.callbacks.redirect).toBeDefined();
 
       // Test pages configuration (lines 223-226)

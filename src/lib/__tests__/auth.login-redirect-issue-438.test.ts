@@ -117,10 +117,9 @@ describe('Issue #438: Login Redirect Problems', () => {
       process.env.AUTH_TRUST_HOST = 'true';
       const config = await getAuthConfigAsync(mockNextAuth);
       expect(config).toBeDefined();
-      expect(config.session.strategy).toBe('jwt');
+      expect(config.session.strategy).toBe('database');
       expect(config.callbacks).toBeDefined();
       expect(config.callbacks.session).toBeDefined();
-      expect(config.callbacks.jwt).toBeDefined();
     });
 
     it('should prevent authentication bypass with middleware checks', async () => {
@@ -156,10 +155,9 @@ describe('Issue #438: Login Redirect Problems', () => {
 
       const config = await getAuthConfigAsync(mockNextAuth);
       expect(config).toBeDefined();
-      expect(config.session.strategy).toBe('jwt');
+      expect(config.session.strategy).toBe('database');
       expect(config.callbacks).toBeDefined();
       expect(config.callbacks.session).toBeDefined();
-      expect(config.callbacks.jwt).toBeDefined();
 
       // Verify additional complete configuration is valid
       expect(config.trustHost).toBe(true);

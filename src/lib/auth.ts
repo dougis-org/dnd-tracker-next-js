@@ -20,6 +20,59 @@ export function isLocalHostname(hostname: string): boolean {
 }
 
 /**
+ * Helper function to enhance session user data
+ * Reduces complexity in session callback (Issue #526)
+ */
+export async function enhanceSessionUserData(session: any, user: any): Promise<any> {
+  // Add user data to session from database user
+  session.user.id = user.id ?? '';
+  session.user.subscriptionTier = user.subscriptionTier || 'free';
+
+  // Get additional user data from UserService if needed
+  if (user.email && (!session.user.name || !session.user.subscriptionTier)) {
+    try {
+      const userResult = await UserService.getUserByEmail(user.email);
+      if (userResult.success && userResult.data) {
+        const userData = userResult.data;
+        session.user.subscriptionTier = userData.subscriptionTier || 'free';
+        if (!session.user.name) {
+          session.user.name = `${userData.firstName} ${userData.lastName}`;
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to fetch additional user data:', error);
+    }
+  }
+
+  return session;
+}
+
+/**
+ * Helper function to validate user sign in
+ * Reduces complexity in signIn callback (Issue #526)
+ */
+export async function validateUserSignIn(user: any, account: any): Promise<boolean> {
+  if (!user?.email) {
+    console.warn('SignIn callback: Missing user email');
+    return false;
+  }
+
+  // For credentials provider, user is already authenticated by authorize function
+  if (account?.provider === 'credentials') {
+    return true;
+  }
+
+  // For other providers, validate user exists in our system
+  const userResult = await UserService.getUserByEmail(user.email);
+  if (!userResult.success) {
+    console.warn(`SignIn callback: User not found in system: ${user.email}`);
+    return false;
+  }
+
+  return true;
+}
+
+/**
  * Validates hostname for production environment
  * Exported for reuse in test files to prevent code duplication (Issue #499)
  */
@@ -77,18 +130,15 @@ const clientPromise = Promise.resolve(client);
 // Validate NEXTAUTH_URL to prevent invalid redirects (Issue #438)
 const validatedNextAuthUrl = validateNextAuthUrl();
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
+
+const authConfig = NextAuth({
   adapter: MongoDBAdapter(clientPromise, {
     databaseName: process.env.MONGODB_DB_NAME,
   }),
-  // Fix for Issue #434 & #473: NextAuth v5 requires explicit trust host configuration
-  // This prevents "UntrustedHost" errors and token persistence issues in production deployments
-  // In production environments (including Fly.io), we need to trust the host automatically
   trustHost:
     process.env.AUTH_TRUST_HOST === 'true' ||
     process.env.NODE_ENV === 'production',
 
-  // Use validated URL to prevent redirects to invalid URLs like 0.0.0.0 (Issue #438)
   ...(validatedNextAuthUrl && { url: validatedNextAuthUrl }),
   providers: [
     CredentialsProvider({
@@ -104,7 +154,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }
 
         try {
-          // Get user by email
           const result = await UserService.getUserByEmail(
             credentials.email as string
           );
@@ -112,10 +161,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             return null;
           }
 
-          // Convert rememberMe from string to boolean (NextAuth passes form values as strings)
           const rememberMe = credentials.rememberMe === 'true';
 
-          // Authenticate user
           const authResult = await UserService.authenticateUser({
             email: credentials.email as string,
             password: credentials.password as string,
@@ -126,7 +173,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             return null;
           }
 
-          // Return user object for session
           const authenticatedUser = authResult.data.user;
           return {
             id: authenticatedUser.id?.toString() || '',
@@ -142,86 +188,45 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   session: {
-    strategy: 'jwt',
+    strategy: 'database',
     maxAge: 30 * 24 * 60 * 60, // 30 days
     updateAge: 24 * 60 * 60, // 24 hours
   },
   callbacks: {
-    async session({ session, token }: { session: any; token: any }) {
+    async session({ session, user }: { session: any; user: any }) {
       try {
-        // Enhanced session callback for Issue #438: Better authentication state management
-        if (!session?.user || !token) {
-          console.warn('Session callback: Missing session or token data');
+        if (!session?.user || !user) {
+          console.warn('Session callback: Missing session or user data');
           return session;
         }
 
-        // Validate token expiration to prevent authentication bypass
-        if (token.exp && Date.now() >= token.exp * 1000) {
-          console.warn('Session callback: Token has expired');
-          return null; // Force re-authentication
-        }
-
-        // Add user ID and subscription tier to session from JWT token
-        session.user.id = token.sub ?? '';
-        session.user.subscriptionTier = token.subscriptionTier || 'free';
-
-        // Ensure user has a valid name
-        if (!session.user.name && token.firstName && token.lastName) {
-          session.user.name = `${token.firstName} ${token.lastName}`;
-        }
-
-        return session;
+        return await enhanceSessionUserData(session, user);
       } catch (error) {
         console.error('Session callback error:', error);
-        return null; // Force re-authentication on error
+        return null;
       }
     },
-    async jwt({ token, user }: { token: any; user?: any }) {
+    async signIn({ user, account, profile: _profile, email: _email, credentials: _credentials }) {
       try {
-        // Enhanced JWT callback for Issue #438: Better token management
-        // Handle null/undefined token by creating a minimal token object
-        if (!token) {
-          token = {};
-        }
-
-        if (user) {
-          // Store additional user data in token for session persistence
-          token.subscriptionTier = (user as any).subscriptionTier || 'free';
-          token.firstName = (user as any).firstName || '';
-          token.lastName = (user as any).lastName || '';
-          token.email = (user as any).email || token.email;
-        }
-
-        // Ensure token has required fields and update sub when user is provided
-        if (user?.id) {
-          token.sub = user.id;
-        }
-
-        return token;
+        return await validateUserSignIn(user, account);
       } catch (error) {
-        console.error('JWT callback error:', error);
-        return token || {}; // Return existing token or empty object to prevent complete failure
+        console.error('SignIn callback error:', error);
+        return false;
       }
     },
     async redirect({ url, baseUrl }: { url: string; baseUrl: string }) {
       try {
-        // Enhanced redirect callback for Issue #438: Prevent invalid redirects
-
-        // If url is relative, make it absolute
         if (url.startsWith('/')) {
           return `${baseUrl}${url}`;
         }
 
-        // If url is absolute, validate it's safe
         const parsedUrl = new URL(url);
         const parsedBaseUrl = new URL(baseUrl);
 
-        // Only allow redirects to the same origin
         if (parsedUrl.origin === parsedBaseUrl.origin) {
           return url;
         }
 
-        // For production, only allow specific trusted domains
         if (process.env.NODE_ENV === 'production') {
           const trustedDomains = [
             'dnd-tracker-next-js.fly.dev',
@@ -236,10 +241,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }
 
         console.warn(`Blocked redirect to untrusted URL: ${url}`);
-        return baseUrl; // Fallback to base URL
+        return baseUrl;
       } catch (error) {
         console.error('Redirect callback error:', error);
-        return baseUrl; // Safe fallback
+        return baseUrl;
       }
     },
   },
@@ -249,3 +254,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
   debug: process.env.NODE_ENV === 'development',
 });
+
+export const { handlers, auth, signIn, signOut } = authConfig;
+
+
