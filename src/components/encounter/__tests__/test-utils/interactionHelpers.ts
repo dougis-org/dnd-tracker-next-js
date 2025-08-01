@@ -11,14 +11,14 @@ export const clickButton = async (buttonText: string | RegExp) => {
   let element;
   try {
     // For case-insensitive string matching, convert to RegExp
-    const searchPattern = typeof buttonText === 'string' 
-      ? new RegExp(buttonText, 'i') 
+    const searchPattern = typeof buttonText === 'string'
+      ? new RegExp(buttonText, 'i')
       : buttonText;
     element = screen.getByRole('button', { name: searchPattern });
   } catch {
     // For case-insensitive string matching, convert to RegExp
-    const searchPattern = typeof buttonText === 'string' 
-      ? new RegExp(buttonText, 'i') 
+    const searchPattern = typeof buttonText === 'string'
+      ? new RegExp(buttonText, 'i')
       : buttonText;
     element = screen.getByRole('menuitem', { name: searchPattern });
   }

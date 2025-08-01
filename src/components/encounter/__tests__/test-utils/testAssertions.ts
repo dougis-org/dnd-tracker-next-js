@@ -2,7 +2,6 @@
  * Common test assertion helpers to reduce duplication
  */
 import { screen } from '@testing-library/react';
-import { createSafeTestRegExp } from '../../../../test-utils/secure-regexp';
 
 // Common loading state assertions
 export const assertLoadingState = (expectedCount: number) => {
@@ -17,7 +16,7 @@ export const assertLoadingState = (expectedCount: number) => {
 export const assertEmptyState = (title = 'No encounters found', description?: string) => {
   expect(screen.getByText(title)).toBeInTheDocument();
   if (description) {
-    expect(screen.getByText((content, element) => {
+    expect(screen.getByText((content, _element) => {
       return content?.includes(description) || false;
     })).toBeInTheDocument();
   }
