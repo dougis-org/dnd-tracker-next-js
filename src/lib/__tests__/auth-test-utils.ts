@@ -230,9 +230,7 @@ export function setupAuthTestMocks(
 
   // Setup NextAuth mock to return proper structure
   mockNextAuth.mockImplementation((config) => {
-    // Execute callbacks to test them
     if (config && config.callbacks) {
-      // Store config for testing
       (mockNextAuth as any)._lastConfig = config;
     }
     return {

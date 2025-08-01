@@ -66,11 +66,36 @@ const customJestConfig = {
     },
   },
   moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/src/$1',
-    '^next-auth/react$': '<rootDir>/src/__mocks__/next-auth/react.js',
-    '^next-auth/jwt$': '<rootDir>/src/__mocks__/next-auth/jwt.js',
+    '^@/(.*)
+  transformIgnorePatterns: ['node_modules/(?!(bson|@auth)/)'],
+};
+
+// createJestConfig is exported this way to ensure that next/jest can load the Next.js config which is async
+module.exports = createJestConfig(customJestConfig);
+: '<rootDir>/src/$1',
+    '^next-auth
+  transformIgnorePatterns: ['node_modules/(?!(bson|@auth)/)'],
+};
+
+// createJestConfig is exported this way to ensure that next/jest can load the Next.js config which is async
+module.exports = createJestConfig(customJestConfig);
+: '<rootDir>/src/__mocks__/next-auth.js',
+    '^next-auth/react
+  transformIgnorePatterns: ['node_modules/(?!(bson|@auth)/)'],
+};
+
+// createJestConfig is exported this way to ensure that next/jest can load the Next.js config which is async
+module.exports = createJestConfig(customJestConfig);
+: '<rootDir>/src/__mocks__/next-auth/react.js',
+    '^next-auth/jwt
+  transformIgnorePatterns: ['node_modules/(?!(bson|@auth)/)'],
+};
+
+// createJestConfig is exported this way to ensure that next/jest can load the Next.js config which is async
+module.exports = createJestConfig(customJestConfig);
+: '<rootDir>/src/__mocks__/next-auth/jwt.js',
   },
-  transformIgnorePatterns: ['node_modules/(?!(bson|next-auth|@auth)/)'],
+  transformIgnorePatterns: ['node_modules/(?!(bson|@auth)/)'],
 };
 
 // createJestConfig is exported this way to ensure that next/jest can load the Next.js config which is async

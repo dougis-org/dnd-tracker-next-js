@@ -130,18 +130,20 @@ const clientPromise = Promise.resolve(client);
 // Validate NEXTAUTH_URL to prevent invalid redirects (Issue #438)
 const validatedNextAuthUrl = validateNextAuthUrl();
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
+
+
+
+
+
+
+const authConfig = NextAuth({
   adapter: MongoDBAdapter(clientPromise, {
     databaseName: process.env.MONGODB_DB_NAME,
   }),
-  // Fix for Issue #434 & #473: NextAuth v5 requires explicit trust host configuration
-  // This prevents "UntrustedHost" errors and token persistence issues in production deployments
-  // In production environments (including Fly.io), we need to trust the host automatically
   trustHost:
     process.env.AUTH_TRUST_HOST === 'true' ||
     process.env.NODE_ENV === 'production',
 
-  // Use validated URL to prevent redirects to invalid URLs like 0.0.0.0 (Issue #438)
   ...(validatedNextAuthUrl && { url: validatedNextAuthUrl }),
   providers: [
     CredentialsProvider({
@@ -157,7 +159,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }
 
         try {
-          // Get user by email
           const result = await UserService.getUserByEmail(
             credentials.email as string
           );
@@ -165,10 +166,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             return null;
           }
 
-          // Convert rememberMe from string to boolean (NextAuth passes form values as strings)
           const rememberMe = credentials.rememberMe === 'true';
 
-          // Authenticate user
           const authResult = await UserService.authenticateUser({
             email: credentials.email as string,
             password: credentials.password as string,
@@ -179,7 +178,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             return null;
           }
 
-          // Return user object for session
           const authenticatedUser = authResult.data.user;
           return {
             id: authenticatedUser.id?.toString() || '',
@@ -202,7 +200,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   callbacks: {
     async session({ session, user }: { session: any; user: any }) {
       try {
-        // Enhanced session callback for Issue #438: Better authentication state management
         if (!session?.user || !user) {
           console.warn('Session callback: Missing session or user data');
           return session;
@@ -211,7 +208,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         return await enhanceSessionUserData(session, user);
       } catch (error) {
         console.error('Session callback error:', error);
-        return null; // Force re-authentication on error
+        return null;
       }
     },
     async signIn({ user, account, profile: _profile, email: _email, credentials: _credentials }) {
@@ -224,23 +221,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
     async redirect({ url, baseUrl }: { url: string; baseUrl: string }) {
       try {
-        // Enhanced redirect callback for Issue #438: Prevent invalid redirects
-
-        // If url is relative, make it absolute
         if (url.startsWith('/')) {
           return `${baseUrl}${url}`;
         }
 
-        // If url is absolute, validate it's safe
         const parsedUrl = new URL(url);
         const parsedBaseUrl = new URL(baseUrl);
 
-        // Only allow redirects to the same origin
         if (parsedUrl.origin === parsedBaseUrl.origin) {
           return url;
         }
 
-        // For production, only allow specific trusted domains
         if (process.env.NODE_ENV === 'production') {
           const trustedDomains = [
             'dnd-tracker-next-js.fly.dev',
@@ -255,10 +246,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }
 
         console.warn(`Blocked redirect to untrusted URL: ${url}`);
-        return baseUrl; // Fallback to base URL
+        return baseUrl;
       } catch (error) {
         console.error('Redirect callback error:', error);
-        return baseUrl; // Safe fallback
+        return baseUrl;
       }
     },
   },
@@ -268,3 +259,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
   debug: process.env.NODE_ENV === 'development',
 });
+
+export const { handlers, auth, signIn, signOut } = authConfig;
+
+
+
+
+
+
