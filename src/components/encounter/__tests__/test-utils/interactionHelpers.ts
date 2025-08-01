@@ -7,13 +7,17 @@ import { screen } from '@testing-library/react';
 // Common button click helper
 export const clickButton = async (buttonText: string | RegExp) => {
   const user = userEvent.setup();
-  // Try to find button first, then menuitem if not found
+  // Use string-based matching instead of RegExp for security
+  const searchPattern = typeof buttonText === 'string' ? buttonText : buttonText;
+
+  // Try to find button with role "button" first, fallback to "menuitem"
   let element;
   try {
-    element = screen.getByRole('button', { name: buttonText });
+    element = screen.getByRole('button', { name: searchPattern });
   } catch {
-    element = screen.getByRole('menuitem', { name: buttonText });
+    element = screen.getByRole('menuitem', { name: searchPattern });
   }
+
   await user.click(element);
   return element;
 };

@@ -1,6 +1,7 @@
 import type { ICharacter } from '@/lib/models/Character';
 import { Types } from 'mongoose';
 import { createMockCharacter } from '@/lib/services/__tests__/CharacterService.test-helpers';
+import { containsTextIgnoreCase } from '../../../test-utils/secure-regexp';
 
 const createCharacterWithClass = (
   id: string,
@@ -92,7 +93,7 @@ export const testFilterOperation = async (
 
   await renderCharacterListAndWait(props);
 
-  const filterElement = screen.getByRole('combobox', { name: new RegExp(filterSelector, 'i') });
+  const filterElement = screen.getByRole('combobox', { name: (content) => containsTextIgnoreCase(content, filterSelector) });
   fireEvent.change(filterElement, { target: { value: filterValue } });
 
   await waitFor(() => {

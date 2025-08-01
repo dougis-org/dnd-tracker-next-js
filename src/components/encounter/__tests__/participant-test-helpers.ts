@@ -1,6 +1,7 @@
 import { screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { testDataFactories } from '@/lib/services/__tests__/testDataFactories';
+import { createSafeTestRegExp } from '../../../test-utils/secure-regexp';
 
 // Default participant data
 const DEFAULT_PARTICIPANT = {
@@ -55,7 +56,7 @@ export const formActions = {
   },
 
   async submit(user: ReturnType<typeof userEvent.setup>, buttonName: string) {
-    await user.click(screen.getByRole('button', { name: new RegExp(buttonName, 'i') }));
+    await user.click(screen.getByRole('button', { name: createSafeTestRegExp(buttonName) }));
   }
 };
 
@@ -71,13 +72,13 @@ export const testExpectations = {
 
   formElements() {
     ['Character Name', 'Hit Points', 'Armor Class'].forEach(label =>
-      expect(screen.getByLabelText(new RegExp(label, 'i'))).toBeInTheDocument()
+      expect(screen.getByLabelText(createSafeTestRegExp(label))).toBeInTheDocument()
     );
   },
 
   async validationErrors(errors: string[]) {
     for (const error of errors) {
-      await waitForElement(new RegExp(error, 'i'));
+      await waitForElement(createSafeTestRegExp(error));
     }
   },
 
@@ -119,7 +120,7 @@ export const workflows = {
   async addParticipant(user: ReturnType<typeof userEvent.setup>, data: Record<string, string>) {
     await formActions.openDialog(user);
     await formActions.fillForm(user, data);
-    await formActions.submit(user, 'add participant');
+    await formActions.submit(user, 'Add Participant');
   },
 
   async editParticipant(user: ReturnType<typeof userEvent.setup>, index: number, data: Record<string, string>) {
@@ -127,7 +128,7 @@ export const workflows = {
     await user.click(editButtons[index]);
     await waitForElement('Edit Participant');
     await formActions.fillForm(user, data);
-    await formActions.submit(user, 'update participant');
+    await formActions.submit(user, 'Update Participant');
   },
 
   async removeParticipant(user: ReturnType<typeof userEvent.setup>, index: number) {

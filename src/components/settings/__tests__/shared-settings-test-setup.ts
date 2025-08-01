@@ -1,5 +1,6 @@
 import React from 'react';
 import { useSession, signOut } from 'next-auth/react';
+import { containsTextIgnoreCase } from '../../../test-utils/secure-regexp';
 
 /**
  * Shared Settings Test Setup
@@ -199,7 +200,22 @@ const deletionTestActions = {
 
   async expectErrorMessage(waitFor: Function, screen: any, errorMessage: string) {
     await waitFor(() => {
-      expect(screen.getByText(new RegExp(errorMessage, 'i'))).toBeInTheDocument();
+      // Handle multiple possible error messages separated by |
+      const errorMessages = errorMessage.split('|');
+      let found = false;
+      for (const msg of errorMessages) {
+        try {
+          expect(screen.getByText((content) => containsTextIgnoreCase(content, msg.trim()))).toBeInTheDocument();
+          found = true;
+          break;
+        } catch {
+          // Continue to next message
+        }
+      }
+      if (!found) {
+        // If none found, fail with the original expectation to get proper error message
+        expect(screen.getByText((content) => containsTextIgnoreCase(content, errorMessages[0].trim()))).toBeInTheDocument();
+      }
     });
   }
 };

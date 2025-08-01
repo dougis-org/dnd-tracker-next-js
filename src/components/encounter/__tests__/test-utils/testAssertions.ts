@@ -16,7 +16,9 @@ export const assertLoadingState = (expectedCount: number) => {
 export const assertEmptyState = (title = 'No encounters found', description?: string) => {
   expect(screen.getByText(title)).toBeInTheDocument();
   if (description) {
-    expect(screen.getByText(new RegExp(description))).toBeInTheDocument();
+    expect(screen.getByText((content, _element) => {
+      return content?.includes(description) || false;
+    })).toBeInTheDocument();
   }
 };
 

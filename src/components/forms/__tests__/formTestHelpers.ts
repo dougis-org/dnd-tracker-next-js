@@ -4,6 +4,7 @@
  */
 
 import { render, screen, fireEvent } from '@testing-library/react';
+import { createSafeTestRegExp } from '../../../test-utils/secure-regexp';
 
 /**
  * Standard form props factory
@@ -47,7 +48,9 @@ export function renderFormComponent(Component: React.ComponentType<any>, props =
  * Tests field rendering with proper attributes
  */
 export function testFieldRendering(fieldName: string, labelText: string, fieldType: string = 'input') {
-  const field = screen.getByLabelText(new RegExp(labelText, 'i'));
+  // Use exact string match instead of RegExp to avoid security scanner warnings
+  // getByLabelText supports both string and regex, but string is safer for literal matches
+  const field = screen.getByLabelText(labelText, { exact: false });
   expect(field).toBeInTheDocument();
   expect(field).toHaveAttribute('name', fieldName);
   if (fieldType === 'input') {
@@ -139,7 +142,8 @@ export namespace CharacterFormHelpers {
   }
 
   export function testAbilityScoreField(abilityName: string, value: number, mockOnChange: jest.Mock) {
-    const field = screen.getByLabelText(new RegExp(abilityName, 'i'));
+    // Use secure RegExp helper to prevent ReDoS vulnerabilities
+    const field = screen.getByLabelText(createSafeTestRegExp(abilityName));
     fireEvent.change(field, { target: { value: value.toString() } });
     expect(mockOnChange).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -218,7 +222,8 @@ export namespace UITestHelpers {
   }
 
   export function testButtonInteraction(buttonText: string, onClick: jest.Mock) {
-    const button = screen.getByRole('button', { name: new RegExp(buttonText, 'i') });
+    // Use secure RegExp helper to prevent ReDoS vulnerabilities
+    const button = screen.getByRole('button', { name: createSafeTestRegExp(buttonText) });
     fireEvent.click(button);
     expect(onClick).toHaveBeenCalled();
   }

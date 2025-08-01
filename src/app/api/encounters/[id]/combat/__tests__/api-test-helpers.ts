@@ -94,6 +94,13 @@ export const setupRerollMocks = () => {
   mockEncounter.combatState.isActive = true;
   mockEncounter.combatState.currentTurn = 0;
 
+  // Update the EncounterService mock to return the encounter with initiative order
+  const { EncounterService } = require('@/lib/services/EncounterService');
+  (EncounterService.getEncounterById as jest.Mock).mockResolvedValue({
+    success: true,
+    data: mockEncounter,
+  });
+
   return { mockCharacters, mockEncounter };
 };
 

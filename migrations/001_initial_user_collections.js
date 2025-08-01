@@ -8,6 +8,7 @@
  * the necessary indexes for optimal performance and data integrity.
  */
 
+/* eslint-env node */
 module.exports = {
   version: '001',
   description: 'Create initial user collection indexes',

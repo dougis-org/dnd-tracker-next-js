@@ -357,17 +357,30 @@ export class CharacterDataRecovery {
 
   /**
    * Safely set nested property without relying on JSON.stringify key ordering
+   * Prevents prototype pollution by validating keys and avoiding dangerous properties
    */
   private static setNestedProperty(obj: any, path: string, value: any): void {
     const pathParts = path.split('.');
     let current = obj;
+
+    // Prevent prototype pollution by blocking dangerous keys
+    const dangerousKeys = ['__proto__', 'constructor', 'prototype'];
+    if (pathParts.some(key => dangerousKeys.includes(key))) {
+      return; // Skip dangerous property paths
+    }
 
     for (let i = 0; i < pathParts.length - 1; i++) {
       const key = pathParts[i];
       if (!current || typeof current !== 'object') {
         return; // Cannot set property on non-object
       }
-      if (current[key] === undefined) {
+
+      // Additional check for each intermediate key
+      if (dangerousKeys.includes(key)) {
+        return; // Skip dangerous intermediate keys
+      }
+
+      if (!Object.prototype.hasOwnProperty.call(current, key)) {
         current[key] = {};
       }
       current = current[key];
@@ -375,7 +388,10 @@ export class CharacterDataRecovery {
 
     if (current && typeof current === 'object') {
       const finalKey = pathParts[pathParts.length - 1];
-      current[finalKey] = value;
+      // Final check for the last key
+      if (!dangerousKeys.includes(finalKey)) {
+        current[finalKey] = value;
+      }
     }
   }
 

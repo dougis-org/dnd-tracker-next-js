@@ -114,10 +114,17 @@ export const expectSuccessResult = (
   onClearSelection: jest.Mock,
   onRefetch: jest.Mock
 ) => {
-  expect(mockToast).toHaveBeenCalledWith({
-    title: `Encounters ${operation}d`,
-    description: `${count} encounters have been ${operation}d successfully.`,
-  });
+  if (count === 1) {
+    expect(mockToast).toHaveBeenCalledWith({
+      title: `Encounter ${operation}d`,
+      description: 'Encounter archived successfully.',
+    });
+  } else {
+    expect(mockToast).toHaveBeenCalledWith({
+      title: `Encounters ${operation}d`,
+      description: `${count} encounters have been ${operation}d successfully.`,
+    });
+  }
   expectCallbacksInvoked(onClearSelection, onRefetch);
 };
 
@@ -130,7 +137,7 @@ export const expectPartialResult = (
   onRefetch: jest.Mock
 ) => {
   expect(mockToast).toHaveBeenCalledWith({
-    title: 'Partial Success',
+    title: "Partial Success",
     description: `${successful} encounters ${operation}d successfully, ${failed} failed.`,
   });
   expectCallbacksInvoked(onClearSelection, onRefetch);
@@ -152,7 +159,9 @@ export const clickOperation = async (
     await clickButtonFn(/delete/i);
     await clickButtonFn('Delete');
   } else {
-    await clickButtonFn(new RegExp(operation, 'i'));
+    // Use exact case matching for button text
+    const capitalizedOperation = operation.charAt(0).toUpperCase() + operation.slice(1);
+    await clickButtonFn(capitalizedOperation);
   }
 };
 

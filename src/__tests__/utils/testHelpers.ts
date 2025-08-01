@@ -4,6 +4,7 @@
  */
 
 import { jest } from '@jest/globals';
+import { containsTextIgnoreCase } from '../test-utils/secure-regexp';
 
 /**
  * Standard mock factory functions
@@ -315,23 +316,26 @@ export namespace ServiceTesting {
 export namespace InteractionTesting {
   export function clickElement(selector: string) {
     const { fireEvent, screen } = require('@testing-library/react');
-    const element = screen.getByRole('button', { name: new RegExp(selector, 'i') }) ||
+    // Use secure RegExp helper to prevent ReDoS vulnerabilities
+    const element = screen.getByRole('button', { name: (content) => containsTextIgnoreCase(content, selector) }) ||
                    screen.getByTestId(selector) ||
-                   screen.getByText(new RegExp(selector, 'i'));
+                   screen.getByText((content) => containsTextIgnoreCase(content, selector));
     fireEvent.click(element);
     return element;
   }
 
   export function typeInInput(labelText: string, value: string) {
     const { fireEvent, screen } = require('@testing-library/react');
-    const input = screen.getByLabelText(new RegExp(labelText, 'i'));
+    // Use secure RegExp helper to prevent ReDoS vulnerabilities
+    const input = screen.getByLabelText((content) => containsTextIgnoreCase(content, labelText));
     fireEvent.change(input, { target: { value } });
     return input;
   }
 
   export function selectOption(labelText: string, optionText: string) {
     const { fireEvent, screen } = require('@testing-library/react');
-    const select = screen.getByLabelText(new RegExp(labelText, 'i'));
+    // Use secure RegExp helper to prevent ReDoS vulnerabilities
+    const select = screen.getByLabelText((content) => containsTextIgnoreCase(content, labelText));
     fireEvent.change(select, { target: { value: optionText } });
     return select;
   }

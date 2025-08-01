@@ -3,6 +3,7 @@
  */
 
 import { screen, waitFor } from '@testing-library/react';
+import { containsTextIgnoreCase } from '../../../../../test-utils/secure-regexp';
 
 // Common field validation assertions
 export const expectFieldToBeRendered = (labelText: string | RegExp) => {
@@ -59,7 +60,7 @@ export const expectSectionToBeRendered = (sectionTitle: string) => {
 };
 
 export const expectSectionToHaveHeading = (headingText: string, level: string = '3') => {
-  const heading = screen.getByRole('heading', { name: new RegExp(headingText, 'i') });
+  const heading = screen.getByRole('heading', { name: (content) => containsTextIgnoreCase(content, headingText) });
   expect(heading).toHaveAttribute('aria-level', level);
   return heading;
 };
@@ -68,7 +69,7 @@ export const expectSectionToHaveHeading = (headingText: string, level: string = 
 export const expectAbilityScoreFieldsToBeRendered = () => {
   const abilities = ['Strength', 'Dexterity', 'Constitution', 'Intelligence', 'Wisdom', 'Charisma'];
   const fields = abilities.map(ability =>
-    expectFieldToBeRendered(new RegExp(ability, 'i'))
+    expectFieldToBeRendered((content) => containsTextIgnoreCase(content, ability))
   );
   return fields;
 };
@@ -82,7 +83,7 @@ export const expectAbilityScoreModifiersToBeDisplayed = (modifiers: Record<strin
 export const expectAbilityScoreFieldsToHaveNumberAttributes = () => {
   const abilities = ['Strength', 'Dexterity', 'Constitution', 'Intelligence', 'Wisdom', 'Charisma'];
   abilities.forEach(ability => {
-    const field = screen.getByLabelText(new RegExp(ability, 'i'));
+    const field = screen.getByLabelText((content) => containsTextIgnoreCase(content, ability));
     expect(field).toHaveAttribute('type', 'number');
     expect(field).toHaveAttribute('min', '1');
     expect(field).toHaveAttribute('max', '30');

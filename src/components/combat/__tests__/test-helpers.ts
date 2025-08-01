@@ -2,6 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { IEncounter } from '@/lib/models/encounter/interfaces';
 import { createTestEncounter, makeEncounterActive, PARTICIPANT_IDS } from '@/lib/models/encounter/__tests__/combat-test-helpers';
+import { containsTextIgnoreCase } from '../../../test-utils/secure-regexp';
 
 /**
  * Creates a standard test encounter with participants for combat component testing
@@ -117,7 +118,7 @@ export function expectElementToBeInDocument(text: string) {
 }
 
 export function expectElementByRole(role: string, name: string) {
-  expect(screen.getByRole(role, { name: new RegExp(name, 'i') })).toBeInTheDocument();
+  expect(screen.getByRole(role, { name: (content) => containsTextIgnoreCase(content, name) })).toBeInTheDocument();
 }
 
 export function renderWithEncounter(component: React.ReactElement, encounter?: IEncounter) {

@@ -12,6 +12,7 @@ import {
   FieldChangeTestCase,
   ErrorTestCase
 } from '../utils';
+import { containsTextIgnoreCase } from '../../../../../test-utils/secure-regexp';
 
 describe('AbilityScoresSection', () => {
   const { defaultSectionProps } = setupSectionTest();
@@ -32,7 +33,7 @@ describe('AbilityScoresSection', () => {
 
   const fieldChangeTestCases: FieldChangeTestCase<typeof testProps.value>[] = abilities.map(ability => ({
     fieldName: ability.key,
-    labelPattern: new RegExp(ability.name, 'i'),
+    labelPattern: (content: string) => containsTextIgnoreCase(content, ability.name),
     newValue: 18,
     expectedStateChange: { [ability.key]: 18 },
     inputMethod: 'change' as const,
@@ -41,7 +42,7 @@ describe('AbilityScoresSection', () => {
   const errorTestCases: ErrorTestCase[] = abilities.map(ability => ({
     fieldName: ability.key,
     errorMessage: `${ability.name} must be between 1 and 30`,
-    labelPattern: new RegExp(ability.name, 'i'),
+    labelPattern: (content: string) => containsTextIgnoreCase(content, ability.name),
   }));
 
   describe('Ability Score Fields', () => {
@@ -84,7 +85,7 @@ describe('AbilityScoresSection', () => {
       render(<AbilityScoresSection {...testProps} />);
 
       abilities.forEach(ability => {
-        const field = screen.getByLabelText(new RegExp(ability.name, 'i'));
+        const field = screen.getByLabelText((content) => containsTextIgnoreCase(content, ability.name));
         expect(field).toHaveAttribute('type', 'number');
         expect(field).toHaveAttribute('min', '1');
         expect(field).toHaveAttribute('max', '30');
@@ -302,7 +303,7 @@ describe('AbilityScoresSection', () => {
     const accessibilityTests = testSectionAccessibility(AbilityScoresSection, testProps, {
       headingText: 'Ability Scores',
       headingLevel: 3,
-      fieldPatterns: abilities.map(ability => new RegExp(ability.name, 'i')),
+      fieldPatterns: abilities.map(ability => (content: string) => containsTextIgnoreCase(content, ability.name)),
     });
     accessibilityTests.forEach(({ name, test }) => {
       it(name, test);

@@ -124,14 +124,9 @@ describe('Issue #499: Auth function duplication removal', () => {
 
   describe('Code duplication detection', () => {
     it('should verify that auth-production-redirect-issue-494.test.ts uses imported functions', async () => {
-      // Read the test file content to check for duplication
-      const fs = require('fs');
-      const path = require('path');
-      const testFilePath = path.join(
-        process.cwd(),
-        'src/__tests__/auth-production-redirect-issue-494.test.ts'
-      );
-      const testFileContent = fs.readFileSync(testFilePath, 'utf8');
+      // Read the test file content to check for duplication using secure utilities
+      const { safeReadTestFile, TEST_FILE_PATHS } = require('../test-utils/secure-filesystem');
+      const testFileContent = safeReadTestFile(TEST_FILE_PATHS.AUTH_PRODUCTION_REDIRECT);
 
       // After refactoring, these function implementations should NOT exist in the test file
       expect(testFileContent).not.toContain('const testValidationHelpers = {');

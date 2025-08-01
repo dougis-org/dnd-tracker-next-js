@@ -265,7 +265,7 @@ describe('EncounterParticipantManager', () => {
         expect(screen.getByRole('dialog')).toBeInTheDocument();
       });
 
-      await formActions.submit(user, 'update participant');
+      await formActions.submit(user, 'Update Participant');
 
       await waitFor(() => {
         serviceMocks.expectCall(mockEncounterService, 'updateParticipant', [

@@ -2,6 +2,7 @@
  * Shared test assertion utilities to reduce duplication across test files
  */
 import { screen } from '@testing-library/react';
+import { containsTextIgnoreCase } from '../../../../../test-utils/secure-regexp';
 
 // Field validation assertions - replaces repeated field checking patterns
 export const expectFieldToBeRequired = (field: HTMLElement) => {
@@ -10,7 +11,7 @@ export const expectFieldToBeRequired = (field: HTMLElement) => {
 
 export const expectFieldToHaveError = (field: HTMLElement, errorMessage: string) => {
   expect(field).toHaveAttribute('aria-invalid', 'true');
-  expect(screen.getByText(new RegExp(errorMessage, 'i'))).toBeInTheDocument();
+  expect(screen.getByText((content) => containsTextIgnoreCase(content, errorMessage))).toBeInTheDocument();
 };
 
 export const expectFieldToBeRendered = (labelPattern: string | RegExp) => {
@@ -29,11 +30,11 @@ export const expectFormToBeInLoadingState = () => {
 };
 
 export const expectFormToShowError = (errorMessage: string) => {
-  expect(screen.getByText(new RegExp(errorMessage, 'i'))).toBeInTheDocument();
+  expect(screen.getByText((content) => containsTextIgnoreCase(content, errorMessage))).toBeInTheDocument();
 };
 
 export const expectFormToShowSuccess = (successMessage: string) => {
-  expect(screen.getByText(new RegExp(successMessage, 'i'))).toBeInTheDocument();
+  expect(screen.getByText(createSafeTestRegExp(successMessage))).toBeInTheDocument();
 };
 
 // Section-specific assertions - reduces section duplication
@@ -46,7 +47,7 @@ export const expectBasicInfoFieldsToBeRendered = () => {
 export const expectAbilityScoreFieldsToBeRendered = () => {
   const abilities = ['Strength', 'Dexterity', 'Constitution', 'Intelligence', 'Wisdom', 'Charisma'];
   abilities.forEach(ability => {
-    expectFieldToBeRendered(new RegExp(ability, 'i'));
+    expectFieldToBeRendered((content) => containsTextIgnoreCase(content, ability));
   });
 };
 
@@ -66,7 +67,7 @@ export const expectCombatStatsFieldsToBeRendered = () => {
 export const expectCharacterPreviewToShowValidState = (character: any) => {
   expect(screen.getByText('Character Preview')).toBeInTheDocument();
   expect(screen.getByText(character.name)).toBeInTheDocument();
-  expect(screen.getByText(new RegExp(character.race, 'i'))).toBeInTheDocument();
+  expect(screen.getByText((content) => containsTextIgnoreCase(content, character.race))).toBeInTheDocument();
 };
 
 export const expectCharacterPreviewToShowInvalidState = () => {
@@ -89,7 +90,7 @@ export const expectCharacterServiceNotToBeCalled = (mockService: any) => {
 export const expectSectionHeaderToBeRendered = (title: string, description?: string) => {
   expect(screen.getByText(title)).toBeInTheDocument();
   if (description) {
-    expect(screen.getByText(new RegExp(description, 'i'))).toBeInTheDocument();
+    expect(screen.getByText((content) => containsTextIgnoreCase(content, description))).toBeInTheDocument();
   }
 };
 
@@ -101,7 +102,7 @@ export const expectButtonsToBeRendered = (buttonNames: (string | RegExp)[]) => {
 
 // Accessibility assertions - consolidates a11y checks
 export const expectProperHeadingStructure = (headingText: string, level: number) => {
-  const heading = screen.getByRole('heading', { name: new RegExp(headingText, 'i') });
+  const heading = screen.getByRole('heading', { name: (content) => containsTextIgnoreCase(content, headingText) });
   expect(heading).toHaveAttribute('aria-level', level.toString());
 };
 
@@ -119,5 +120,5 @@ export const expectListToContainItems = (items: string[], _itemType = 'listitem'
 };
 
 export const expectEmptyStateToBeRendered = (emptyMessage: string) => {
-  expect(screen.getByText(new RegExp(emptyMessage, 'i'))).toBeInTheDocument();
+  expect(screen.getByText((content) => containsTextIgnoreCase(content, emptyMessage))).toBeInTheDocument();
 };

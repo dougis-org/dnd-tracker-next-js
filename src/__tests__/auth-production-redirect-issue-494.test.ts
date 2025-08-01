@@ -163,10 +163,9 @@ describe('Issue #494: Production redirect fix', () => {
   describe('Production server configuration', () => {
     it('should not bind to 0.0.0.0 hostname in production start script', () => {
       // Read package.json to validate start script doesn't use -H 0.0.0.0
-      const fs = require('fs');
-      const path = require('path');
-      const packageJsonPath = path.join(process.cwd(), 'package.json');
-      const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+      const { safeReadTestFile } = require('../test-utils/secure-filesystem');
+      const packageJsonContent = safeReadTestFile('package.json');
+      const packageJson = JSON.parse(packageJsonContent);
 
       const startScript = packageJson.scripts.start;
 

@@ -39,14 +39,24 @@ export function createTextParts(text: string, query: string): Array<{ text: stri
     return [{ text, isHighlight: false }];
   }
 
-  const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const regex = new RegExp(`(${escapedQuery})`, 'gi');
-  const parts = text.split(regex);
+  const lowerText = text.toLowerCase();
+  const lowerQuery = query.toLowerCase();
+  const queryIndex = lowerText.indexOf(lowerQuery);
 
-  return parts.filter(part => part !== '').map((part) => ({
-    text: part,
-    isHighlight: part.toLowerCase() === query.toLowerCase()
-  }));
+  if (queryIndex === -1) {
+    return [{ text, isHighlight: false }];
+  }
+
+  const parts = [];
+  if (queryIndex > 0) {
+    parts.push({ text: text.substring(0, queryIndex), isHighlight: false });
+  }
+  parts.push({ text: text.substring(queryIndex, queryIndex + query.length), isHighlight: true });
+  if (queryIndex + query.length < text.length) {
+    parts.push({ text: text.substring(queryIndex + query.length), isHighlight: false });
+  }
+
+  return parts;
 }
 
 /**

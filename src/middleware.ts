@@ -5,10 +5,7 @@ import { isProtectedApiRoute } from '@/lib/middleware';
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  const isProtectedPageRoute = checkProtectedPageRoute(pathname);
-  const isProtectedAPI = isProtectedApiRoute(pathname);
-
-  if (!isProtectedPageRoute && !isProtectedAPI) {
+  if (!isProtectedRoute(pathname)) {
     return NextResponse.next();
   }
 
@@ -18,79 +15,35 @@ export async function middleware(request: NextRequest) {
       secret: process.env.NEXTAUTH_SECRET,
     });
 
-    // Enhanced token validation for Issue #438: Better authentication state management
-    if (!token) {
-      console.log(`Middleware: No token found for ${pathname}, redirecting to signin`);
-      return handleUnauthenticatedRequest(request, isProtectedAPI);
-    }
+    if (!token || !token.sub) {
+      if (isProtectedApiRoute(pathname)) {
+        return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+      }
 
-    // Check token expiration to prevent authentication bypass
-    if (token.exp && Date.now() >= token.exp * 1000) {
-      console.log(`Middleware: Expired token for ${pathname}, redirecting to signin`);
-      return handleUnauthenticatedRequest(request, isProtectedAPI);
-    }
+      // Create signin URL with callback parameter
+      const signinUrl = new URL('/signin', request.url);
+      signinUrl.searchParams.set('callbackUrl', encodeURI(request.url));
 
-    // Validate token has required fields
-    if (!token.sub) {
-      console.warn(`Middleware: Token missing user ID for ${pathname}`);
-      return handleUnauthenticatedRequest(request, isProtectedAPI);
+      return NextResponse.redirect(signinUrl);
     }
 
     return NextResponse.next();
   } catch (error) {
-    console.error(`Middleware: Token validation error for ${pathname}:`, error);
-    return handleUnauthenticatedRequest(request, isProtectedAPI);
-  }
-}
+    console.error('Middleware authentication error:', error);
 
-function checkProtectedPageRoute(pathname: string): boolean {
-  const protectedPaths = [
-    '/dashboard',
-    '/characters',
-    '/encounters',
-    '/parties',
-    '/combat',
-    '/settings'
-  ];
-
-  return protectedPaths.some(path => pathname.startsWith(path));
-}
-
-function handleUnauthenticatedRequest(request: NextRequest, isAPI: boolean): NextResponse {
-  if (isAPI) {
-    return NextResponse.json(
-      { error: 'Authentication required' },
-      { status: 401 }
-    );
-  }
-
-  try {
-    // Enhanced redirect handling for Issue #438: Prevent invalid redirects
-    const url = new URL('/signin', request.url);
-
-    // Validate the request URL before using it as callback
-    const requestUrl = request.url;
-    try {
-      const parsedRequestUrl = new URL(requestUrl);
-
-      // Only set callbackUrl if it's from a trusted origin
-      if (parsedRequestUrl.origin === url.origin) {
-        url.searchParams.set('callbackUrl', encodeURI(requestUrl));
-      } else {
-        console.warn(`Middleware: Blocked callback to external origin: ${parsedRequestUrl.origin}`);
-        // Don't set callbackUrl for external origins
-      }
-    } catch (urlError) {
-      console.warn(`Middleware: Invalid request URL: ${requestUrl}`, urlError);
-      // Don't set callbackUrl for invalid URLs
+    if (isProtectedApiRoute(pathname)) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
-    return NextResponse.redirect(url);
-  } catch (error) {
-    console.error('Middleware: Error handling unauthenticated request:', error);
-    // Fallback: simple redirect without callback
-    return NextResponse.redirect(new URL('/signin', request.url));
+    // Redirect to signin on any authentication error
+    const signinUrl = new URL('/signin', request.url);
+    return NextResponse.redirect(signinUrl);
   }
+}
+
+function isProtectedRoute(pathname: string): boolean {
+  const protectedPaths = ['/dashboard', '/characters', '/encounters', '/parties', '/combat', '/settings'];
+  return protectedPaths.some(path => pathname.startsWith(path)) || isProtectedApiRoute(pathname);
 }
 
 export const config = {

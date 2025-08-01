@@ -405,7 +405,11 @@ export async function testAuthorize(
  * CONSOLIDATED: Provides common callback testing pattern
  */
 export async function testCallback(mockNextAuth: jest.Mock, callbackName: string, params: any): Promise<any> {
+  const { SecureCallbackAccessor } = require('../../test-utils/secure-method-calls');
   const config = await getAuthConfigAsync(mockNextAuth);
-  const callback = config.callbacks[callbackName];
+  const callback = SecureCallbackAccessor.getCallback(config, callbackName);
+  if (!callback) {
+    throw new Error(`Callback ${callbackName} not found`);
+  }
   return callback(params);
 }
