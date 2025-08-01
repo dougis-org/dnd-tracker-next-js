@@ -131,11 +131,6 @@ const clientPromise = Promise.resolve(client);
 const validatedNextAuthUrl = validateNextAuthUrl();
 
 
-
-
-
-
-
 const authConfig = NextAuth({
   adapter: MongoDBAdapter(clientPromise, {
     databaseName: process.env.MONGODB_DB_NAME,
@@ -261,9 +256,5 @@ const authConfig = NextAuth({
 });
 
 export const { handlers, auth, signIn, signOut } = authConfig;
-
-
-
-
 
 
