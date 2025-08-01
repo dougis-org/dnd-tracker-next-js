@@ -15,6 +15,7 @@ export function createMockCollection() {
     insertOne: jest.fn(),
     updateOne: jest.fn(),
     deleteOne: jest.fn(),
+    deleteMany: jest.fn(),
     findOneAndUpdate: jest.fn(),
     findOneAndDelete: jest.fn(),
     createIndex: jest.fn().mockResolvedValue('index_created'),
