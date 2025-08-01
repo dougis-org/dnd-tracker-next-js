@@ -1,8 +1,7 @@
 import { screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { testDataFactories } from '@/lib/services/__tests__/testDataFactories';
-// Import removed - containsTextIgnoreCase not used in this file currently
-// import { containsTextIgnoreCase } from '../../../test-utils/secure-regexp';
+import { createSafeTestRegExp } from '../../../test-utils/secure-regexp';
 
 // Default participant data
 const DEFAULT_PARTICIPANT = {
@@ -121,7 +120,7 @@ export const workflows = {
   async addParticipant(user: ReturnType<typeof userEvent.setup>, data: Record<string, string>) {
     await formActions.openDialog(user);
     await formActions.fillForm(user, data);
-    await formActions.submit(user, 'add participant');
+    await formActions.submit(user, 'Add Character');
   },
 
   async editParticipant(user: ReturnType<typeof userEvent.setup>, index: number, data: Record<string, string>) {
@@ -129,7 +128,7 @@ export const workflows = {
     await user.click(editButtons[index]);
     await waitForElement('Edit Participant');
     await formActions.fillForm(user, data);
-    await formActions.submit(user, 'update participant');
+    await formActions.submit(user, 'Save Changes');
   },
 
   async removeParticipant(user: ReturnType<typeof userEvent.setup>, index: number) {

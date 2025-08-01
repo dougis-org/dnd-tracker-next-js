@@ -155,6 +155,7 @@ export class SecureKeyboardActionHandler {
       'Space': 'Space',
       'Enter': 'Enter',
       'Escape': 'Escape',
+      'Backspace': 'Backspace',
       'ArrowUp': 'ArrowUp',
       'ArrowDown': 'ArrowDown',
       'ArrowLeft': 'ArrowLeft',
@@ -163,6 +164,7 @@ export class SecureKeyboardActionHandler {
       'KeyP': 'KeyP',
       'KeyR': 'KeyR',
       'KeyS': 'KeyS',
+      'KeyE': 'KeyE',
     };
 
     const safeKey = keyMap[keyCode];
