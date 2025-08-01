@@ -32,7 +32,8 @@ export interface SessionConfig {
  * Environment-based session configuration
  */
 export const SESSION_STRATEGY: SessionStrategy =
-  (process.env.NEXTAUTH_SESSION_STRATEGY as SessionStrategy) || 'jwt';
+  (process.env.NEXTAUTH_SESSION_STRATEGY as SessionStrategy) ||
+  ((process.env.USE_DATABASE_SESSIONS === 'true') ? 'database' : 'jwt');
 
 /**
  * Get session configuration based on strategy
@@ -117,6 +118,63 @@ export const sessionUtils = {
   hasValidSession,
   getSessionUserId,
   getSessionUserTier,
+};
+
+/**
+ * Enhanced session management utilities
+ */
+export const enhancedSessionUtils = {
+
+  /**
+   * Check if session is valid and not expired
+   */
+  isSessionValid: async () => {
+    try {
+      const { auth } = await getAuthConfig();
+      const session = await auth();
+      return Boolean(session?.user?.id);
+    } catch {
+      return false;
+    }
+  },
+
+  /**
+   * Get session details with expiration check
+   */
+  getSessionDetails: async () => {
+    try {
+      const { auth } = await getAuthConfig();
+      const session = await auth();
+      if (!session) return null;
+
+      const isExpired = session.expires
+        ? new Date(session.expires) <= new Date()
+        : false;
+
+      return {
+        ...session,
+        isValid: Boolean(session.user?.id) && !isExpired,
+        isExpired,
+      };
+    } catch (error) {
+      console.error('Error getting session details:', error);
+      return null;
+    }
+  },
+
+  /**
+   * Force session refresh/validation
+   */
+  refreshSession: async () => {
+    try {
+      const { auth } = await getAuthConfig();
+      const session = await auth();
+      return session;
+    } catch (error) {
+      console.error('Error refreshing session:', error);
+      return null;
+    }
+  },
 };
 
 /**
