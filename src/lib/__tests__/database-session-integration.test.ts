@@ -109,7 +109,7 @@ describe('Database Session Integration', () => {
     it('should integrate with existing UserService', async () => {
       const mockUser = createMockUser();
       const mockCredentials = createMockCredentials();
-      
+
       mockedUserService.authenticateUser.mockResolvedValue({
         success: true,
         data: {
@@ -147,7 +147,7 @@ describe('Database Session Integration', () => {
     it('should handle session cleanup and error scenarios', async () => {
       mockSessionsCollection.deleteMany.mockResolvedValue({ deletedCount: 3 });
       mockSessionsCollection.createIndex.mockResolvedValue('sessionToken_1');
-      
+
       await mockSessionsCollection.deleteMany({ expires: { $lt: new Date() } });
       await mockSessionsCollection.createIndex({ sessionToken: 1 });
 

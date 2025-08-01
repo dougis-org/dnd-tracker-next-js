@@ -182,11 +182,11 @@ export const createRouteTestExecutor = (handler: Function, baseUrl = '/api/users
       body: requestData ? JSON.stringify(requestData) : undefined,
       headers: { 'content-type': 'application/json' },
     });
-    
+
     if (requestData) {
       (mockRequest as any).json = jest.fn().mockResolvedValue(requestData);
     }
-    
+
     const params = createMockParams(userId);
     return handler(mockRequest, { params });
   };

@@ -27,7 +27,7 @@ describe('MongoDB Adapter Configuration', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     mockUsersCollection = createMockCollection();
     mockSessionsCollection = createMockCollection();
     const mockDb = createMockDatabase({
@@ -35,7 +35,7 @@ describe('MongoDB Adapter Configuration', () => {
       sessions: mockSessionsCollection,
     });
     mockClient = createMockClient(mockDb);
-    
+
     MockedMongoClient.mockImplementation(() => mockClient);
     mockedConnectToDatabase.mockResolvedValue();
     adapter = MongoDBAdapter(Promise.resolve(mockClient), { databaseName: 'test-dnd-tracker' });
@@ -47,7 +47,7 @@ describe('MongoDB Adapter Configuration', () => {
         'createUser', 'getUser', 'getUserByEmail', 'updateUser', 'deleteUser',
         'createSession', 'getSession', 'updateSession', 'deleteSession'
       ];
-      
+
       expect(adapter).toBeDefined();
       requiredMethods.forEach(method => {
         expect(adapter[method]).toBeDefined();
