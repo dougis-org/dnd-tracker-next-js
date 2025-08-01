@@ -66,3 +66,16 @@ export function containsTextIgnoreCase(haystack: string, needle: string): boolea
 export function getByTextSecure(text: string) {
   return (content: string) => containsTextIgnoreCase(content, text);
 }
+
+/**
+ * Creates a safe test pattern for use in testing
+ * Returns the original text since most test frameworks accept both RegExp and string
+ * This avoids dynamic RegExp construction while maintaining compatibility
+ * @param text - The text to create a pattern for
+ * @returns The text as-is for string-based matching
+ */
+export function createSafeTestRegExp(text: string): string {
+  // Return the text as-is for string-based matching
+  // Most testing frameworks accept strings where RegExp is expected
+  return text;
+}
