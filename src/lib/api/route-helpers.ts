@@ -36,10 +36,7 @@ export async function withAuth<T>(
 
 export async function validateUserAccess(requestedUserId: string, sessionUserId: string) {
   if (requestedUserId !== sessionUserId) {
-    return NextResponse.json(
-      { success: false, message: 'You can only access your own profile' },
-      { status: 403 }
-    );
+    return createErrorResponse('You can only access your own profile', 403);
   }
   return null;
 }
@@ -48,22 +45,18 @@ export async function withAuthAndAccess(
   params: Promise<{ id: string }>,
   callback: (_userId: string) => Promise<Response>
 ): Promise<Response> {
-  try {
-    const { error: authError, session } = await validateAuth();
-    if (authError) return authError;
+  return withAuth(async (userId) => {
+    try {
+      const { id: requestedUserId } = await params;
+      const accessError = await validateUserAccess(requestedUserId, userId);
+      if (accessError) return accessError;
 
-    const { id: userId } = await params;
-    const accessError = await validateUserAccess(userId, session!.user.id);
-    if (accessError) return accessError;
-
-    return await callback(userId);
-  } catch (error) {
-    console.error('API route error:', error);
-    return NextResponse.json(
-      { success: false, message: 'Internal server error' },
-      { status: 500 }
-    );
-  }
+      return await callback(requestedUserId);
+    } catch (error) {
+      console.error('API route error:', error);
+      return createErrorResponse('Internal server error', 500);
+    }
+  });
 }
 
 export function createSuccessResponse(data: any, message?: string) {
@@ -213,7 +206,6 @@ export async function validateRequestBody(request: Request, requiredFields: stri
 
 /**
  * Generic handler for API routes that need validation and service calls
- * Eliminates duplication across PATCH routes with validation
  */
 export function createValidatedRouteHandler<T>(
   schema: any,
@@ -236,14 +228,14 @@ export function createValidatedRouteHandler<T>(
         if (error instanceof ZodError) {
           return handleZodValidationError(error);
         }
-        throw error; // Let withAuthAndAccess handle unexpected errors
+        throw error;
       }
     });
   };
 }
 
 /**
- * Generic handler for simple routes (GET, DELETE, etc.) that don't need request body validation
+ * Generic handler for simple routes (GET, DELETE, etc.)
  */
 export function createSimpleRouteHandler(
   serviceCall: (_userId: string) => Promise<any>,
@@ -260,29 +252,6 @@ export function createSimpleRouteHandler(
     });
   };
 }
-
-/**
- * Legacy alias for backward compatibility - use createSimpleRouteHandler instead
- */
-export const createGetRouteHandler = (
-  serviceCall: (_userId: string) => Promise<any>,
-  errorOptions?: {
-    defaultErrorMessage?: string;
-    defaultErrorStatus?: number;
-  }
-) => createSimpleRouteHandler(serviceCall, undefined, errorOptions);
-
-/**
- * Legacy alias for backward compatibility - use createSimpleRouteHandler instead
- */
-export const createDeleteRouteHandler = (
-  serviceCall: (_userId: string) => Promise<any>,
-  successMessage: string,
-  errorOptions?: {
-    defaultErrorMessage?: string;
-    defaultErrorStatus?: number;
-  }
-) => createSimpleRouteHandler(serviceCall, successMessage, errorOptions);
 
 /**
  * Generic service result handler that can be used across all API routes
