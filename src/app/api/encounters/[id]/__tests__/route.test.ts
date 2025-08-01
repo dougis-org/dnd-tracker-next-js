@@ -37,12 +37,19 @@ const mockEncounterService = EncounterService as jest.Mocked<typeof EncounterSer
 const mockAuth = auth as jest.MockedFunction<typeof auth>;
 
 describe('/api/encounters/[id] route', () => {
+  const mockUser = {
+    id: 'user123',
+    email: 'test@example.com',
+    name: 'Test User',
+  };
+
   const mockEncounter = createTestEncounter({
     name: 'Test Encounter',
     description: 'Test description',
     difficulty: 'medium',
     estimatedDuration: 60,
     targetLevel: 5,
+    ownerId: mockUser.id,
     participants: [
       createTestParticipant({
         name: 'Test Player',
@@ -53,12 +60,6 @@ describe('/api/encounters/[id] route', () => {
     ],
     tags: ['test'],
   });
-
-  const mockUser = {
-    id: 'user123',
-    email: 'test@example.com',
-    name: 'Test User',
-  };
 
   const mockSession = {
     user: mockUser,
@@ -71,9 +72,7 @@ describe('/api/encounters/[id] route', () => {
 
   describe('GET /api/encounters/[id]', () => {
     it('should return encounter when found', async () => {
-      mockEncounterService.getEncounterById.mockResolvedValue(
-        mockApiResponses.success(mockEncounter)
-      );
+      mockSuccessfulAccessValidation(mockEncounterService, mockApiResponses, mockEncounter, mockUser.id);
 
       const { response, data } = await executeApiTest(GET, {}, 'GET');
 
@@ -91,12 +90,15 @@ describe('/api/encounters/[id] route', () => {
     });
 
     it('should handle service errors gracefully', async () => {
-      await testServiceError(
-        mockEncounterService.getEncounterById,
-        mockApiResponses,
-        GET,
-        'Database connection failed'
-      );
+      mockEncounterService.getEncounterById.mockResolvedValue({
+        success: false,
+        error: 'Database connection failed'
+      });
+      
+      const { response, data } = await executeApiTest(GET, {}, 'GET');
+      expect(response.status).toBe(500);
+      expect(data.success).toBe(false);
+      expect(data.error).toMatch(/(Database connection failed|Service error)/i);
     });
   });
 
@@ -169,15 +171,16 @@ describe('/api/encounters/[id] route', () => {
     it('should handle service errors gracefully', async () => {
       // Mock access validation to succeed
       mockSuccessfulAccessValidation(mockEncounterService, mockApiResponses, mockEncounter, mockUser.id);
+      
+      mockEncounterService.updateEncounter.mockResolvedValue({
+        success: false,
+        error: 'Database write failed'
+      });
 
-      await testServiceError(
-        mockEncounterService.updateEncounter,
-        mockApiResponses,
-        PUT,
-        'Database write failed',
-        createValidUpdateData(),
-        'PUT'
-      );
+      const { response, data } = await executeApiTest(PUT, createValidUpdateData(), 'PUT');
+      expect(response.status).toBe(500);
+      expect(data.success).toBe(false);
+      expect(data.error).toMatch(/(Database write failed|Service error)/i);
     });
   });
 
@@ -207,15 +210,16 @@ describe('/api/encounters/[id] route', () => {
     it('should handle service errors gracefully', async () => {
       // Mock access validation to succeed
       mockSuccessfulAccessValidation(mockEncounterService, mockApiResponses, mockEncounter, mockUser.id);
+      
+      mockEncounterService.deleteEncounter.mockResolvedValue({
+        success: false,
+        error: 'Database delete failed'
+      });
 
-      await testServiceError(
-        mockEncounterService.deleteEncounter,
-        mockApiResponses,
-        DELETE,
-        'Database delete failed',
-        {},
-        'DELETE'
-      );
+      const { response, data } = await executeApiTest(DELETE, {}, 'DELETE');
+      expect(response.status).toBe(500);
+      expect(data.success).toBe(false);
+      expect(data.error).toMatch(/(Database delete failed|Service error)/i);
     });
   });
 
