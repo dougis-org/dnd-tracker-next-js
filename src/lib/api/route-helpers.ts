@@ -1,13 +1,14 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { ZodError } from 'zod';
-import { auth } from '@/lib/auth';
+import { getAuthConfig } from '@/lib/session-config';
 
 /**
  * Shared API route helpers for authentication and access control
  */
 
 export async function validateAuth() {
-  const session = await auth();
+  const config = await getAuthConfig();
+  const session = await config.auth();
   if (!session?.user?.id) {
     return {
       error: NextResponse.json(

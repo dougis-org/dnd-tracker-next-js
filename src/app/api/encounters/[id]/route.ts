@@ -1,19 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
 import { EncounterService } from '@/lib/services/EncounterService';
 import { updateEncounterSchema } from '@/lib/validations/encounter';
-
-// Helper function to validate authentication
-async function validateAuth() {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json(
-      { success: false, error: 'Authentication required' },
-      { status: 401 }
-    );
-  }
-  return { session, userId: session.user.id };
-}
+import { validateAuth } from '@/lib/api/session-route-helpers';
 
 // Helper function to validate encounter ID
 async function validateEncounterId(params: Promise<{ id: string }>) {
@@ -83,7 +71,7 @@ function handleUnexpectedError(error: unknown, operation: string) {
 // Helper function for common validation steps (auth + encounter ID)
 async function validateBasicRequest(params: Promise<{ id: string }>) {
   const authResult = await validateAuth();
-  if (authResult instanceof NextResponse) return { error: authResult };
+  if (authResult.error) return { error: authResult.error };
 
   const encounterId = await validateEncounterId(params);
   if (encounterId instanceof NextResponse) return { error: encounterId };
@@ -97,7 +85,7 @@ async function validateRequestWithAccess(params: Promise<{ id: string }>) {
   if (basicResult.error) return basicResult;
 
   const { authResult, encounterId } = basicResult;
-  const { userId } = authResult;
+  const userId = authResult.session?.user?.id;
 
   const accessResult = await validateEncounterAccess(encounterId, userId);
   if (accessResult instanceof NextResponse) return { error: accessResult };
