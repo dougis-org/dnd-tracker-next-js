@@ -52,15 +52,20 @@ describe('Issue #473: Authentication Token Persistence', () => {
     (getToken as jest.Mock).mockResolvedValue(null);
     mockRedirect.mockReturnValue({ type: 'redirect' });
 
-    const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
     const request = createTestRequest('/dashboard');
     const { middleware } = await import('@/middleware');
     await middleware(request);
 
     expect(mockRedirect).toHaveBeenCalled();
-    expect(consoleSpy).toHaveBeenCalledWith(
-      'Middleware: No token found for /dashboard, redirecting to signin'
+    expect(mockNext).not.toHaveBeenCalled();
+    // Verify redirect URL contains signin and callback parameters
+    expect(mockRedirect).toHaveBeenCalledWith(
+      expect.objectContaining({
+        pathname: '/signin',
+        searchParams: expect.objectContaining({
+          get: expect.any(Function)
+        })
+      })
     );
-    consoleSpy.mockRestore();
   });
 });

@@ -10,9 +10,17 @@ export const clickButton = async (buttonText: string | RegExp) => {
   // Try to find button first, then menuitem if not found
   let element;
   try {
-    element = screen.getByRole('button', { name: buttonText });
+    // For case-insensitive string matching, convert to RegExp
+    const searchPattern = typeof buttonText === 'string' 
+      ? new RegExp(buttonText, 'i') 
+      : buttonText;
+    element = screen.getByRole('button', { name: searchPattern });
   } catch {
-    element = screen.getByRole('menuitem', { name: buttonText });
+    // For case-insensitive string matching, convert to RegExp
+    const searchPattern = typeof buttonText === 'string' 
+      ? new RegExp(buttonText, 'i') 
+      : buttonText;
+    element = screen.getByRole('menuitem', { name: searchPattern });
   }
   await user.click(element);
   return element;

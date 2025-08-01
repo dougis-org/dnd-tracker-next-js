@@ -120,7 +120,7 @@ export const workflows = {
   async addParticipant(user: ReturnType<typeof userEvent.setup>, data: Record<string, string>) {
     await formActions.openDialog(user);
     await formActions.fillForm(user, data);
-    await formActions.submit(user, 'Add Character');
+    await formActions.submit(user, 'Add Participant');
   },
 
   async editParticipant(user: ReturnType<typeof userEvent.setup>, index: number, data: Record<string, string>) {
@@ -128,7 +128,7 @@ export const workflows = {
     await user.click(editButtons[index]);
     await waitForElement('Edit Participant');
     await formActions.fillForm(user, data);
-    await formActions.submit(user, 'Save Changes');
+    await formActions.submit(user, 'Update Participant');
   },
 
   async removeParticipant(user: ReturnType<typeof userEvent.setup>, index: number) {
