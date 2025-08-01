@@ -73,14 +73,14 @@ describe('NextAuth Configuration Coverage', () => {
 
     // Test successful authentication
     mockGetUserByEmail.mockResolvedValue({ success: true, data: mockUser });
-    mockAuthenticateUser.mockResolvedValue({ 
-      success: true, 
-      data: { user: mockUser, requiresVerification: false } 
+    mockAuthenticateUser.mockResolvedValue({
+      success: true,
+      data: { user: mockUser, requiresVerification: false }
     });
 
     const credentials = { email: 'test@example.com', password: 'test123' };
-    const authorizeResult = await mockConfig.providers[0].authorize(credentials);
-    
+    await mockConfig.providers[0].authorize(credentials);
+
     // Basic validation that the auth flow can be exercised
     expect(mockConfig.adapter).toBeDefined();
     expect(mockConfig.providers).toHaveLength(1);
@@ -98,7 +98,7 @@ describe('NextAuth Configuration Coverage', () => {
 
     mockNextAuth.mockReturnValue(mockConfig);
     mockGetUserByEmail.mockResolvedValue({ success: false });
-    
+
     const result = await mockConfig.providers[0].authorize({});
     expect(result).toBeNull();
   });
@@ -108,14 +108,14 @@ describe('NextAuth Configuration Coverage', () => {
     process.env.NODE_ENV = 'development';
     const devConfig = { debug: true };
     mockNextAuth.mockReturnValue(devConfig);
-    
+
     expect(devConfig.debug).toBe(true);
 
     // Test production environment
     process.env.NODE_ENV = 'production';
     const prodConfig = { debug: false };
     mockNextAuth.mockReturnValue(prodConfig);
-    
+
     expect(prodConfig.debug).toBe(false);
   });
 });

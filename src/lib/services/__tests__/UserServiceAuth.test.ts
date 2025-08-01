@@ -11,7 +11,7 @@ describe('UserService Auth Operations', () => {
   it('should delegate auth operations to UserServiceAuth', async () => {
     const userData = { email: 'test@example.com', password: 'password123', username: 'test' };
     const loginData = { email: 'test@example.com', password: 'password123' };
-    
+
     await UserService.createUser(userData);
     await UserService.authenticateUser(loginData);
     await UserService.changePassword('userId', { currentPassword: 'old', newPassword: 'new' });

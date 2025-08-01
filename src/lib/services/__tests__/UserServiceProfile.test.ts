@@ -10,7 +10,7 @@ describe('UserService Profile Operations', () => {
 
   it('should delegate profile operations to UserServiceProfile', async () => {
     const profileData = { username: 'newname', preferences: {} };
-    
+
     await UserService.getUserById('userId');
     await UserService.updateUserProfile('userId', profileData);
     await UserService.deleteUser('userId');
