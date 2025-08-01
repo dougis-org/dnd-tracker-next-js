@@ -47,7 +47,7 @@ const customJestConfig = {
     ] : [])
   ],
   testMatch: ['<rootDir>/src/**/*.test.{js,jsx,ts,tsx}'],
-  collectCoverage: process.env.COVERAGE_ENABLED === 'true' && !process.env.CI || (!process.env.CI && !process.env.COVERAGE_DISABLED), // Temporarily disable coverage in CI to prevent timeouts
+  collectCoverage: true,
   collectCoverageFrom: [
     'src/**/*.{js,jsx,ts,tsx}',
     '!src/**/*.d.ts',
@@ -65,13 +65,12 @@ const customJestConfig = {
   ],
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html', 'json-summary'],
-  // Temporarily relaxed for CI coverage reporting
   coverageThreshold: {
     global: {
-      branches: 0,
-      functions: 0,
-      lines: 0,
-      statements: 0,
+      branches: 70,
+      functions: 70,
+      lines: 70,
+      statements: 70,
     },
   },
   moduleNameMapper: {

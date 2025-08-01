@@ -40,12 +40,17 @@ export class SecureHookMethodCaller {
       throw new Error(`Unknown method name: ${methodName}`);
     }
 
-    const method = hookResult[safeName];
+    // Use type-safe property access
+    if (typeof hookResult !== 'object' || hookResult === null) {
+      throw new Error('Hook result must be an object');
+    }
+
+    const method = hookResult[safeName as keyof typeof hookResult];
     if (typeof method !== 'function') {
       throw new Error(`Method ${safeName} is not a function`);
     }
 
-    return await method(...args);
+    return await method.apply(hookResult, args);
   }
 }
 
@@ -81,7 +86,7 @@ export class SecureCallbackAccessor {
       return undefined;
     }
 
-    return callbacks[safeName];
+    return callbacks[safeName as keyof typeof callbacks];
   }
 }
 
@@ -128,12 +133,17 @@ export class SecureActionDispatcher {
       throw new Error(`Unknown action name: ${actionName}`);
     }
 
-    const action = hookResult[safeName];
+    // Use type-safe property access
+    if (typeof hookResult !== 'object' || hookResult === null) {
+      throw new Error('Hook result must be an object');
+    }
+
+    const action = hookResult[safeName as keyof typeof hookResult];
     if (typeof action !== 'function') {
       throw new Error(`Action ${safeName} is not a function`);
     }
 
-    action(...args);
+    action.apply(hookResult, args);
   }
 }
 
@@ -172,10 +182,11 @@ export class SecureKeyboardActionHandler {
       return undefined;
     }
 
-    if (!keyActions || typeof keyActions !== 'object') {
+    // Use type-safe property access
+    if (typeof keyActions !== 'object' || keyActions === null) {
       return undefined;
     }
 
-    return keyActions[safeKey];
+    return keyActions[safeKey as keyof typeof keyActions];
   }
 }
