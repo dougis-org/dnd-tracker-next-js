@@ -29,11 +29,17 @@ export interface SessionConfig {
 }
 
 /**
- * Environment-based session configuration
+ * Get the current session strategy based on environment variables
  */
-export const SESSION_STRATEGY: SessionStrategy =
-  (process.env.NEXTAUTH_SESSION_STRATEGY as SessionStrategy) ||
-  ((process.env.USE_DATABASE_SESSIONS === 'true') ? 'database' : 'jwt');
+export function getSessionStrategy(): SessionStrategy {
+  return (process.env.NEXTAUTH_SESSION_STRATEGY as SessionStrategy) ||
+    ((process.env.USE_DATABASE_SESSIONS === 'true') ? 'database' : 'jwt');
+}
+
+/**
+ * Environment-based session configuration (deprecated - use getSessionStrategy() instead)
+ */
+export const SESSION_STRATEGY: SessionStrategy = getSessionStrategy();
 
 /**
  * Get session configuration based on strategy
@@ -67,14 +73,14 @@ export function getSessionConfig(strategy?: SessionStrategy): SessionConfig {
  * Check if database sessions are enabled
  */
 export function isDatabaseSessionEnabled(): boolean {
-  return SESSION_STRATEGY === 'database';
+  return getSessionStrategy() === 'database';
 }
 
 /**
  * Check if JWT sessions are enabled
  */
 export function isJWTSessionEnabled(): boolean {
-  return SESSION_STRATEGY === 'jwt';
+  return getSessionStrategy() === 'jwt';
 }
 
 /**
