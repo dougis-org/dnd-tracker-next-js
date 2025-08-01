@@ -47,8 +47,6 @@ jobs:
           # Add flag to indicate we're in CI environment
           CI: 'true'
           NODE_ENV: 'test'
-          # Enable coverage collection for this workflow
-          COVERAGE_ENABLED: 'true'
           # Debug level for MongoDB connection issues
           DEBUG: 'mongodb:*'
 
