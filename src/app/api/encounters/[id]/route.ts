@@ -52,7 +52,7 @@ export async function PUT(
 ) {
   try {
     const encounterId = await validateEncounterIdUtil(params);
-    
+
     return await withAuth(async (userId: string) => {
       try {
         await validateEncounterAccessUtil(encounterId, userId, EncounterService);
@@ -60,23 +60,23 @@ export async function PUT(
         const validatedData = updateEncounterSchema.parse(updateData);
 
         const result = await EncounterService.updateEncounter(encounterId, validatedData);
-        
+
         // Handle service errors with proper status codes
         if (!result.success) {
           // Always return 500 for service/database errors to match test expectations
           const errorMessage = result.error?.message || 'Update failed';
-          const isServiceError = errorMessage.includes('Service error') || 
+          const isServiceError = errorMessage.includes('Service error') ||
                                errorMessage.includes('Database') ||
                                errorMessage.includes('write failed') ||
                                errorMessage.includes('Connection') ||
                                errorMessage.includes('Timeout');
-          
+
           if (isServiceError) {
             return createErrorResponse('Database write failed', 500);
           }
           return createErrorResponse(errorMessage, 400);
         }
-        
+
         return handleServiceResult(result, 'Encounter updated successfully');
       } catch (error) {
         if (error instanceof Error) {
@@ -113,28 +113,28 @@ export async function DELETE(
 ) {
   try {
     const encounterId = await validateEncounterIdUtil(params);
-    
+
     return await withAuth(async (userId: string) => {
       try {
         await validateEncounterAccessUtil(encounterId, userId, EncounterService);
         const result = await EncounterService.deleteEncounter(encounterId);
-        
+
         // Handle service errors with proper status codes
         if (!result.success) {
           // Always return 500 for service/database errors to match test expectations
           const errorMessage = result.error?.message || 'Delete failed';
-          const isServiceError = errorMessage.includes('Service error') || 
+          const isServiceError = errorMessage.includes('Service error') ||
                                errorMessage.includes('Database') ||
                                errorMessage.includes('delete failed') ||
                                errorMessage.includes('Connection') ||
                                errorMessage.includes('Timeout');
-          
+
           if (isServiceError) {
             return createErrorResponse('Database delete failed', 500);
           }
           return createErrorResponse(errorMessage, 400);
         }
-        
+
         return handleServiceResult(result, 'Encounter deleted successfully');
       } catch (error) {
         if (error instanceof Error) {
