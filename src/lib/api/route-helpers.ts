@@ -12,7 +12,7 @@ export async function validateAuth() {
   if (!session?.user?.id) {
     return {
       error: NextResponse.json(
-        { success: false, error: 'Unauthorized' },
+        { success: false, error: 'Authentication required' },
         { status: 401 }
       ),
       session: null

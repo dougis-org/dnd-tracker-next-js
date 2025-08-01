@@ -64,7 +64,7 @@ export async function PUT(
         // Handle service errors with proper status codes
         if (!result.success) {
           // Always return 500 for service/database errors to match test expectations
-          const errorMessage = result.error?.message || 'Update failed';
+          const errorMessage = result.error?.message || result.error || 'Update failed';
           const isServiceError = errorMessage.includes('Service error') ||
                                errorMessage.includes('Database') ||
                                errorMessage.includes('write failed') ||
@@ -122,7 +122,7 @@ export async function DELETE(
         // Handle service errors with proper status codes
         if (!result.success) {
           // Always return 500 for service/database errors to match test expectations
-          const errorMessage = result.error?.message || 'Delete failed';
+          const errorMessage = result.error?.message || result.error || 'Delete failed';
           const isServiceError = errorMessage.includes('Service error') ||
                                errorMessage.includes('Database') ||
                                errorMessage.includes('delete failed') ||
