@@ -164,7 +164,7 @@ export const expectUnauthorizedResponse = (response: Response, data: any) => {
 export const expectUnauthenticatedResponse = (response: Response, data: any) => {
   expect(response.status).toBe(401);
   expect(data.success).toBe(false);
-  expect(data.error).toBe('Unauthorized');
+  expect(data.error).toBe('Authentication required');
 };
 
 // Advanced test execution helpers to reduce duplication
