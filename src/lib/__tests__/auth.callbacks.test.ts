@@ -3,10 +3,10 @@ import { UserService } from '../services/UserService';
 import {
   enhanceSessionUserData,
   validateUserSignIn,
-} from '../../auth'; // Assuming these are exported for testing
+} from '../auth'; // Assuming these are exported for testing
 
 // Mock UserService
-jest.mock('../../services/UserService');
+jest.mock('../services/UserService');
 
 const mockUserService = UserService as jest.Mocked<typeof UserService>;
 

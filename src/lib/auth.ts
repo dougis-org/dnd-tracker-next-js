@@ -23,7 +23,7 @@ export function isLocalHostname(hostname: string): boolean {
  * Helper function to enhance session user data
  * Reduces complexity in session callback (Issue #526)
  */
-async function enhanceSessionUserData(session: any, user: any): Promise<any> {
+export async function enhanceSessionUserData(session: any, user: any): Promise<any> {
   // Add user data to session from database user
   session.user.id = user.id ?? '';
   session.user.subscriptionTier = user.subscriptionTier || 'free';
@@ -51,7 +51,7 @@ async function enhanceSessionUserData(session: any, user: any): Promise<any> {
  * Helper function to validate user sign in
  * Reduces complexity in signIn callback (Issue #526)
  */
-async function validateUserSignIn(user: any, account: any): Promise<boolean> {
+export async function validateUserSignIn(user: any, account: any): Promise<boolean> {
   if (!user?.email) {
     console.warn('SignIn callback: Missing user email');
     return false;
