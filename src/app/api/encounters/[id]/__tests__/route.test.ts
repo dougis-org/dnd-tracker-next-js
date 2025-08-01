@@ -21,7 +21,6 @@ import {
   mockSuccessfulAccessValidation,
   createOwnedEncounter,
   testUnauthenticatedAccess,
-  testServiceError,
   testEncounterNotFound,
   testUnauthorizedAccess,
   setupTestMocks,
@@ -94,7 +93,7 @@ describe('/api/encounters/[id] route', () => {
         success: false,
         error: 'Database connection failed'
       });
-      
+
       const { response, data } = await executeApiTest(GET, {}, 'GET');
       expect(response.status).toBe(500);
       expect(data.success).toBe(false);
@@ -171,7 +170,7 @@ describe('/api/encounters/[id] route', () => {
     it('should handle service errors gracefully', async () => {
       // Mock access validation to succeed
       mockSuccessfulAccessValidation(mockEncounterService, mockApiResponses, mockEncounter, mockUser.id);
-      
+
       mockEncounterService.updateEncounter.mockResolvedValue({
         success: false,
         error: 'Database write failed'
@@ -210,7 +209,7 @@ describe('/api/encounters/[id] route', () => {
     it('should handle service errors gracefully', async () => {
       // Mock access validation to succeed
       mockSuccessfulAccessValidation(mockEncounterService, mockApiResponses, mockEncounter, mockUser.id);
-      
+
       mockEncounterService.deleteEncounter.mockResolvedValue({
         success: false,
         error: 'Database delete failed'

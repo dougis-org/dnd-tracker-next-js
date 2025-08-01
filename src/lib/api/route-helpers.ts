@@ -165,7 +165,8 @@ export async function validateEncounterId(params: Promise<{ id: string }>) {
     }
 
     return id;
-  } catch (error) {
+  // eslint-disable-next-line no-unused-vars
+  } catch (_error) {
     // Handle case where params is invalid or missing
     throw new Error('Encounter ID is required');
   }
@@ -180,14 +181,14 @@ export async function validateEncounterAccess(encounterId: string, userId: strin
   if (!result.success) {
     // Check if this is a service error (database failure) vs business logic error
     const errorMessage = result.error?.message || result.error;
-    if (errorMessage?.includes('Service error') || 
+    if (errorMessage?.includes('Service error') ||
         errorMessage?.includes('Database') ||
         errorMessage?.includes('Connection') ||
         errorMessage?.includes('Timeout')) {
       throw new Error('Database connection failed');
     }
     // For non-service errors, check if it's a "not found" case
-    if (errorMessage?.includes('not found') || 
+    if (errorMessage?.includes('not found') ||
         errorMessage?.includes('Not found') ||
         errorMessage?.includes('does not exist')) {
       throw new Error('Encounter not found');
@@ -289,7 +290,7 @@ export function handleServiceResult(
 ) {
   if (!result.success) {
     // For service errors, always use 500 status to match test expectations
-    const status = result.error?.message?.includes('Service error') || 
+    const status = result.error?.message?.includes('Service error') ||
                   result.error?.message?.includes('Database') ? 500 : errorStatus;
     return handleServiceError(result, result.error?.message || 'Operation failed', status);
   }
