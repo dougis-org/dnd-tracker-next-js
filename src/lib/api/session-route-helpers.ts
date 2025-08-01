@@ -85,8 +85,6 @@ export {
   validateRequestBody,
   createValidatedRouteHandler,
   createSimpleRouteHandler,
-  createGetRouteHandler,
-  createDeleteRouteHandler,
   handleServiceResult,
   withAuth,
   withAuthAndAccess,
