@@ -75,7 +75,6 @@ if (typeof window !== 'undefined') {
     removeEventListener: jest.fn(),
     dispatchEvent: jest.fn(),
   }));
-  
   Object.defineProperty(window, 'matchMedia', {
     writable: true,
     value: mockMatchMedia,
@@ -91,7 +90,6 @@ if (typeof window !== 'undefined') {
   Element.prototype.hasPointerCapture = jest.fn(() => false);
   Element.prototype.setPointerCapture = jest.fn();
   Element.prototype.releasePointerCapture = jest.fn();
-  
   // Add getBoundingClientRect if not present
   if (!Element.prototype.getBoundingClientRect) {
     const mockBoundingRect = () => ({

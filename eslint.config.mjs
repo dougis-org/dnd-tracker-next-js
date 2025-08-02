@@ -30,7 +30,7 @@ export default [
     ]
   },
   // Next.js configuration - includes the plugin automatically
-  ...compat.extends('plugin:next/recommended', 'plugin:next/core-web-vitals'),
+  ...compat.extends('next/core-web-vitals'),
   // Prettier configuration
   ...compat.extends('prettier'),
   {
