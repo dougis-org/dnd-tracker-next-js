@@ -56,7 +56,7 @@ export const expectApiError = async (
 };
 
 export const expectUnauthorizedError = async (response: Response) => {
-  return expectApiError(response, 401, 'Unauthorized');
+  return expectApiError(response, 401, 'Authentication required');
 };
 
 export const expectForbiddenError = async (response: Response) => {

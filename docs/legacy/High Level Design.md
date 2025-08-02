@@ -385,7 +385,7 @@ export async function withAuth(
     const session = await getServerSession(req, res, authOptions);
 
     if (!session) {
-      return res.status(401).json({ error: 'Unauthorized' });
+      return res.status(401).json({ error: 'Authentication required' });
     }
 
     const user = await getUserWithSubscription(session.user.id);

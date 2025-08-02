@@ -27,6 +27,13 @@ const nextConfig = {
       return config;
     },
   }),
+
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      config.externals.push('mongodb', 'fs/promises');
+    }
+    return config;
+  },
 };
 
 module.exports = nextConfig;

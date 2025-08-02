@@ -466,7 +466,7 @@ describe('CharacterService Facade', () => {
       const { CharacterServiceTemplates } = require('../CharacterServiceTemplates');
       CharacterServiceTemplates.cloneCharacter.mockResolvedValue({
         success: false,
-        error: { code: CHARACTER_ERROR_CODES.UNAUTHORIZED_ACCESS, message: 'Unauthorized' },
+        error: { code: CHARACTER_ERROR_CODES.UNAUTHORIZED_ACCESS, message: 'Authentication required' },
       });
 
       const result = await CharacterService.cloneCharacter(validCharacterId, validUserId, 'Clone');

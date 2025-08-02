@@ -15,7 +15,7 @@ export async function initializeRoute() {
   const session = await auth();
   if (!session?.user?.id) {
     return {
-      error: createErrorResponse('Unauthorized', 401),
+      error: createErrorResponse('Authentication required', 401),
       userId: null
     };
   }

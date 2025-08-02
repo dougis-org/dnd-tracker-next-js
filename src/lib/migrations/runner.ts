@@ -444,16 +444,8 @@ export class MigrationRunner implements IMigrationRunner {
    */
   private async loadMigration(filepath: string): Promise<Migration> {
     try {
-      // Use require in test environment, import in production
-      if (process.env.NODE_ENV === 'test') {
-        // Clear require cache to ensure fresh loads in tests
-        delete require.cache[require.resolve(filepath)];
-        return require(filepath);
-      } else {
-        // Dynamic import for ES modules in production
-        const migration = await import(filepath);
-        return migration.default || migration;
-      }
+      // Use require for consistent loading
+      return require(filepath);
     } catch (error) {
       throw new Error(`Failed to load migration ${filepath}: ${error instanceof Error ? error.message : String(error)}`);
     }
