@@ -4,50 +4,38 @@ import {
   parseQueryParams
 } from './helpers/api-helpers';
 import {
-  initializeRoute,
   handleSimpleResult,
   handleCreationResult,
   handlePaginatedResult,
-  handleRouteError,
   validateCharacterCreation
 } from './helpers/route-helpers';
-
+import { withAuth } from '@/lib/api/session-route-helpers';
 
 export async function GET(request: NextRequest) {
-  try {
-    const { error, userId } = await initializeRoute();
-    if (error) return error;
-
+  return withAuth(async (userId) => {
     const { type, search, limit, page } = parseQueryParams(request.url);
 
     if (search) {
-      const result = await CharacterService.searchCharacters(search, userId!);
+      const result = await CharacterService.searchCharacters(search, userId);
       return handleSimpleResult(result);
     }
     if (type) {
-      const result = await CharacterService.getCharactersByType(type as any, userId!);
+      const result = await CharacterService.getCharactersByType(type as any, userId);
       return handleSimpleResult(result);
     }
 
-    const result = await CharacterService.getCharactersByOwner(userId!, page, limit);
+    const result = await CharacterService.getCharactersByOwner(userId, page, limit);
     return handlePaginatedResult(result);
-  } catch (error) {
-    return handleRouteError(error, 'GET /api/characters');
-  }
+  });
 }
 
 export async function POST(request: NextRequest) {
-  try {
-    const { error, userId } = await initializeRoute();
-    if (error) return error;
-
+  return withAuth(async (userId) => {
     const body = await request.json();
     const validation = validateCharacterCreation(body);
     if (!validation.isValid) return validation.error!;
 
-    const result = await CharacterService.createCharacter(userId!, validation.data!);
+    const result = await CharacterService.createCharacter(userId, validation.data!);
     return handleCreationResult(result, 'Character created successfully');
-  } catch (error) {
-    return handleRouteError(error, 'POST /api/characters');
-  }
+  });
 }

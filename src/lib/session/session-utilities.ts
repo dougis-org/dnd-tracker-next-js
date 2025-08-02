@@ -22,7 +22,20 @@ export async function getCurrentSession(auth: any) {
 export async function hasValidSession(auth: any): Promise<boolean> {
   try {
     const session = await getCurrentSession(auth);
-    return Boolean(session?.user?.id);
+
+    if (!session?.user?.id) {
+      return false;
+    }
+
+    // Check if session has expired
+    if (session.expires) {
+      const expiresAt = new Date(session.expires);
+      if (expiresAt <= new Date()) {
+        return false;
+      }
+    }
+
+    return true;
   } catch (error) {
     console.error('Error checking session validity:', error);
     return false;
