@@ -152,7 +152,7 @@ export const runAuthenticationTest = async (
 ) => {
   const request = createUnauthenticatedRequest('http://localhost:3000/api/test', {}, mockAuth);
   const response = await apiFunction(request, ...args);
-  await expectErrorResponse(response, 401, 'Unauthorized');
+  await expectErrorResponse(response, 401, 'Authentication required');
 };
 
 const runErrorTest = async (
