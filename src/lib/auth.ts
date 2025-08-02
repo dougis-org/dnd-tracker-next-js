@@ -249,7 +249,7 @@ const authConfig = NextAuth({
     },
   },
   pages: {
-    signIn: '/signin',
+    signIn: '/login',
     error: '/error',
   },
   debug: process.env.NODE_ENV === 'development',

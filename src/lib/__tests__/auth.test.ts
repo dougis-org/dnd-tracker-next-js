@@ -412,11 +412,11 @@ describe('Authentication System', () => {
 
     it('should have correct page configuration', () => {
       const expectedPages = {
-        signIn: '/signin',
+        signIn: '/login',
         error: '/error',
       };
 
-      expect(expectedPages.signIn).toBe('/signin');
+      expect(expectedPages.signIn).toBe('/login');
       expect(expectedPages.error).toBe('/error');
     });
 

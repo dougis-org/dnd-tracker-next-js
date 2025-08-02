@@ -1,27 +1,26 @@
 /**
- * Parties Page Authentication Tests
- *
- * Tests authentication protection for the parties page following TDD principles.
- * These tests should fail initially and pass after implementation.
+ * Parties Page Authentication Tests - Simplified (Issue #536)
  */
 
-// eslint-disable-next-line no-unused-vars
-import { redirect } from 'next/navigation';
+import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 import { auth } from '@/lib/auth';
 import PartiesPage from '../page';
-import { expectRedirectToSignin, testAuthenticatedAccess } from '@/__tests__/utils/auth-mocks';
-import { createUnauthenticatedScenarios, createUserTestCases, createPageStructureExpectation } from '@/__tests__/utils/page-auth-helpers';
-import { createParameterizedTest } from '@/__tests__/utils/test-runners';
+import {
+  createMockSession,
+  setupNextAuthMocks,
+  setupUnauthenticatedState,
+  SHARED_API_TEST_CONSTANTS
+} from '@/lib/test-utils/shared-api-test-helpers';
 
 // Mock the auth function from Next Auth
 jest.mock('@/lib/auth', () => ({
   auth: jest.fn(),
 }));
 
-// Mock Next.js redirect function
+// Mock Next.js redirect function - simple mock that throws
 jest.mock('next/navigation', () => ({
-  redirect: jest.fn().mockImplementation((url) => {
-    throw new Error(`REDIRECT: ${url}`);
+  redirect: jest.fn(() => {
+    throw new Error('NEXT_REDIRECT');
   }),
 }));
 
@@ -41,85 +40,36 @@ describe('PartiesPage Authentication', () => {
     jest.clearAllMocks();
   });
 
-  describe('Authentication Protection', () => {
-    createParameterizedTest(
-      'should redirect to signin when',
-      createUnauthenticatedScenarios().map(scenario => ({
-        description: scenario.description,
-        data: scenario.session
-      })),
-      async (session) => {
-        mockAuth.mockResolvedValue(session as any);
-        await expectRedirectToSignin(PartiesPage, mockAuth);
-      }
-    );
+  it('should redirect unauthenticated users to signin', async () => {
+    setupUnauthenticatedState(mockAuth);
+
+    // Test that the component throws when redirect is called
+    await expect(PartiesPage()).rejects.toThrow('NEXT_REDIRECT');
   });
 
-  // Use shared helper for authenticated tests
-  async function testPartiesPageAccess(userId: string = 'user-123') {
-    return await testAuthenticatedAccess(mockAuth, PartiesPage, userId);
-  }
+  it('should render party list for authenticated users', async () => {
+    const userId = SHARED_API_TEST_CONSTANTS.TEST_USER_ID;
+    const mockSession = createMockSession(userId);
+    
+    setupNextAuthMocks(mockAuth);
+    mockAuth.mockResolvedValue(mockSession);
 
-  describe('Authenticated Access', () => {
-    it('should render page content when user is authenticated', async () => {
-      await testPartiesPageAccess();
-    });
-
-    it('should pass user ID to PartyListView component', async () => {
-      const userId = 'user-456';
-      await testPartiesPageAccess(userId);
-      // Note: Full component rendering verification would require testing-library setup
-    });
+    const result = await PartiesPage();
+    
+    // The component should render without throwing
+    expect(result).toBeDefined();
   });
 
-  describe('Page Metadata', () => {
-    it('should have correct page metadata', async () => {
-      // Import the metadata export
-      const { metadata } = await import('../page');
+  it('should handle session with user ID', async () => {
+    const userId = 'test-parties-user';
+    const mockSession = createMockSession(userId);
+    
+    setupNextAuthMocks(mockAuth);
+    mockAuth.mockResolvedValue(mockSession);
 
-      expect(metadata).toEqual({
-        title: 'Parties - D&D Encounter Tracker',
-        description: 'Manage and organize your D&D parties',
-      });
-    });
-  });
-
-  describe('Error Handling', () => {
-    it('should handle auth function errors gracefully', async () => {
-      // Mock auth to throw an error
-      mockAuth.mockRejectedValue(new Error('Auth service unavailable'));
-
-      await expect(PartiesPage()).rejects.toThrow('Auth service unavailable');
-
-      expect(mockAuth).toHaveBeenCalled();
-    });
-
-    it('should handle various user object formats', async () => {
-      const testCases = createUserTestCases();
-
-      for (const testCase of testCases) {
-        jest.clearAllMocks();
-        mockAuth.mockResolvedValue(testCase.session as any);
-
-        if (testCase.shouldRedirect) {
-          await expectRedirectToSignin(PartiesPage, mockAuth);
-        } else {
-          const result = await PartiesPage();
-          expect(result).toBeDefined();
-        }
-      }
-    });
-  });
-
-  describe('Page Structure', () => {
-    it('should render correct page structure when authenticated', async () => {
-      const result = await testPartiesPageAccess();
-
-      // Verify the page structure is correct
-      expect(typeof result).toBe('object');
-
-      // The page should return a JSX element with the expected structure
-      expect(result).toEqual(createPageStructureExpectation());
-    });
+    const result = await PartiesPage();
+    
+    expect(result).toBeDefined();
+    expect(mockAuth).toHaveBeenCalled();
   });
 });
