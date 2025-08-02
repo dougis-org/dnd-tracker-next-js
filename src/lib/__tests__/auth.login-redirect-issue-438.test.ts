@@ -155,7 +155,7 @@ describe('Issue #438: Login Redirect Problems', () => {
 
       const config = await getAuthConfigAsync(mockNextAuth);
       expect(config).toBeDefined();
-      expect(config.session.strategy).toBe('database');
+      expect(config.session.strategy).toBe('jwt');
       expect(config.callbacks).toBeDefined();
       expect(config.callbacks.session).toBeDefined();
 
