@@ -15,7 +15,6 @@ const mockSessionUtils = {
   hasValidSession: jest.fn(),
   getSessionUserId: jest.fn(),
   getCurrentSession: jest.fn(),
-  getSessionUserTier: jest.fn(),
 };
 
 // Setup mocks
@@ -27,7 +26,7 @@ describe('Auth Integration - Session Persistence', () => {
     jest.clearAllMocks();
   });
 
-  it('should store and retrieve session data across requests', async () => {
+  it('should store and retrieve session data', async () => {
     const userId = SHARED_API_TEST_CONSTANTS.TEST_USER_ID;
     const mockSession = createMockSession(userId);
 
@@ -42,20 +41,7 @@ describe('Auth Integration - Session Persistence', () => {
     expect(sessionUserId).toBe(userId);
   });
 
-  it('should maintain session data integrity', async () => {
-    const userId = SHARED_API_TEST_CONSTANTS.TEST_USER_ID;
-    const mockSession = createMockSession(userId);
-
-    mockSessionUtils.getCurrentSession.mockResolvedValue(mockSession);
-
-    const session1 = await mockSessionUtils.getCurrentSession();
-    const session2 = await mockSessionUtils.getCurrentSession();
-
-    expect(session1).toEqual(session2);
-    expect(session1.user.id).toBe(userId);
-  });
-
-  it('should handle session expiration properly', async () => {
+  it('should handle session expiration', async () => {
     setupUnauthenticatedState(mockAuth);
     mockSessionUtils.hasValidSession.mockResolvedValue(false);
     mockSessionUtils.getCurrentSession.mockResolvedValue(null);

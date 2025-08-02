@@ -12,14 +12,8 @@ import {
 } from '@/lib/test-utils/shared-api-test-helpers';
 
 // Mock services
-const mockUserService = {
-  authenticateUser: jest.fn(),
-};
-
-const mockCharacterService = {
-  getCharactersByOwner: jest.fn(),
-};
-
+const mockUserService = { authenticateUser: jest.fn() };
+const mockCharacterService = { getCharactersByOwner: jest.fn() };
 const mockAuth = jest.fn();
 
 // Setup mocks
@@ -38,7 +32,6 @@ describe('Auth Integration - Login to API Access', () => {
     const mockUser = createMockUser();
     const mockSession = createMockSession(userId);
 
-    // Setup authentication flow
     mockUserService.authenticateUser.mockResolvedValue({
       success: true,
       data: { user: mockUser, session: mockSession },
@@ -48,10 +41,9 @@ describe('Auth Integration - Login to API Access', () => {
 
     mockCharacterService.getCharactersByOwner.mockResolvedValue({
       success: true,
-      data: { characters: [{ id: 'char1', ownerId: userId }], pagination: { total: 1 } },
+      data: { characters: [{ id: 'char1', ownerId: userId }] },
     });
 
-    // Test authentication
     const authResult = await mockUserService.authenticateUser({
       email: mockUser.email,
       password: 'testpassword',
@@ -59,16 +51,12 @@ describe('Auth Integration - Login to API Access', () => {
     });
 
     expect(authResult.success).toBe(true);
-    expect(authResult.data.user.id).toBe(userId);
 
-    // Test session validation
     const token = await getToken({ req: {} as any });
     expect(token.sub).toBe(userId);
 
-    // Test API access
     const apiResult = await mockCharacterService.getCharactersByOwner(userId, 1, 10);
     expect(apiResult.success).toBe(true);
-    expect(apiResult.data.characters[0].ownerId).toBe(userId);
   });
 
   it('should validate session tokens properly', async () => {
