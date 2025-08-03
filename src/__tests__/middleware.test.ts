@@ -176,7 +176,7 @@ describe('Middleware Route Protection', () => {
 
       // Mock global URL constructor
       const originalURL = global.URL;
-      global.URL = jest.fn().mockImplementation((path, base) => {
+      global.URL = jest.fn().mockImplementation((path, _base) => {
         if (path === '/signin') {
           return mockSigninUrl;
         } else if (path === '/dashboard/characters') {
@@ -490,7 +490,7 @@ describe('Middleware Route Protection', () => {
         toString: jest.fn().mockReturnValue('http://localhost:3000/dashboard'),
       };
 
-      global.URL = jest.fn().mockImplementation((path, base) => {
+      global.URL = jest.fn().mockImplementation((path, _base) => {
         if (path === '/signin') {
           return mockSigninUrl;
         } else if (path === '/dashboard') {
