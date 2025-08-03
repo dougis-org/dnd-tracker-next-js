@@ -45,6 +45,9 @@ jobs:
       - name: Run ESLint with auto-fix
         run: npm run lint:fix
 
+      - name: Run Markdown Lint with auto-fix
+        run: npm run lint:markdown:fix
+
       - name: Check for changes
         id: verify_diff
         run: |
