@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, Suspense } from 'react';
 import { signIn } from 'next-auth/react';
 import { z } from 'zod';
 import { userLoginSchema } from '@/lib/validations/user';
@@ -43,7 +43,7 @@ const TOAST_MESSAGES = {
   failure: 'Login Failure, please check your email and password',
 } as const;
 
-export default function SignInPage() {
+function SignInContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
@@ -259,5 +259,22 @@ export default function SignInPage() {
         </div>
       </FormWrapper>
     </div>
+  );
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense fallback={
+      <div className="space-y-6">
+        <div className="text-center space-y-2">
+          <h1 className="text-2xl font-bold">Sign in to your account</h1>
+          <p className="text-slate-500 dark:text-slate-400">
+            Loading...
+          </p>
+        </div>
+      </div>
+    }>
+      <SignInContent />
+    </Suspense>
   );
 }

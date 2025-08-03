@@ -269,6 +269,29 @@ rewrites
 
 ## Recent Updates
 
+### 2025-08-03 - Issue #586 Navigation RSC Hydration Issue Resolved
+
+- ✅ **[Issue #586: Critical Navigation Failures After Authentication][issue-586]** - Successfully
+  resolved critical RSC (React Server Components) request failures that occurred during navigation
+  between protected pages after authentication. The root cause was a server-client hydration
+  mismatch where the root layout was an async server component using `await auth()` while protected
+  pages were client components using `useSession()`. This inconsistency caused RSC requests to
+  fail with `net::ERR_ABORTED` errors during navigation.
+  
+  **Technical Fix**: Converted root layout from async server component to regular component,
+  removing `await auth()` call and allowing SessionProvider to handle session initialization
+  entirely client-side. This eliminated the hydration mismatch and restored seamless navigation
+  between protected pages.
+  
+  **Quality Improvements**: Fixed Next.js 15 Suspense boundary issues in auth pages,
+  implemented comprehensive TDD test suite covering server-client session consistency,
+  navigation flows, and RSC request simulation. All core functionality tests pass.
+  
+  **PR Status**: While PR #587 has false positive Codacy security warnings in test scripts
+  (hardcoded test passwords and Playwright navigation URLs), the core RSC hydration issue
+  is fully resolved. Users can now navigate between protected pages without encountering
+  "Application error: a client-side exception has occurred" messages.
+
 ### 2025-08-03 - Issue #581 Authentication Session Persistence Fully Resolved
 
 - ✅ **[Issue #581: Phase 3.3: Investigate and resolve production authentication session persistence][issue-581]** - Successfully
@@ -280,8 +303,8 @@ rewrites
   3. **Middleware Token Validation**: Fixed middleware to use correct `cookieName` parameter for production
   4. **Test Suite Fixes**: Updated 2 failing tests that expected removed MongoDB adapter behavior
   
-  Production validation confirms full authentication functionality: Login flow (✅ PASS), Logout flow (✅ PASS), 
-  Protected routes (✅ PASS 7/7). Session persistence is working correctly - the previous errors were due to 
+  Production validation confirms full authentication functionality: Login flow (✅ PASS), Logout flow (✅ PASS),
+  Protected routes (✅ PASS 7/7). Session persistence is working correctly - the previous errors were due to
   testing with non-existent user accounts. Authentication system is now fully operational in production.
 
 ### 2025-08-03 - Issue #530 Production Authentication Testing Completed
@@ -428,3 +451,7 @@ rewrites
 [issue-537]: https://github.com/dougis-org/dnd-tracker-next-js/issues/537
 
 [issue-572]: https://github.com/dougis-org/dnd-tracker-next-js/issues/572
+
+[issue-581]: https://github.com/dougis-org/dnd-tracker-next-js/issues/581
+
+[issue-586]: https://github.com/dougis-org/dnd-tracker-next-js/issues/586

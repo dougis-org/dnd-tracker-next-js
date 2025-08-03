@@ -2,14 +2,14 @@
 
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import { Check, Loader2, Mail } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 type VerificationState = 'pending' | 'success' | 'error' | 'sending' | 'sent';
 
-export default function VerifyEmailPage() {
+function VerifyEmailContent() {
   const _router = useRouter();
   const searchParams = useSearchParams();
   const email = searchParams.get('email');
@@ -32,9 +32,7 @@ export default function VerifyEmailPage() {
     try {
       const response = await fetch('/api/auth/verify-email', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token }),
       });
 
@@ -66,9 +64,7 @@ export default function VerifyEmailPage() {
     try {
       const response = await fetch('/api/auth/resend-verification', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       });
 
@@ -87,94 +83,76 @@ export default function VerifyEmailPage() {
     }
   };
 
-  // Component for pending verification state
-  const PendingVerification = () => (
-    <div className="text-center space-y-4">
-      <div className="flex justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-      <h1 className="text-2xl font-bold">Verifying your email</h1>
-      <p className="text-slate-500 dark:text-slate-400">
-        Please wait while we verify your email address...
-      </p>
-    </div>
-  );
 
-  // Component for successful verification
-  const SuccessfulVerification = () => (
-    <div className="text-center space-y-4">
-      <div className="flex justify-center">
-        <div className="w-12 h-12 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center">
+  // Render state-specific content
+  if (state === 'pending') {
+    return (
+      <div className="space-y-6 text-center space-y-4">
+        <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
+        <h1 className="text-2xl font-bold">Verifying your email</h1>
+        <p className="text-slate-500 dark:text-slate-400">
+          Please wait while we verify your email address...
+        </p>
+      </div>
+    );
+  }
+
+  if (state === 'success') {
+    return (
+      <div className="space-y-6 text-center space-y-4">
+        <div className="w-12 h-12 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center mx-auto">
           <Check className="h-6 w-6 text-green-600 dark:text-green-300" />
         </div>
-      </div>
-      <h1 className="text-2xl font-bold">Email Verified!</h1>
-      <p className="text-slate-500 dark:text-slate-400">
-        Thank you for verifying your email address. Your account is now active.
-      </p>
-      <div className="pt-2">
+        <h1 className="text-2xl font-bold">Email Verified!</h1>
+        <p className="text-slate-500 dark:text-slate-400">
+          Thank you for verifying your email address. Your account is now active.
+        </p>
         <Button asChild>
           <Link href={'/signin?next=/profile-setup' as any}>Sign In and Complete Profile</Link>
         </Button>
       </div>
-    </div>
-  );
+    );
+  }
 
-  // Component for verification error
-  const VerificationError = () => (
-    <div className="text-center space-y-4">
-      <Alert variant="destructive" className="mb-4">
-        <AlertDescription>{error || 'Failed to verify email'}</AlertDescription>
-      </Alert>
-      <h1 className="text-2xl font-bold">Verification Failed</h1>
-      <p className="text-slate-500 dark:text-slate-400">
-        The verification link may have expired or is invalid.
-      </p>
-      <div className="pt-2 space-y-3">
+  if (state === 'error') {
+    return (
+      <div className="space-y-6 text-center space-y-4">
+        <Alert variant="destructive">
+          <AlertDescription>{error || 'Failed to verify email'}</AlertDescription>
+        </Alert>
+        <h1 className="text-2xl font-bold">Verification Failed</h1>
+        <p className="text-slate-500 dark:text-slate-400">
+          The verification link may have expired or is invalid.
+        </p>
         {email && (
-          <Button onClick={resendVerification} disabled={state === 'sending'}>
-            {state === 'sending' ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Sending...
-              </>
-            ) : (
-              'Resend Verification Email'
-            )}
+          <Button onClick={resendVerification}>
+            Resend Verification Email
           </Button>
         )}
-        <div>
-          <Link
-            href={'/signin' as any}
-            className="text-sm text-primary hover:underline"
-          >
-            Return to Sign In
-          </Link>
-        </div>
+        <Link href={'/signin' as any} className="text-sm text-primary hover:underline">
+          Return to Sign In
+        </Link>
       </div>
-    </div>
-  );
+    );
+  }
 
-  // Component for sending verification email
-  const SendingVerification = () => (
-    <div className="text-center space-y-4">
-      <div className="flex justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+  if (state === 'sending') {
+    return (
+      <div className="space-y-6 text-center space-y-4">
+        <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
+        <h1 className="text-2xl font-bold">Sending Verification Email</h1>
+        <p className="text-slate-500 dark:text-slate-400">
+          Please wait while we send a new verification email...
+        </p>
       </div>
-      <h1 className="text-2xl font-bold">Sending Verification Email</h1>
-      <p className="text-slate-500 dark:text-slate-400">
-        Please wait while we send a new verification email...
-      </p>
-    </div>
-  );
+    );
+  }
 
-  // Component for verification sent
-  const VerificationSent = () => (
-    <div className="text-center space-y-4">
-      <div className="flex justify-center">
-        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-          <Mail className="h-6 w-6 text-primary" />
-        </div>
+  // Default: sent state
+  return (
+    <div className="space-y-6 text-center space-y-4">
+      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+        <Mail className="h-6 w-6 text-primary" />
       </div>
       <h1 className="text-2xl font-bold">Check Your Email</h1>
       <p className="text-slate-500 dark:text-slate-400">
@@ -184,45 +162,27 @@ export default function VerifyEmailPage() {
       <p className="text-slate-500 dark:text-slate-400">
         Click the link in the email to verify your account.
       </p>
-      <div className="pt-2 space-y-3">
-        <Button onClick={resendVerification} disabled={state === 'sending'}>
-          {state === 'sending' ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Sending...
-            </>
-          ) : (
-            'Resend Verification Email'
-          )}
-        </Button>
-        <div>
-          <Link
-            href={'/signin' as any}
-            className="text-sm text-primary hover:underline"
-          >
-            Return to Sign In
-          </Link>
-        </div>
-      </div>
+      <Button onClick={resendVerification}>
+        Resend Verification Email
+      </Button>
+      <Link href={'/signin' as any} className="text-sm text-primary hover:underline">
+        Return to Sign In
+      </Link>
     </div>
   );
+}
 
-  // Render content based on current state
-  const renderContent = () => {
-    switch (state) {
-      case 'pending':
-        return <PendingVerification />;
-      case 'success':
-        return <SuccessfulVerification />;
-      case 'error':
-        return <VerificationError />;
-      case 'sending':
-        return <SendingVerification />;
-      case 'sent':
-      default:
-        return <VerificationSent />;
-    }
-  };
-
-  return <div className="space-y-6">{renderContent()}</div>;
+export default function VerifyEmailPage() {
+  return (
+    <Suspense fallback={
+      <div className="text-center space-y-4">
+        <div className="flex justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+        <h1 className="text-2xl font-bold">Loading...</h1>
+      </div>
+    }>
+      <VerifyEmailContent />
+    </Suspense>
+  );
 }
