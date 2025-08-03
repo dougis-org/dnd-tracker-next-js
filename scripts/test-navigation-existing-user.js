@@ -81,40 +81,39 @@ class ExistingUserNavigationTest {
     });
   }
 
+  async performLogin() {
+    await this.page.goto(`${this.baseUrl}/signin`);
+    await this.page.waitForLoadState('networkidle');
+    await this.page.fill('input[name="email"]', TEST_USER_EMAIL);
+    await this.page.fill('input[name="password"]', TEST_USER_PASSWORD);
+    await this.page.click('button[type="submit"]');
+    await this.page.waitForLoadState('networkidle');
+  }
+
   async testLogin() {
     console.log('🔐 Testing Login...');
     const startTime = Date.now();
     
     try {
-      await this.page.goto(`${this.baseUrl}/signin`);
-      await this.page.waitForLoadState('networkidle');
-      
-      // Fill and submit login form
-      await this.page.fill('input[name="email"]', TEST_USER_EMAIL);
-      await this.page.fill('input[name="password"]', TEST_USER_PASSWORD);
-      await this.page.click('button[type="submit"]');
-      await this.page.waitForLoadState('networkidle');
+      await this.performLogin();
       
       const currentUrl = this.page.url();
       const duration = Date.now() - startTime;
+      const isSuccess = currentUrl.includes('/dashboard') || 
+        (!currentUrl.includes('/signin') && !currentUrl.includes('/error'));
       
-      if (currentUrl.includes('/dashboard') || 
-          (!currentUrl.includes('/signin') && !currentUrl.includes('/error'))) {
-        this.results.login = {
-          success: true,
-          details: { redirectUrl: currentUrl, duration }
-        };
-        console.log(`   ✅ Login successful (${duration}ms)`);
-        console.log(`   📍 Redirected to: ${currentUrl}`);
-        return true;
-      } else {
-        this.results.login = {
-          success: false,
-          details: { error: 'Login failed', currentUrl, duration }
-        };
-        console.log(`   ❌ Login failed: ${currentUrl}`);
-        return false;
-      }
+      this.results.login = {
+        success: isSuccess,
+        details: isSuccess 
+          ? { redirectUrl: currentUrl, duration }
+          : { error: 'Login failed', currentUrl, duration }
+      };
+      
+      console.log(isSuccess 
+        ? `   ✅ Login successful (${duration}ms)\n   📍 Redirected to: ${currentUrl}`
+        : `   ❌ Login failed: ${currentUrl}`
+      );
+      return isSuccess;
     } catch (error) {
       this.results.login = {
         success: false,
@@ -125,6 +124,15 @@ class ExistingUserNavigationTest {
     }
   }
 
+  async checkForErrors() {
+    const hasApplicationError = await this.page.locator(':has-text("Application error")').count() > 0;
+    const hasErrorPage = this.page.url().includes('/error') || this.page.url().includes('/signin');
+    const bodyText = await this.page.textContent('body');
+    const hasClientError = bodyText.includes('client-side exception') || bodyText.includes('Application error');
+    
+    return { hasApplicationError, hasErrorPage, hasClientError, bodyText };
+  }
+
   async testPageNavigation(pageName, route) {
     console.log(`🔄 Testing Navigation to ${pageName}...`);
     const startTime = Date.now();
@@ -133,25 +141,13 @@ class ExistingUserNavigationTest {
       const beforeUrl = this.page.url();
       console.log(`   📍 Starting from: ${beforeUrl}`);
       
-      // Navigate to the page
       await this.page.goto(`${this.baseUrl}${route}`);
       await this.page.waitForLoadState('domcontentloaded');
-      
-      // Wait to see if errors occur
       await this.page.waitForTimeout(3000);
       
       const afterUrl = this.page.url();
       const duration = Date.now() - startTime;
-      
-      // Check for application errors
-      const hasApplicationError = await this.page.locator(':has-text("Application error")').count() > 0;
-      const hasErrorPage = afterUrl.includes('/error') || afterUrl.includes('/signin');
-      const pageTitle = await this.page.title();
-      
-      // Get page content for analysis
-      const bodyText = await this.page.textContent('body');
-      const hasClientError = bodyText.includes('client-side exception') || 
-                            bodyText.includes('Application error');
+      const { hasApplicationError, hasErrorPage, hasClientError, bodyText } = await this.checkForErrors();
       
       const result = {
         pageName,
@@ -160,7 +156,7 @@ class ExistingUserNavigationTest {
         beforeUrl,
         afterUrl,
         duration,
-        pageTitle,
+        pageTitle: await this.page.title(),
         hasApplicationError,
         hasErrorPage,
         hasClientError,
@@ -169,8 +165,7 @@ class ExistingUserNavigationTest {
       
       if (hasClientError) {
         result.errorText = bodyText.substring(0, 500);
-        console.log(`   ❌ Client-side error detected!`);
-        console.log(`   📄 Error content: ${result.errorText}...`);
+        console.log(`   ❌ Client-side error detected!\n   📄 Error content: ${result.errorText}...`);
       }
       
       this.results.navigations.push(result);

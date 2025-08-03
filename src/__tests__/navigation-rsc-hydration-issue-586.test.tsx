@@ -78,14 +78,18 @@ describe('Issue #586: Navigation RSC Hydration Failures', () => {
     } as any);
   });
 
+  const renderPageAndWaitForLoad = async (PageComponent, expectedText) => {
+    render(<PageComponent />);
+    await waitFor(() => {
+      expect(screen.getByText(expectedText)).toBeInTheDocument();
+    });
+  };
+
   describe('Server-Client Session State Consistency', () => {
     it('should have consistent session state between server and client components', async () => {
-      // This test will initially fail because of the hydration mismatch
       mockUseSession.mockReturnValue(authenticatedSession);
-
       const CharactersPage = (await import('../app/characters/page')).default;
 
-      // Mock server-side session state (what root layout gets from await auth())
       const _serverSession = {
         user: {
           id: 'test-user-123',
@@ -95,89 +99,57 @@ describe('Issue #586: Navigation RSC Hydration Failures', () => {
         }
       };
 
-      // Render the page - this should not cause hydration mismatch
       render(<CharactersPage />);
-
-      // The page should render without throwing hydration errors
       expect(screen.getByText('Characters')).toBeInTheDocument();
-
-      // TODO: This assertion will fail initially due to hydration mismatch
-      // When fixed, the session data should be consistent
       expect(screen.getByText(/Manage and organize your D&D characters/)).toBeInTheDocument();
     });
 
     it('should not fail when navigating between protected pages', async () => {
       mockUseSession.mockReturnValue(authenticatedSession);
 
-      // Simulate successful navigation from dashboard to characters
       const CharactersPage = (await import('../app/characters/page')).default;
       const DashboardPage = (await import('../app/dashboard/page')).default;
 
-      // First render dashboard
       const { rerender } = render(<DashboardPage />);
-
       await waitFor(() => {
         expect(screen.getAllByText('Dashboard').length).toBeGreaterThan(0);
       });
 
-      // Then navigate to characters - this should not fail
       rerender(<CharactersPage />);
-
       await waitFor(() => {
         expect(screen.getByText('Characters')).toBeInTheDocument();
       });
-
-      // Navigation should not cause any console errors or failed requests
-      // The test should pass now that we fixed the server-client hydration mismatch
     });
   });
 
   describe('RSC Request Simulation', () => {
     it('should not abort RSC requests during navigation', async () => {
-      // Mock network requests to simulate RSC behavior
       const mockFetch = jest.fn().mockResolvedValue({
         ok: true,
         json: () => Promise.resolve({ success: true })
       });
-
       global.fetch = mockFetch;
 
       mockUseSession.mockReturnValue(authenticatedSession);
-
       const CharactersPage = (await import('../app/characters/page')).default;
+      
       render(<CharactersPage />);
-
-      // Wait for component to stabilize
       await waitFor(() => {
         expect(screen.getByText('Characters')).toBeInTheDocument();
       });
-
-      // TODO: In current broken state, RSC requests would fail
-      // After fix, RSC-like requests should succeed
-      // For now, just verify no errors are thrown during render
       expect(screen.getByTestId('character-list')).toBeInTheDocument();
     });
   });
 
   describe('Error Boundary Integration', () => {
     it('should not trigger client-side exceptions during navigation', async () => {
-      // Mock console.error to catch React errors
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
       mockUseSession.mockReturnValue(authenticatedSession);
-
       const CharactersPage = (await import('../app/characters/page')).default;
 
-      // This should not throw any client-side exceptions
-      expect(() => {
-        render(<CharactersPage />);
-      }).not.toThrow();
-
-      // Should not log any React hydration errors
-      // TODO: Currently this would fail due to hydration mismatch
-      expect(consoleSpy).not.toHaveBeenCalledWith(
-        expect.stringContaining('Hydration')
-      );
+      expect(() => render(<CharactersPage />)).not.toThrow();
+      expect(consoleSpy).not.toHaveBeenCalledWith(expect.stringContaining('Hydration'));
 
       consoleSpy.mockRestore();
     });
@@ -185,22 +157,16 @@ describe('Issue #586: Navigation RSC Hydration Failures', () => {
 
   describe('Session Provider State Management', () => {
     it('should properly initialize session state from server', async () => {
-      // Test that SessionProvider correctly handles initial session from server
       mockUseSession.mockReturnValue({
         ...authenticatedSession,
-        status: 'loading' as const // Simulate initial loading state
+        status: 'loading' as const
       });
 
       const CharactersPage = (await import('../app/characters/page')).default;
       render(<CharactersPage />);
-
-      // Should show loading state initially
       expect(screen.getByText('Loading...')).toBeInTheDocument();
 
-      // Update to authenticated state
       mockUseSession.mockReturnValue(authenticatedSession);
-
-      // Re-render to simulate session resolution
       const { rerender: _rerender } = render(<CharactersPage />);
 
       await waitFor(() => {

@@ -82,6 +82,16 @@ class NavigationFlowTester {
     });
   }
 
+  async fillRegistrationForm() {
+    await this.page.fill('input[name="firstName"]', 'Navigation');
+    await this.page.fill('input[name="lastName"]', 'Test');
+    await this.page.fill('input[name="email"]', TEST_USER_EMAIL);
+    await this.page.fill('input[name="password"]', TEST_USER_PASSWORD);
+    await this.page.fill('input[name="confirmPassword"]', TEST_USER_PASSWORD);
+    await this.page.fill('input[name="username"]', 'navtest' + Date.now().toString().slice(-6));
+    await this.page.check('input[name="agreeToTerms"]');
+  }
+
   async testRegistration() {
     console.log('📝 Testing User Registration...');
     const startTime = Date.now();
@@ -90,36 +100,26 @@ class NavigationFlowTester {
       await this.page.goto(`${this.baseUrl}/signup`);
       await this.page.waitForLoadState('networkidle');
       
-      // Fill registration form
-      await this.page.fill('input[name="firstName"]', 'Navigation');
-      await this.page.fill('input[name="lastName"]', 'Test');
-      await this.page.fill('input[name="email"]', TEST_USER_EMAIL);
-      await this.page.fill('input[name="password"]', TEST_USER_PASSWORD);
-      await this.page.fill('input[name="confirmPassword"]', TEST_USER_PASSWORD);
-      await this.page.fill('input[name="username"]', 'navtest' + Date.now().toString().slice(-6));
-      await this.page.check('input[name="agreeToTerms"]');
+      await this.fillRegistrationForm();
       
-      // Submit registration
       await this.page.click('button[type="submit"]');
       await this.page.waitForLoadState('networkidle');
       
       const currentUrl = this.page.url();
       const duration = Date.now() - startTime;
       
-      if (currentUrl.includes('/signin') || currentUrl.includes('/dashboard')) {
-        this.results.registration = {
-          success: true,
-          details: { redirectUrl: currentUrl, duration }
-        };
-        console.log(`   ✅ Registration successful (${duration}ms)`);
-        console.log(`   📍 Redirected to: ${currentUrl}`);
-      } else {
-        this.results.registration = {
-          success: false,
-          details: { error: 'Unexpected redirect URL', currentUrl, duration }
-        };
-        console.log(`   ❌ Registration failed - unexpected redirect: ${currentUrl}`);
-      }
+      const isSuccess = currentUrl.includes('/signin') || currentUrl.includes('/dashboard');
+      this.results.registration = {
+        success: isSuccess,
+        details: isSuccess 
+          ? { redirectUrl: currentUrl, duration }
+          : { error: 'Unexpected redirect URL', currentUrl, duration }
+      };
+      
+      console.log(isSuccess 
+        ? `   ✅ Registration successful (${duration}ms)\n   📍 Redirected to: ${currentUrl}`
+        : `   ❌ Registration failed - unexpected redirect: ${currentUrl}`
+      );
     } catch (error) {
       this.results.registration = {
         success: false,
@@ -129,43 +129,42 @@ class NavigationFlowTester {
     }
   }
 
+  async navigateToSignin() {
+    if (!this.page.url().includes('/signin')) {
+      await this.page.goto(`${this.baseUrl}/signin`);
+      await this.page.waitForLoadState('networkidle');
+    }
+  }
+
   async testLogin() {
     console.log('🔐 Testing Login Flow...');
     const startTime = Date.now();
     
     try {
-      // Navigate to signin if not already there
-      if (!this.page.url().includes('/signin')) {
-        await this.page.goto(`${this.baseUrl}/signin`);
-        await this.page.waitForLoadState('networkidle');
-      }
+      await this.navigateToSignin();
       
-      // Fill login form
       await this.page.fill('input[name="email"]', TEST_USER_EMAIL);
       await this.page.fill('input[name="password"]', TEST_USER_PASSWORD);
-      
-      // Submit login
       await this.page.click('button[type="submit"]');
       await this.page.waitForLoadState('networkidle');
       
       const currentUrl = this.page.url();
       const duration = Date.now() - startTime;
       
-      if (currentUrl.includes('/dashboard') || 
-          (!currentUrl.includes('/signin') && !currentUrl.includes('/error'))) {
-        this.results.login = {
-          success: true,
-          details: { redirectUrl: currentUrl, duration }
-        };
-        console.log(`   ✅ Login successful (${duration}ms)`);
-        console.log(`   📍 Redirected to: ${currentUrl}`);
-      } else {
-        this.results.login = {
-          success: false,
-          details: { error: 'Login failed', currentUrl, duration }
-        };
-        console.log(`   ❌ Login failed - still on signin/error page: ${currentUrl}`);
-      }
+      const isSuccess = currentUrl.includes('/dashboard') || 
+        (!currentUrl.includes('/signin') && !currentUrl.includes('/error'));
+      
+      this.results.login = {
+        success: isSuccess,
+        details: isSuccess 
+          ? { redirectUrl: currentUrl, duration }
+          : { error: 'Login failed', currentUrl, duration }
+      };
+      
+      console.log(isSuccess 
+        ? `   ✅ Login successful (${duration}ms)\n   📍 Redirected to: ${currentUrl}`
+        : `   ❌ Login failed - still on signin/error page: ${currentUrl}`
+      );
     } catch (error) {
       this.results.login = {
         success: false,
