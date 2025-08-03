@@ -29,6 +29,7 @@ describe('Markdown Linting', () => {
   });
 
   describe('Key Documentation Files', () => {
+    const markdownlintPath = 'node_modules/.bin/markdownlint';
     const keyFiles = [
       'README.md',
       'CLAUDE.md',
@@ -39,7 +40,6 @@ describe('Markdown Linting', () => {
       test(`${file} should pass markdownlint`, () => {
         expect(() => {
           // Use static known path instead of dynamic construction
-          const markdownlintPath = 'node_modules/.bin/markdownlint';
           const result = spawnSync(markdownlintPath, [file], { stdio: 'pipe' });
           if (result.status !== 0) {
             throw new Error(`markdownlint failed for ${file}: ${result.stderr?.toString()}`);
