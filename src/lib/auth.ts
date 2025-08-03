@@ -174,6 +174,9 @@ const authConfig = NextAuth({
     maxAge: 30 * 24 * 60 * 60, // 30 days
     updateAge: 24 * 60 * 60, // 24 hours
   },
+  jwt: {
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+  },
   callbacks: {
     async jwt({ token, user }: { token: any; user?: any }) {
       // If user is provided (on signin), store user data in token
