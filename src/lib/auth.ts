@@ -1,6 +1,7 @@
 import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import { UserService } from './services/UserService';
+import { UserService } from '@/lib/services';
+import {SESSION_TIMEOUTS} from "@/lib/constants/session-constants";
 
 /**
  * Helper function to check if hostname is a local/invalid IP
@@ -171,8 +172,8 @@ const authConfig = NextAuth({
   ],
   session: {
     strategy: 'jwt',
-    maxAge: 30 * 24 * 60 * 60, // 30 days
-    updateAge: 24 * 60 * 60, // 24 hours
+    maxAge: SESSION_TIMEOUTS.MAX_AGE, // 30 days
+    updateAge: SESSION_TIMEOUTS.UPDATE_AGE, // 24 hours
   },
   jwt: {
     maxAge: SESSION_TIMEOUTS.MAX_AGE, // 30 days

@@ -401,8 +401,8 @@ describe('Authentication System', () => {
     it('should have correct session configuration values', () => {
       const expectedSessionConfig = {
         strategy: 'database',
-        maxAge: 30 * 24 * 60 * 60, // 30 days
-        updateAge: 24 * 60 * 60, // 24 hours
+        maxAge: SESSION_TIMEOUTS.MAX_AGE, // 30 days
+        updateAge: SESSION_TIMEOUTS.UPDATE_AGE, // 24 hours
       };
 
       expect(expectedSessionConfig.strategy).toBe('database');

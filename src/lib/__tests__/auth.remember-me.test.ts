@@ -190,7 +190,7 @@ describe('Authentication RememberMe Functionality', () => {
       // Note: This test documents the current behavior and can be extended
       // if different session durations are implemented in the future
 
-      const standardMaxAge = 30 * 24 * 60 * 60; // 30 days
+      const standardMaxAge = SESSION_TIMEOUTS.MAX_AGE; // 30 days
       const extendedMaxAge = 90 * 24 * 60 * 60; // 90 days (future enhancement)
 
       // Current behavior: same duration regardless of rememberMe

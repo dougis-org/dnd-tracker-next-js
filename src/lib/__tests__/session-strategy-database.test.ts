@@ -59,8 +59,8 @@ describe('Database Session Strategy (Issue #524)', () => {
     const createConfig = (strategy: 'database' | 'jwt') => ({
       session: {
         strategy,
-        maxAge: 30 * 24 * 60 * 60,
-        updateAge: 24 * 60 * 60,
+        maxAge: SESSION_TIMEOUTS.MAX_AGE,
+        updateAge: SESSION_TIMEOUTS.UPDATE_AGE,
       },
       providers: [],
       callbacks: {},

@@ -118,8 +118,8 @@ describe('Issue #572: Credentials Login with JWT Strategy', () => {
         ],
         session: {
           strategy: 'jwt', // This should be JWT for credentials to work
-          maxAge: 30 * 24 * 60 * 60,
-          updateAge: 24 * 60 * 60,
+          maxAge: SESSION_TIMEOUTS.MAX_AGE,
+          updateAge: SESSION_TIMEOUTS.UPDATE_AGE,
         }
       };
 
@@ -134,8 +134,8 @@ describe('Issue #572: Credentials Login with JWT Strategy', () => {
         ],
         session: {
           strategy: 'database', // This causes the error!
-          maxAge: 30 * 24 * 60 * 60,
-          updateAge: 24 * 60 * 60,
+          maxAge: SESSION_TIMEOUTS.MAX_AGE,
+          updateAge: SESSION_TIMEOUTS.UPDATE_AGE,
         }
       };
 
