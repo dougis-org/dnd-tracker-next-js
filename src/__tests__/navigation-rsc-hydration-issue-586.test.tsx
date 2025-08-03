@@ -78,12 +78,6 @@ describe('Issue #586: Navigation RSC Hydration Failures', () => {
     } as any);
   });
 
-  const renderPageAndWaitForLoad = async (PageComponent, expectedText) => {
-    render(<PageComponent />);
-    await waitFor(() => {
-      expect(screen.getByText(expectedText)).toBeInTheDocument();
-    });
-  };
 
   describe('Server-Client Session State Consistency', () => {
     it('should have consistent session state between server and client components', async () => {
@@ -132,7 +126,7 @@ describe('Issue #586: Navigation RSC Hydration Failures', () => {
 
       mockUseSession.mockReturnValue(authenticatedSession);
       const CharactersPage = (await import('../app/characters/page')).default;
-      
+
       render(<CharactersPage />);
       await waitFor(() => {
         expect(screen.getByText('Characters')).toBeInTheDocument();

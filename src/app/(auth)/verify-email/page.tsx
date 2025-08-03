@@ -125,7 +125,7 @@ function VerifyEmailContent() {
           The verification link may have expired or is invalid.
         </p>
         {email && (
-          <Button onClick={resendVerification} disabled={state === 'sending'}>
+          <Button onClick={resendVerification}>
             Resend Verification Email
           </Button>
         )}
@@ -162,15 +162,8 @@ function VerifyEmailContent() {
       <p className="text-slate-500 dark:text-slate-400">
         Click the link in the email to verify your account.
       </p>
-      <Button onClick={resendVerification} disabled={state === 'sending'}>
-        {state === 'sending' ? (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Sending...
-          </>
-        ) : (
-          'Resend Verification Email'
-        )}
+      <Button onClick={resendVerification}>
+        Resend Verification Email
       </Button>
       <Link href={'/signin' as any} className="text-sm text-primary hover:underline">
         Return to Sign In
