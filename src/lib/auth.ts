@@ -1,6 +1,4 @@
 import NextAuth from 'next-auth';
-import { MongoDBAdapter } from '@auth/mongodb-adapter';
-import { MongoClient } from 'mongodb';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { UserService } from './services/UserService';
 
@@ -109,32 +107,16 @@ export function validateNextAuthUrl(inputUrl?: string): string | undefined {
   }
 }
 
-const mongoUri = process.env.MONGODB_URI;
-if (!mongoUri) {
-  if (
-    process.env.NODE_ENV === 'production' &&
-    process.env.VERCEL !== '1' &&
-    process.env.CI !== 'true'
-  ) {
-    throw new Error('MONGODB_URI environment variable is not set');
-  }
-  // For build time or CI environment, use a placeholder URI that won't be used
-  console.warn('MONGODB_URI not set, using placeholder for build/CI');
-}
-
-const client = new MongoClient(
-  mongoUri || 'mongodb://localhost:27017/placeholder'
-);
-const clientPromise = Promise.resolve(client);
+// Note: MongoDB client setup removed since we're using JWT strategy
+// The UserService handles its own database connections for user management
 
 // Validate NEXTAUTH_URL to prevent invalid redirects (Issue #438)
 const validatedNextAuthUrl = validateNextAuthUrl();
 
 
 const authConfig = NextAuth({
-  adapter: MongoDBAdapter(clientPromise, {
-    databaseName: process.env.MONGODB_DB_NAME,
-  }),
+  // Note: When using JWT strategy, we don't use a database adapter
+  // The MongoDBAdapter is only needed for database sessions
   trustHost:
     process.env.AUTH_TRUST_HOST === 'true' ||
     process.env.NODE_ENV === 'production',
