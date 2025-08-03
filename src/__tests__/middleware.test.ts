@@ -63,6 +63,7 @@ const testProtectedRoute = async (pathname: string): Promise<void> => {
   expect(getToken).toHaveBeenCalledWith({
     req: request,
     secret: process.env.NEXTAUTH_SECRET,
+    cookieName: 'next-auth.session-token',
   });
 };
 
@@ -96,7 +97,7 @@ describe('Middleware Route Protection', () => {
       const publicRoutes = [
         '/',
         '/about',
-        '/login',
+        '/signin',
         '/signup',
         '/auth/error',
         '/api/health',
@@ -140,10 +141,11 @@ describe('Middleware Route Protection', () => {
       expect(getToken).toHaveBeenCalledWith({
         req: request,
         secret: process.env.NEXTAUTH_SECRET,
+        cookieName: 'next-auth.session-token',
       });
       expect(mockRedirect).toHaveBeenCalledWith(
         expect.objectContaining({
-          href: expect.stringContaining('/login'),
+          href: expect.stringContaining('/signin'),
           searchParams: expect.any(Object),
         })
       );
@@ -153,33 +155,45 @@ describe('Middleware Route Protection', () => {
       const { middleware } = await import('../middleware');
 
       const request = {
-        nextUrl: { pathname: '/dashboard/characters' },
+        nextUrl: { pathname: '/dashboard/characters', search: '' },
         url: 'http://localhost:3000/dashboard/characters',
       } as NextRequest;
 
       (getToken as jest.Mock).mockResolvedValue(null);
 
-      // Mock URL constructor and redirect
-      const mockUrl = {
-        href: 'http://localhost:3000/login?callbackUrl=http%3A//localhost%3A3000/dashboard/characters',
+      // Mock signin URL
+      const mockSigninUrl = {
+        href: 'http://localhost:3000/signin',
         searchParams: {
           set: jest.fn(),
         },
       };
 
+      // Mock callback URL
+      const mockCallbackUrl = {
+        toString: jest.fn().mockReturnValue('http://localhost:3000/dashboard/characters'),
+      };
+
       // Mock global URL constructor
       const originalURL = global.URL;
-      global.URL = jest.fn().mockImplementation(() => mockUrl) as any;
+      global.URL = jest.fn().mockImplementation((path, _base) => {
+        if (path === '/signin') {
+          return mockSigninUrl;
+        } else if (path === '/dashboard/characters') {
+          return mockCallbackUrl;
+        }
+        return mockSigninUrl;
+      }) as any;
 
       mockRedirect.mockReturnValue({ type: 'redirect' });
 
       await middleware(request);
 
-      expect(mockUrl.searchParams.set).toHaveBeenCalledWith(
+      expect(mockSigninUrl.searchParams.set).toHaveBeenCalledWith(
         'callbackUrl',
-        encodeURI('http://localhost:3000/dashboard/characters')
+        'http://localhost:3000/dashboard/characters'
       );
-      expect(mockRedirect).toHaveBeenCalledWith(mockUrl);
+      expect(mockRedirect).toHaveBeenCalledWith(mockSigninUrl);
 
       // Restore original URL
       global.URL = originalURL;
@@ -208,6 +222,7 @@ describe('Middleware Route Protection', () => {
       expect(getToken).toHaveBeenCalledWith({
         req: request,
         secret: process.env.NEXTAUTH_SECRET,
+        cookieName: 'next-auth.session-token',
       });
       expect(mockNext).toHaveBeenCalled();
       expect(mockRedirect).not.toHaveBeenCalled();
@@ -229,10 +244,11 @@ describe('Middleware Route Protection', () => {
       expect(getToken).toHaveBeenCalledWith({
         req: request,
         secret: process.env.NEXTAUTH_SECRET,
+        cookieName: 'next-auth.session-token',
       });
       expect(mockRedirect).toHaveBeenCalledWith(
         expect.objectContaining({
-          href: expect.stringContaining('/login'),
+          href: expect.stringContaining('/signin'),
           searchParams: expect.any(Object),
         })
       );
@@ -256,6 +272,7 @@ describe('Middleware Route Protection', () => {
       expect(getToken).toHaveBeenCalledWith({
         req: request,
         secret: process.env.NEXTAUTH_SECRET,
+        cookieName: 'next-auth.session-token',
       });
       expect(mockJson).toHaveBeenCalledWith(
         { error: 'Authentication required' },
@@ -337,6 +354,7 @@ describe('Middleware Route Protection', () => {
       expect(getToken).toHaveBeenCalledWith({
         req: request,
         secret: undefined,
+        cookieName: 'next-auth.session-token',
       });
 
       // Restore secret
@@ -366,29 +384,38 @@ describe('Middleware Route Protection', () => {
   });
 
   describe('URL Construction', () => {
-    it('should construct login URL correctly with /login path', async () => {
+    it('should construct signin URL correctly with /signin path', async () => {
       const { middleware } = await import('../middleware');
 
       const request = {
-        nextUrl: { pathname: '/dashboard' },
+        nextUrl: { pathname: '/dashboard', search: '' },
         url: 'http://localhost:3000/dashboard',
       } as NextRequest;
 
       (getToken as jest.Mock).mockResolvedValue(null);
 
-      // Mock URL to track constructor calls
-      const mockUrl = {
-        href: 'http://localhost:3000/login',
+      // Mock signin URL
+      const mockSigninUrl = {
+        href: 'http://localhost:3000/signin',
         searchParams: {
           set: jest.fn(),
         },
       };
 
+      // Mock callback URL
+      const mockCallbackUrl = {
+        toString: jest.fn().mockReturnValue('http://localhost:3000/dashboard'),
+      };
+
       const originalURL = global.URL;
       global.URL = jest.fn().mockImplementation((path, base) => {
-        expect(path).toBe('/login');
-        expect(base).toBe('http://localhost:3000/dashboard');
-        return mockUrl;
+        if (path === '/signin') {
+          expect(base).toBe('http://localhost:3000/dashboard');
+          return mockSigninUrl;
+        } else if (path === '/dashboard') {
+          return mockCallbackUrl;
+        }
+        return mockSigninUrl;
       }) as any;
 
       mockRedirect.mockReturnValue({ type: 'redirect' });
@@ -396,7 +423,7 @@ describe('Middleware Route Protection', () => {
       await middleware(request);
 
       expect(global.URL).toHaveBeenCalledWith(
-        '/login',
+        '/signin',
         'http://localhost:3000/dashboard'
       );
 
@@ -447,11 +474,30 @@ describe('Middleware Route Protection', () => {
       const { middleware } = await import('../middleware');
 
       const request = {
-        nextUrl: { pathname: '/dashboard' },
+        nextUrl: { pathname: '/dashboard', search: '' },
         url: 'http://localhost:3000/dashboard',
       } as NextRequest;
 
       const invalidTokens = [null, undefined, false, 0, ''];
+
+      // Mock URL constructor for these tests
+      const originalURL = global.URL;
+      const mockSigninUrl = {
+        href: 'http://localhost:3000/signin',
+        searchParams: { set: jest.fn() },
+      };
+      const mockCallbackUrl = {
+        toString: jest.fn().mockReturnValue('http://localhost:3000/dashboard'),
+      };
+
+      global.URL = jest.fn().mockImplementation((path, _base) => {
+        if (path === '/signin') {
+          return mockSigninUrl;
+        } else if (path === '/dashboard') {
+          return mockCallbackUrl;
+        }
+        return mockSigninUrl;
+      }) as any;
 
       for (const token of invalidTokens) {
         (getToken as jest.Mock).mockResolvedValue(token);
@@ -467,6 +513,9 @@ describe('Middleware Route Protection', () => {
         mockRedirect.mockReset();
         (getToken as jest.Mock).mockReset();
       }
+
+      // Restore original URL
+      global.URL = originalURL;
     });
   });
 });

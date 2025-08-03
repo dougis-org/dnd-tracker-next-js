@@ -139,7 +139,7 @@ describe('API Middleware', () => {
     });
 
     it('should return false for public API routes', () => {
-      expect(isProtectedApiRoute('/api/auth/login')).toBe(false);
+      expect(isProtectedApiRoute('/api/auth/signin')).toBe(false);
       expect(isProtectedApiRoute('/api/auth/register')).toBe(false);
       expect(isProtectedApiRoute('/api/health')).toBe(false);
       expect(isProtectedApiRoute('/api/public')).toBe(false);

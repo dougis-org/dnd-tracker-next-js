@@ -5,6 +5,7 @@ import {
   restoreAuthTestEnv,
   createMockUser
 } from './auth-test-utils';
+import {SESSION_TIMEOUTS} from "../constants/session-constants";
 
 // Mock all external dependencies
 jest.mock('@auth/mongodb-adapter', () => ({
@@ -401,8 +402,8 @@ describe('Authentication System', () => {
     it('should have correct session configuration values', () => {
       const expectedSessionConfig = {
         strategy: 'database',
-        maxAge: 30 * 24 * 60 * 60, // 30 days
-        updateAge: 24 * 60 * 60, // 24 hours
+        maxAge: SESSION_TIMEOUTS.MAX_AGE, // 30 days
+        updateAge: SESSION_TIMEOUTS.UPDATE_AGE, // 24 hours
       };
 
       expect(expectedSessionConfig.strategy).toBe('database');
@@ -412,11 +413,11 @@ describe('Authentication System', () => {
 
     it('should have correct page configuration', () => {
       const expectedPages = {
-        signIn: '/login',
+        signIn: '/signin',
         error: '/error',
       };
 
-      expect(expectedPages.signIn).toBe('/login');
+      expect(expectedPages.signIn).toBe('/signin');
       expect(expectedPages.error).toBe('/error');
     });
 
