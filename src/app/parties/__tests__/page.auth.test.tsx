@@ -50,12 +50,12 @@ describe('PartiesPage Authentication', () => {
   it('should render party list for authenticated users', async () => {
     const userId = SHARED_API_TEST_CONSTANTS.TEST_USER_ID;
     const mockSession = createMockSession(userId);
-    
+
     setupNextAuthMocks(mockAuth);
     mockAuth.mockResolvedValue(mockSession);
 
     const result = await PartiesPage();
-    
+
     // The component should render without throwing
     expect(result).toBeDefined();
   });
@@ -63,12 +63,12 @@ describe('PartiesPage Authentication', () => {
   it('should handle session with user ID', async () => {
     const userId = 'test-parties-user';
     const mockSession = createMockSession(userId);
-    
+
     setupNextAuthMocks(mockAuth);
     mockAuth.mockResolvedValue(mockSession);
 
     const result = await PartiesPage();
-    
+
     expect(result).toBeDefined();
     expect(mockAuth).toHaveBeenCalled();
   });
