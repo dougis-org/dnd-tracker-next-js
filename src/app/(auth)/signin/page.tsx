@@ -61,7 +61,8 @@ export default function SignInPage() {
     }
 
     // Use the enhanced validation utility that handles development environment variations
-    const currentOrigin = window.location.origin;
+    // Only access window in the browser (client-side)
+    const currentOrigin = typeof window !== 'undefined' ? window.location.origin : '';
     const trustedDomains = getTrustedDomains();
 
     const isValid = isValidCallbackUrl(rawCallbackUrl, currentOrigin, {

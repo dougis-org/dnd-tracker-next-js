@@ -193,14 +193,30 @@ const authConfig = NextAuth({
     updateAge: 24 * 60 * 60, // 24 hours
   },
   callbacks: {
-    async session({ session, user }: { session: any; user: any }) {
+    async jwt({ token, user }: { token: any; user?: any }) {
+      // If user is provided (on signin), store user data in token
+      if (user) {
+        token.id = user.id;
+        token.subscriptionTier = user.subscriptionTier;
+        token.email = user.email;
+        token.name = user.name;
+      }
+      return token;
+    },
+    async session({ session, token }: { session: any; token: any }) {
       try {
-        if (!session?.user || !user) {
-          console.warn('Session callback: Missing session or user data');
+        if (!session?.user || !token) {
+          console.warn('Session callback: Missing session or token data');
           return session;
         }
 
-        return await enhanceSessionUserData(session, user);
+        // Add user data from JWT token to session
+        session.user.id = token.id || '';
+        session.user.subscriptionTier = token.subscriptionTier || 'free';
+        session.user.email = token.email;
+        session.user.name = token.name;
+
+        return session;
       } catch (error) {
         console.error('Session callback error:', error);
         return null;
@@ -249,7 +265,7 @@ const authConfig = NextAuth({
     },
   },
   pages: {
-    signIn: '/login',
+    signIn: '/signin',
     error: '/error',
   },
   debug: process.env.NODE_ENV === 'development',
