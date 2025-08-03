@@ -29,7 +29,7 @@ describe('Markdown Linting', () => {
   });
 
   describe('Key Documentation Files', () => {
-    const markdownlintPath = 'node_modules/.bin/markdownlint';
+    const markdownlintPath = require('path').resolve(__dirname, '../../node_modules/.bin/markdownlint');
     const keyFiles = [
       'README.md',
       'CLAUDE.md',
