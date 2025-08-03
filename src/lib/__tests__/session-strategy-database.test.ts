@@ -15,6 +15,7 @@ import {
   setupStandardMocks,
   clearAllMocks,
 } from './test-helpers/session-test-utils';
+import {SESSION_TIMEOUTS} from "../constants/session-constants";
 
 // Mock MongoDB and NextAuth dependencies
 jest.mock('mongodb');

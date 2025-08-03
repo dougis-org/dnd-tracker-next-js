@@ -5,6 +5,7 @@ import {
   restoreAuthTestEnv,
   createMockUser
 } from './auth-test-utils';
+import {SESSION_TIMEOUTS} from "../constants/session-constants";
 
 // Mock all external dependencies
 jest.mock('@auth/mongodb-adapter', () => ({

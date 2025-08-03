@@ -8,6 +8,7 @@
 import { NextAuthConfig } from 'next-auth';
 import { signIn } from 'next-auth/react';
 import { UserService } from '@/lib/services/UserService';
+import {SESSION_TIMEOUTS} from "../lib/constants/session-constants";
 
 // Mock dependencies
 jest.mock('@/lib/services/UserService');
