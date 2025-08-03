@@ -31,7 +31,7 @@ class NavigationFlowTester {
 
   async initialize() {
     console.log('🚀 Enhanced Navigation Flow Test');
-    console.log('=' .repeat(50));
+console.log('='.repeat(50));
     console.log(`📍 Testing URL: ${this.baseUrl}`);
     console.log(`📧 Test Email: ${TEST_USER_EMAIL}`);
     console.log(`🔧 Headless Mode: ${HEADLESS}`);
