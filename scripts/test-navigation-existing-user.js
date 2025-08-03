@@ -28,7 +28,7 @@ class ExistingUserNavigationTest {
 
   async initialize() {
     console.log('🔍 Navigation Test with Existing User');
-    console.log('=' .repeat(50));
+console.log('='.repeat(50));
     console.log(`📍 Testing URL: ${this.baseUrl}`);
     console.log(`📧 User: ${TEST_USER_EMAIL}`);
     console.log(`🔧 Headless Mode: ${HEADLESS}`);
