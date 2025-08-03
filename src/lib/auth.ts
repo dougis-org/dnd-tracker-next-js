@@ -175,7 +175,7 @@ const authConfig = NextAuth({
     updateAge: 24 * 60 * 60, // 24 hours
   },
   jwt: {
-    maxAge: 30 * 24 * 60 * 60, // 30 days
+    maxAge: SESSION_TIMEOUTS.MAX_AGE, // 30 days
   },
   cookies: {
     sessionToken: {
