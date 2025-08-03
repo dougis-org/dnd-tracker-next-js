@@ -20,11 +20,11 @@ export async function middleware(request: NextRequest) {
         return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
       }
 
-      // Create login URL with callback parameter
-      const loginUrl = new URL('/login', request.url);
-      loginUrl.searchParams.set('callbackUrl', encodeURI(request.url));
+      // Create signin URL with callback parameter
+      const signinUrl = new URL('/signin', request.url);
+      signinUrl.searchParams.set('callbackUrl', encodeURI(request.url));
 
-      return NextResponse.redirect(loginUrl);
+      return NextResponse.redirect(signinUrl);
     }
 
     return NextResponse.next();
@@ -35,9 +35,9 @@ export async function middleware(request: NextRequest) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
-    // Redirect to login on any authentication error
-    const loginUrl = new URL('/login', request.url);
-    return NextResponse.redirect(loginUrl);
+    // Redirect to signin on any authentication error
+    const signinUrl = new URL('/signin', request.url);
+    return NextResponse.redirect(signinUrl);
   }
 }
 
