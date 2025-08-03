@@ -96,7 +96,7 @@ describe('Middleware Route Protection', () => {
       const publicRoutes = [
         '/',
         '/about',
-        '/signin',
+        '/login',
         '/signup',
         '/auth/error',
         '/api/health',
@@ -143,7 +143,7 @@ describe('Middleware Route Protection', () => {
       });
       expect(mockRedirect).toHaveBeenCalledWith(
         expect.objectContaining({
-          href: expect.stringContaining('/signin'),
+          href: expect.stringContaining('/login'),
           searchParams: expect.any(Object),
         })
       );
@@ -161,7 +161,7 @@ describe('Middleware Route Protection', () => {
 
       // Mock URL constructor and redirect
       const mockUrl = {
-        href: 'http://localhost:3000/signin?callbackUrl=http%3A//localhost%3A3000/dashboard/characters',
+        href: 'http://localhost:3000/login?callbackUrl=http%3A//localhost%3A3000/dashboard/characters',
         searchParams: {
           set: jest.fn(),
         },
@@ -213,7 +213,7 @@ describe('Middleware Route Protection', () => {
       expect(mockRedirect).not.toHaveBeenCalled();
     });
 
-    it('should redirect unauthenticated users from settings page to signin', async () => {
+    it('should redirect unauthenticated users from settings page to login', async () => {
       const { middleware } = await import('../middleware');
 
       const request = {
@@ -232,7 +232,7 @@ describe('Middleware Route Protection', () => {
       });
       expect(mockRedirect).toHaveBeenCalledWith(
         expect.objectContaining({
-          href: expect.stringContaining('/signin'),
+          href: expect.stringContaining('/login'),
           searchParams: expect.any(Object),
         })
       );
@@ -311,7 +311,7 @@ describe('Middleware Route Protection', () => {
       );
       mockRedirect.mockReturnValue({ type: 'redirect' });
 
-      // Middleware should catch errors and redirect to signin
+      // Middleware should catch errors and redirect to login
       const result = await middleware(request);
 
       expect(result).toBeDefined();
@@ -366,7 +366,7 @@ describe('Middleware Route Protection', () => {
   });
 
   describe('URL Construction', () => {
-    it('should construct signin URL correctly with /signin path', async () => {
+    it('should construct login URL correctly with /login path', async () => {
       const { middleware } = await import('../middleware');
 
       const request = {
@@ -378,7 +378,7 @@ describe('Middleware Route Protection', () => {
 
       // Mock URL to track constructor calls
       const mockUrl = {
-        href: 'http://localhost:3000/signin',
+        href: 'http://localhost:3000/login',
         searchParams: {
           set: jest.fn(),
         },
@@ -386,7 +386,7 @@ describe('Middleware Route Protection', () => {
 
       const originalURL = global.URL;
       global.URL = jest.fn().mockImplementation((path, base) => {
-        expect(path).toBe('/signin');
+        expect(path).toBe('/login');
         expect(base).toBe('http://localhost:3000/dashboard');
         return mockUrl;
       }) as any;
@@ -396,7 +396,7 @@ describe('Middleware Route Protection', () => {
       await middleware(request);
 
       expect(global.URL).toHaveBeenCalledWith(
-        '/signin',
+        '/login',
         'http://localhost:3000/dashboard'
       );
 

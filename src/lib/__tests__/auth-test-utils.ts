@@ -152,7 +152,7 @@ export async function testMiddlewareAuth(
     expect(response).toBeDefined();
     expect(response.type).toBe('redirect');
     const location = response.headers.get('location');
-    expect(location).toContain('/signin');
+    expect(location).toContain('/login');
   }
 }
 

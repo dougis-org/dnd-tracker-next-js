@@ -163,7 +163,7 @@ describe('NextAuth Trusted Host Configuration', () => {
       expect(config.callbacks.session).toBeDefined();
 
       expect(config.pages).toBeDefined();
-      expect(config.pages.signIn).toBe('/signin');
+      expect(config.pages.signIn).toBe('/login');
       expect(config.pages.error).toBe('/error');
 
       expect(config.debug).toBe(false); // Should be false in production test env

@@ -107,7 +107,7 @@ export function useRequireAuth(options: RequireAuthOptions = {}): {
 
   useEffect(() => {
     if (status === 'unauthenticated') {
-      const redirectTo = options.redirectTo || '/signin';
+      const redirectTo = options.redirectTo || '/login';
       performRedirect(router, redirectTo, options.replace);
     }
   }, [status, router, options]);

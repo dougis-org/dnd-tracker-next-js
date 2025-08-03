@@ -7,7 +7,7 @@ import { testMiddlewareAuth, verifyUrlValidation, setupCommonAuthTestMocks, setu
  * 1. Users get redirected to an error page showing IP address 0.0.0.0
  * 2. Users who do reach the site aren't properly recognized as logged in
  *    (despite showing their name in the menu)
- * 3. Accessing any link in the left nav directs to the signin page
+ * 3. Accessing any link in the left nav directs to the login page
  */
 
 // Mock NextAuth dependencies
@@ -162,7 +162,7 @@ describe('Issue #438: Login Redirect Problems', () => {
       // Verify additional complete configuration is valid
       expect(config.trustHost).toBe(true);
       expect(config.providers).toBeDefined();
-      expect(config.pages.signIn).toBe('/signin');
+      expect(config.pages.signIn).toBe('/login');
       expect(config.pages.error).toBe('/error');
     });
   });

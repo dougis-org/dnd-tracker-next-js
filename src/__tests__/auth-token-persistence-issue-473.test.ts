@@ -44,7 +44,7 @@ describe('Issue #473: Authentication Token Persistence', () => {
     expect(mockRedirect).not.toHaveBeenCalled();
     expect(getToken).toHaveBeenCalledWith({
       req: request,
-      secret: 'test-secret-for-jwt-signing',
+      secret: 'test-secret-for-jwt-loging',
     });
   });
 
@@ -58,10 +58,10 @@ describe('Issue #473: Authentication Token Persistence', () => {
 
     expect(mockRedirect).toHaveBeenCalled();
     expect(mockNext).not.toHaveBeenCalled();
-    // Verify redirect URL contains signin and callback parameters
+    // Verify redirect URL contains login and callback parameters
     expect(mockRedirect).toHaveBeenCalledWith(
       expect.objectContaining({
-        pathname: '/signin',
+        pathname: '/login',
         searchParams: expect.objectContaining({
           get: expect.any(Function)
         })

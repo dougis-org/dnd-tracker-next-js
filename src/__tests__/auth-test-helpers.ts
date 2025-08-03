@@ -33,7 +33,7 @@ export const setupTestEnvironment = (envOverrides: Record<string, string> = {}) 
   const originalEnv = process.env;
 
   const defaultEnv = {
-    NEXTAUTH_SECRET: 'test-secret-for-jwt-signing',
+    NEXTAUTH_SECRET: 'test-secret-for-jwt-loging',
     NEXTAUTH_URL: 'http://localhost:3000',
     NODE_ENV: 'development',
     MONGODB_URI: 'mongodb://test-uri',

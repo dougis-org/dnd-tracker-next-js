@@ -113,7 +113,7 @@ describe('Client-side Session Management', () => {
 
   describe('useSessionGuard', () => {
     const defaultConfig: RedirectConfig = {
-      redirectTo: '/signin',
+      redirectTo: '/login',
       replace: false,
     };
 
@@ -129,31 +129,31 @@ describe('Client-side Session Management', () => {
       setupUnauthenticatedUser();
       renderHook(() => useSessionGuard(defaultConfig));
 
-      expect(mockPush).toHaveBeenCalledWith('/signin');
+      expect(mockPush).toHaveBeenCalledWith('/login');
     });
 
     it('should use replace navigation when configured', () => {
       setupUnauthenticatedUser();
       const config: RedirectConfig = {
-        redirectTo: '/signin',
+        redirectTo: '/login',
         replace: true,
       };
 
       renderHook(() => useSessionGuard(config));
 
-      expect(mockReplace).toHaveBeenCalledWith('/signin');
+      expect(mockReplace).toHaveBeenCalledWith('/login');
     });
 
     it('should redirect with basic URL when callback URL not configured', () => {
       setupUnauthenticatedUser();
       const config: RedirectConfig = {
-        redirectTo: '/signin',
+        redirectTo: '/login',
         includeCallbackUrl: false,
       };
 
       renderHook(() => useSessionGuard(config));
 
-      expect(mockPush).toHaveBeenCalledWith('/signin');
+      expect(mockPush).toHaveBeenCalledWith('/login');
     });
 
     it('should not redirect during loading', () => {
@@ -194,7 +194,7 @@ describe('Client-side Session Management', () => {
         session: null,
         isLoading: false,
       });
-      expect(mockPush).toHaveBeenCalledWith('/signin');
+      expect(mockPush).toHaveBeenCalledWith('/login');
     });
 
     it('should use custom redirect URL when provided', () => {
@@ -207,10 +207,10 @@ describe('Client-side Session Management', () => {
     it('should use replace navigation when replace option is true', () => {
       setupUnauthenticatedUser();
       renderHook(() =>
-        useRequireAuth({ redirectTo: '/signin', replace: true })
+        useRequireAuth({ redirectTo: '/login', replace: true })
       );
 
-      expect(mockReplace).toHaveBeenCalledWith('/signin');
+      expect(mockReplace).toHaveBeenCalledWith('/login');
     });
   });
 
@@ -238,7 +238,7 @@ describe('Client-side Session Management', () => {
     it('should include callback URL when configured', () => {
       setupUnauthenticatedUser();
       const config: RedirectConfig = {
-        redirectTo: '/signin',
+        redirectTo: '/login',
         includeCallbackUrl: true,
       };
 
@@ -247,7 +247,7 @@ describe('Client-side Session Management', () => {
       // Since JSDOM provides window.location, accept what it actually gives us
       expect(mockPush).toHaveBeenCalledTimes(1);
       const callArgs = mockPush.mock.calls[0][0];
-      expect(callArgs).toMatch(/^\/signin\?callbackUrl=/);
+      expect(callArgs).toMatch(/^\/login\?callbackUrl=/);
     });
   });
 
