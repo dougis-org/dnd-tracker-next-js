@@ -270,9 +270,9 @@ rewrites
 
 ### 2025-08-03 - Issue #572 JWT Authentication Strategy Fixed
 
-- ✅ **Issue #572: Unable to login with credentials** - Successfully resolved critical
+- ✅ **[Issue #572: Unable to login with credentials][issue-572]** - Successfully resolved critical
   authentication bug preventing credentials login in production. Fixed NextAuth
-  configuration in `src/lib/auth.ts` by changing session strategy from 'database' 
+  configuration in `src/lib/auth.ts` by changing session strategy from 'database'
   to 'jwt', which is required for credentials provider compatibility. Issue was
   causing "UnsupportedStrategy" error in production. Complete fix deployed via
   PR #577 with comprehensive test coverage and all quality checks passing.
