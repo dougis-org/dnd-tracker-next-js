@@ -10,6 +10,7 @@ import { Types } from 'mongoose';
 
 import type { EncounterExportData } from './types';
 import { prepareExportData } from './dataBuilder';
+import {SESSION_TIMEOUTS} from "@/lib/constants/session-constants";
 
 /**
  * Generate shareable encounter link
@@ -17,7 +18,7 @@ import { prepareExportData } from './dataBuilder';
 export async function generateShareableLink(
   encounterId: string,
   userId: string,
-  expiresIn: number = 24 * 60 * 60 * 1000 // 24 hours
+  expiresIn: number = SESSION_TIMEOUTS.UPDATE_AGE * 1000 // 24 hours
 ): Promise<ServiceResult<string>> {
   try {
     const encounter = await Encounter.findById(encounterId);

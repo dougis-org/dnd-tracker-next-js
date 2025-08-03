@@ -45,6 +45,7 @@ describe('Issue #473: Authentication Token Persistence', () => {
     expect(getToken).toHaveBeenCalledWith({
       req: request,
       secret: 'test-secret-for-jwt-loging',
+      cookieName: 'next-auth.session-token',
     });
   });
 
@@ -61,7 +62,7 @@ describe('Issue #473: Authentication Token Persistence', () => {
     // Verify redirect URL contains login and callback parameters
     expect(mockRedirect).toHaveBeenCalledWith(
       expect.objectContaining({
-        pathname: '/login',
+        pathname: '/signin',
         searchParams: expect.objectContaining({
           get: expect.any(Function)
         })
