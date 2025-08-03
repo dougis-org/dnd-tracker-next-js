@@ -28,7 +28,10 @@
     "deploy:migrate:production": "bash scripts/migrate-production.sh",
     "deploy:full": "bash scripts/deploy-with-migrations.sh",
     "deploy:staging": "bash scripts/deploy-with-migrations.sh staging",
-    "deploy:production": "bash scripts/deploy-with-migrations.sh production"
+    "deploy:production": "bash scripts/deploy-with-migrations.sh production",
+    "test:production:setup": "node scripts/setup-production-test-user.js",
+    "test:production:auth": "node scripts/test-production-auth.js",
+    "test:production:full": "node scripts/run-production-auth-tests.js"
   },
   "dependencies": {
     "@auth/mongodb-adapter": "^3.10.0",
@@ -93,6 +96,7 @@
     "mongodb-memory-server": "^10.1.4",
     "postcss": "^8.4.0",
     "prettier": "^3.5.3",
+    "puppeteer": "^24.15.0",
     "tailwindcss": "^3.4.17",
     "ts-jest": "^29.4.0",
     "tsx": "^4.20.3",
