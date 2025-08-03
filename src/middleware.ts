@@ -22,7 +22,11 @@ export async function middleware(request: NextRequest) {
 
       // Create signin URL with callback parameter
       const signinUrl = new URL('/signin', request.url);
-      signinUrl.searchParams.set('callbackUrl', encodeURI(request.url));
+      
+      // Fix callback URL to use production domain instead of localhost
+      const callbackUrl = new URL(request.nextUrl.pathname + request.nextUrl.search, 
+                                  process.env.NEXTAUTH_URL || request.url);
+      signinUrl.searchParams.set('callbackUrl', callbackUrl.toString());
 
       return NextResponse.redirect(signinUrl);
     }
@@ -37,6 +41,12 @@ export async function middleware(request: NextRequest) {
 
     // Redirect to signin on any authentication error
     const signinUrl = new URL('/signin', request.url);
+    
+    // Fix callback URL to use production domain
+    const callbackUrl = new URL(request.nextUrl.pathname + request.nextUrl.search, 
+                                process.env.NEXTAUTH_URL || request.url);
+    signinUrl.searchParams.set('callbackUrl', callbackUrl.toString());
+    
     return NextResponse.redirect(signinUrl);
   }
 }
