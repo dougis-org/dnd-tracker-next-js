@@ -87,7 +87,7 @@ describe('NextAuth Configuration Tests', () => {
       expect(config.callbacks.redirect).toBeDefined();
 
       // Test pages configuration (lines 223-226)
-      expect(config.pages.signIn).toBe('/login');
+      expect(config.pages.signIn).toBe('/signin');
       expect(config.pages.error).toBe('/error');
 
       // Test debug configuration (line 227)

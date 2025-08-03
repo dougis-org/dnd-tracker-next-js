@@ -97,7 +97,7 @@ describe('Middleware Route Protection', () => {
       const publicRoutes = [
         '/',
         '/about',
-        '/login',
+        '/signin',
         '/signup',
         '/auth/error',
         '/api/health',
