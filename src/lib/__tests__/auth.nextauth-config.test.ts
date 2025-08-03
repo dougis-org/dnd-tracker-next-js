@@ -63,8 +63,8 @@ describe('NextAuth Configuration Tests', () => {
       expect(mockNextAuth).toHaveBeenCalledTimes(1);
       const config = mockNextAuth.mock.calls[0][0];
 
-      // Test adapter configuration
-      expect(config.adapter).toBeDefined();
+      // Test adapter configuration - adapter removed for JWT strategy
+      expect(config.adapter).toBeUndefined();
 
       // Test trustHost configuration (lines 74-75)
       expect(config.trustHost).toBe(true);

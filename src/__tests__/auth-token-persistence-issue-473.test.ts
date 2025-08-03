@@ -45,6 +45,7 @@ describe('Issue #473: Authentication Token Persistence', () => {
     expect(getToken).toHaveBeenCalledWith({
       req: request,
       secret: 'test-secret-for-jwt-loging',
+      cookieName: 'next-auth.session-token',
     });
   });
 
