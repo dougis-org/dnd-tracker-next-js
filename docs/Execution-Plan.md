@@ -428,3 +428,5 @@ rewrites
 [issue-537]: https://github.com/dougis-org/dnd-tracker-next-js/issues/537
 
 [issue-572]: https://github.com/dougis-org/dnd-tracker-next-js/issues/572
+
+[issue-581]: https://github.com/dougis-org/dnd-tracker-next-js/issues/581
