@@ -82,11 +82,24 @@ class ProductionAuthTester {
       await this.page.type('input[name="email"]', TEST_USER_EMAIL);
       await this.page.type('input[name="password"]', TEST_USER_PASSWORD);
       
-      // Submit form
-      await Promise.all([
-        this.page.waitForNavigation({ waitUntil: 'networkidle2' }),
-        this.page.click('button[type="submit"]')
-      ]);
+      // Submit form and wait for response
+      await this.page.click('button[type="submit"]');
+      
+      // Wait for either navigation or error message
+      try {
+        await this.page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 15000 });
+      } catch (navError) {
+        // Check if we're still on signin page with an error
+        const currentUrl = this.page.url();
+        if (currentUrl.includes('/signin')) {
+          // Look for error messages on the page
+          const errorMessage = await this.page.$eval('[role="alert"], .alert-destructive', el => el.textContent.trim()).catch(() => null);
+          if (errorMessage) {
+            throw new Error(`Authentication failed: ${errorMessage}`);
+          }
+        }
+        throw navError;
+      }
       
       // Verify successful login (should redirect to dashboard or protected page)
       const currentUrl = this.page.url();
