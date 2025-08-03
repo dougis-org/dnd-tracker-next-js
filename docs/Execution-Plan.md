@@ -268,6 +268,15 @@ rewrites
 
 ## Recent Updates
 
+### 2025-08-03 - Issue #572 JWT Authentication Strategy Fixed
+
+- ✅ **[Issue #572: Unable to login with credentials][issue-572]** - Successfully resolved critical
+  authentication bug preventing credentials login in production. Fixed NextAuth
+  configuration in `src/lib/auth.ts` by changing session strategy from 'database'
+  to 'jwt', which is required for credentials provider compatibility. Issue was
+  causing "UnsupportedStrategy" error in production. Complete fix deployed via
+  PR #577 with comprehensive test coverage and all quality checks passing.
+
 ### 2025-08-02 - Issue #527 Session Storage and Retrieval Completed
 
 - ✅ **Phase 2.2: Fix session storage and retrieval** (#527) - Successfully
@@ -388,3 +397,5 @@ rewrites
 [issue-536]: https://github.com/dougis-org/dnd-tracker-next-js/issues/536
 
 [issue-537]: https://github.com/dougis-org/dnd-tracker-next-js/issues/537
+
+[issue-572]: https://github.com/dougis-org/dnd-tracker-next-js/issues/572
