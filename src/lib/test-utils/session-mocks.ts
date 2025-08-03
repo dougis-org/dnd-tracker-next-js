@@ -4,6 +4,7 @@
  */
 
 import { ObjectId } from 'mongodb';
+import {SESSION_TIMEOUTS} from "@/lib/constants/session-constants";
 
 /**
  * Creates a mock user for session testing
@@ -57,7 +58,7 @@ export const SessionTestConstants = {
   VALID_SUBSCRIPTION_TIER: 'expert',
   EXPIRED_SESSION_TIME: new Date(Date.now() - 1000 * 60 * 60), // 1 hour ago
   VALID_SESSION_TIME: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7), // 7 days from now
-  MAX_AGE: 30 * 24 * 60 * 60, // 30 days in seconds
+  MAX_AGE: SESSION_TIMEOUTS.MAX_AGE, // 30 days in seconds
   UPDATE_AGE: 24 * 60 * 60, // 24 hours in seconds
 } as const;
 

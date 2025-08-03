@@ -13,6 +13,9 @@ export async function middleware(request: NextRequest) {
     const token = await getToken({
       req: request,
       secret: process.env.NEXTAUTH_SECRET,
+      cookieName: process.env.NODE_ENV === 'production'
+        ? '__Secure-next-auth.session-token'
+        : 'next-auth.session-token',
     });
 
     if (!token || !token.sub) {
@@ -20,11 +23,15 @@ export async function middleware(request: NextRequest) {
         return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
       }
 
-      // Create login URL with callback parameter
-      const loginUrl = new URL('/login', request.url);
-      loginUrl.searchParams.set('callbackUrl', encodeURI(request.url));
+      // Create signin URL with callback parameter
+      const signinUrl = new URL('/signin', request.url);
 
-      return NextResponse.redirect(loginUrl);
+      // Fix callback URL to use production domain instead of localhost
+      const callbackUrl = new URL(request.nextUrl.pathname + request.nextUrl.search,
+                                  process.env.NEXTAUTH_URL || request.url);
+      signinUrl.searchParams.set('callbackUrl', callbackUrl.toString());
+
+      return NextResponse.redirect(signinUrl);
     }
 
     return NextResponse.next();
@@ -35,9 +42,15 @@ export async function middleware(request: NextRequest) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
-    // Redirect to login on any authentication error
-    const loginUrl = new URL('/login', request.url);
-    return NextResponse.redirect(loginUrl);
+    // Redirect to signin on any authentication error
+    const signinUrl = new URL('/signin', request.url);
+
+    // Fix callback URL to use production domain
+    const callbackUrl = new URL(request.nextUrl.pathname + request.nextUrl.search,
+                                process.env.NEXTAUTH_URL || request.url);
+    signinUrl.searchParams.set('callbackUrl', callbackUrl.toString());
+
+    return NextResponse.redirect(signinUrl);
   }
 }
 
