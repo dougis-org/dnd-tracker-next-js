@@ -9,9 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Search, User, Shield, Heart, AlertCircle } from 'lucide-react';
-import { CharacterService } from '@/lib/services/CharacterService';
+import { CharacterServiceClient } from '@/lib/services/CharacterServiceClient';
 import type { Character } from '@/lib/validations/character';
-import { convertICharactersToCharacters } from '@/lib/utils/character-conversion';
 
 interface CharacterLibraryInterfaceProps {
   onImportCharacters: (_characters: Character[]) => void;
@@ -47,11 +46,10 @@ export function CharacterLibraryInterface({
     setError(null);
 
     try {
-      const result = await CharacterService.getCharactersByOwner(userId, 1, 20);
+      const result = await CharacterServiceClient.getCharactersByOwner(userId, 1, 20);
 
       if (result.success) {
-        const items = convertICharactersToCharacters(result.data.items);
-        setCharacters(items);
+        setCharacters(result.data.items);
       } else {
         setError(String(result.error) || 'Failed to load characters');
       }
@@ -69,11 +67,10 @@ export function CharacterLibraryInterface({
     setError(null);
 
     try {
-      const result = await CharacterService.searchCharacters(filters.search, userId);
+      const result = await CharacterServiceClient.searchCharacters(filters.search, userId);
 
       if (result.success) {
-        const items = convertICharactersToCharacters(result.data);
-        setCharacters(items);
+        setCharacters(result.data);
       } else {
         setError(String(result.error) || 'Search failed');
       }
@@ -92,19 +89,18 @@ export function CharacterLibraryInterface({
       let result;
 
       if (filters.type !== 'all') {
-        result = await CharacterService.getCharactersByType(filters.type as any, userId);
+        result = await CharacterServiceClient.getCharactersByType(filters.type as any, userId);
       } else if (filters.class !== 'all') {
-        result = await CharacterService.getCharactersByClass(filters.class as any, userId);
+        result = await CharacterServiceClient.getCharactersByClass(filters.class as any, userId);
       } else if (filters.race !== 'all') {
-        result = await CharacterService.getCharactersByRace(filters.race as any, userId);
+        result = await CharacterServiceClient.getCharactersByRace(filters.race as any, userId);
       } else {
-        result = await CharacterService.getCharactersByOwner(userId, 1, 20);
+        result = await CharacterServiceClient.getCharactersByOwner(userId, 1, 20);
       }
 
       if (result.success) {
         const data = 'items' in result.data ? result.data.items : result.data;
-        const items = convertICharactersToCharacters(data);
-        setCharacters(items);
+        setCharacters(data);
       } else {
         setError(String(result.error) || 'Filter failed');
       }

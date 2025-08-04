@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Plus } from 'lucide-react';
+import { CharacterServiceClient } from '@/lib/services/CharacterServiceClient';
 import { CharacterService } from '@/lib/services/CharacterService';
 import { CharacterStats } from '@/lib/services/CharacterServiceStats';
 import { CharacterEditingHeader } from './CharacterEditingHeader';
@@ -11,7 +12,6 @@ import { CharacterAbilityScores } from './CharacterAbilityScores';
 import { CharacterNotes } from './CharacterNotes';
 import type { Character } from '@/lib/validations/character';
 import type { CharacterUpdate } from '@/lib/validations/character';
-import { convertICharacterToCharacter } from '@/lib/utils/character-conversion';
 
 interface CharacterStatsManagerProps {
   characterId: string;
@@ -43,13 +43,13 @@ export function CharacterStatsManager({ characterId, userId }: CharacterStatsMan
       setStatsError(null);
 
       // Load character data
-      const characterResult = await CharacterService.getCharacterById(characterId, userId);
+      const characterResult = await CharacterServiceClient.getCharacterById(characterId, userId);
       if (!characterResult.success) {
         setError(characterResult.error?.message || 'Failed to load character');
         return;
       }
 
-      setCharacter(convertICharacterToCharacter(characterResult.data));
+      setCharacter(characterResult.data);
       // Initialize editedCharacter with just the editable fields
       setEditedCharacter({
         abilityScores: characterResult.data.abilityScores,
@@ -164,10 +164,10 @@ export function CharacterStatsManager({ characterId, userId }: CharacterStatsMan
 
     try {
       setSaving(true);
-      const result = await CharacterService.updateCharacter(characterId, userId, editedCharacter);
+      const result = await CharacterServiceClient.updateCharacter(characterId, userId, editedCharacter);
 
       if (result.success) {
-        setCharacter(convertICharacterToCharacter(result.data));
+        setCharacter(result.data);
         setEditMode(false);
         setSaveSuccess(true);
         setTimeout(() => setSaveSuccess(false), 3000);

@@ -1,7 +1,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { CharacterListView } from '../CharacterListView';
-import { CharacterService } from '@/lib/services/CharacterService';
+import { CharacterServiceClient } from '@/lib/services/CharacterServiceClient';
 import { containsTextIgnoreCase } from '../../../test-utils/secure-regexp';
 import {
   mockCharacters,
@@ -14,9 +14,9 @@ import {
   testFilterOperation,
 } from './test-helpers';
 
-// Mock the CharacterService
-jest.mock('@/lib/services/CharacterService');
-const mockCharacterService = CharacterService as jest.Mocked<typeof CharacterService>;
+// Mock the CharacterServiceClient
+jest.mock('@/lib/services/CharacterServiceClient');
+const mockCharacterService = CharacterServiceClient as jest.Mocked<typeof CharacterServiceClient>;
 
 // Mock next/navigation
 const mockPush = jest.fn();

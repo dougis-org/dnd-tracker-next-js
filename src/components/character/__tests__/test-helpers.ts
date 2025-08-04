@@ -17,8 +17,9 @@ const createCharacterWithClass = (
     name,
     type: 'pc',
     race: race as any,
+    customRace: undefined,
     size: 'medium',
-    classes: [{ class: characterClass as any, level, hitDie: 10 }],
+    classes: [{ class: characterClass as any, level, hitDie: 10, subclass: undefined }],
     abilityScores: {
       strength: 16,
       dexterity: 14,
@@ -44,7 +45,9 @@ const createCharacterWithClass = (
     spells: [],
     backstory: `A brave ${characterClass}`,
     notes: 'Test character',
+    imageUrl: undefined,
     isPublic: false,
+    partyId: undefined,
     createdAt: `2024-01-0${dateOffset}T00:00:00.000Z`,
     updatedAt: `2024-01-0${dateOffset}T00:00:00.000Z`
   };
@@ -62,9 +65,9 @@ export const createMockPaginatedResponse = (items = mockCharacters, pagination =
     items,
     pagination: {
       page: 1,
-      limit: 12,
-      total: items.length,
       totalPages: 1,
+      totalItems: items.length,
+      itemsPerPage: 12,
       ...pagination,
     },
   },

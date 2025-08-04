@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { CharacterService } from '@/lib/services/CharacterService';
+import { CharacterServiceClient } from '@/lib/services/CharacterServiceClient';
 import { DEFAULT_PAGE_SIZE } from '../constants';
-import { convertICharactersToCharacters } from '@/lib/utils/character-conversion';
 import type { Character } from '@/lib/validations/character';
 
 // Client-safe paginated characters type
@@ -35,18 +34,13 @@ export function useCharacterData(userId: string): UseCharacterDataResult {
       setLoading(true);
       setError(null);
 
-      const result = await CharacterService.getCharactersByOwner(userId, currentPage, DEFAULT_PAGE_SIZE);
+      const result = await CharacterServiceClient.getCharactersByOwner(userId, currentPage, DEFAULT_PAGE_SIZE);
 
       if (result.success) {
-        // Convert ICharacter types to client-safe Character types
+        // Use Character types directly - no conversion needed
         const clientData: ClientPaginatedCharacters = {
-          items: convertICharactersToCharacters(result.data.items),
-          pagination: {
-            page: result.data.pagination.page,
-            totalPages: result.data.pagination.totalPages,
-            totalItems: result.data.pagination.total,
-            itemsPerPage: result.data.pagination.limit
-          }
+          items: result.data.items,
+          pagination: result.data.pagination
         };
         setCharactersData(clientData);
       } else {
