@@ -42,7 +42,7 @@ export function useCharacterData(userId: string): UseCharacterDataResult {
         // In tests, the service returns Character types directly, so skip conversion
         const isTestEnvironment = process.env.NODE_ENV === 'test';
         const items = isTestEnvironment ? result.data.items as Character[] : convertICharactersToCharacters(result.data.items);
-        
+
         const clientData: ClientPaginatedCharacters = {
           items,
           pagination: {
