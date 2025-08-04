@@ -4,13 +4,14 @@
 
 /**
  * Subscription tier hierarchy for access control
+ * Based on User model validation: ['free', 'seasoned', 'expert', 'master', 'guild']
  */
 export const SUBSCRIPTION_TIERS = [
   'free',
-  'basic',
-  'premium',
-  'pro',
-  'enterprise',
+  'seasoned',
+  'expert',
+  'master',
+  'guild',
 ];
 
 /**
