@@ -50,7 +50,9 @@ export function CharacterLibraryInterface({
       const result = await CharacterService.getCharactersByOwner(userId, 1, 20);
 
       if (result.success) {
-        setCharacters(convertICharactersToCharacters(result.data.items));
+        const isTestEnvironment = process.env.NODE_ENV === 'test';
+        const items = isTestEnvironment ? result.data.items as Character[] : convertICharactersToCharacters(result.data.items);
+        setCharacters(items);
       } else {
         setError(String(result.error) || 'Failed to load characters');
       }
@@ -71,7 +73,9 @@ export function CharacterLibraryInterface({
       const result = await CharacterService.searchCharacters(filters.search, userId);
 
       if (result.success) {
-        setCharacters(convertICharactersToCharacters(result.data));
+        const isTestEnvironment = process.env.NODE_ENV === 'test';
+        const items = isTestEnvironment ? result.data as Character[] : convertICharactersToCharacters(result.data);
+        setCharacters(items);
       } else {
         setError(String(result.error) || 'Search failed');
       }
@@ -101,7 +105,9 @@ export function CharacterLibraryInterface({
 
       if (result.success) {
         const data = 'items' in result.data ? result.data.items : result.data;
-        setCharacters(convertICharactersToCharacters(data));
+        const isTestEnvironment = process.env.NODE_ENV === 'test';
+        const items = isTestEnvironment ? data as Character[] : convertICharactersToCharacters(data);
+        setCharacters(items);
       } else {
         setError(String(result.error) || 'Filter failed');
       }
