@@ -11,6 +11,7 @@ import { CharacterAbilityScores } from './CharacterAbilityScores';
 import { CharacterNotes } from './CharacterNotes';
 import type { Character } from '@/lib/validations/character';
 import type { CharacterUpdate } from '@/lib/validations/character';
+import { convertICharacterToCharacter } from '@/lib/utils/character-conversion';
 
 interface CharacterStatsManagerProps {
   characterId: string;
@@ -48,7 +49,7 @@ export function CharacterStatsManager({ characterId, userId }: CharacterStatsMan
         return;
       }
 
-      setCharacter(characterResult.data);
+      setCharacter(convertICharacterToCharacter(characterResult.data));
       // Initialize editedCharacter with just the editable fields
       setEditedCharacter({
         abilityScores: characterResult.data.abilityScores,
