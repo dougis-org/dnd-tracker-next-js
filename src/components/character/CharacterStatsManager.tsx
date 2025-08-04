@@ -9,7 +9,7 @@ import { CharacterStats } from '@/lib/services/CharacterServiceStats';
 import { CharacterEditingHeader } from './CharacterEditingHeader';
 import { CharacterAbilityScores } from './CharacterAbilityScores';
 import { CharacterNotes } from './CharacterNotes';
-import type { ICharacter } from '@/lib/models/Character';
+import type { Character } from '@/lib/validations/character';
 import type { CharacterUpdate } from '@/lib/validations/character';
 
 interface CharacterStatsManagerProps {
@@ -18,7 +18,7 @@ interface CharacterStatsManagerProps {
 }
 
 export function CharacterStatsManager({ characterId, userId }: CharacterStatsManagerProps) {
-  const [character, setCharacter] = useState<ICharacter | null>(null);
+  const [character, setCharacter] = useState<Character | null>(null);
   const [stats, setStats] = useState<CharacterStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

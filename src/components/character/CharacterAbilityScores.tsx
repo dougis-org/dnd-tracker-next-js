@@ -1,11 +1,11 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import type { ICharacter } from '@/lib/models/Character';
+import type { Character } from '@/lib/validations/character';
 import type { CharacterUpdate } from '@/lib/validations/character';
 
 interface CharacterAbilityScoresProps {
-  character: ICharacter;
+  character: Character;
   editMode: boolean;
   editedCharacter: CharacterUpdate;
   onUpdateAbilityScore: (_ability: string, _value: number) => void;

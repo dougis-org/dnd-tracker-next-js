@@ -1,12 +1,12 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import type { ICharacter } from '@/lib/models/Character';
+import type { Character } from '@/lib/validations/character';
 
 interface CharacterActionButtonsProps {
-  character: ICharacter;
-  onEdit?: (_character: ICharacter) => void;
-  onDuplicate?: (_character: ICharacter) => void;
-  onDelete?: (_character: ICharacter) => void;
+  character: Character;
+  onEdit?: (_character: Character) => void;
+  onDuplicate?: (_character: Character) => void;
+  onDelete?: (_character: Character) => void;
   size?: 'sm' | 'default' | 'lg';
   variant?: 'default' | 'ghost' | 'outline';
 }
