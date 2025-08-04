@@ -3,7 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ImportParticipantDialog } from '../ParticipantDialogs';
 import { CharacterService } from '@/lib/services/CharacterService';
-import type { ICharacter } from '@/lib/models/Character';
+import type { Character } from '@/lib/validations/character';
 import { convertCharacterToParticipant } from '../utils/characterConversion';
 
 // Mock the CharacterService
@@ -17,7 +17,7 @@ Object.defineProperty(Element.prototype, 'scrollIntoView', {
 });
 
 // Mock data factory for characters
-const createMockCharacter = (overrides: Partial<ICharacter> = {}): ICharacter => ({
+const createMockCharacter = (overrides: Partial<Character> = {}): Character => ({
   _id: '507f1f77bcf86cd799439011',
   ownerId: 'user123',
   name: 'Test Character',
@@ -62,7 +62,7 @@ const createMockCharacter = (overrides: Partial<ICharacter> = {}): ICharacter =>
   getInitiativeModifier: jest.fn(),
   getEffectiveHP: jest.fn(),
   ...overrides,
-} as ICharacter);
+} as Character);
 
 const mockCharacters = [
   createMockCharacter({
