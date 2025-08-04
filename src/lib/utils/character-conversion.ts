@@ -43,7 +43,7 @@ export function convertICharacterToCharacter(iCharacter: ICharacter): Character 
     updatedAt: iCharacter.updatedAt.toISOString()
   };
 
-  return baseCharacter as Character;
+  return baseCharacter as unknown as Character;
 }
 
 /**
@@ -54,16 +54,5 @@ export function convertICharactersToCharacters(iCharacters: ICharacter[]): Chara
     return [];
   }
 
-  return iCharacters.map(char => {
-    // If already a Character type (from tests), return as-is
-    // Check for test mock by looking for jest function properties or Date objects
-    if (typeof char === 'object' && (
-      char.createdAt instanceof Date ||
-      char.updatedAt instanceof Date ||
-      typeof char.getAbilityModifier === 'function'
-    )) {
-      return char as Character;
-    }
-    return convertICharacterToCharacter(char);
-  });
+  return iCharacters.map(convertICharacterToCharacter);
 }

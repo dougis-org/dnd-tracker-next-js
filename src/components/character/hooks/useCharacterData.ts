@@ -39,12 +39,8 @@ export function useCharacterData(userId: string): UseCharacterDataResult {
 
       if (result.success) {
         // Convert ICharacter types to client-safe Character types
-        // In tests, the service returns Character types directly, so skip conversion
-        const isTestEnvironment = process.env.NODE_ENV === 'test';
-        const items = isTestEnvironment ? result.data.items as Character[] : convertICharactersToCharacters(result.data.items);
-
         const clientData: ClientPaginatedCharacters = {
-          items,
+          items: convertICharactersToCharacters(result.data.items),
           pagination: {
             page: result.data.pagination.page,
             totalPages: result.data.pagination.totalPages,
