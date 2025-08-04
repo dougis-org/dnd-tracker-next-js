@@ -17,6 +17,7 @@ export interface ServiceResult<T> {
 // Custom error classes for better error handling
 export class PartyServiceError extends Error {
   public code: string;
+
   public statusCode: number;
 
   constructor(message: string, code: string, statusCode: number = 400) {
@@ -34,7 +35,7 @@ export class PartyNotFoundError extends PartyServiceError {
 }
 
 export class PartyAccessDeniedError extends PartyServiceError {
-  constructor(partyId: string, userId: string) {
+  constructor(_partyId: string, _userId: string) {
     super(
       'You do not have permission to access this party',
       'PARTY_ACCESS_DENIED',

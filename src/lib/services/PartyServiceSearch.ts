@@ -1,8 +1,7 @@
 import { Types } from 'mongoose';
-import { Party, type IParty } from '@/lib/models/Party';
+import { Party } from '@/lib/models/Party';
 import {
   ServiceResult,
-  PartyServiceError,
   handleServiceError,
 } from './PartyServiceErrors';
 import type {
@@ -19,12 +18,13 @@ import type {
  * Handles complex queries, filtering, sorting, and pagination
  */
 export class PartyServiceSearch {
+
   /**
    * Get paginated list of parties for a user with filtering and sorting
    */
   static async getPartiesForUser(
     userId: string,
-    filters: PartyFilters = {},
+    filters: PartyFilters = { tags: [], memberCount: [] },
     sortBy: PartySortBy = 'name',
     sortOrder: SortOrder = 'asc',
     pagination: PaginationParams = { page: 1, limit: 20 }
@@ -145,7 +145,7 @@ export class PartyServiceSearch {
    * Build base query for user access (owned + shared + public)
    */
   private static buildUserAccessQuery(userId: Types.ObjectId, filters: PartyFilters): any {
-    const accessConditions = [
+    const accessConditions: any[] = [
       { ownerId: userId }, // User owns the party
       { sharedWith: userId }, // Party is shared with user
     ];
@@ -153,18 +153,6 @@ export class PartyServiceSearch {
     // Include public parties unless explicitly filtered out
     if (filters.isPublic !== false) {
       accessConditions.push({ isPublic: true });
-    }
-
-    // If filtering for specific ownership
-    if (filters.ownerId) {
-      const ownerObjectId = new Types.ObjectId(filters.ownerId);
-      return { ownerId: ownerObjectId };
-    }
-
-    // If filtering for parties shared with specific user
-    if (filters.sharedWith) {
-      const sharedUserObjectId = new Types.ObjectId(filters.sharedWith);
-      return { sharedWith: sharedUserObjectId };
     }
 
     return { $or: accessConditions };
@@ -197,7 +185,7 @@ export class PartyServiceSearch {
    * Build filter query for specific filters
    */
   private static buildFilterQuery(baseQuery: any, filters: PartyFilters): any {
-    let query = { ...baseQuery };
+    const query = { ...baseQuery };
 
     // Filter by tags
     if (filters.tags && filters.tags.length > 0) {

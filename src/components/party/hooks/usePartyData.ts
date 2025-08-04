@@ -21,152 +21,6 @@ interface UsePartyDataReturn {
   refetch: () => void;
 }
 
-// Utility function to check if text matches search query
-function matchesSearchQuery(text: string, searchQuery: string): boolean {
-  return text.toLowerCase().includes(searchQuery.toLowerCase());
-}
-
-// Utility function to apply search filter
-function applySearchFilter(parties: PartyListItem[], searchQuery: string): PartyListItem[] {
-  if (!searchQuery.trim()) return parties;
-
-  return parties.filter(party =>
-    matchesSearchQuery(party.name, searchQuery) ||
-    matchesSearchQuery(party.description, searchQuery)
-  );
-}
-
-// Utility function to apply member count filter
-function applyMemberCountFilter(parties: PartyListItem[], memberCountFilter: number[]): PartyListItem[] {
-  if (memberCountFilter.length === 0) return parties;
-  return parties.filter(party => memberCountFilter.includes(party.memberCount));
-}
-
-// Utility function to apply tags filter
-function applyTagsFilter(parties: PartyListItem[], tagsFilter: string[]): PartyListItem[] {
-  if (tagsFilter.length === 0) return parties;
-  return parties.filter(party => tagsFilter.some(tag => party.tags.includes(tag)));
-}
-
-// Utility function to apply filters to parties
-function applyFilters(parties: PartyListItem[], searchQuery: string, filters: PartyFilters): PartyListItem[] {
-  let filtered = [...parties];
-  filtered = applySearchFilter(filtered, searchQuery);
-  filtered = applyMemberCountFilter(filtered, filters.memberCount);
-  filtered = applyTagsFilter(filtered, filters.tags);
-  return filtered;
-}
-
-// Date field types for sort normalization
-const DATE_FIELDS = ['createdAt', 'updatedAt', 'lastActivity'] as const;
-
-// Utility function to normalize sort values
-function normalizeSortValue(value: any, sortBy: PartySortBy): any {
-  if (DATE_FIELDS.includes(sortBy as any)) {
-    return new Date(value).getTime();
-  }
-  return typeof value === 'string' ? value.toLowerCase() : value;
-}
-
-// Utility function to sort parties
-function sortParties(parties: PartyListItem[], sortBy: PartySortBy, sortOrder: SortOrder): void {
-  const multiplier = sortOrder === 'asc' ? 1 : -1;
-  parties.sort((a, b) => {
-    const aVal = normalizeSortValue(a[sortBy], sortBy);
-    const bVal = normalizeSortValue(b[sortBy], sortBy);
-    return (aVal < bVal ? -1 : aVal > bVal ? 1 : 0) * multiplier;
-  });
-}
-
-// Utility function to simulate API delay
-async function simulateApiDelay(): Promise<void> {
-  await new Promise(resolve => setTimeout(resolve, 500));
-}
-
-// Utility function to create pagination info
-function createPaginationInfo(currentPage: number, totalItems: number, limit: number): PaginationInfo {
-  return {
-    currentPage,
-    totalPages: Math.ceil(totalItems / limit),
-    totalItems,
-    itemsPerPage: limit,
-  };
-}
-
-// Utility function to paginate items
-function paginateItems<T>(items: T[], currentPage: number, limit: number): T[] {
-  const startIndex = (currentPage - 1) * limit;
-  const endIndex = startIndex + limit;
-  return items.slice(startIndex, endIndex);
-}
-
-// Utility function to process party data with filtering, sorting, and pagination
-async function processPartyData({
-  parties,
-  searchQuery,
-  filters,
-  sortBy,
-  sortOrder,
-  currentPage,
-  limit,
-}: {
-  parties: PartyListItem[];
-  searchQuery: string;
-  filters: PartyFilters;
-  sortBy: PartySortBy;
-  sortOrder: SortOrder;
-  currentPage: number;
-  limit: number;
-}): Promise<{ items: PartyListItem[]; pagination: PaginationInfo }> {
-  const filteredParties = applyFilters(parties, searchQuery, filters);
-  sortParties(filteredParties, sortBy, sortOrder);
-
-  const totalItems = filteredParties.length;
-  const paginatedParties = paginateItems(filteredParties, currentPage, limit);
-
-  return {
-    items: paginatedParties,
-    pagination: createPaginationInfo(currentPage, totalItems, limit),
-  };
-}
-
-// Mock data for development - this will be replaced with real API calls
-const mockParties: PartyListItem[] = [
-  {
-    id: 'party-1',
-    ownerId: 'user-123' as any,
-    name: 'The Brave Adventurers',
-    description: 'A party of brave heroes ready to face any challenge',
-    members: [],
-    tags: ['heroic', 'balanced'],
-    isPublic: false,
-    sharedWith: [],
-    settings: { allowJoining: true, requireApproval: false, maxMembers: 6 },
-    createdAt: new Date('2023-01-01'),
-    updatedAt: new Date('2023-01-01'),
-    lastActivity: new Date('2023-01-01'),
-    memberCount: 4,
-    playerCharacterCount: 4,
-    averageLevel: 5,
-  },
-  {
-    id: 'party-2',
-    ownerId: 'user-123' as any,
-    name: 'The Shadow Walkers',
-    description: 'Stealthy rogues and assassins operating in the shadows',
-    members: [],
-    tags: ['stealth', 'urban'],
-    isPublic: false,
-    sharedWith: [],
-    settings: { allowJoining: false, requireApproval: true, maxMembers: 4 },
-    createdAt: new Date('2023-01-02'),
-    updatedAt: new Date('2023-01-02'),
-    lastActivity: new Date('2023-01-02'),
-    memberCount: 3,
-    playerCharacterCount: 3,
-    averageLevel: 7,
-  },
-];
 
 // Hook for managing party data state
 function usePartyState(initialPage: number = 1) {
@@ -195,21 +49,58 @@ function usePartyOperations(state: ReturnType<typeof usePartyState>, params: Use
     setError(null);
 
     try {
-      await simulateApiDelay();
-      const paginatedResult = await processPartyData({
-        parties: mockParties,
-        searchQuery,
-        filters,
-        sortBy,
-        sortOrder,
-        currentPage,
-        limit,
-      });
+      // Build query parameters
+      const queryParams = new URLSearchParams();
 
-      setParties(paginatedResult.items);
-      setPagination(paginatedResult.pagination);
+      // Add pagination
+      queryParams.set('page', currentPage.toString());
+      queryParams.set('limit', limit.toString());
+
+      // Add sorting
+      queryParams.set('sortBy', sortBy);
+      queryParams.set('sortOrder', sortOrder);
+
+      // Add search if present
+      if (searchQuery.trim()) {
+        queryParams.set('search', searchQuery.trim());
+      }
+
+      // Add filters
+      if (filters.tags.length > 0) {
+        queryParams.set('tags', filters.tags.join(','));
+      }
+      if (filters.memberCount.length > 0) {
+        queryParams.set('memberCount', filters.memberCount.join(','));
+      }
+      if (filters.isPublic !== undefined) {
+        queryParams.set('isPublic', filters.isPublic.toString());
+      }
+
+      // Fetch data from API
+      const response = await fetch(`/api/parties?${queryParams.toString()}`);
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Failed to fetch parties' }));
+        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.message || 'Failed to fetch parties');
+      }
+
+      setParties(data.parties || []);
+      setPagination(data.pagination || {
+        currentPage: 1,
+        totalPages: 0,
+        totalItems: 0,
+        itemsPerPage: limit,
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred while fetching parties');
+      setParties([]);
+      setPagination(null);
     } finally {
       setIsLoading(false);
     }

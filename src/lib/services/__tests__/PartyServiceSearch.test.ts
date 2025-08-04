@@ -15,7 +15,6 @@ import { Party } from '@/lib/models/Party';
 
 describe('PartyServiceSearch', () => {
   const userId = new Types.ObjectId().toString();
-  const otherUserId = new Types.ObjectId().toString();
 
   const mockParty = {
     _id: new Types.ObjectId(),

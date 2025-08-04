@@ -7,6 +7,7 @@ export interface PartyFilters {
     end: Date;
   };
   tags: string[];
+  isPublic?: boolean;
 }
 
 export type PartySortBy =

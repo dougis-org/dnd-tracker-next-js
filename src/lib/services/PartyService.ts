@@ -18,10 +18,10 @@ import { PartyServiceSearch } from './PartyServiceSearch';
  *
  * Provides comprehensive business logic for party management including
  * CRUD operations, search functionality, and data access control.
- * 
+ *
  * This class acts as a coordination layer, delegating operations
  * to specialized modules for better organization and maintainability.
- * 
+ *
  * Architecture follows the established UserService pattern with:
  * - Main service class as facade/coordinator
  * - Specialized modules for different concerns
@@ -83,7 +83,7 @@ export class PartyService {
    */
   static async getPartiesForUser(
     userId: string,
-    filters: PartyFilters = {},
+    filters: PartyFilters = { tags: [], memberCount: [] },
     sortBy: PartySortBy = 'name',
     sortOrder: SortOrder = 'asc',
     pagination: PaginationParams = { page: 1, limit: 20 }

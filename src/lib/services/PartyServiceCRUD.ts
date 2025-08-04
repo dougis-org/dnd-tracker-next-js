@@ -2,7 +2,6 @@ import { Types } from 'mongoose';
 import { Party, type IParty } from '@/lib/models/Party';
 import {
   ServiceResult,
-  PartyServiceError,
   PartyNotFoundError,
   PartyAccessDeniedError,
   PartyOwnershipError,
@@ -22,6 +21,7 @@ import {
  * Handles basic Create, Read, Update, Delete operations with proper access control
  */
 export class PartyServiceCRUD {
+
   /**
    * Create a new party
    */

@@ -125,7 +125,7 @@ describe('PartyService', () => {
 
         expect(MockedPartyServiceSearch.getPartiesForUser).toHaveBeenCalledWith(
           userId,
-          {},
+          { tags: [], memberCount: [] },
           'name',
           'asc',
           { page: 1, limit: 20 }
@@ -349,7 +349,7 @@ describe('PartyService', () => {
 
       expect(MockedPartyServiceSearch.getPartiesForUser).toHaveBeenCalledWith(
         userId,
-        {}, // default filters
+        { tags: [], memberCount: [] }, // default filters
         'name', // default sortBy
         'asc', // default sortOrder
         { page: 1, limit: 20 } // default pagination
