@@ -21,9 +21,9 @@ export function CharacterGrid({
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
       {characters.map((character) => (
         <Card
-          key={character._id.toString()}
+          key={character._id?.toString() || character.name}
           className="cursor-pointer hover:shadow-md transition-shadow"
-          data-testid={`character-card-${character._id.toString()}`}
+          data-testid={`character-card-${character._id?.toString() || character.name}`}
           onClick={() => onCharacterSelect?.(character)}
         >
           <CardHeader className="pb-2">
@@ -33,12 +33,12 @@ export function CharacterGrid({
                   {character.name}
                 </CardTitle>
                 <p className="text-sm text-muted-foreground" data-testid="character-level">
-                  Level {character.level}
+                  Level {character.classes.reduce((sum, cls) => sum + cls.level, 0)}
                 </p>
               </div>
               <CharacterSelectionCheckbox
-                characterId={character._id.toString()}
-                isSelected={selectedCharacters.has(character._id.toString())}
+                characterId={character._id?.toString() || ''}
+                isSelected={selectedCharacters.has(character._id?.toString() || '')}
                 onSelectCharacter={onSelectCharacter}
               />
             </div>

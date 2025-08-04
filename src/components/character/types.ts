@@ -1,10 +1,10 @@
-import type { ICharacter } from '@/lib/models/Character';
+import type { Character } from '@/lib/validations/character';
 
 export interface CharacterActions {
-  onCharacterEdit?: (_character: ICharacter) => void;
-  onCharacterDelete?: (_character: ICharacter) => void;
-  onCharacterDuplicate?: (_character: ICharacter) => void;
-  onCharacterSelect?: (_character: ICharacter) => void;
+  onCharacterEdit?: (_character: Character) => void;
+  onCharacterDelete?: (_character: Character) => void;
+  onCharacterDuplicate?: (_character: Character) => void;
+  onCharacterSelect?: (_character: Character) => void;
 }
 
 export interface SelectionProps {
@@ -13,7 +13,7 @@ export interface SelectionProps {
 }
 
 export interface CharacterDisplayProps extends CharacterActions, SelectionProps {
-  characters: ICharacter[];
+  characters: Character[];
 }
 
 export interface CharacterTableProps extends CharacterDisplayProps {

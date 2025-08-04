@@ -274,7 +274,7 @@ export function CharacterComparison({
   );
 }
 
-function analyzeChanges(original: ICharacter, updated: ICharacter): ChangeDetail[] {
+function analyzeChanges(original: Character, updated: Character): ChangeDetail[] {
   const changes: ChangeDetail[] = [];
 
   // Name

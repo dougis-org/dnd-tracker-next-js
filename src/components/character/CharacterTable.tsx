@@ -39,15 +39,15 @@ export function CharacterTable({
         <tbody>
           {characters.map((character) => (
             <tr
-              key={character._id.toString()}
+              key={character._id?.toString() || character.name}
               className="border-b hover:bg-muted/50 cursor-pointer"
-              data-testid={`character-row-${character._id.toString()}`}
+              data-testid={`character-row-${character._id?.toString() || character.name}`}
               onClick={() => onCharacterSelect?.(character)}
             >
               <td className="p-4">
                 <CharacterSelectionCheckbox
-                  characterId={character._id.toString()}
-                  isSelected={selectedCharacters.has(character._id.toString())}
+                  characterId={character._id?.toString() || ''}
+                  isSelected={selectedCharacters.has(character._id?.toString() || '')}
                   onSelectCharacter={onSelectCharacter}
                 />
               </td>

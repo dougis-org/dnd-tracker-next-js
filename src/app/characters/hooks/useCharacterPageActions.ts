@@ -3,7 +3,7 @@ import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { useConfirmationDialog } from '@/components/modals/ConfirmationDialog';
 import { CharacterService } from '@/lib/services/CharacterService';
-import type { ICharacter } from '@/lib/models/Character';
+import type { Character } from '@/lib/validations/character';
 
 /**
  * Custom hook for managing character page actions
@@ -18,17 +18,21 @@ export function useCharacterPageActions() {
   const [isDuplicating, setIsDuplicating] = useState(false);
 
   const navigationActions = {
-    selectCharacter: (character: ICharacter) => {
-      router.push(`/characters/${character._id.toString()}`);
+    selectCharacter: (character: Character) => {
+      if (character._id) {
+        router.push(`/characters/${character._id.toString()}`);
+      }
     },
 
-    editCharacter: (character: ICharacter) => {
-      router.push(`/characters/${character._id.toString()}`);
+    editCharacter: (character: Character) => {
+      if (character._id) {
+        router.push(`/characters/${character._id.toString()}`);
+      }
     },
   };
 
   const characterActions = {
-    deleteCharacter: async (character: ICharacter) => {
+    deleteCharacter: async (character: Character) => {
       if (!session?.user?.id) {
         return;
       }
@@ -44,7 +48,7 @@ export function useCharacterPageActions() {
           onConfirm: () => {},
         });
 
-        if (confirmed) {
+        if (confirmed && character._id) {
           setIsDeleting(true);
           try {
             const result = await CharacterService.deleteCharacter(
@@ -70,7 +74,7 @@ export function useCharacterPageActions() {
       }
     },
 
-    duplicateCharacter: async (character: ICharacter) => {
+    duplicateCharacter: async (character: Character) => {
       if (!session?.user?.id) {
         return;
       }
@@ -80,6 +84,10 @@ export function useCharacterPageActions() {
 
       if (!newName) {
         return false; // User cancelled
+      }
+
+      if (!character._id) {
+        return false;
       }
 
       setIsDuplicating(true);

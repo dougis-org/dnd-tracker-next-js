@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import type { ICharacter } from '@/lib/models/Character';
+import type { Character } from '@/lib/validations/character';
 
 interface UseCharacterSelectionResult {
   selectedCharacters: Set<string>;
   handleSelectCharacter: (_characterId: string, _selected: boolean) => void;
-  handleSelectAll: (_characters: ICharacter[], _selected: boolean) => void;
+  handleSelectAll: (_characters: Character[], _selected: boolean) => void;
   clearSelection: () => void;
 }
 
@@ -21,9 +21,9 @@ export function useCharacterSelection(): UseCharacterSelectionResult {
     setSelectedCharacters(newSelected);
   };
 
-  const handleSelectAll = (characters: ICharacter[], selected: boolean) => {
+  const handleSelectAll = (characters: Character[], selected: boolean) => {
     if (selected) {
-      setSelectedCharacters(new Set(characters.map(char => char._id.toString())));
+      setSelectedCharacters(new Set(characters.map(char => char._id?.toString() || '').filter(id => id)));
     } else {
       setSelectedCharacters(new Set());
     }
