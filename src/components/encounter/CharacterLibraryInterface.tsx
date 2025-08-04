@@ -11,6 +11,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Search, User, Shield, Heart, AlertCircle } from 'lucide-react';
 import { CharacterService } from '@/lib/services/CharacterService';
 import type { Character } from '@/lib/validations/character';
+import { convertICharactersToCharacters } from '@/lib/utils/character-conversion';
 
 interface CharacterLibraryInterfaceProps {
   onImportCharacters: (_characters: Character[]) => void;
@@ -49,7 +50,7 @@ export function CharacterLibraryInterface({
       const result = await CharacterService.getCharactersByOwner(userId, 1, 20);
 
       if (result.success) {
-        setCharacters(result.data.items);
+        setCharacters(convertICharactersToCharacters(result.data.items));
       } else {
         setError(String(result.error) || 'Failed to load characters');
       }
@@ -70,7 +71,7 @@ export function CharacterLibraryInterface({
       const result = await CharacterService.searchCharacters(filters.search, userId);
 
       if (result.success) {
-        setCharacters(result.data);
+        setCharacters(convertICharactersToCharacters(result.data));
       } else {
         setError(String(result.error) || 'Search failed');
       }
@@ -100,7 +101,7 @@ export function CharacterLibraryInterface({
 
       if (result.success) {
         const data = 'items' in result.data ? result.data.items : result.data;
-        setCharacters(data as Character[]);
+        setCharacters(convertICharactersToCharacters(data));
       } else {
         setError(String(result.error) || 'Filter failed');
       }
@@ -317,11 +318,11 @@ export function CharacterLibraryInterface({
       <div className="max-h-96 overflow-y-auto">
         <div className="space-y-2">
           {characters.map((character) => (
-            <Card key={character._id.toString()} className="cursor-pointer hover:bg-gray-50 transition-colors">
+            <Card key={character._id?.toString() || character.name} className="cursor-pointer hover:bg-gray-50 transition-colors">
               <CardContent className="p-4">
                 <div className="flex items-center space-x-3">
                   <Checkbox
-                    id={`character-${character._id}`}
+                    id={`character-${character._id?.toString() || character.name}`}
                     checked={isCharacterSelected(character)}
                     onCheckedChange={() => handleCharacterSelect(character)}
                   />

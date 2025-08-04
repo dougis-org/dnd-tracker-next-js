@@ -55,7 +55,7 @@ export function CharacterTable({
                 {character.name}
               </td>
               <td className="p-4" data-testid="character-level">
-                Level {character.level}
+                Level {character.classes.reduce((sum, cls) => sum + cls.level, 0)}
               </td>
               <td className="p-4">{character.classes[0].class}</td>
               <td className="p-4">{character.race}</td>

@@ -41,7 +41,12 @@ export function useCharacterData(userId: string): UseCharacterDataResult {
         // Convert ICharacter types to client-safe Character types
         const clientData: ClientPaginatedCharacters = {
           items: convertICharactersToCharacters(result.data.items),
-          pagination: result.data.pagination
+          pagination: {
+            page: result.data.pagination.page,
+            totalPages: result.data.pagination.totalPages,
+            totalItems: result.data.pagination.total,
+            itemsPerPage: result.data.pagination.limit
+          }
         };
         setCharactersData(clientData);
       } else {

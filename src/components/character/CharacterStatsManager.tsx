@@ -167,7 +167,7 @@ export function CharacterStatsManager({ characterId, userId }: CharacterStatsMan
       const result = await CharacterService.updateCharacter(characterId, userId, editedCharacter);
 
       if (result.success) {
-        setCharacter(result.data);
+        setCharacter(convertICharacterToCharacter(result.data));
         setEditMode(false);
         setSaveSuccess(true);
         setTimeout(() => setSaveSuccess(false), 3000);
@@ -343,7 +343,7 @@ export function CharacterStatsManager({ characterId, userId }: CharacterStatsMan
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 gap-2">
-            {Array.from(character.skills.entries()).map(([skill, isProficient]) => {
+            {Object.entries(character.skills).map(([skill, isProficient]) => {
               const bonus = stats?.skills[skill] || 0;
               const bonusString = bonus >= 0 ? `+${bonus}` : `${bonus}`;
 
