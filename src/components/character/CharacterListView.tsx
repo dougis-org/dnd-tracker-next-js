@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import type { ICharacter } from '@/lib/models/Character';
+import type { Character } from '@/lib/validations/character';
 import { CharacterFilters } from './CharacterFilters';
 import { ViewModeToggle } from './ViewModeToggle';
 import { BatchActions } from './BatchActions';
@@ -17,10 +17,10 @@ import type { ViewMode } from './constants';
 
 export interface CharacterListViewProps {
   userId: string;
-  onCharacterSelect?: (_character: ICharacter) => void;
-  onCharacterEdit?: (_character: ICharacter) => void;
-  onCharacterDelete?: (_character: ICharacter) => void;
-  onCharacterDuplicate?: (_character: ICharacter) => void;
+  onCharacterSelect?: (_character: Character) => void;
+  onCharacterEdit?: (_character: Character) => void;
+  onCharacterDelete?: (_character: Character) => void;
+  onCharacterDuplicate?: (_character: Character) => void;
   onCreateCharacter?: () => void;
 }
 

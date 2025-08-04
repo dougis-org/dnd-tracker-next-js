@@ -3,11 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Edit } from 'lucide-react';
-import type { ICharacter } from '@/lib/models/Character';
+import type { Character } from '@/lib/validations/character';
 import type { CharacterUpdate } from '@/lib/validations/character';
 
 interface CharacterNotesProps {
-  character: ICharacter;
+  character: Character;
   editMode: boolean;
   editedCharacter: CharacterUpdate;
   onUpdateBackstory: (_backstory: string) => void;

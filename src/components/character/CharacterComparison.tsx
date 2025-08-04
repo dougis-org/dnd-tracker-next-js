@@ -3,11 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, XCircle, ArrowRight } from 'lucide-react';
-import type { ICharacter } from '@/lib/models/Character';
+import type { Character } from '@/lib/validations/character';
 
 interface CharacterComparisonProps {
-  originalCharacter: ICharacter;
-  updatedCharacter: ICharacter;
+  originalCharacter: Character;
+  updatedCharacter: Character;
   onAcceptChanges: () => void;
   onRejectChanges: () => void;
 }
@@ -274,7 +274,7 @@ export function CharacterComparison({
   );
 }
 
-function analyzeChanges(original: ICharacter, updated: ICharacter): ChangeDetail[] {
+function analyzeChanges(original: Character, updated: Character): ChangeDetail[] {
   const changes: ChangeDetail[] = [];
 
   // Name

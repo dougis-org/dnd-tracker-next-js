@@ -4,12 +4,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Plus } from 'lucide-react';
+import { CharacterServiceClient } from '@/lib/services/CharacterServiceClient';
 import { CharacterService } from '@/lib/services/CharacterService';
 import { CharacterStats } from '@/lib/services/CharacterServiceStats';
 import { CharacterEditingHeader } from './CharacterEditingHeader';
 import { CharacterAbilityScores } from './CharacterAbilityScores';
 import { CharacterNotes } from './CharacterNotes';
-import type { ICharacter } from '@/lib/models/Character';
+import type { Character } from '@/lib/validations/character';
 import type { CharacterUpdate } from '@/lib/validations/character';
 
 interface CharacterStatsManagerProps {
@@ -18,7 +19,7 @@ interface CharacterStatsManagerProps {
 }
 
 export function CharacterStatsManager({ characterId, userId }: CharacterStatsManagerProps) {
-  const [character, setCharacter] = useState<ICharacter | null>(null);
+  const [character, setCharacter] = useState<Character | null>(null);
   const [stats, setStats] = useState<CharacterStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -42,7 +43,7 @@ export function CharacterStatsManager({ characterId, userId }: CharacterStatsMan
       setStatsError(null);
 
       // Load character data
-      const characterResult = await CharacterService.getCharacterById(characterId, userId);
+      const characterResult = await CharacterServiceClient.getCharacterById(characterId, userId);
       if (!characterResult.success) {
         setError(characterResult.error?.message || 'Failed to load character');
         return;
@@ -163,7 +164,7 @@ export function CharacterStatsManager({ characterId, userId }: CharacterStatsMan
 
     try {
       setSaving(true);
-      const result = await CharacterService.updateCharacter(characterId, userId, editedCharacter);
+      const result = await CharacterServiceClient.updateCharacter(characterId, userId, editedCharacter);
 
       if (result.success) {
         setCharacter(result.data);
@@ -342,7 +343,7 @@ export function CharacterStatsManager({ characterId, userId }: CharacterStatsMan
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 gap-2">
-            {Array.from(character.skills.entries()).map(([skill, isProficient]) => {
+            {Object.entries(character.skills).map(([skill, isProficient]) => {
               const bonus = stats?.skills[skill] || 0;
               const bonusString = bonus >= 0 ? `+${bonus}` : `${bonus}`;
 

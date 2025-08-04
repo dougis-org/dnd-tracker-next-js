@@ -1,6 +1,4 @@
-import type { ICharacter } from '@/lib/models/Character';
-import { Types } from 'mongoose';
-import { createMockCharacter } from '@/lib/services/__tests__/CharacterService.test-helpers';
+import type { Character } from '@/lib/validations/character';
 import { containsTextIgnoreCase } from '../../../test-utils/secure-regexp';
 
 const createCharacterWithClass = (
@@ -11,21 +9,51 @@ const createCharacterWithClass = (
   characterClass: string,
   ac: number,
   dateOffset: number
-): ICharacter => {
+): Character => {
   const hp = level * 8 + 5; // Simplified HP calculation
-  return createMockCharacter({
-    _id: new Types.ObjectId(id) as any,
+  return {
+    _id: id,
+    ownerId: 'user123',
     name,
-    level,
-    race,
-    classes: [{ class: characterClass, level, subclass: '', hitDie: 10 }],
+    type: 'pc',
+    race: race as any,
+    customRace: undefined,
+    size: 'medium',
+    classes: [{ class: characterClass as any, level, hitDie: 10, subclass: undefined }],
+    abilityScores: {
+      strength: 16,
+      dexterity: 14,
+      constitution: 15,
+      intelligence: 10,
+      wisdom: 12,
+      charisma: 8
+    },
     hitPoints: { current: hp, maximum: hp, temporary: 0 },
     armorClass: ac,
-    createdAt: new Date(`2024-01-0${dateOffset}`),
-  });
+    speed: 30,
+    proficiencyBonus: 2,
+    savingThrows: {
+      strength: false,
+      dexterity: false,
+      constitution: false,
+      intelligence: false,
+      wisdom: false,
+      charisma: false
+    },
+    skills: {},
+    equipment: [],
+    spells: [],
+    backstory: `A brave ${characterClass}`,
+    notes: 'Test character',
+    imageUrl: undefined,
+    isPublic: false,
+    partyId: undefined,
+    createdAt: `2024-01-0${dateOffset}T00:00:00.000Z`,
+    updatedAt: `2024-01-0${dateOffset}T00:00:00.000Z`
+  };
 };
 
-export const mockCharacters: ICharacter[] = [
+export const mockCharacters: Character[] = [
   createCharacterWithClass('char1', 'Aragorn', 5, 'human', 'ranger', 16, 1),
   createCharacterWithClass('char2', 'Legolas', 4, 'elf', 'ranger', 15, 5),
   createCharacterWithClass('char3', 'Gimli', 3, 'dwarf', 'fighter', 18, 3),
@@ -37,9 +65,9 @@ export const createMockPaginatedResponse = (items = mockCharacters, pagination =
     items,
     pagination: {
       page: 1,
-      limit: 12,
-      total: items.length,
       totalPages: 1,
+      totalItems: items.length,
+      itemsPerPage: 12,
       ...pagination,
     },
   },

@@ -9,11 +9,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Search, User, Shield, Heart, AlertCircle } from 'lucide-react';
-import { CharacterService } from '@/lib/services/CharacterService';
-import type { ICharacter } from '@/lib/models/Character';
+import { CharacterServiceClient } from '@/lib/services/CharacterServiceClient';
+import type { Character } from '@/lib/validations/character';
 
 interface CharacterLibraryInterfaceProps {
-  onImportCharacters: (_characters: ICharacter[]) => void;
+  onImportCharacters: (_characters: Character[]) => void;
   isLoading: boolean;
   userId: string;
 }
@@ -30,8 +30,8 @@ export function CharacterLibraryInterface({
   isLoading,
   userId,
 }: CharacterLibraryInterfaceProps) {
-  const [characters, setCharacters] = useState<ICharacter[]>([]);
-  const [selectedCharacters, setSelectedCharacters] = useState<ICharacter[]>([]);
+  const [characters, setCharacters] = useState<Character[]>([]);
+  const [selectedCharacters, setSelectedCharacters] = useState<Character[]>([]);
   const [filters, setFilters] = useState<CharacterFilters>({
     search: '',
     type: 'all',
@@ -46,7 +46,7 @@ export function CharacterLibraryInterface({
     setError(null);
 
     try {
-      const result = await CharacterService.getCharactersByOwner(userId, 1, 20);
+      const result = await CharacterServiceClient.getCharactersByOwner(userId, 1, 20);
 
       if (result.success) {
         setCharacters(result.data.items);
@@ -67,7 +67,7 @@ export function CharacterLibraryInterface({
     setError(null);
 
     try {
-      const result = await CharacterService.searchCharacters(filters.search, userId);
+      const result = await CharacterServiceClient.searchCharacters(filters.search, userId);
 
       if (result.success) {
         setCharacters(result.data);
@@ -89,18 +89,18 @@ export function CharacterLibraryInterface({
       let result;
 
       if (filters.type !== 'all') {
-        result = await CharacterService.getCharactersByType(filters.type as any, userId);
+        result = await CharacterServiceClient.getCharactersByType(filters.type as any, userId);
       } else if (filters.class !== 'all') {
-        result = await CharacterService.getCharactersByClass(filters.class as any, userId);
+        result = await CharacterServiceClient.getCharactersByClass(filters.class as any, userId);
       } else if (filters.race !== 'all') {
-        result = await CharacterService.getCharactersByRace(filters.race as any, userId);
+        result = await CharacterServiceClient.getCharactersByRace(filters.race as any, userId);
       } else {
-        result = await CharacterService.getCharactersByOwner(userId, 1, 20);
+        result = await CharacterServiceClient.getCharactersByOwner(userId, 1, 20);
       }
 
       if (result.success) {
         const data = 'items' in result.data ? result.data.items : result.data;
-        setCharacters(data as ICharacter[]);
+        setCharacters(data);
       } else {
         setError(String(result.error) || 'Filter failed');
       }
@@ -138,7 +138,7 @@ export function CharacterLibraryInterface({
     }
   }, [filters.type, filters.class, filters.race, filters.search, handleFilter, loadCharacters]);
 
-  const handleCharacterSelect = (character: ICharacter) => {
+  const handleCharacterSelect = (character: Character) => {
     setSelectedCharacters(prev =>
       prev.find(c => c._id === character._id)
         ? prev.filter(c => c._id !== character._id)
@@ -158,17 +158,17 @@ export function CharacterLibraryInterface({
     onImportCharacters(selectedCharacters);
   };
 
-  const isCharacterSelected = (character: ICharacter) =>
+  const isCharacterSelected = (character: Character) =>
     selectedCharacters.some(c => c._id === character._id);
 
-  const getCharacterClassDisplay = (character: ICharacter): string => {
+  const getCharacterClassDisplay = (character: Character): string => {
     if (character.classes.length === 1) {
       return character.classes[0].class;
     }
     return character.classes.map(c => c.class).join('/');
   };
 
-  const getCharacterLevelDisplay = (character: ICharacter): string => {
+  const getCharacterLevelDisplay = (character: Character): string => {
     const totalLevel = character.classes.reduce((sum, c) => sum + c.level, 0);
     return `Level ${totalLevel}`;
   };
@@ -317,11 +317,11 @@ export function CharacterLibraryInterface({
       <div className="max-h-96 overflow-y-auto">
         <div className="space-y-2">
           {characters.map((character) => (
-            <Card key={character._id.toString()} className="cursor-pointer hover:bg-gray-50 transition-colors">
+            <Card key={character._id?.toString() || character.name} className="cursor-pointer hover:bg-gray-50 transition-colors">
               <CardContent className="p-4">
                 <div className="flex items-center space-x-3">
                   <Checkbox
-                    id={`character-${character._id}`}
+                    id={`character-${character._id?.toString() || character.name}`}
                     checked={isCharacterSelected(character)}
                     onCheckedChange={() => handleCharacterSelect(character)}
                   />

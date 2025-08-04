@@ -2,9 +2,9 @@ import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { CharacterComparison } from '../CharacterComparison';
 import { renderWithProviders } from '@/lib/test-utils';
-import type { ICharacter } from '@/lib/models/Character';
+import type { Character } from '@/lib/validations/character';
 
-const mockOriginalCharacter: Partial<ICharacter> = {
+const mockOriginalCharacter: Partial<Character> = {
   name: 'Test Character',
   abilityScores: {
     strength: 14,
@@ -20,7 +20,7 @@ const mockOriginalCharacter: Partial<ICharacter> = {
   armorClass: 16
 };
 
-const mockUpdatedCharacter: Partial<ICharacter> = {
+const mockUpdatedCharacter: Partial<Character> = {
   name: 'Test Character Updated',
   abilityScores: {
     strength: 18,
@@ -39,8 +39,8 @@ const mockUpdatedCharacter: Partial<ICharacter> = {
 // Helper function to reduce test duplication
 const renderCharacterComparison = (props: Partial<React.ComponentProps<typeof CharacterComparison>> = {}) => {
   const defaultProps = {
-    originalCharacter: mockOriginalCharacter as ICharacter,
-    updatedCharacter: mockUpdatedCharacter as ICharacter,
+    originalCharacter: mockOriginalCharacter as Character,
+    updatedCharacter: mockUpdatedCharacter as Character,
     onAcceptChanges: jest.fn(),
     onRejectChanges: jest.fn(),
     ...props
@@ -142,7 +142,7 @@ describe('CharacterComparison', () => {
 
   it('should display no changes message when characters are identical', () => {
     renderCharacterComparison({
-      updatedCharacter: mockOriginalCharacter as ICharacter
+      updatedCharacter: mockOriginalCharacter as Character
     });
 
     expect(screen.getByTestId('no-changes-message')).toBeInTheDocument();

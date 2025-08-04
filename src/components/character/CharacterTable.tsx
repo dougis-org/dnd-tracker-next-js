@@ -39,15 +39,15 @@ export function CharacterTable({
         <tbody>
           {characters.map((character) => (
             <tr
-              key={character._id.toString()}
+              key={character._id?.toString() || character.name}
               className="border-b hover:bg-muted/50 cursor-pointer"
-              data-testid={`character-row-${character._id.toString()}`}
+              data-testid={`character-row-${character._id?.toString() || character.name}`}
               onClick={() => onCharacterSelect?.(character)}
             >
               <td className="p-4">
                 <CharacterSelectionCheckbox
-                  characterId={character._id.toString()}
-                  isSelected={selectedCharacters.has(character._id.toString())}
+                  characterId={character._id?.toString() || ''}
+                  isSelected={selectedCharacters.has(character._id?.toString() || '')}
                   onSelectCharacter={onSelectCharacter}
                 />
               </td>
@@ -55,7 +55,7 @@ export function CharacterTable({
                 {character.name}
               </td>
               <td className="p-4" data-testid="character-level">
-                Level {character.level}
+                Level {character.classes.reduce((sum, cls) => sum + cls.level, 0)}
               </td>
               <td className="p-4">{character.classes[0].class}</td>
               <td className="p-4">{character.race}</td>

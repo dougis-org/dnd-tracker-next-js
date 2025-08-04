@@ -2,13 +2,13 @@ import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ImportParticipantDialog } from '../ParticipantDialogs';
-import { CharacterService } from '@/lib/services/CharacterService';
-import type { ICharacter } from '@/lib/models/Character';
+import { CharacterServiceClient } from '@/lib/services/CharacterServiceClient';
+import type { Character } from '@/lib/validations/character';
 import { convertCharacterToParticipant } from '../utils/characterConversion';
 
-// Mock the CharacterService
-jest.mock('@/lib/services/CharacterService');
-const mockCharacterService = CharacterService as jest.Mocked<typeof CharacterService>;
+// Mock the CharacterServiceClient
+jest.mock('@/lib/services/CharacterServiceClient');
+const mockCharacterService = CharacterServiceClient as jest.Mocked<typeof CharacterServiceClient>;
 
 // Mock scrollIntoView for tests
 Object.defineProperty(Element.prototype, 'scrollIntoView', {
@@ -16,15 +16,16 @@ Object.defineProperty(Element.prototype, 'scrollIntoView', {
   writable: true,
 });
 
-// Mock data factory for characters
-const createMockCharacter = (overrides: Partial<ICharacter> = {}): ICharacter => ({
+// Mock data factory for characters - matches Character validation type
+const createMockCharacter = (overrides: Partial<Character> = {}): Character => ({
   _id: '507f1f77bcf86cd799439011',
   ownerId: 'user123',
   name: 'Test Character',
   type: 'pc',
   race: 'human',
+  customRace: undefined,
   size: 'medium',
-  classes: [{ class: 'fighter', level: 5, hitDie: 10 }],
+  classes: [{ class: 'fighter', level: 5, hitDie: 10, subclass: undefined }],
   abilityScores: {
     strength: 16,
     dexterity: 14,
@@ -49,20 +50,18 @@ const createMockCharacter = (overrides: Partial<ICharacter> = {}): ICharacter =>
     wisdom: false,
     charisma: false,
   },
-  skills: new Map(),
+  skills: {},
   equipment: [],
   spells: [],
   backstory: '',
   notes: '',
+  imageUrl: undefined,
   isPublic: false,
-  createdAt: new Date(),
-  updatedAt: new Date(),
-  level: 5,
-  getAbilityModifier: jest.fn(),
-  getInitiativeModifier: jest.fn(),
-  getEffectiveHP: jest.fn(),
+  partyId: undefined,
+  createdAt: '2025-08-04T05:19:01.210Z',
+  updatedAt: '2025-08-04T05:19:01.210Z',
   ...overrides,
-} as ICharacter);
+} as Character);
 
 const mockCharacters = [
   createMockCharacter({
@@ -70,7 +69,7 @@ const mockCharacters = [
     name: 'Aragorn',
     type: 'pc',
     race: 'human',
-    classes: [{ class: 'ranger', level: 5, hitDie: 10 }],
+    classes: [{ class: 'ranger', level: 5, hitDie: 10, subclass: undefined }],
     hitPoints: { maximum: 45, current: 45, temporary: 0 },
     armorClass: 16,
   }),
@@ -79,7 +78,7 @@ const mockCharacters = [
     name: 'Legolas',
     type: 'pc',
     race: 'elf',
-    classes: [{ class: 'ranger', level: 5, hitDie: 10 }],
+    classes: [{ class: 'ranger', level: 5, hitDie: 10, subclass: undefined }],
     hitPoints: { maximum: 40, current: 40, temporary: 0 },
     armorClass: 15,
   }),
@@ -88,7 +87,7 @@ const mockCharacters = [
     name: 'Gimli',
     type: 'pc',
     race: 'dwarf',
-    classes: [{ class: 'fighter', level: 5, hitDie: 10 }],
+    classes: [{ class: 'fighter', level: 5, hitDie: 10, subclass: undefined }],
     hitPoints: { maximum: 50, current: 50, temporary: 0 },
     armorClass: 18,
   }),
@@ -110,9 +109,9 @@ describe('CharacterLibraryIntegration', () => {
         items: mockCharacters,
         pagination: {
           page: 1,
-          limit: 20,
-          total: 3,
           totalPages: 1,
+          totalItems: 3,
+          itemsPerPage: 20,
         },
       },
     });
@@ -324,8 +323,8 @@ describe('CharacterLibraryIntegration', () => {
         _id: '507f1f77bcf86cd799439014',
         name: 'Multiclass Hero',
         classes: [
-          { class: 'fighter', level: 3, hitDie: 10 },
-          { class: 'wizard', level: 2, hitDie: 6 },
+          { class: 'fighter', level: 3, hitDie: 10, subclass: undefined },
+          { class: 'wizard', level: 2, hitDie: 6, subclass: undefined },
         ],
       });
 
@@ -333,7 +332,7 @@ describe('CharacterLibraryIntegration', () => {
         success: true,
         data: {
           items: [multiclassCharacter],
-          pagination: { page: 1, limit: 20, total: 1, totalPages: 1 },
+          pagination: { page: 1, totalPages: 1, totalItems: 1, itemsPerPage: 20 },
         },
       });
 
@@ -502,7 +501,7 @@ describe('CharacterLibraryIntegration', () => {
         success: true,
         data: {
           items: [],
-          pagination: { page: 1, limit: 20, total: 0, totalPages: 0 },
+          pagination: { page: 1, totalPages: 0, totalItems: 0, itemsPerPage: 20 },
         },
       });
 
