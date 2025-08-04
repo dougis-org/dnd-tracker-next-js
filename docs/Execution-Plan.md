@@ -2,7 +2,10 @@
 
 ## Overview
 
-Following the successful completion of the authentication system fixes (documented in [Authentication-Fix-Plan.md](./Authentication-Fix-Plan.md)), the next critical priority is implementing a functional party management system. Investigation of Issue #593 revealed that the entire party management system is non-functional due to missing backend implementation.
+Following the successful completion of the authentication system fixes (documented in
+[Authentication-Fix-Plan.md](./Authentication-Fix-Plan.md)), the next critical priority is implementing a functional
+party management system. Investigation of Issue #593 revealed that the entire party management system is non-functional
+due to missing backend implementation.
 
 ## Current State Assessment
 
@@ -16,7 +19,8 @@ The party system currently:
 
 **[#593 - Parties errors][issue-593]**
 
-Investigation revealed this is not a simple bug but a systemic failure where the party management UI was built but never connected to any backend functionality.
+Investigation revealed this is not a simple bug but a systemic failure where the party management UI was built but never
+connected to any backend functionality.
 
 ## Issues Identified
 
