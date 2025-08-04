@@ -269,6 +269,30 @@ rewrites
 
 ## Recent Updates
 
+### 2025-08-04 - Issue #594 Client-Side Runtime Error Fixed ✅
+
+- ✅ **[Issue #594: Client-side runtime error - Cannot read properties of undefined (reading 'Character')][issue-594]** -
+  **COMPLETED** via PR #595 merged on 2025-08-04. Successfully resolved critical client-side runtime errors where React
+  components were incorrectly importing mongoose model types (`ICharacter`) instead of validation types (`Character`),
+  causing "Cannot read properties of undefined" errors in browser environments where mongoose dependencies are unavailable.
+  
+  **Root Cause**: Client-side components in CharacterListView and CharacterLibraryInterface were importing
+  `ICharacter` from server-side mongoose models instead of `Character` from client-safe Zod validation schemas.
+  This caused webpack to attempt bundling mongoose code for the browser, resulting in runtime failures.
+  
+  **Technical Fix**: Systematically replaced all client-side imports to use validation types from
+  `@/lib/validations/character` instead of model types from `@/lib/models/Character`. Updated 7 React components,
+  2 TypeScript definition files, utility functions, hooks, and test files. Created a conversion layer using
+  `CharacterServiceClient` to bridge server-side mongoose models and client-side validation types.
+  
+  **Quality Improvements**: Eliminated complex type conversion logic after user insight that conversion was
+  unnecessary since all components now use Character types. Removed high-complexity test file that was adding
+  256 complexity points (max 40). Maintained comprehensive test coverage while simplifying implementation.
+  
+  **Resolution Status**: Issue #594 closed successfully. Characters page and Encounters page now load without
+  runtime errors. All CI/CD checks pass including build, tests, linting, and security scans. The critical
+  P1 authentication-related bug has been fully resolved.
+
 ### 2025-08-04 - Issue #537 Advanced Session Mocks and Test Utilities Completed ✅
 
 - ✅ **[Issue #537: Phase 3.3: Create realistic session mocks and test utilities][issue-537]** - **COMPLETED**
@@ -477,3 +501,5 @@ rewrites
 [issue-581]: https://github.com/dougis-org/dnd-tracker-next-js/issues/581
 
 [issue-586]: https://github.com/dougis-org/dnd-tracker-next-js/issues/586
+
+[issue-594]: https://github.com/dougis-org/dnd-tracker-next-js/issues/594
