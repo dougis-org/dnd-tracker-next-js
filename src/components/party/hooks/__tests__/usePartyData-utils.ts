@@ -1,4 +1,4 @@
-import { RenderHookResult } from '@testing-library/react';
+import { RenderHookResult, act } from '@testing-library/react';
 import type { PartyFilters, PartyListItem, PaginationInfo } from '../../types';
 
 /**
@@ -163,8 +163,12 @@ export const expectHookFunctions = (result: RenderHookResult<any, any>) => {
 
 // Test execution helpers
 export const runAsyncTest = async (_result: RenderHookResult<any, any>) => {
-  jest.advanceTimersByTime(500);
-  await new Promise(resolve => setTimeout(resolve, 0));
+  await act(async () => {
+    // Advance fake timers to trigger async operations
+    jest.advanceTimersByTime(500);
+    // Allow promises to resolve
+    await Promise.resolve();
+  });
 };
 
 export const testSearchScenario = async (
