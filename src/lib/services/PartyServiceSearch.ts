@@ -32,11 +32,11 @@ export class PartyServiceSearch {
     try {
       const userObjectId = new Types.ObjectId(userId);
       const finalQuery = this.buildCompleteQuery(userObjectId, filters);
-      
+
       const { totalCount, parties } = await this.executePartyQuery(
-        finalQuery, 
-        sortBy, 
-        sortOrder, 
+        finalQuery,
+        sortBy,
+        sortOrder,
         pagination
       );
 
@@ -94,7 +94,7 @@ export class PartyServiceSearch {
    * Create pagination info object
    */
   private static createPaginationInfo(
-    pagination: PaginationParams, 
+    pagination: PaginationParams,
     totalCount: number
   ): PaginationInfo {
     const { limit } = this.calculatePagination(pagination);
@@ -118,7 +118,7 @@ export class PartyServiceSearch {
     try {
       const query = this.buildPublicPartyQuery(searchQuery);
       const { totalCount, parties } = await this.executePartyQuery(query, sortBy, sortOrder, pagination);
-      
+
       const partyList = await this.convertPartiesToListItems(parties);
       const paginationInfo = this.createPaginationInfo(pagination, totalCount);
 
@@ -136,11 +136,11 @@ export class PartyServiceSearch {
    */
   private static buildPublicPartyQuery(searchQuery?: string): any {
     let query: any = { isPublic: true };
-    
+
     if (searchQuery && searchQuery.trim()) {
       query = this.buildSearchQuery(query, searchQuery);
     }
-    
+
     return query;
   }
 
@@ -343,7 +343,7 @@ export class PartyServiceSearch {
    */
   private static buildStatsQueries(userObjectId: Types.ObjectId): Promise<number>[] {
     const recentDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-    
+
     return [
       // Total accessible parties
       Party.countDocuments({
@@ -384,7 +384,7 @@ export class PartyServiceSearch {
     recentActivity: number;
   } {
     const [totalParties, ownedParties, sharedParties, publicParties, recentActivity] = results;
-    
+
     return {
       totalParties,
       ownedParties,

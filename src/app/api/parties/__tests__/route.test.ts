@@ -11,7 +11,6 @@ import {
   SAMPLE_PARTY_DATA,
   SAMPLE_PARTY_RESPONSE,
   SAMPLE_PAGINATION,
-  DEFAULT_QUERY_PARAMS,
   TEST_USER_ID,
   createSuccessResult,
 } from './api-test-utils';
@@ -67,7 +66,7 @@ describe('/api/parties', () => {
     it('should handle validation errors', async () => {
       mockValidationError(MockedPartyQuerySchema);
       const request = createGetRequest();
-      
+
       const response = await GET(request);
       expect(response).toBeDefined();
     });
@@ -117,7 +116,7 @@ describe('/api/parties', () => {
     it('should handle validation errors in POST', async () => {
       mockValidationError(MockedPartyCreateSchema);
       const request = createPostRequest(SAMPLE_PARTY_DATA);
-      
+
       const response = await POST(request);
       expect(response).toBeDefined();
     });
@@ -150,7 +149,7 @@ describe('/api/parties', () => {
 
         const request = requestBuilder();
         const response = await handler(request);
-        
+
         expect(response).toBeDefined();
       });
     });

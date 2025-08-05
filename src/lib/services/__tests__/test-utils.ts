@@ -1,4 +1,3 @@
-import { Types } from 'mongoose';
 import type { PartyCreate, PartyListItem, PaginationInfo } from '@/lib/validations/party';
 
 /**
@@ -112,5 +111,5 @@ export const createMockResponse = (data: any, status = 200) => ({
   statusText: status === 200 ? 'OK' : 'Error',
 });
 
-export const createMockFetch = (response: any, status = 200) => 
+export const createMockFetch = (response: any, status = 200) =>
   jest.fn().mockResolvedValue(createMockResponse(response, status));

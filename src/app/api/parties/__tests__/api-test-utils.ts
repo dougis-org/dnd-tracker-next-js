@@ -132,31 +132,31 @@ export const createPutRequest = (body: any) => {
 
 // Test scenario helpers
 export const testSuccessScenario = async (
-  handler: (req: NextRequest, context?: any) => Promise<Response>,
-  request: NextRequest,
+  handler: (_req: NextRequest, _context?: any) => Promise<Response>,
+  _request: NextRequest,
   expectedServiceCall: jest.Mock,
   expectedArgs: any[],
   expectedResponse: any,
-  context?: any
+  _context?: any
 ) => {
   expectedServiceCall.mockResolvedValue(createSuccessResult(expectedResponse));
 
-  const response = await handler(request, context);
+  const response = await handler(_request, _context);
 
   expect(expectedServiceCall).toHaveBeenCalledWith(...expectedArgs);
   expect(response).toBeDefined();
 };
 
 export const testErrorScenario = async (
-  handler: (req: NextRequest, context?: any) => Promise<Response>,
-  request: NextRequest,
+  handler: (_req: NextRequest, _context?: any) => Promise<Response>,
+  _request: NextRequest,
   expectedServiceCall: jest.Mock,
   expectedArgs: any[],
-  context?: any
+  _context?: any
 ) => {
   expectedServiceCall.mockResolvedValue(createErrorResult('Test error', 'TEST_ERROR'));
 
-  const response = await handler(request, context);
+  const response = await handler(_request, _context);
 
   expect(expectedServiceCall).toHaveBeenCalledWith(...expectedArgs);
   expect(response).toBeDefined();

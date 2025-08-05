@@ -1,16 +1,7 @@
 import { renderHook } from '@testing-library/react';
 import { usePartyData } from '../usePartyData';
 import {
-  defaultParams,
-  createParamsWithSearchQuery,
-  createParamsWithFilters,
-  createParamsWithSort,
-  createParamsWithPagination,
-  expectBasicHookFunctions,
-  expectPaginationInfo,
-  expectPartyResults,
   setupConsoleMock,
-  advanceTimersAndWaitForLoading
 } from './testHelpers';
 import {
   setupMockFetch,
@@ -22,7 +13,6 @@ import {
   testFilterScenario,
   mockSortedFetch,
   mockPaginatedFetch,
-  MOCK_PARTIES,
 } from './usePartyData-utils';
 import type { PartyFilters } from '../../types';
 
@@ -140,7 +130,7 @@ describe('usePartyData', () => {
     sortTestCases.forEach(({ sortBy, sortOrder, expectedNames }) => {
       it(`should sort by ${sortBy} ${sortOrder}`, async () => {
         if (sortOrder === 'desc') mockSortedFetch(mockFetch, 'desc');
-        
+
         const result = renderHookWrapper(createTestParams.withSort(sortBy, sortOrder));
         await runAsyncTest(result);
 
@@ -171,7 +161,7 @@ describe('usePartyData', () => {
   describe('Pagination', () => {
     it('should handle pagination correctly', async () => {
       mockPaginatedFetch(mockFetch, 1, 1);
-      
+
       const result = renderHookWrapper(createTestParams.withPagination(1, 1));
       await runAsyncTest(result);
 
@@ -198,7 +188,7 @@ describe('usePartyData', () => {
   describe('Error Handling', () => {
     it('should handle errors gracefully', async () => {
       const restoreConsole = setupConsoleMock();
-      
+
       const result = renderHookWrapper(createTestParams.default());
       await runAsyncTest(result);
 
@@ -213,10 +203,10 @@ describe('usePartyData', () => {
       await runAsyncTest(result);
 
       expectHookFunctions(result);
-      
+
       result.current.refetch();
       await runAsyncTest(result);
-      
+
       expectHookFunctions(result);
     });
   });

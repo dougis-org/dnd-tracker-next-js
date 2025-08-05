@@ -44,12 +44,12 @@ export const createMockApiResponse = (parties: PartyListItem[], pagination?: Par
   }),
 });
 
-export const createFilteredResponse = (partyKey: keyof typeof MOCK_PARTIES) => 
+export const createFilteredResponse = (partyKey: keyof typeof MOCK_PARTIES) =>
   createMockApiResponse([MOCK_PARTIES[partyKey]]);
 
 export const createSortedResponse = (order: 'asc' | 'desc' = 'asc') => {
   const parties = Object.values(MOCK_PARTIES);
-  return order === 'desc' 
+  return order === 'desc'
     ? createMockApiResponse([MOCK_PARTIES.shadowWalkers, MOCK_PARTIES.braveAdventurers])
     : createMockApiResponse(parties);
 };
@@ -91,23 +91,23 @@ export const createTestParams = {
     currentPage: 1,
     itemsPerPage: 20,
   }),
-  
+
   withSearch: (query: string) => ({
     ...createTestParams.default(),
     searchQuery: query,
   }),
-  
+
   withFilters: (filters: PartyFilters) => ({
     ...createTestParams.default(),
     filters,
   }),
-  
+
   withSort: (sortBy: string, sortOrder: 'asc' | 'desc') => ({
     ...createTestParams.default(),
     sortBy,
     sortOrder,
   }),
-  
+
   withPagination: (page: number, itemsPerPage: number) => ({
     ...createTestParams.default(),
     currentPage: page,
@@ -124,25 +124,25 @@ export const expectHookState = (result: RenderHookResult<any, any>, expectedStat
   pagination?: Partial<PaginationInfo>;
 }) => {
   const { current } = result;
-  
+
   if (expectedState.partiesCount !== undefined) {
     expect(current.parties).toHaveLength(expectedState.partiesCount);
   }
-  
+
   if (expectedState.partyNames) {
     expectedState.partyNames.forEach((name, index) => {
       expect(current.parties[index]?.name).toBe(name);
     });
   }
-  
+
   if (expectedState.isLoading !== undefined) {
     expect(current.isLoading).toBe(expectedState.isLoading);
   }
-  
+
   if (expectedState.error !== undefined) {
     expect(current.error).toBe(expectedState.error);
   }
-  
+
   if (expectedState.pagination) {
     Object.entries(expectedState.pagination).forEach(([key, value]) => {
       expect(current.pagination?.[key]).toBe(value);
@@ -157,7 +157,7 @@ export const expectHookFunctions = (result: RenderHookResult<any, any>) => {
 };
 
 // Test execution helpers
-export const runAsyncTest = async (result: RenderHookResult<any, any>) => {
+export const runAsyncTest = async (_result: RenderHookResult<any, any>) => {
   jest.advanceTimersByTime(500);
   await new Promise(resolve => setTimeout(resolve, 0));
 };
@@ -166,14 +166,14 @@ export const testSearchScenario = async (
   mockFetch: jest.MockedFunction<typeof fetch>,
   searchQuery: string,
   expectedPartyKey: keyof typeof MOCK_PARTIES,
-  hookRunner: (params: any) => RenderHookResult<any, any>
+  hookRunner: (_params: any) => RenderHookResult<any, any>
 ) => {
   mockFilteredFetch(mockFetch, expectedPartyKey);
-  const params = createTestParams.withSearch(searchQuery);
-  const result = hookRunner(params);
-  
+  const _params = createTestParams.withSearch(searchQuery);
+  const result = hookRunner(_params);
+
   await runAsyncTest(result);
-  
+
   expectHookState(result, {
     partiesCount: 1,
     partyNames: [MOCK_PARTIES[expectedPartyKey].name],
@@ -184,17 +184,17 @@ export const testFilterScenario = async (
   mockFetch: jest.MockedFunction<typeof fetch>,
   filters: PartyFilters,
   expectedPartyKey: keyof typeof MOCK_PARTIES,
-  hookRunner: (params: any) => RenderHookResult<any, any>
+  hookRunner: (_params: any) => RenderHookResult<any, any>
 ) => {
   mockFilteredFetch(mockFetch, expectedPartyKey);
-  const params = createTestParams.withFilters(filters);
-  const result = hookRunner(params);
-  
+  const _params = createTestParams.withFilters(filters);
+  const result = hookRunner(_params);
+
   await runAsyncTest(result);
-  
+
   expectHookState(result, { partiesCount: 1 });
   const party = result.current.parties[0];
-  
+
   if (filters.memberCount?.length) {
     expect(party.memberCount).toBe(filters.memberCount[0]);
   }

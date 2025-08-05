@@ -8,7 +8,6 @@ import {
   testErrorScenario,
   mockValidationSuccess,
   mockValidationError,
-  SAMPLE_PARTY_DATA,
   SAMPLE_PARTY_RESPONSE,
   TEST_USER_ID,
   TEST_PARTY_ID,
@@ -94,7 +93,7 @@ describe('/api/parties/[id]', () => {
     it('should handle validation errors in PUT', async () => {
       mockValidationError(MockedPartyUpdateSchema);
       const request = createPutRequest(updateData);
-      
+
       const response = await PUT(request, context);
       expect(response).toBeDefined();
     });
@@ -161,7 +160,7 @@ describe('/api/parties/[id]', () => {
 
         const request = requestBuilder();
         const response = await handler(request, context);
-        
+
         expect(response).toBeDefined();
       });
     });
@@ -179,7 +178,7 @@ describe('/api/parties/[id]', () => {
 
     it('should handle missing party ID in context', async () => {
       const invalidContext = { params: {} };
-      
+
       MockedPartyService.getPartyById.mockResolvedValue(
         createSuccessResult(SAMPLE_PARTY_RESPONSE)
       );
@@ -198,7 +197,7 @@ describe('/api/parties/[id]', () => {
         request: createGetRequest(),
       },
       {
-        method: 'PUT', 
+        method: 'PUT',
         handler: PUT,
         service: 'updateParty',
         request: createPutRequest({ name: 'Updated' }),
@@ -207,7 +206,7 @@ describe('/api/parties/[id]', () => {
       {
         method: 'DELETE',
         handler: DELETE,
-        service: 'deleteParty', 
+        service: 'deleteParty',
         request: createGetRequest(),
       },
     ];
@@ -215,7 +214,7 @@ describe('/api/parties/[id]', () => {
     integrationTestCases.forEach(({ method, handler, service, request, setupValidation }) => {
       it(`should call ${service} service method for ${method}`, async () => {
         setupValidation?.();
-        
+
         MockedPartyService[service as keyof typeof MockedPartyService].mockResolvedValue(
           createSuccessResult(method === 'DELETE' ? undefined : SAMPLE_PARTY_RESPONSE)
         );

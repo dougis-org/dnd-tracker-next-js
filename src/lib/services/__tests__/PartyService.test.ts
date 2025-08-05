@@ -7,7 +7,6 @@ import {
   createMockPartyResponse,
   createMockPaginationInfo,
   createSuccessResult,
-  createErrorResult,
   testErrorPropagation,
   setupMockClearance,
   TEST_USER_ID,
