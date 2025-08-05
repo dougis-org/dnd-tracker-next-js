@@ -1,8 +1,8 @@
 import { renderHook } from '@testing-library/react';
-import { usePartyData } from '../usePartyData';
+import { usePartyData } from '@/components/party/hooks/usePartyData';
 import {
   setupConsoleMock,
-} from './testHelpers';
+} from '@/components/party/hooks/__tests__/testHelpers';
 import {
   setupMockFetch,
   createTestParams,
@@ -14,8 +14,8 @@ import {
   mockSortedFetch,
   mockPaginatedFetch,
   getHookCurrent,
-} from './usePartyData-utils';
-import type { PartyFilters } from '../../types';
+} from '@/components/party/hooks/__tests__/usePartyData-utils';
+import type { PartyFilters } from '@/components/party/types';
 
 // Mock fetch globally
 global.fetch = jest.fn();

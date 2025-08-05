@@ -1,6 +1,6 @@
-import { GET, PUT, DELETE } from '../route';
+import { GET, PUT, DELETE } from '@/app/api/parties/[id]/route';
 import {
-  setupApiMocks,
+  getMocks,
   setupStandardMocks,
   createGetRequest,
   createPutRequest,
@@ -12,20 +12,15 @@ import {
   TEST_USER_ID,
   TEST_PARTY_ID,
   createSuccessResult,
-} from '../../../__tests__/api-test-utils';
-
-const mocks = setupApiMocks();
-const {
-  MockedPartyService,
-  MockedPartyUpdateSchema,
-} = mocks;
+} from '@/app/api/parties/__tests__/api-test-utils';
 
 describe('/api/parties/[id]', () => {
+  let mocks: ReturnType<typeof getMocks>;
   const context = { params: { id: TEST_PARTY_ID } };
 
   beforeEach(() => {
     jest.clearAllMocks();
-    setupStandardMocks(mocks);
+    mocks = setupStandardMocks();
   });
 
   describe('GET /api/parties/[id]', () => {
@@ -42,7 +37,7 @@ describe('/api/parties/[id]', () => {
         await testSuccessScenario(
           GET,
           createGetRequest(),
-          MockedPartyService.getPartyById,
+          mocks.PartyService.getPartyById,
           expectedArgs,
           mockResponse,
           context
@@ -54,7 +49,7 @@ describe('/api/parties/[id]', () => {
       await testErrorScenario(
         GET,
         createGetRequest(),
-        MockedPartyService.getPartyById,
+        mocks.PartyService.getPartyById,
         [TEST_PARTY_ID, TEST_USER_ID],
         context
       );
@@ -77,12 +72,12 @@ describe('/api/parties/[id]', () => {
     testPutScenarios.forEach(({ name, requestBody, mockResponse, expectedArgs }) => {
       it(name, async () => {
         const request = createPutRequest(requestBody);
-        mockValidationSuccess(MockedPartyUpdateSchema, requestBody);
+        mockValidationSuccess(mocks.partyUpdateSchema, requestBody);
 
         await testSuccessScenario(
           PUT,
           request,
-          MockedPartyService.updateParty,
+          mocks.PartyService.updateParty,
           expectedArgs,
           mockResponse,
           context
@@ -91,7 +86,7 @@ describe('/api/parties/[id]', () => {
     });
 
     it('should handle validation errors in PUT', async () => {
-      mockValidationError(MockedPartyUpdateSchema);
+      mockValidationError(mocks.partyUpdateSchema);
       const request = createPutRequest(updateData);
 
       const response = await PUT(request, context);
@@ -100,12 +95,12 @@ describe('/api/parties/[id]', () => {
 
     it('should handle service errors in PUT', async () => {
       const request = createPutRequest(updateData);
-      mockValidationSuccess(MockedPartyUpdateSchema, updateData);
+      mockValidationSuccess(mocks.partyUpdateSchema, updateData);
 
       await testErrorScenario(
         PUT,
         request,
-        MockedPartyService.updateParty,
+        mocks.PartyService.updateParty,
         [TEST_PARTY_ID, TEST_USER_ID, updateData],
         context
       );
@@ -126,7 +121,7 @@ describe('/api/parties/[id]', () => {
         await testSuccessScenario(
           DELETE,
           createGetRequest(), // DELETE uses same request format as GET
-          MockedPartyService.deleteParty,
+          mocks.PartyService.deleteParty,
           expectedArgs,
           mockResponse,
           context
@@ -138,7 +133,7 @@ describe('/api/parties/[id]', () => {
       await testErrorScenario(
         DELETE,
         createGetRequest(),
-        MockedPartyService.deleteParty,
+        mocks.PartyService.deleteParty,
         [TEST_PARTY_ID, TEST_USER_ID],
         context
       );
@@ -179,7 +174,7 @@ describe('/api/parties/[id]', () => {
     it('should handle missing party ID in context', async () => {
       const invalidContext = { params: {} };
 
-      MockedPartyService.getPartyById.mockResolvedValue(
+      mocks.PartyService.getPartyById.mockResolvedValue(
         createSuccessResult(SAMPLE_PARTY_RESPONSE)
       );
 
@@ -201,7 +196,7 @@ describe('/api/parties/[id]', () => {
         handler: PUT,
         service: 'updateParty',
         request: createPutRequest({ name: 'Updated' }),
-        setupValidation: () => mockValidationSuccess(MockedPartyUpdateSchema, { name: 'Updated' }),
+        setupValidation: () => mockValidationSuccess(mocks.partyUpdateSchema, { name: 'Updated' }),
       },
       {
         method: 'DELETE',
@@ -215,13 +210,13 @@ describe('/api/parties/[id]', () => {
       it(`should call ${service} service method for ${method}`, async () => {
         setupValidation?.();
 
-        MockedPartyService[service as keyof typeof MockedPartyService].mockResolvedValue(
+        mocks.PartyService[service as keyof typeof mocks.PartyService].mockResolvedValue(
           createSuccessResult(method === 'DELETE' ? undefined : SAMPLE_PARTY_RESPONSE)
         );
 
         await handler(request, context);
 
-        expect(MockedPartyService[service as keyof typeof MockedPartyService]).toHaveBeenCalled();
+        expect(mocks.PartyService[service as keyof typeof mocks.PartyService]).toHaveBeenCalled();
       });
     });
   });

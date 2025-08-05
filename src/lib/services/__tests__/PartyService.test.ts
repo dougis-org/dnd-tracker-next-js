@@ -1,6 +1,6 @@
-import { PartyService } from '../PartyService';
-import { PartyServiceCRUD } from '../PartyServiceCRUD';
-import { PartyServiceSearch } from '../PartyServiceSearch';
+import { PartyService } from '@/lib/services/PartyService';
+import { PartyServiceCRUD } from '@/lib/services/PartyServiceCRUD';
+import { PartyServiceSearch } from '@/lib/services/PartyServiceSearch';
 import type { PartyUpdate, PartyFilters, PaginationParams } from '@/lib/validations/party';
 import {
   createMockPartyData,
@@ -11,11 +11,11 @@ import {
   setupMockClearance,
   TEST_USER_ID,
   TEST_PARTY_ID,
-} from './test-utils';
+} from '@/lib/services/__tests__/test-utils';
 
 // Mock the specialized service modules
-jest.mock('../PartyServiceCRUD');
-jest.mock('../PartyServiceSearch');
+jest.mock('@/lib/services/PartyServiceCRUD');
+jest.mock('@/lib/services/PartyServiceSearch');
 
 const MockedPartyServiceCRUD = PartyServiceCRUD as jest.Mocked<typeof PartyServiceCRUD>;
 const MockedPartyServiceSearch = PartyServiceSearch as jest.Mocked<typeof PartyServiceSearch>;

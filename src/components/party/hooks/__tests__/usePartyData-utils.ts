@@ -1,5 +1,5 @@
 import { RenderHookResult, act } from '@testing-library/react';
-import type { PartyFilters, PartyListItem, PaginationInfo } from '../../types';
+import type { PartyFilters, PartyListItem, PaginationInfo } from '@/components/party/types';
 
 /**
  * Utilities specifically for usePartyData tests to reduce complexity and duplication

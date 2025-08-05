@@ -1,6 +1,6 @@
-import { GET, POST } from '../route';
+import { GET, POST } from '@/app/api/parties/route';
 import {
-  setupApiMocks,
+  getMocks,
   setupStandardMocks,
   createGetRequest,
   createPostRequest,
@@ -13,19 +13,14 @@ import {
   SAMPLE_PAGINATION,
   TEST_USER_ID,
   createSuccessResult,
-} from './api-test-utils';
-
-const mocks = setupApiMocks();
-const {
-  MockedPartyService,
-  MockedPartyCreateSchema,
-  MockedPartyQuerySchema,
-} = mocks;
+} from '@/app/api/parties/__tests__/api-test-utils';
 
 describe('/api/parties', () => {
+  let mocks: ReturnType<typeof getMocks>;
+
   beforeEach(() => {
     jest.clearAllMocks();
-    setupStandardMocks(mocks);
+    mocks = setupStandardMocks();
   });
 
   describe('GET /api/parties', () => {
@@ -46,7 +41,7 @@ describe('/api/parties', () => {
 
     testGetScenarios.forEach(({ name, request, mockResponse, expectedArgs }) => {
       it(name, async () => {
-        mockValidationSuccess(MockedPartyQuerySchema, {
+        mockValidationSuccess(mocks.partyQuerySchema, {
           filters: { tags: [], memberCount: [] },
           sortBy: expectedArgs[2],
           sortOrder: expectedArgs[3],
@@ -56,7 +51,7 @@ describe('/api/parties', () => {
         await testSuccessScenario(
           GET,
           request,
-          MockedPartyService.getPartiesForUser,
+          mocks.PartyService.getPartiesForUser,
           expectedArgs,
           mockResponse
         );
@@ -64,7 +59,7 @@ describe('/api/parties', () => {
     });
 
     it('should handle validation errors', async () => {
-      mockValidationError(MockedPartyQuerySchema);
+      mockValidationError(mocks.partyQuerySchema);
       const request = createGetRequest();
 
       const response = await GET(request);
@@ -72,7 +67,7 @@ describe('/api/parties', () => {
     });
 
     it('should handle service errors', async () => {
-      mockValidationSuccess(MockedPartyQuerySchema, {
+      mockValidationSuccess(mocks.partyQuerySchema, {
         filters: { tags: [], memberCount: [] },
         sortBy: 'name',
         sortOrder: 'asc',
@@ -82,7 +77,7 @@ describe('/api/parties', () => {
       await testErrorScenario(
         GET,
         createGetRequest(),
-        MockedPartyService.getPartiesForUser,
+        mocks.PartyService.getPartiesForUser,
         [TEST_USER_ID, { tags: [], memberCount: [] }, 'name', 'asc', { page: 1, limit: 20 }]
       );
     });
@@ -101,12 +96,12 @@ describe('/api/parties', () => {
     testPostScenarios.forEach(({ name, requestBody, mockResponse, expectedArgs }) => {
       it(name, async () => {
         const request = createPostRequest(requestBody);
-        mockValidationSuccess(MockedPartyCreateSchema, requestBody);
+        mockValidationSuccess(mocks.partyCreateSchema, requestBody);
 
         await testSuccessScenario(
           POST,
           request,
-          MockedPartyService.createParty,
+          mocks.PartyService.createParty,
           expectedArgs,
           mockResponse
         );
@@ -114,7 +109,7 @@ describe('/api/parties', () => {
     });
 
     it('should handle validation errors in POST', async () => {
-      mockValidationError(MockedPartyCreateSchema);
+      mockValidationError(mocks.partyCreateSchema);
       const request = createPostRequest(SAMPLE_PARTY_DATA);
 
       const response = await POST(request);
@@ -123,12 +118,12 @@ describe('/api/parties', () => {
 
     it('should handle service errors in POST', async () => {
       const request = createPostRequest(SAMPLE_PARTY_DATA);
-      mockValidationSuccess(MockedPartyCreateSchema, SAMPLE_PARTY_DATA);
+      mockValidationSuccess(mocks.partyCreateSchema, SAMPLE_PARTY_DATA);
 
       await testErrorScenario(
         POST,
         request,
-        MockedPartyService.createParty,
+        mocks.PartyService.createParty,
         [TEST_USER_ID, SAMPLE_PARTY_DATA]
       );
     });
@@ -167,20 +162,20 @@ describe('/api/parties', () => {
 
     it('should handle missing query parameters gracefully', async () => {
       const request = createGetRequest({});
-      mockValidationSuccess(MockedPartyQuerySchema, {
+      mockValidationSuccess(mocks.partyQuerySchema, {
         filters: { tags: [], memberCount: [] },
         sortBy: 'name',
         sortOrder: 'asc',
         pagination: { page: 1, limit: 20 },
       });
 
-      MockedPartyService.getPartiesForUser.mockResolvedValue(
+      mocks.PartyService.getPartiesForUser.mockResolvedValue(
         createSuccessResult({ parties: [], pagination: SAMPLE_PAGINATION })
       );
 
       const response = await GET(request);
       expect(response).toBeDefined();
-      expect(MockedPartyService.getPartiesForUser).toHaveBeenCalled();
+      expect(mocks.PartyService.getPartiesForUser).toHaveBeenCalled();
     });
   });
 });
