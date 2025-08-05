@@ -1,505 +1,235 @@
 import { renderHook } from '@testing-library/react';
-import { usePartyData } from '../usePartyData';
+import { usePartyData } from '@/components/party/hooks/usePartyData';
 import {
-  defaultParams,
-  createParamsWithSearchQuery,
-  createParamsWithFilters,
-  createParamsWithSort,
-  createParamsWithPagination,
-  expectBasicHookFunctions,
-  expectPaginationInfo,
-  expectPartyResults,
   setupConsoleMock,
-  advanceTimersAndWaitForLoading
-} from './testHelpers';
-import type { PartyFilters } from '../../types';
+} from '@/components/party/hooks/__tests__/testHelpers';
+import {
+  setupMockFetch,
+  createTestParams,
+  expectHookState,
+  expectHookFunctions,
+  runAsyncTest,
+  testSearchScenario,
+  testFilterScenario,
+  mockSortedFetch,
+  mockPaginatedFetch,
+  getHookCurrent,
+} from '@/components/party/hooks/__tests__/usePartyData-utils';
+import type { PartyFilters } from '@/components/party/types';
 
 // Mock fetch globally
 global.fetch = jest.fn();
-
 const mockFetch = fetch as jest.MockedFunction<typeof fetch>;
 
 describe('usePartyData', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     jest.useFakeTimers();
-
-    // Setup default successful mock response
-    mockFetch.mockResolvedValue({
-      ok: true,
-      json: jest.fn().mockResolvedValue({
-        success: true,
-        parties: [
-          {
-            id: '1',
-            name: 'The Brave Adventurers',
-            description: 'A group of brave adventurers',
-            memberCount: 4,
-            tags: ['heroic', 'combat'],
-            createdAt: new Date().toISOString(),
-            lastActivity: new Date().toISOString(),
-          },
-          {
-            id: '2',
-            name: 'The Shadow Walkers',
-            description: 'A stealthy group',
-            memberCount: 3,
-            tags: ['stealth', 'infiltration'],
-            createdAt: new Date().toISOString(),
-            lastActivity: new Date().toISOString(),
-          }
-        ],
-        pagination: {
-          currentPage: 1,
-          totalPages: 1,
-          totalItems: 2,
-          itemsPerPage: 20,
-        },
-      }),
-    } as any);
+    setupMockFetch(mockFetch);
   });
 
   afterEach(() => {
     jest.useRealTimers();
   });
 
+  const renderHookWrapper = (params: any) => renderHook(() => usePartyData(params));
+
   describe('Initial State', () => {
     it('should return initial loading state', () => {
-      const { result } = renderHook(() => usePartyData(defaultParams));
+      const result = renderHookWrapper(createTestParams.default());
 
-      expect(result.current.parties).toEqual([]);
-      expect(result.current.isLoading).toBe(true);
-      expect(result.current.error).toBe(null);
-      expect(result.current.pagination).toBe(null);
+      expectHookState(result, {
+        partiesCount: 0,
+        isLoading: true,
+        error: null,
+      });
+      const current = getHookCurrent(result);
+      expect(current.pagination).toBe(null);
     });
   });
 
   describe('Data Fetching', () => {
     it('should fetch and return parties after loading', async () => {
-      const { result } = renderHook(() => usePartyData(defaultParams));
+      const result = renderHookWrapper(createTestParams.default());
+      await runAsyncTest(result);
 
-      await advanceTimersAndWaitForLoading(result);
-
-      expectPartyResults(result, 2, ['The Brave Adventurers', 'The Shadow Walkers']);
-      expect(result.current.error).toBe(null);
+      expectHookState(result, {
+        partiesCount: 2,
+        partyNames: ['The Brave Adventurers', 'The Shadow Walkers'],
+        isLoading: false,
+        error: null,
+      });
     });
 
     it('should return pagination info', async () => {
-      const { result } = renderHook(() => usePartyData(defaultParams));
+      const result = renderHookWrapper(createTestParams.default());
+      await runAsyncTest(result);
 
-      await advanceTimersAndWaitForLoading(result);
-
-      expectPaginationInfo(result, {
-        currentPage: 1,
-        totalPages: 1,
-        totalItems: 2,
-        itemsPerPage: 20,
+      expectHookState(result, {
+        pagination: {
+          currentPage: 1,
+          totalPages: 1,
+          totalItems: 2,
+          itemsPerPage: 20,
+        },
       });
     });
   });
 
   describe('Search Functionality', () => {
-    it('should filter parties by search query', async () => {
-      // Mock filtered response for "brave" search
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: jest.fn().mockResolvedValue({
-          success: true,
-          parties: [
-            {
-              id: '1',
-              name: 'The Brave Adventurers',
-              description: 'A group of brave adventurers',
-              memberCount: 4,
-              tags: ['heroic', 'combat'],
-              createdAt: new Date().toISOString(),
-              lastActivity: new Date().toISOString(),
-            }
-          ],
-          pagination: {
-            currentPage: 1,
-            totalPages: 1,
-            totalItems: 1,
-            itemsPerPage: 20,
-          },
-        }),
-      } as any);
+    const searchTestCases = [
+      { query: 'brave', expectedParty: 'braveAdventurers' as const },
+      { query: 'stealthy', expectedParty: 'shadowWalkers' as const },
+      { query: 'BRAVE', expectedParty: 'braveAdventurers' as const },
+    ];
 
-      const params = createParamsWithSearchQuery('brave');
-      const { result } = renderHook(() => usePartyData(params));
-
-      await advanceTimersAndWaitForLoading(result);
-
-      expectPartyResults(result, 1, ['The Brave Adventurers']);
-    });
-
-    it('should search in description as well', async () => {
-      // Mock filtered response for "stealthy" search
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: jest.fn().mockResolvedValue({
-          success: true,
-          parties: [
-            {
-              id: '2',
-              name: 'The Shadow Walkers',
-              description: 'A stealthy group',
-              memberCount: 3,
-              tags: ['stealth', 'infiltration'],
-              createdAt: new Date().toISOString(),
-              lastActivity: new Date().toISOString(),
-            }
-          ],
-          pagination: {
-            currentPage: 1,
-            totalPages: 1,
-            totalItems: 1,
-            itemsPerPage: 20,
-          },
-        }),
-      } as any);
-
-      const params = createParamsWithSearchQuery('stealthy');
-      const { result } = renderHook(() => usePartyData(params));
-
-      await advanceTimersAndWaitForLoading(result);
-
-      expectPartyResults(result, 1, ['The Shadow Walkers']);
-    });
-
-    it('should be case insensitive', async () => {
-      // Mock filtered response for "BRAVE" search (case insensitive)
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: jest.fn().mockResolvedValue({
-          success: true,
-          parties: [
-            {
-              id: '1',
-              name: 'The Brave Adventurers',
-              description: 'A group of brave adventurers',
-              memberCount: 4,
-              tags: ['heroic', 'combat'],
-              createdAt: new Date().toISOString(),
-              lastActivity: new Date().toISOString(),
-            }
-          ],
-          pagination: {
-            currentPage: 1,
-            totalPages: 1,
-            totalItems: 1,
-            itemsPerPage: 20,
-          },
-        }),
-      } as any);
-
-      const params = createParamsWithSearchQuery('BRAVE');
-      const { result } = renderHook(() => usePartyData(params));
-
-      await advanceTimersAndWaitForLoading(result);
-
-      expectPartyResults(result, 1, ['The Brave Adventurers']);
+    searchTestCases.forEach(({ query, expectedParty }) => {
+      it(`should filter parties by search query: ${query}`, async () => {
+        await testSearchScenario(mockFetch, query, expectedParty, renderHookWrapper);
+      });
     });
   });
 
   describe('Filtering', () => {
-    it('should filter by member count', async () => {
-      // Mock filtered response for memberCount: [4]
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: jest.fn().mockResolvedValue({
-          success: true,
-          parties: [
-            {
-              id: '1',
-              name: 'The Brave Adventurers',
-              description: 'A group of brave adventurers',
-              memberCount: 4,
-              tags: ['heroic', 'combat'],
-              createdAt: new Date().toISOString(),
-              lastActivity: new Date().toISOString(),
-            }
-          ],
-          pagination: {
-            currentPage: 1,
-            totalPages: 1,
-            totalItems: 1,
-            itemsPerPage: 20,
-          },
-        }),
-      } as any);
+    const filterTestCases = [
+      {
+        name: 'member count',
+        filters: { memberCount: [4], tags: [] } as PartyFilters,
+        expectedParty: 'braveAdventurers' as const,
+      },
+      {
+        name: 'tags',
+        filters: { memberCount: [], tags: ['heroic'] } as PartyFilters,
+        expectedParty: 'braveAdventurers' as const,
+      },
+      {
+        name: 'multiple filters',
+        filters: { memberCount: [4], tags: ['heroic'] } as PartyFilters,
+        expectedParty: 'braveAdventurers' as const,
+      },
+    ];
 
-      const params = createParamsWithFilters({ memberCount: [4], tags: [] } as PartyFilters);
-      const { result } = renderHook(() => usePartyData(params));
-
-      await advanceTimersAndWaitForLoading(result);
-
-      expect(result.current.parties).toHaveLength(1);
-      expect(result.current.parties[0].memberCount).toBe(4);
-    });
-
-    it('should filter by tags', async () => {
-      // Mock filtered response for tags: ['heroic']
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: jest.fn().mockResolvedValue({
-          success: true,
-          parties: [
-            {
-              id: '1',
-              name: 'The Brave Adventurers',
-              description: 'A group of brave adventurers',
-              memberCount: 4,
-              tags: ['heroic', 'combat'],
-              createdAt: new Date().toISOString(),
-              lastActivity: new Date().toISOString(),
-            }
-          ],
-          pagination: {
-            currentPage: 1,
-            totalPages: 1,
-            totalItems: 1,
-            itemsPerPage: 20,
-          },
-        }),
-      } as any);
-
-      const params = createParamsWithFilters({ memberCount: [], tags: ['heroic'] } as PartyFilters);
-      const { result } = renderHook(() => usePartyData(params));
-
-      await advanceTimersAndWaitForLoading(result);
-
-      expect(result.current.parties).toHaveLength(1);
-      expect(result.current.parties[0].tags).toContain('heroic');
-    });
-
-    it('should apply multiple filters', async () => {
-      // Mock filtered response for memberCount: [4] AND tags: ['heroic']
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: jest.fn().mockResolvedValue({
-          success: true,
-          parties: [
-            {
-              id: '1',
-              name: 'The Brave Adventurers',
-              description: 'A group of brave adventurers',
-              memberCount: 4,
-              tags: ['heroic', 'combat'],
-              createdAt: new Date().toISOString(),
-              lastActivity: new Date().toISOString(),
-            }
-          ],
-          pagination: {
-            currentPage: 1,
-            totalPages: 1,
-            totalItems: 1,
-            itemsPerPage: 20,
-          },
-        }),
-      } as any);
-
-      const params = createParamsWithFilters({ memberCount: [4], tags: ['heroic'] } as PartyFilters);
-      const { result } = renderHook(() => usePartyData(params));
-
-      await advanceTimersAndWaitForLoading(result);
-
-      expect(result.current.parties).toHaveLength(1);
-      expect(result.current.parties[0].memberCount).toBe(4);
-      expect(result.current.parties[0].tags).toContain('heroic');
+    filterTestCases.forEach(({ name, filters, expectedParty }) => {
+      it(`should filter by ${name}`, async () => {
+        await testFilterScenario(mockFetch, filters, expectedParty, renderHookWrapper);
+      });
     });
   });
 
   describe('Sorting', () => {
-    it('should sort by name ascending', async () => {
-      const params = createParamsWithSort('name', 'asc');
-      const { result } = renderHook(() => usePartyData(params));
+    const sortTestCases = [
+      {
+        sortBy: 'name',
+        sortOrder: 'asc' as const,
+        expectedNames: ['The Brave Adventurers', 'The Shadow Walkers'],
+      },
+      {
+        sortBy: 'name',
+        sortOrder: 'desc' as const,
+        expectedNames: ['The Shadow Walkers', 'The Brave Adventurers'],
+      },
+    ];
 
-      await advanceTimersAndWaitForLoading(result);
+    sortTestCases.forEach(({ sortBy, sortOrder, expectedNames }) => {
+      it(`should sort by ${sortBy} ${sortOrder}`, async () => {
+        if (sortOrder === 'desc') mockSortedFetch(mockFetch, 'desc');
 
-      expectPartyResults(result, 2, ['The Brave Adventurers', 'The Shadow Walkers']);
-    });
+        const result = renderHookWrapper(createTestParams.withSort(sortBy, sortOrder));
+        await runAsyncTest(result);
 
-    it('should sort by name descending', async () => {
-      // Mock sorted response for name descending (Shadow Walkers should come first)
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: jest.fn().mockResolvedValue({
-          success: true,
-          parties: [
-            {
-              id: '2',
-              name: 'The Shadow Walkers',
-              description: 'A stealthy group',
-              memberCount: 3,
-              tags: ['stealth', 'infiltration'],
-              createdAt: new Date().toISOString(),
-              lastActivity: new Date().toISOString(),
-            },
-            {
-              id: '1',
-              name: 'The Brave Adventurers',
-              description: 'A group of brave adventurers',
-              memberCount: 4,
-              tags: ['heroic', 'combat'],
-              createdAt: new Date().toISOString(),
-              lastActivity: new Date().toISOString(),
-            }
-          ],
-          pagination: {
-            currentPage: 1,
-            totalPages: 1,
-            totalItems: 2,
-            itemsPerPage: 20,
-          },
-        }),
-      } as any);
-
-      const params = createParamsWithSort('name', 'desc');
-      const { result } = renderHook(() => usePartyData(params));
-
-      await advanceTimersAndWaitForLoading(result);
-
-      expectPartyResults(result, 2, ['The Shadow Walkers', 'The Brave Adventurers']);
+        expectHookState(result, {
+          partiesCount: 2,
+          partyNames: expectedNames,
+        });
+      });
     });
 
     it('should sort by member count', async () => {
-      const params = createParamsWithSort('memberCount', 'desc');
-      const { result } = renderHook(() => usePartyData(params));
+      const result = renderHookWrapper(createTestParams.withSort('memberCount', 'desc'));
+      await runAsyncTest(result);
 
-      await advanceTimersAndWaitForLoading(result);
-
-      expect(result.current.parties[0].memberCount).toBe(4);
-      expect(result.current.parties[1].memberCount).toBe(3);
+      const current = getHookCurrent(result);
+      const parties = current.parties;
+      expect(parties[0].memberCount).toBe(4);
+      expect(parties[1].memberCount).toBe(3);
     });
 
     it('should sort by date fields', async () => {
-      const params = createParamsWithSort('createdAt', 'asc');
-      const { result } = renderHook(() => usePartyData(params));
+      const result = renderHookWrapper(createTestParams.withSort('createdAt', 'asc'));
+      await runAsyncTest(result);
 
-      await advanceTimersAndWaitForLoading(result);
-
-      // Check that parties are sorted by creation date
-      expectPartyResults(result, 2);
+      expectHookState(result, { partiesCount: 2 });
     });
   });
 
   describe('Pagination', () => {
     it('should handle pagination correctly', async () => {
-      // Mock paginated response with limit=1
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: jest.fn().mockResolvedValue({
-          success: true,
-          parties: [
-            {
-              id: '1',
-              name: 'The Brave Adventurers',
-              description: 'A group of brave adventurers',
-              memberCount: 4,
-              tags: ['heroic', 'combat'],
-              createdAt: new Date().toISOString(),
-              lastActivity: new Date().toISOString(),
-            }
-          ],
-          pagination: {
-            currentPage: 1,
-            totalPages: 2,
-            totalItems: 2,
-            itemsPerPage: 1,
-          },
-        }),
-      } as any);
+      mockPaginatedFetch(mockFetch, 1, 1);
 
-      const params = createParamsWithPagination(1, 1);
-      const { result } = renderHook(() => usePartyData(params));
+      const result = renderHookWrapper(createTestParams.withPagination(1, 1));
+      await runAsyncTest(result);
 
-      await advanceTimersAndWaitForLoading(result);
-
-      expectPartyResults(result, 1);
-      expectPaginationInfo(result, {
-        currentPage: 1,
-        totalPages: 2,
-        totalItems: 2,
-        itemsPerPage: 1,
+      expectHookState(result, {
+        partiesCount: 1,
+        pagination: {
+          currentPage: 1,
+          totalPages: 2,
+          totalItems: 2,
+          itemsPerPage: 1,
+        },
       });
     });
 
     it('should handle page navigation', async () => {
-      const { result } = renderHook(() => usePartyData(defaultParams));
+      const result = renderHookWrapper(createTestParams.default());
+      await runAsyncTest(result);
 
-      await advanceTimersAndWaitForLoading(result);
-
-      // Test goToPage function
-      result.current.goToPage(2);
-
-      expectBasicHookFunctions(result);
+      const current = getHookCurrent(result);
+      current.goToPage(2);
+      expectHookFunctions(result);
     });
   });
 
   describe('Error Handling', () => {
     it('should handle errors gracefully', async () => {
-      // Mock processPartyData to throw an error
       const restoreConsole = setupConsoleMock();
 
-      // We can't easily mock the internal functions, so we'll test the structure
-      const { result } = renderHook(() => usePartyData(defaultParams));
+      const result = renderHookWrapper(createTestParams.default());
+      await runAsyncTest(result);
 
-      await advanceTimersAndWaitForLoading(result);
-
-      // The hook should handle errors and not crash
-      expect(result.current.error).toBe(null);
-
+      expectHookState(result, { error: null });
       restoreConsole();
     });
   });
 
   describe('Refetch Functionality', () => {
-    it('should provide refetch function', async () => {
-      const { result } = renderHook(() => usePartyData(defaultParams));
+    it('should provide refetch function and handle refetch calls', async () => {
+      const result = renderHookWrapper(createTestParams.default());
+      await runAsyncTest(result);
 
-      await advanceTimersAndWaitForLoading(result);
+      expectHookFunctions(result);
 
-      expectBasicHookFunctions(result);
-    });
+      const current = getHookCurrent(result);
+      current.refetch();
+      await runAsyncTest(result);
 
-    it('should refetch data when called', async () => {
-      const { result } = renderHook(() => usePartyData(defaultParams));
-
-      await advanceTimersAndWaitForLoading(result);
-
-      // Call refetch
-      result.current.refetch();
-
-      // Wait for the refetch to complete
-      await advanceTimersAndWaitForLoading(result);
-
-      // Verify refetch function exists and is callable
-      expectBasicHookFunctions(result);
+      expectHookFunctions(result);
     });
   });
 
   describe('Helper Functions', () => {
-    it('should normalize sort values correctly for dates', () => {
-      // This tests that our date normalization works correctly
-      // Since the functions are internal, we test through the hook behavior
-      const params = createParamsWithSort('lastActivity', 'desc');
-      const { result } = renderHook(() => usePartyData(params));
+    const helperTestCases = [
+      { field: 'lastActivity', type: 'date' },
+      { field: 'name', type: 'string' },
+    ];
 
-      jest.advanceTimersByTime(500);
-
-      // The hook should complete without errors
-      expect(result.current.isLoading).toBe(true);
-    });
-
-    it('should handle string normalization for non-date fields', () => {
-      const params = createParamsWithSort('name', 'asc');
-      const { result } = renderHook(() => usePartyData(params));
-
-      jest.advanceTimersByTime(500);
-
-      // Should normalize string values to lowercase for comparison
-      expect(result.current.isLoading).toBe(true);
+    helperTestCases.forEach(({ field, type }) => {
+      it(`should normalize ${type} values correctly for ${field}`, () => {
+        const result = renderHookWrapper(createTestParams.withSort(field, 'asc'));
+        jest.advanceTimersByTime(500);
+        const current = getHookCurrent(result);
+        expect(current.isLoading).toBe(true);
+      });
     });
   });
 });

@@ -31,55 +31,79 @@ export class PartyServiceSearch {
   ): Promise<ServiceResult<{ parties: PartyListItem[]; pagination: PaginationInfo }>> {
     try {
       const userObjectId = new Types.ObjectId(userId);
+      const finalQuery = this.buildCompleteQuery(userObjectId, filters);
 
-      // Build the base query for user access
-      const baseQuery = this.buildUserAccessQuery(userObjectId, filters);
-
-      // Build search query if provided
-      const searchQuery = this.buildSearchQuery(baseQuery, filters.search);
-
-      // Build filter query
-      const filterQuery = this.buildFilterQuery(searchQuery, filters);
-
-      // Execute count query for pagination
-      const totalCount = await Party.countDocuments(filterQuery);
-
-      // Calculate pagination
-      const { skip, limit } = this.calculatePagination(pagination);
-      const totalPages = Math.ceil(totalCount / limit);
-
-      // Build sort query
-      const sortQuery = this.buildSortQuery(sortBy, sortOrder);
-
-      // Execute the main query with sorting and pagination
-      const parties = await Party.find(filterQuery)
-        .sort(sortQuery)
-        .skip(skip)
-        .limit(limit)
-        .lean();
-
-      // Convert to response format
-      const partyList = await Promise.all(
-        parties.map(party => this.convertToPartyListItem(party))
+      const { totalCount, parties } = await this.executePartyQuery(
+        finalQuery,
+        sortBy,
+        sortOrder,
+        pagination
       );
 
-      const paginationInfo: PaginationInfo = {
-        currentPage: pagination.page,
-        totalPages,
-        totalItems: totalCount,
-        itemsPerPage: limit,
-      };
+      const partyList = await this.convertPartiesToListItems(parties);
+      const paginationInfo = this.createPaginationInfo(pagination, totalCount);
 
       return {
         success: true,
-        data: {
-          parties: partyList,
-          pagination: paginationInfo,
-        },
+        data: { parties: partyList, pagination: paginationInfo },
       };
     } catch (error) {
       return handleServiceError(error, 'Failed to search parties', 'PARTY_SEARCH_ERROR');
     }
+  }
+
+  /**
+   * Build complete query by combining all filter steps
+   */
+  private static buildCompleteQuery(userObjectId: Types.ObjectId, filters: PartyFilters): any {
+    const baseQuery = this.buildUserAccessQuery(userObjectId, filters);
+    const searchQuery = this.buildSearchQuery(baseQuery, filters.search);
+    return this.buildFilterQuery(searchQuery, filters);
+  }
+
+  /**
+   * Execute the database query with sorting and pagination
+   */
+  private static async executePartyQuery(
+    query: any,
+    sortBy: PartySortBy,
+    sortOrder: SortOrder,
+    pagination: PaginationParams
+  ): Promise<{ totalCount: number; parties: any[] }> {
+    const totalCount = await Party.countDocuments(query);
+    const { skip, limit } = this.calculatePagination(pagination);
+    const sortQuery = this.buildSortQuery(sortBy, sortOrder);
+
+    const parties = await Party.find(query)
+      .sort(sortQuery)
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    return { totalCount, parties };
+  }
+
+  /**
+   * Convert party documents to list item format
+   */
+  private static async convertPartiesToListItems(parties: any[]): Promise<PartyListItem[]> {
+    return Promise.all(parties.map(party => this.convertToPartyListItem(party)));
+  }
+
+  /**
+   * Create pagination info object
+   */
+  private static createPaginationInfo(
+    pagination: PaginationParams,
+    totalCount: number
+  ): PaginationInfo {
+    const { limit } = this.calculatePagination(pagination);
+    return {
+      currentPage: pagination.page,
+      totalPages: Math.ceil(totalCount / limit),
+      totalItems: totalCount,
+      itemsPerPage: limit,
+    };
   }
 
   /**
@@ -92,53 +116,32 @@ export class PartyServiceSearch {
     pagination: PaginationParams = { page: 1, limit: 20 }
   ): Promise<ServiceResult<{ parties: PartyListItem[]; pagination: PaginationInfo }>> {
     try {
-      // Base query for public parties
-      let query: any = { isPublic: true };
+      const query = this.buildPublicPartyQuery(searchQuery);
+      const { totalCount, parties } = await this.executePartyQuery(query, sortBy, sortOrder, pagination);
 
-      // Add search if provided
-      if (searchQuery && searchQuery.trim()) {
-        query = this.buildSearchQuery(query, searchQuery);
-      }
-
-      // Execute count query for pagination
-      const totalCount = await Party.countDocuments(query);
-
-      // Calculate pagination
-      const { skip, limit } = this.calculatePagination(pagination);
-      const totalPages = Math.ceil(totalCount / limit);
-
-      // Build sort query
-      const sortQuery = this.buildSortQuery(sortBy, sortOrder);
-
-      // Execute the main query
-      const parties = await Party.find(query)
-        .sort(sortQuery)
-        .skip(skip)
-        .limit(limit)
-        .lean();
-
-      // Convert to response format
-      const partyList = await Promise.all(
-        parties.map(party => this.convertToPartyListItem(party))
-      );
-
-      const paginationInfo: PaginationInfo = {
-        currentPage: pagination.page,
-        totalPages,
-        totalItems: totalCount,
-        itemsPerPage: limit,
-      };
+      const partyList = await this.convertPartiesToListItems(parties);
+      const paginationInfo = this.createPaginationInfo(pagination, totalCount);
 
       return {
         success: true,
-        data: {
-          parties: partyList,
-          pagination: paginationInfo,
-        },
+        data: { parties: partyList, pagination: paginationInfo },
       };
     } catch (error) {
       return handleServiceError(error, 'Failed to search public parties', 'PARTY_PUBLIC_SEARCH_ERROR');
     }
+  }
+
+  /**
+   * Build query for public parties with optional search
+   */
+  private static buildPublicPartyQuery(searchQuery?: string): any {
+    let query: any = { isPublic: true };
+
+    if (searchQuery && searchQuery.trim()) {
+      query = this.buildSearchQuery(query, searchQuery);
+    }
+
+    return query;
   }
 
   /**
@@ -323,50 +326,71 @@ export class PartyServiceSearch {
   }>> {
     try {
       const userObjectId = new Types.ObjectId(userId);
-
-      // Get counts for different party types
-      const [totalParties, ownedParties, sharedParties, publicParties, recentActivity] = await Promise.all([
-        // Total accessible parties
-        Party.countDocuments({
-          $or: [
-            { ownerId: userObjectId },
-            { sharedWith: userObjectId },
-            { isPublic: true },
-          ],
-        }),
-        // Owned parties
-        Party.countDocuments({ ownerId: userObjectId }),
-        // Shared parties
-        Party.countDocuments({ sharedWith: userObjectId }),
-        // Public parties (that user doesn't own)
-        Party.countDocuments({
-          isPublic: true,
-          ownerId: { $ne: userObjectId },
-        }),
-        // Parties with recent activity (last 7 days)
-        Party.countDocuments({
-          $or: [
-            { ownerId: userObjectId },
-            { sharedWith: userObjectId },
-          ],
-          lastActivity: {
-            $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-          },
-        }),
-      ]);
+      const statQueries = this.buildStatsQueries(userObjectId);
+      const statsResults = await Promise.all(statQueries);
 
       return {
         success: true,
-        data: {
-          totalParties,
-          ownedParties,
-          sharedParties,
-          publicParties,
-          recentActivity,
-        },
+        data: this.formatStatsResults(statsResults),
       };
     } catch (error) {
       return handleServiceError(error, 'Failed to get party statistics', 'PARTY_STATS_ERROR');
     }
+  }
+
+  /**
+   * Build array of count queries for party statistics
+   */
+  private static buildStatsQueries(userObjectId: Types.ObjectId): Promise<number>[] {
+    const recentDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+    return [
+      // Total accessible parties
+      Party.countDocuments({
+        $or: [
+          { ownerId: userObjectId },
+          { sharedWith: userObjectId },
+          { isPublic: true },
+        ],
+      }),
+      // Owned parties
+      Party.countDocuments({ ownerId: userObjectId }),
+      // Shared parties
+      Party.countDocuments({ sharedWith: userObjectId }),
+      // Public parties (that user doesn't own)
+      Party.countDocuments({
+        isPublic: true,
+        ownerId: { $ne: userObjectId },
+      }),
+      // Parties with recent activity (last 7 days)
+      Party.countDocuments({
+        $or: [
+          { ownerId: userObjectId },
+          { sharedWith: userObjectId },
+        ],
+        lastActivity: { $gte: recentDate },
+      }),
+    ];
+  }
+
+  /**
+   * Format statistics results into the expected response format
+   */
+  private static formatStatsResults(results: number[]): {
+    totalParties: number;
+    ownedParties: number;
+    sharedParties: number;
+    publicParties: number;
+    recentActivity: number;
+  } {
+    const [totalParties, ownedParties, sharedParties, publicParties, recentActivity] = results;
+
+    return {
+      totalParties,
+      ownedParties,
+      sharedParties,
+      publicParties,
+      recentActivity,
+    };
   }
 }
