@@ -23,6 +23,7 @@ export {
   createErrorResult,
   TEST_USER_ID,
   TEST_PARTY_ID,
+  setupAuthMocks, // Export the reusable auth mock helper
 };
 
 // Mock setup at top level
@@ -42,6 +43,10 @@ jest.mock('@/lib/api/route-helpers', () => ({
   handleServiceError: jest.fn(),
 }));
 
+jest.mock('@/lib/session-config', () => ({
+  getAuthConfig: jest.fn(),
+}));
+
 jest.mock('@/lib/validations/party', () => ({
   partyCreateSchema: {
     parse: jest.fn(),
@@ -59,43 +64,62 @@ export const getMocks = () => {
   const { PartyService } = require('@/lib/services/PartyService');
   const { withAuth, createSuccessResponse, handleServiceError } = require('@/lib/api/route-helpers');
   const { partyCreateSchema, partyQuerySchema, partyUpdateSchema } = require('@/lib/validations/party');
+  const { getAuthConfig } = require('@/lib/session-config');
 
   return {
     PartyService,
     withAuth,
+    MockedWithAuth: withAuth, // Add alias for backwards compatibility
     createSuccessResponse,
     handleServiceError,
     partyCreateSchema,
     partyQuerySchema,
     partyUpdateSchema,
+    getAuthConfig,
   };
+};
+
+// Centralized auth mock helper - can be reused across all API test files
+export const setupAuthMocks = (userId: string = TEST_USER_ID) => {
+  const { getAuthConfig, withAuth } = getMocks();
+
+  // Mock session configuration
+  getAuthConfig.mockResolvedValue({
+    auth: jest.fn().mockResolvedValue({
+      user: { id: userId }
+    })
+  });
+
+  // Mock withAuth to call the callback with userId
+  withAuth.mockImplementation(async (callback: (_userId: string) => Promise<any>) => {
+    const result = await callback(userId);
+    return result;
+  });
+
+  return { getAuthConfig, withAuth };
 };
 
 // Standard mock setup for beforeEach
 export const setupStandardMocks = () => {
   const mocks = getMocks();
 
-  // Mock withAuth to call the callback with userId
-  mocks.withAuth.mockImplementation(async (callback: (_userId: string) => Promise<any>) => {
-    return await callback(TEST_USER_ID);
-  });
+  // Setup auth mocks
+  setupAuthMocks();
 
   // Mock createSuccessResponse to return a Response-like object
   mocks.createSuccessResponse.mockImplementation((data: any) => {
-    return {
-      json: () => Promise.resolve(data),
+    return new Response(JSON.stringify(data), {
       status: 200,
-      ok: true,
-    };
+      headers: { 'Content-Type': 'application/json' }
+    });
   });
 
   // Mock handleServiceError to return an error Response-like object
   mocks.handleServiceError.mockImplementation(() => {
-    return {
-      json: () => Promise.resolve({ success: false, error: 'Test error' }),
+    return new Response(JSON.stringify({ success: false, error: 'Test error' }), {
       status: 500,
-      ok: false,
-    };
+      headers: { 'Content-Type': 'application/json' }
+    });
   });
 
   return mocks;
@@ -167,7 +191,13 @@ export const testSuccessScenario = async (
 ) => {
   expectedServiceCall.mockResolvedValue(createSuccessResult(expectedResponse));
 
-  const response = await handler(_request, _context);
+  // Handle async params for context if present
+  const processedContext = _context && _context.params ? {
+    ..._context,
+    params: Promise.resolve(_context.params)
+  } : _context;
+
+  const response = await handler(_request, processedContext);
 
   expect(expectedServiceCall).toHaveBeenCalledWith(...expectedArgs);
   expect(response).toBeDefined();
@@ -182,7 +212,13 @@ export const testErrorScenario = async (
 ) => {
   expectedServiceCall.mockResolvedValue(createErrorResult('Test error', 'TEST_ERROR'));
 
-  const response = await handler(_request, _context);
+  // Handle async params for context if present
+  const processedContext = _context && _context.params ? {
+    ..._context,
+    params: Promise.resolve(_context.params)
+  } : _context;
+
+  const response = await handler(_request, processedContext);
 
   expect(expectedServiceCall).toHaveBeenCalledWith(...expectedArgs);
   expect(response).toBeDefined();
