@@ -13,6 +13,7 @@ import {
   testFilterScenario,
   mockSortedFetch,
   mockPaginatedFetch,
+  getHookCurrent,
 } from './usePartyData-utils';
 import type { PartyFilters } from '../../types';
 
@@ -36,12 +37,14 @@ describe('usePartyData', () => {
   describe('Initial State', () => {
     it('should return initial loading state', () => {
       const result = renderHookWrapper(createTestParams.default());
+      
       expectHookState(result, {
         partiesCount: 0,
         isLoading: true,
         error: null,
       });
-      expect(result.current.pagination).toBe(null);
+      const current = getHookCurrent(result);
+      expect(current.pagination).toBe(null);
     });
   });
 
@@ -145,7 +148,8 @@ describe('usePartyData', () => {
       const result = renderHookWrapper(createTestParams.withSort('memberCount', 'desc'));
       await runAsyncTest(result);
 
-      const parties = result.current.parties;
+      const current = getHookCurrent(result);
+      const parties = current.parties;
       expect(parties[0].memberCount).toBe(4);
       expect(parties[1].memberCount).toBe(3);
     });
@@ -180,7 +184,8 @@ describe('usePartyData', () => {
       const result = renderHookWrapper(createTestParams.default());
       await runAsyncTest(result);
 
-      result.current.goToPage(2);
+      const current = getHookCurrent(result);
+      current.goToPage(2);
       expectHookFunctions(result);
     });
   });
@@ -204,7 +209,8 @@ describe('usePartyData', () => {
 
       expectHookFunctions(result);
 
-      result.current.refetch();
+      const current = getHookCurrent(result);
+      current.refetch();
       await runAsyncTest(result);
 
       expectHookFunctions(result);
@@ -221,7 +227,8 @@ describe('usePartyData', () => {
       it(`should normalize ${type} values correctly for ${field}`, () => {
         const result = renderHookWrapper(createTestParams.withSort(field, 'asc'));
         jest.advanceTimersByTime(500);
-        expect(result.current.isLoading).toBe(true);
+        const current = getHookCurrent(result);
+        expect(current.isLoading).toBe(true);
       });
     });
   });

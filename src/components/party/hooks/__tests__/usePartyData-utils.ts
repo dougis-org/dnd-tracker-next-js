@@ -115,6 +115,11 @@ export const createTestParams = {
   }),
 };
 
+// Helper to safely get the current hook value
+export const getHookCurrent = (result: RenderHookResult<any, any>) => {
+  return result.current || (result as any).result?.current;
+};
+
 // Assertion helpers
 export const expectHookState = (result: RenderHookResult<any, any>, expectedState: {
   partiesCount?: number;
@@ -123,7 +128,7 @@ export const expectHookState = (result: RenderHookResult<any, any>, expectedStat
   error?: any;
   pagination?: Partial<PaginationInfo>;
 }) => {
-  const { current } = result;
+  const current = getHookCurrent(result);
 
   if (expectedState.partiesCount !== undefined) {
     expect(current.parties).toHaveLength(expectedState.partiesCount);
@@ -151,7 +156,7 @@ export const expectHookState = (result: RenderHookResult<any, any>, expectedStat
 };
 
 export const expectHookFunctions = (result: RenderHookResult<any, any>) => {
-  const { current } = result;
+  const current = getHookCurrent(result);
   expect(typeof current.refetch).toBe('function');
   expect(typeof current.goToPage).toBe('function');
 };
@@ -193,7 +198,8 @@ export const testFilterScenario = async (
   await runAsyncTest(result);
 
   expectHookState(result, { partiesCount: 1 });
-  const party = result.current.parties[0];
+  const current = getHookCurrent(result);
+  const party = current.parties[0];
 
   if (filters.memberCount?.length) {
     expect(party.memberCount).toBe(filters.memberCount[0]);
