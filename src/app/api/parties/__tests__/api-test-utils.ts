@@ -1,7 +1,4 @@
 import { NextRequest } from 'next/server';
-import { PartyService } from '@/lib/services/PartyService';
-import { withAuth, createSuccessResponse, handleServiceError } from '@/lib/api/route-helpers';
-import { partyCreateSchema, partyQuerySchema, partyUpdateSchema } from '@/lib/validations/party';
 import {
   createMockPartyData,
   createMockPartyResponse,
@@ -28,64 +25,80 @@ export {
   TEST_PARTY_ID,
 };
 
-// Mock types
-export type MockedPartyService = jest.Mocked<typeof PartyService>;
-export type MockedWithAuth = jest.MockedFunction<typeof withAuth>;
-export type MockedCreateSuccessResponse = jest.MockedFunction<typeof createSuccessResponse>;
-export type MockedHandleServiceError = jest.MockedFunction<typeof handleServiceError>;
+// Mock setup at top level
+jest.mock('@/lib/services/PartyService', () => ({
+  PartyService: {
+    getPartiesForUser: jest.fn(),
+    createParty: jest.fn(),
+    getPartyById: jest.fn(),
+    updateParty: jest.fn(),
+    deleteParty: jest.fn(),
+  },
+}));
 
-// Mock setup helper
-export const setupApiMocks = () => {
-  // Mock the dependencies
-  jest.mock('@/lib/services/PartyService');
-  jest.mock('@/lib/api/route-helpers');
-  jest.mock('@/lib/validations/party');
+jest.mock('@/lib/api/route-helpers', () => ({
+  withAuth: jest.fn(),
+  createSuccessResponse: jest.fn(),
+  handleServiceError: jest.fn(),
+}));
 
-  const MockedPartyService = PartyService as MockedPartyService;
-  const MockedWithAuth = withAuth as MockedWithAuth;
-  const MockedCreateSuccessResponse = createSuccessResponse as MockedCreateSuccessResponse;
-  const MockedHandleServiceError = handleServiceError as MockedHandleServiceError;
-  const MockedPartyCreateSchema = partyCreateSchema as jest.Mocked<typeof partyCreateSchema>;
-  const MockedPartyQuerySchema = partyQuerySchema as jest.Mocked<typeof partyQuerySchema>;
-  const MockedPartyUpdateSchema = partyUpdateSchema as jest.Mocked<typeof partyUpdateSchema>;
+jest.mock('@/lib/validations/party', () => ({
+  partyCreateSchema: {
+    parse: jest.fn(),
+  },
+  partyQuerySchema: {
+    parse: jest.fn(),
+  },
+  partyUpdateSchema: {
+    parse: jest.fn(),
+  },
+}));
+
+// Helper to get mocked modules
+export const getMocks = () => {
+  const { PartyService } = require('@/lib/services/PartyService');
+  const { withAuth, createSuccessResponse, handleServiceError } = require('@/lib/api/route-helpers');
+  const { partyCreateSchema, partyQuerySchema, partyUpdateSchema } = require('@/lib/validations/party');
 
   return {
-    MockedPartyService,
-    MockedWithAuth,
-    MockedCreateSuccessResponse,
-    MockedHandleServiceError,
-    MockedPartyCreateSchema,
-    MockedPartyQuerySchema,
-    MockedPartyUpdateSchema,
+    PartyService,
+    withAuth,
+    createSuccessResponse,
+    handleServiceError,
+    partyCreateSchema,
+    partyQuerySchema,
+    partyUpdateSchema,
   };
 };
 
 // Standard mock setup for beforeEach
-export const setupStandardMocks = (mocks: ReturnType<typeof setupApiMocks>) => {
-  const { MockedWithAuth, MockedCreateSuccessResponse, MockedHandleServiceError } = mocks;
+export const setupStandardMocks = () => {
+  const mocks = getMocks();
 
   // Mock withAuth to call the callback with userId
-  MockedWithAuth.mockImplementation(async (callback) => {
+  mocks.withAuth.mockImplementation(async (callback: (_userId: string) => Promise<any>) => {
     return await callback(TEST_USER_ID);
   });
 
   // Mock createSuccessResponse to return a Response-like object
-  MockedCreateSuccessResponse.mockImplementation((data) => {
+  mocks.createSuccessResponse.mockImplementation((data: any) => {
     return {
       json: () => Promise.resolve(data),
       status: 200,
       ok: true,
-    } as any;
+    };
   });
 
   // Mock handleServiceError to return an error Response-like object
-  MockedHandleServiceError.mockImplementation(() => {
+  mocks.handleServiceError.mockImplementation(() => {
     return {
       json: () => Promise.resolve({ success: false, error: 'Test error' }),
       status: 500,
       ok: false,
-    } as any;
+    };
   });
+
+  return mocks;
 };
 
 // Request builders
@@ -110,10 +123,23 @@ export const createMockRequest = (overrides: Partial<{
 
 export const createGetRequest = (searchParams?: Record<string, string>) => {
   const params = new URLSearchParams(searchParams || {});
-  return createMockRequest({
+  const url = `http://localhost:3000/api/parties?${params.toString()}`;
+
+  // Create a mock request with proper URL parsing
+  const mockRequest = {
     method: 'GET',
-    nextUrl: { searchParams: params } as any,
+    url,
+    json: () => Promise.resolve({}),
+    nextUrl: { searchParams: params },
+  } as unknown as NextRequest;
+
+  // Add URL constructor compatibility
+  Object.defineProperty(mockRequest, 'url', {
+    value: url,
+    writable: false,
   });
+
+  return mockRequest;
 };
 
 export const createPostRequest = (body: any) => {
@@ -163,11 +189,11 @@ export const testErrorScenario = async (
 };
 
 // Validation mock helpers
-export const mockValidationSuccess = (schema: jest.Mocked<any>, returnValue: any) => {
+export const mockValidationSuccess = (schema: any, returnValue: any) => {
   schema.parse.mockReturnValue(returnValue);
 };
 
-export const mockValidationError = (schema: jest.Mocked<any>) => {
+export const mockValidationError = (schema: any) => {
   schema.parse.mockImplementation(() => {
     throw new Error('Validation error');
   });
