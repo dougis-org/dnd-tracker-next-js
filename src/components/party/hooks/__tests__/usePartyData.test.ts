@@ -37,7 +37,7 @@ describe('usePartyData', () => {
   describe('Initial State', () => {
     it('should return initial loading state', () => {
       const result = renderHookWrapper(createTestParams.default());
-      
+
       expectHookState(result, {
         partiesCount: 0,
         isLoading: true,
