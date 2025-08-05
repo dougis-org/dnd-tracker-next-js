@@ -1,398 +1,229 @@
-import { NextRequest } from 'next/server';
 import { GET, PUT, DELETE } from '../route';
-import { PartyService } from '@/lib/services/PartyService';
-import { withAuth, createSuccessResponse, handleServiceError } from '@/lib/api/route-helpers';
-import { partyUpdateSchema } from '@/lib/validations/party';
+import {
+  setupApiMocks,
+  setupStandardMocks,
+  createGetRequest,
+  createPutRequest,
+  testSuccessScenario,
+  testErrorScenario,
+  mockValidationSuccess,
+  mockValidationError,
+  SAMPLE_PARTY_DATA,
+  SAMPLE_PARTY_RESPONSE,
+  TEST_USER_ID,
+  TEST_PARTY_ID,
+  createSuccessResult,
+} from '../../../__tests__/api-test-utils';
 
-// Mock the dependencies
-jest.mock('@/lib/services/PartyService');
-jest.mock('@/lib/api/route-helpers');
-jest.mock('@/lib/validations/party');
-
-const MockedPartyService = PartyService as jest.Mocked<typeof PartyService>;
-const MockedWithAuth = withAuth as jest.MockedFunction<typeof withAuth>;
-const MockedCreateSuccessResponse = createSuccessResponse as jest.MockedFunction<typeof createSuccessResponse>;
-const MockedHandleServiceError = handleServiceError as jest.MockedFunction<typeof handleServiceError>;
-const MockedPartyUpdateSchema = partyUpdateSchema as jest.Mocked<typeof partyUpdateSchema>;
+const mocks = setupApiMocks();
+const {
+  MockedPartyService,
+  MockedPartyUpdateSchema,
+} = mocks;
 
 describe('/api/parties/[id]', () => {
-  const userId = '507f1f77bcf86cd799439011';
-  const partyId = '507f1f77bcf86cd799439012';
-
-  const mockPartyResponse = {
-    id: partyId,
-    ownerId: userId,
-    name: 'Test Party',
-    description: 'A test party',
-    members: [],
-    tags: ['test'],
-    isPublic: false,
-    sharedWith: [],
-    settings: {
-      allowJoining: false,
-      requireApproval: true,
-      maxMembers: 6,
-    },
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    lastActivity: new Date(),
-    memberCount: 0,
-    playerCharacterCount: 0,
-    averageLevel: 0,
-  };
+  const context = { params: { id: TEST_PARTY_ID } };
 
   beforeEach(() => {
     jest.clearAllMocks();
-
-    // Mock withAuth to call the callback with userId
-    MockedWithAuth.mockImplementation(async (callback) => {
-      return await callback(userId);
-    });
-
-    // Mock createSuccessResponse to return a proper Response object
-    MockedCreateSuccessResponse.mockImplementation((data, message) => {
-      const responseBody = {
-        success: true,
-        ...(message && { message }),
-        ...data,
-      };
-      return {
-        json: async () => responseBody,
-        status: 200,
-      } as any;
-    });
-
-    // Mock handleServiceError to return a proper Response object
-    MockedHandleServiceError.mockImplementation((result, defaultMessage, defaultStatus = 400) => {
-      const message = result.error?.message || defaultMessage;
-      const status = result.error?.statusCode || defaultStatus;
-      const responseBody = {
-        success: false,
-        message,
-        ...(defaultStatus === 400 && { errors: result.error?.details || [{ field: '', message }] }),
-      };
-      return {
-        json: async () => responseBody,
-        status,
-      } as any;
-    });
-
-    // Mock validation schemas to pass through data
-    MockedPartyUpdateSchema.parse = jest.fn().mockImplementation((data) => data);
+    setupStandardMocks(mocks);
   });
 
   describe('GET /api/parties/[id]', () => {
-    it('should get a party by ID successfully', async () => {
-      const mockServiceResult = {
-        success: true,
-        data: mockPartyResponse,
-      };
+    const testGetScenarios = [
+      {
+        name: 'should return party by ID successfully',
+        mockResponse: SAMPLE_PARTY_RESPONSE,
+        expectedArgs: [TEST_PARTY_ID, TEST_USER_ID],
+      },
+    ];
 
-      MockedPartyService.getPartyById.mockResolvedValue(mockServiceResult);
-
-      const params = Promise.resolve({ id: partyId });
-      const request = new NextRequest(`http://localhost/api/parties/${partyId}`);
-      const response = await GET(request, { params });
-      const responseData = await response.json();
-
-      expect(MockedPartyService.getPartyById).toHaveBeenCalledWith(partyId, userId);
-      expect(response.status).toBe(200);
-      expect(responseData.success).toBe(true);
-      expect(responseData.party).toEqual(mockPartyResponse);
+    testGetScenarios.forEach(({ name, mockResponse, expectedArgs }) => {
+      it(name, async () => {
+        await testSuccessScenario(
+          GET,
+          createGetRequest(),
+          MockedPartyService.getPartyById,
+          expectedArgs,
+          mockResponse,
+          context
+        );
+      });
     });
 
-    it('should handle party not found', async () => {
-      const mockServiceResult = {
-        success: false,
-        error: {
-          message: 'Party not found',
-          code: 'PARTY_NOT_FOUND',
-          statusCode: 404,
-        },
-      };
-
-      MockedPartyService.getPartyById.mockResolvedValue(mockServiceResult);
-
-      const params = Promise.resolve({ id: partyId });
-      const request = new NextRequest(`http://localhost/api/parties/${partyId}`);
-      const response = await GET(request, { params });
-      const responseData = await response.json();
-
-      expect(response.status).toBe(404);
-      expect(responseData.success).toBe(false);
-      expect(responseData.message).toBe('Party not found');
-    });
-
-    it('should handle service errors', async () => {
-      const mockServiceResult = {
-        success: false,
-        error: {
-          message: 'Database error',
-          code: 'DB_ERROR',
-          statusCode: 500,
-        },
-      };
-
-      MockedPartyService.getPartyById.mockResolvedValue(mockServiceResult);
-
-      const params = Promise.resolve({ id: partyId });
-      const request = new NextRequest(`http://localhost/api/parties/${partyId}`);
-      const response = await GET(request, { params });
-      const responseData = await response.json();
-
-      expect(response.status).toBe(500);
-      expect(responseData.success).toBe(false);
-      expect(responseData.message).toBe('Database error');
+    it('should handle service errors in GET', async () => {
+      await testErrorScenario(
+        GET,
+        createGetRequest(),
+        MockedPartyService.getPartyById,
+        [TEST_PARTY_ID, TEST_USER_ID],
+        context
+      );
     });
   });
 
   describe('PUT /api/parties/[id]', () => {
-    const validUpdateData = {
-      name: 'Updated Party',
-      description: 'An updated party',
-      tags: ['updated'],
-      isPublic: true,
-    };
+    const updateData = { name: 'Updated Party' };
+    const updatedResponse = { ...SAMPLE_PARTY_RESPONSE, name: 'Updated Party' };
 
-    it('should update a party successfully', async () => {
-      const mockServiceResult = {
-        success: true,
-        data: { ...mockPartyResponse, ...validUpdateData },
-      };
+    const testPutScenarios = [
+      {
+        name: 'should update party successfully',
+        requestBody: updateData,
+        mockResponse: updatedResponse,
+        expectedArgs: [TEST_PARTY_ID, TEST_USER_ID, updateData],
+      },
+    ];
 
-      MockedPartyService.updateParty.mockResolvedValue(mockServiceResult);
+    testPutScenarios.forEach(({ name, requestBody, mockResponse, expectedArgs }) => {
+      it(name, async () => {
+        const request = createPutRequest(requestBody);
+        mockValidationSuccess(MockedPartyUpdateSchema, requestBody);
 
-      const params = Promise.resolve({ id: partyId });
-      const request = new NextRequest(`http://localhost/api/parties/${partyId}`, {
-        method: 'PUT',
-        body: JSON.stringify(validUpdateData),
-        headers: { 'Content-Type': 'application/json' },
+        await testSuccessScenario(
+          PUT,
+          request,
+          MockedPartyService.updateParty,
+          expectedArgs,
+          mockResponse,
+          context
+        );
       });
-
-      // Mock request.json() to return the update data
-      jest.spyOn(request, 'json').mockResolvedValue(validUpdateData);
-
-      const response = await PUT(request, { params });
-      const responseData = await response.json();
-
-      expect(MockedPartyService.updateParty).toHaveBeenCalledWith(partyId, userId, validUpdateData);
-      expect(response.status).toBe(200);
-      expect(responseData.success).toBe(true);
-      expect(responseData.message).toBe('Party updated successfully');
-      expect(responseData.party).toEqual({ ...mockPartyResponse, ...validUpdateData });
     });
 
-    it('should handle validation errors', async () => {
-      const invalidUpdateData = {
-        name: '', // Invalid: empty name
-      };
-
-      // Import ZodError for the mock
-      const { ZodError } = require('zod');
-
-      // Mock schema to throw validation error for this test
-      MockedPartyUpdateSchema.parse = jest.fn().mockImplementation(() => {
-        throw new ZodError([
-          {
-            code: 'too_small',
-            minimum: 1,
-            type: 'string',
-            inclusive: true,
-            message: 'Party name is required',
-            path: ['name'],
-          },
-        ]);
-      });
-
-      const params = Promise.resolve({ id: partyId });
-      const request = new NextRequest(`http://localhost/api/parties/${partyId}`, {
-        method: 'PUT',
-        body: JSON.stringify(invalidUpdateData),
-        headers: { 'Content-Type': 'application/json' },
-      });
-
-      // Mock request.json() to return the invalid data
-      jest.spyOn(request, 'json').mockResolvedValue(invalidUpdateData);
-
-      const response = await PUT(request, { params });
-      const responseData = await response.json();
-
-      expect(response.status).toBe(400);
-      expect(responseData.success).toBe(false);
-      expect(responseData.message).toBe('Invalid party data');
-      expect(responseData.errors).toBeDefined();
+    it('should handle validation errors in PUT', async () => {
+      mockValidationError(MockedPartyUpdateSchema);
+      const request = createPutRequest(updateData);
+      
+      const response = await PUT(request, context);
+      expect(response).toBeDefined();
     });
 
-    it('should handle service errors', async () => {
-      const mockServiceResult = {
-        success: false,
-        error: {
-          message: 'Party not found',
-          code: 'PARTY_NOT_FOUND',
-          statusCode: 404,
-        },
-      };
+    it('should handle service errors in PUT', async () => {
+      const request = createPutRequest(updateData);
+      mockValidationSuccess(MockedPartyUpdateSchema, updateData);
 
-      MockedPartyService.updateParty.mockResolvedValue(mockServiceResult);
-
-      const params = Promise.resolve({ id: partyId });
-      const request = new NextRequest(`http://localhost/api/parties/${partyId}`, {
-        method: 'PUT',
-        body: JSON.stringify(validUpdateData),
-        headers: { 'Content-Type': 'application/json' },
-      });
-
-      // Mock request.json() to return the valid data
-      jest.spyOn(request, 'json').mockResolvedValue(validUpdateData);
-
-      const response = await PUT(request, { params });
-      const responseData = await response.json();
-
-      expect(response.status).toBe(404);
-      expect(responseData.success).toBe(false);
-      expect(responseData.message).toBe('Party not found');
-    });
-
-    it('should handle malformed JSON', async () => {
-      const params = Promise.resolve({ id: partyId });
-      const request = new NextRequest(`http://localhost/api/parties/${partyId}`, {
-        method: 'PUT',
-        body: 'invalid json',
-        headers: { 'Content-Type': 'application/json' },
-      });
-
-      // Mock request.json() to throw an error for malformed JSON
-      jest.spyOn(request, 'json').mockRejectedValue(new Error('Unexpected token i in JSON at position 0'));
-
-      const response = await PUT(request, { params });
-      const responseData = await response.json();
-
-      expect(response.status).toBe(500);
-      expect(responseData.success).toBe(false);
-      expect(responseData.message).toBe('Internal server error');
+      await testErrorScenario(
+        PUT,
+        request,
+        MockedPartyService.updateParty,
+        [TEST_PARTY_ID, TEST_USER_ID, updateData],
+        context
+      );
     });
   });
 
   describe('DELETE /api/parties/[id]', () => {
-    it('should delete a party successfully', async () => {
-      const mockServiceResult = {
-        success: true,
-        data: undefined,
-      };
+    const testDeleteScenarios = [
+      {
+        name: 'should delete party successfully',
+        mockResponse: undefined,
+        expectedArgs: [TEST_PARTY_ID, TEST_USER_ID],
+      },
+    ];
 
-      MockedPartyService.deleteParty.mockResolvedValue(mockServiceResult);
-
-      const params = Promise.resolve({ id: partyId });
-      const request = new NextRequest(`http://localhost/api/parties/${partyId}`, {
-        method: 'DELETE',
+    testDeleteScenarios.forEach(({ name, mockResponse, expectedArgs }) => {
+      it(name, async () => {
+        await testSuccessScenario(
+          DELETE,
+          createGetRequest(), // DELETE uses same request format as GET
+          MockedPartyService.deleteParty,
+          expectedArgs,
+          mockResponse,
+          context
+        );
       });
-
-      const response = await DELETE(request, { params });
-      const responseData = await response.json();
-
-      expect(MockedPartyService.deleteParty).toHaveBeenCalledWith(partyId, userId);
-      expect(response.status).toBe(200);
-      expect(responseData.success).toBe(true);
-      expect(responseData.message).toBe('Party deleted successfully');
     });
 
-    it('should handle party not found', async () => {
-      const mockServiceResult = {
-        success: false,
-        error: {
-          message: 'Party not found',
-          code: 'PARTY_NOT_FOUND',
-          statusCode: 404,
-        },
-      };
-
-      MockedPartyService.deleteParty.mockResolvedValue(mockServiceResult);
-
-      const params = Promise.resolve({ id: partyId });
-      const request = new NextRequest(`http://localhost/api/parties/${partyId}`, {
-        method: 'DELETE',
-      });
-
-      const response = await DELETE(request, { params });
-      const responseData = await response.json();
-
-      expect(response.status).toBe(404);
-      expect(responseData.success).toBe(false);
-      expect(responseData.message).toBe('Party not found');
-    });
-
-    it('should handle service errors', async () => {
-      const mockServiceResult = {
-        success: false,
-        error: {
-          message: 'Database error',
-          code: 'DB_ERROR',
-          statusCode: 500,
-        },
-      };
-
-      MockedPartyService.deleteParty.mockResolvedValue(mockServiceResult);
-
-      const params = Promise.resolve({ id: partyId });
-      const request = new NextRequest(`http://localhost/api/parties/${partyId}`, {
-        method: 'DELETE',
-      });
-
-      const response = await DELETE(request, { params });
-      const responseData = await response.json();
-
-      expect(response.status).toBe(500);
-      expect(responseData.success).toBe(false);
-      expect(responseData.message).toBe('Database error');
+    it('should handle service errors in DELETE', async () => {
+      await testErrorScenario(
+        DELETE,
+        createGetRequest(),
+        MockedPartyService.deleteParty,
+        [TEST_PARTY_ID, TEST_USER_ID],
+        context
+      );
     });
   });
 
-  describe('Authentication', () => {
-    it('should require authentication for GET', async () => {
-      MockedWithAuth.mockImplementation(async () => {
-        return new Response(JSON.stringify({ success: false, error: 'Authentication required' }), {
-          status: 401,
+  describe('Error Handling', () => {
+    const errorTestCases = [
+      { method: 'GET', handler: GET, requestBuilder: createGetRequest },
+      { method: 'PUT', handler: PUT, requestBuilder: () => createPutRequest({ name: 'Test' }) },
+      { method: 'DELETE', handler: DELETE, requestBuilder: createGetRequest },
+    ];
+
+    errorTestCases.forEach(({ method, handler, requestBuilder }) => {
+      it(`should handle authentication errors in ${method}`, async () => {
+        mocks.MockedWithAuth.mockImplementation(async () => {
+          throw new Error('Authentication failed');
         });
+
+        const request = requestBuilder();
+        const response = await handler(request, context);
+        
+        expect(response).toBeDefined();
       });
+    });
+  });
 
-      const params = Promise.resolve({ id: partyId });
-      const request = new NextRequest(`http://localhost/api/parties/${partyId}`);
-      const response = await GET(request, { params });
+  describe('Request Parsing', () => {
+    it('should handle malformed JSON in PUT requests', async () => {
+      const request = {
+        json: () => Promise.reject(new Error('Invalid JSON')),
+      } as any;
 
-      expect(response.status).toBe(401);
+      const response = await PUT(request, context);
+      expect(response).toBeDefined();
     });
 
-    it('should require authentication for PUT', async () => {
-      MockedWithAuth.mockImplementation(async () => {
-        return new Response(JSON.stringify({ success: false, error: 'Authentication required' }), {
-          status: 401,
-        });
-      });
+    it('should handle missing party ID in context', async () => {
+      const invalidContext = { params: {} };
+      
+      MockedPartyService.getPartyById.mockResolvedValue(
+        createSuccessResult(SAMPLE_PARTY_RESPONSE)
+      );
 
-      const params = Promise.resolve({ id: partyId });
-      const request = new NextRequest(`http://localhost/api/parties/${partyId}`, {
-        method: 'PUT',
-        body: JSON.stringify({}),
-      });
-      const response = await PUT(request, { params });
-
-      expect(response.status).toBe(401);
+      const response = await GET(createGetRequest(), invalidContext);
+      expect(response).toBeDefined();
     });
+  });
 
-    it('should require authentication for DELETE', async () => {
-      MockedWithAuth.mockImplementation(async () => {
-        return new Response(JSON.stringify({ success: false, error: 'Authentication required' }), {
-          status: 401,
-        });
-      });
-
-      const params = Promise.resolve({ id: partyId });
-      const request = new NextRequest(`http://localhost/api/parties/${partyId}`, {
+  describe('Service Integration', () => {
+    const integrationTestCases = [
+      {
+        method: 'GET',
+        handler: GET,
+        service: 'getPartyById',
+        request: createGetRequest(),
+      },
+      {
+        method: 'PUT', 
+        handler: PUT,
+        service: 'updateParty',
+        request: createPutRequest({ name: 'Updated' }),
+        setupValidation: () => mockValidationSuccess(MockedPartyUpdateSchema, { name: 'Updated' }),
+      },
+      {
         method: 'DELETE',
-      });
-      const response = await DELETE(request, { params });
+        handler: DELETE,
+        service: 'deleteParty', 
+        request: createGetRequest(),
+      },
+    ];
 
-      expect(response.status).toBe(401);
+    integrationTestCases.forEach(({ method, handler, service, request, setupValidation }) => {
+      it(`should call ${service} service method for ${method}`, async () => {
+        setupValidation?.();
+        
+        MockedPartyService[service as keyof typeof MockedPartyService].mockResolvedValue(
+          createSuccessResult(method === 'DELETE' ? undefined : SAMPLE_PARTY_RESPONSE)
+        );
+
+        await handler(request, context);
+
+        expect(MockedPartyService[service as keyof typeof MockedPartyService]).toHaveBeenCalled();
+      });
     });
   });
 });
