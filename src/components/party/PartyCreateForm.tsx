@@ -54,16 +54,48 @@ export function PartyCreateForm({ onSubmit, isSubmitting = false, defaultValues 
     form.setValue('tags', tags);
   };
 
+  // Helper components to reduce duplication
+  const SectionHeader = ({ title, description }: { title: string; description: string }) => (
+    <div>
+      <h3 className="text-lg font-medium">{title}</h3>
+      <p className="text-sm text-muted-foreground">{description}</p>
+    </div>
+  );
+
+  const SwitchField = ({
+    name,
+    label,
+    description
+  }: {
+    name: string;
+    label: string;
+    description: string;
+  }) => (
+    <FormField
+      control={form.control}
+      name={name as any}
+      render={({ field }) => (
+        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+          <div className="space-y-0.5">
+            <FormLabel className="text-base">{label}</FormLabel>
+            <FormDescription>{description}</FormDescription>
+          </div>
+          <FormControl>
+            <Switch checked={field.value} onCheckedChange={field.onChange} />
+          </FormControl>
+        </FormItem>
+      )}
+    />
+  );
+
   return (
-    <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+    <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6" data-testid="party-create-form">
       {/* Basic Information */}
       <div className="space-y-4">
-        <div>
-          <h3 className="text-lg font-medium">Basic Information</h3>
-          <p className="text-sm text-muted-foreground">
-            Set up the basic details for your new party.
-          </p>
-        </div>
+        <SectionHeader
+          title="Basic Information"
+          description="Set up the basic details for your new party."
+        />
 
         <FormField
           control={form.control}
@@ -72,11 +104,7 @@ export function PartyCreateForm({ onSubmit, isSubmitting = false, defaultValues 
             <FormItem>
               <FormLabel>Party Name *</FormLabel>
               <FormControl>
-                <Input
-                  placeholder="Enter party name..."
-                  maxLength={100}
-                  {...field}
-                />
+                <Input placeholder="Enter party name..." maxLength={100} {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -131,32 +159,14 @@ export function PartyCreateForm({ onSubmit, isSubmitting = false, defaultValues 
 
       {/* Privacy Settings */}
       <div className="space-y-4">
-        <div>
-          <h3 className="text-lg font-medium">Privacy Settings</h3>
-          <p className="text-sm text-muted-foreground">
-            Control who can see and join your party.
-          </p>
-        </div>
-
-        <FormField
-          control={form.control}
+        <SectionHeader
+          title="Privacy Settings"
+          description="Control who can see and join your party."
+        />
+        <SwitchField
           name="isPublic"
-          render={({ field }) => (
-            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-              <div className="space-y-0.5">
-                <FormLabel className="text-base">Public Party</FormLabel>
-                <FormDescription>
-                  Make this party visible to other users in the community.
-                </FormDescription>
-              </div>
-              <FormControl>
-                <Switch
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                />
-              </FormControl>
-            </FormItem>
-          )}
+          label="Public Party"
+          description="Make this party visible to other users in the community."
         />
       </div>
 
@@ -164,53 +174,19 @@ export function PartyCreateForm({ onSubmit, isSubmitting = false, defaultValues 
 
       {/* Party Settings */}
       <div className="space-y-4">
-        <div>
-          <h3 className="text-lg font-medium">Party Settings</h3>
-          <p className="text-sm text-muted-foreground">
-            Configure how members can join your party.
-          </p>
-        </div>
-
-        <FormField
-          control={form.control}
-          name="settings.allowJoining"
-          render={({ field }) => (
-            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-              <div className="space-y-0.5">
-                <FormLabel className="text-base">Allow Joining</FormLabel>
-                <FormDescription>
-                  Let other users request to join this party.
-                </FormDescription>
-              </div>
-              <FormControl>
-                <Switch
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                />
-              </FormControl>
-            </FormItem>
-          )}
+        <SectionHeader
+          title="Party Settings"
+          description="Configure how members can join your party."
         />
-
-        <FormField
-          control={form.control}
+        <SwitchField
+          name="settings.allowJoining"
+          label="Allow Joining"
+          description="Let other users request to join this party."
+        />
+        <SwitchField
           name="settings.requireApproval"
-          render={({ field }) => (
-            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-              <div className="space-y-0.5">
-                <FormLabel className="text-base">Require Approval</FormLabel>
-                <FormDescription>
-                  New members must be approved before joining.
-                </FormDescription>
-              </div>
-              <FormControl>
-                <Switch
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                />
-              </FormControl>
-            </FormItem>
-          )}
+          label="Require Approval"
+          description="New members must be approved before joining."
         />
 
         <FormField
