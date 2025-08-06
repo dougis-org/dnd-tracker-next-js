@@ -14,7 +14,7 @@ import { BasicInfoValidationSection } from '@/components/forms/character/section
 import { AbilityScoresValidationSection } from '@/components/forms/character/sections/AbilityScoresValidationSection';
 import { ClassesValidationSection } from '@/components/forms/character/sections/ClassesValidationSection';
 import { CombatStatsValidationSection } from '@/components/forms/character/sections/CombatStatsValidationSection';
-import type { ICharacter } from '@/lib/models/Character';
+import type { Character } from '@/lib/validations/character';
 
 interface FormError {
   message: string;
@@ -142,21 +142,8 @@ const mapSpellSchool = createValueMapper(
   'evocation'
 );
 
-function transformSpellComponents(components: string): {
-  verbal: boolean;
-  somatic: boolean;
-  material: boolean;
-  materialComponent: string;
-} {
-  return {
-    verbal: components?.includes('V') || false,
-    somatic: components?.includes('S') || false,
-    material: components?.includes('M') || false,
-    materialComponent: components || '',
-  };
-}
 
-function transformCharacterToFormData(character: ICharacter): CharacterCreation {
+function transformCharacterToFormData(character: Character): CharacterCreation {
   return {
     name: character.name,
     type: character.type,
@@ -185,8 +172,8 @@ function transformCharacterToFormData(character: ICharacter): CharacterCreation 
       castingTime: spell.castingTime,
       range: spell.range,
       duration: spell.duration,
-      components: transformSpellComponents(spell.components),
-      prepared: spell.isPrepared,
+      components: spell.components,
+      prepared: spell.prepared,
     })),
     backstory: character.backstory,
     notes: character.notes,
@@ -200,7 +187,7 @@ export default function CharacterEditPage() {
   const { data: session } = useSession();
   const characterId = params?.id as string;
 
-  const [character, setCharacter] = useState<ICharacter | null>(null);
+  const [character, setCharacter] = useState<Character | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<FormError | null>(null);

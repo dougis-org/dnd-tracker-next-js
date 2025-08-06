@@ -1,10 +1,10 @@
 import React from 'react';
-import type { ICharacter } from '@/lib/models/Character';
+import type { Character } from '@/lib/validations/character';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { getAbilityScoreDisplay } from './character-utils';
 
 interface AbilityScoresDisplayProps {
-  character: ICharacter;
+  character: Character;
 }
 
 const AbilityScoreItem = ({ label, score }: { label: string; score: number }) => (

@@ -1,14 +1,14 @@
 import React from 'react';
-import type { ICharacter } from '@/lib/models/Character';
+import type { Character } from '@/lib/validations/character';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Edit, Share2, Heart, Shield, Zap } from 'lucide-react';
 
 interface CharacterOverviewProps {
-  character: ICharacter;
-  onEdit: (_character: ICharacter) => void;
-  onShare: (_character: ICharacter) => void;
+  character: Character;
+  onEdit: (_character: Character) => void;
+  onShare: (_character: Character) => void;
 }
 
 export function CharacterOverview({ character, onEdit, onShare }: CharacterOverviewProps) {
@@ -19,7 +19,7 @@ export function CharacterOverview({ character, onEdit, onShare }: CharacterOverv
         <div>
           <h1 className="text-3xl font-bold">{character.name}</h1>
           <p className="text-lg text-muted-foreground">
-            {character.race} • Level {character.level}
+            {character.race} • Level {character.classes.reduce((total, cls) => total + cls.level, 0)}
           </p>
         </div>
         <div className="flex gap-2">

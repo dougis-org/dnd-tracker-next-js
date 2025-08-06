@@ -1,10 +1,10 @@
 import React from 'react';
-import type { ICharacter } from '@/lib/models/Character';
+import type { Character } from '@/lib/validations/character';
 import { SectionCard } from './components/SectionCard';
 import { Badge } from '@/components/ui/badge';
 
 interface CharacterEquipmentProps {
-  character: ICharacter;
+  character: Character;
 }
 
 interface EquipmentItemProps {

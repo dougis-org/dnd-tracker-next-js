@@ -10,7 +10,7 @@ import { EmptyParticipantsState } from './EmptyParticipantsState';
 import { AddParticipantDialog, EditParticipantDialog, ImportParticipantDialog } from './ParticipantDialogs';
 import { useParticipantOperations } from './hooks/useParticipantOperations';
 import { useParticipantForm } from './hooks/useParticipantForm';
-import type { ICharacter } from '@/lib/models/Character';
+import type { Character } from '@/lib/validations/character';
 
 interface EncounterParticipantManagerProps {
   encounter: IEncounter;
@@ -106,7 +106,7 @@ export function EncounterParticipantManager({
     await reorderParticipants(participantIds);
   }, [reorderParticipants]);
 
-  const handleImportCharacters = useCallback(async (characters: ICharacter[]) => {
+  const handleImportCharacters = useCallback(async (characters: Character[]) => {
     await importParticipants(characters, () => {
       setDialogState(prev => ({ ...prev, isImportOpen: false }));
     });

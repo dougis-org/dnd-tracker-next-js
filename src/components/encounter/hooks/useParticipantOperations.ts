@@ -4,7 +4,7 @@ import { EncounterService } from '@/lib/services/EncounterService';
 import type { IEncounter } from '@/lib/models/encounter/interfaces';
 import { handleServiceOperation } from '../utils/serviceOperationUtils';
 import { convertCharactersToParticipantData } from '../utils/characterConversion';
-import type { ICharacter } from '@/lib/models/Character';
+import type { Character } from '@/lib/validations/character';
 
 interface ParticipantFormData {
   name: string;
@@ -100,7 +100,7 @@ export const useParticipantOperations = (
   }, [encounter._id, executeServiceOperation]);
 
   const importParticipants = useCallback(async (
-    characters: ICharacter[],
+    characters: Character[],
     onSuccess?: () => void
   ) => {
     // Convert characters to participant format

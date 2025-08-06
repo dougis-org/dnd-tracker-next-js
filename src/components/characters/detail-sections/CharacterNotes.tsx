@@ -1,9 +1,9 @@
 import React from 'react';
-import type { ICharacter } from '@/lib/models/Character';
+import type { Character } from '@/lib/validations/character';
 import { SectionCard } from './components/SectionCard';
 
 interface CharacterNotesProps {
-  character: ICharacter;
+  character: Character;
 }
 
 const NoteSection = ({ title, content }: { title: string; content: string }) => (
