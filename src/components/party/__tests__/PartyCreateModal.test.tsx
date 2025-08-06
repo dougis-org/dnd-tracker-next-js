@@ -28,7 +28,7 @@ jest.mock('../PartyCreateForm', () => ({
   ),
 }));
 
-// Mock the FormModal components  
+// Mock the FormModal components
 jest.mock('@/components/modals/FormModal', () => ({
   QuickAddModal: ({ open, onOpenChange, onSubmit, children, config }: any) => {
     const handleSubmit = () => {
