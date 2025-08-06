@@ -18,18 +18,33 @@ import { useToast } from '@/hooks/use-toast';
 
 interface BatchActionsProps {
   selectedCount: number;
+  selectedParties: string[];
   onClearSelection: () => void;
   onRefetch: () => void;
 }
 
-export function BatchActions({ selectedCount, onClearSelection, onRefetch }: BatchActionsProps) {
+export function BatchActions({ selectedCount, selectedParties, onClearSelection, onRefetch }: BatchActionsProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const { toast } = useToast();
 
   const handleBulkDelete = async () => {
     try {
-      // Simulate bulk delete operation
-      console.log('Bulk delete selected parties');
+      // Delete each party individually using the existing API
+      const deletePromises = selectedParties.map(async (partyId) => {
+        const response = await fetch(`/api/parties/${partyId}`, {
+          method: 'DELETE',
+        });
+
+        if (!response.ok) {
+          const error = await response.json().catch(() => ({}));
+          throw new Error(error.error || `Failed to delete party ${partyId}`);
+        }
+
+        return response.json();
+      });
+
+      // Wait for all deletions to complete
+      await Promise.all(deletePromises);
 
       // Call refetch and clear selection
       onRefetch();
@@ -42,10 +57,12 @@ export function BatchActions({ selectedCount, onClearSelection, onRefetch }: Bat
       });
 
       setShowDeleteDialog(false);
-    } catch {
+    } catch (error) {
+      console.error('Delete parties error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete parties. Please try again.';
       toast({
         title: 'Error',
-        description: 'Failed to delete parties. Please try again.',
+        description: errorMessage,
         variant: 'destructive',
       });
     }

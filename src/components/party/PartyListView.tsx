@@ -110,6 +110,7 @@ export function PartyListView({ userId: _userId }: PartyListViewProps) {
       {selectionState.hasSelection && (
         <BatchActions
           selectedCount={selectionState.selectedParties.length}
+          selectedParties={selectionState.selectedParties}
           onClearSelection={selectionState.clearSelection}
           onRefetch={dataState.refetch}
         />

@@ -28,9 +28,10 @@ jest.mock('../hooks/usePartySelection', () => ({
 
 // Mock components
 jest.mock('../BatchActions', () => ({
-  BatchActions: ({ selectedCount, onClearSelection, onRefetch }: any) => (
+  BatchActions: ({ selectedCount, selectedParties, onClearSelection, onRefetch }: any) => (
     <div data-testid="batch-actions">
       <span>Selected: {selectedCount}</span>
+      <span>Parties: {selectedParties?.join(',')}</span>
       <button onClick={onClearSelection}>Clear Selection</button>
       <button onClick={onRefetch}>Refetch</button>
     </div>
