@@ -58,10 +58,10 @@ describe('PartyCreateForm', () => {
   it('should handle form submission errors', async () => {
     const onSubmit = jest.fn().mockRejectedValue(new Error('Submission failed'));
     const props = createFormProps({ onSubmit });
-    
+
     // Catch the error to prevent it from failing the test
     const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-    
+
     render(<PartyCreateForm {...props} />);
 
     const form = screen.getByTestId('party-create-form');
@@ -70,7 +70,7 @@ describe('PartyCreateForm', () => {
     await waitFor(() => {
       expect(onSubmit).toHaveBeenCalled();
     });
-    
+
     consoleSpy.mockRestore();
   });
 
