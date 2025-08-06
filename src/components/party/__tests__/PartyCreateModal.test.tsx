@@ -11,7 +11,7 @@ jest.mock('@/hooks/use-toast', () => ({
 
 // Mock the form components
 jest.mock('../PartyCreateForm', () => ({
-  PartyCreateForm: ({ onSubmit, isSubmitting }: any) => (
+  PartyCreateForm: ({ isSubmitting }: any) => (
     <div data-testid="party-create-form">
       <input
         data-testid="party-name"
@@ -33,7 +33,7 @@ jest.mock('@/components/modals/FormModal', () => ({
           <p>{config.description}</p>
           <div data-testid="modal-content">
             {children}
-            <button 
+            <button
               type="button"
               data-testid="modal-submit"
               onClick={() => onSubmit({
