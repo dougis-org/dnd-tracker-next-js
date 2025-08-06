@@ -41,7 +41,7 @@ export function PartyCreateModal({ open, onOpenChange, onPartyCreated }: PartyCr
       });
 
       const result = await response.json();
-      
+
       if (!response.ok || !result.success) {
         throw new Error(result.message || `Failed to create party: ${response.status}`);
       }

@@ -27,7 +27,7 @@ describe('PartyCreateForm', () => {
   it('handles form submission', async () => {
     const onSubmit = jest.fn().mockResolvedValue(undefined);
     renderForm({ onSubmit });
-    
+
     fireEvent.submit(screen.getByTestId('party-create-form'));
     await waitFor(() => expect(onSubmit).toHaveBeenCalledWith(createMockPartyDataWithTags()));
   });
@@ -35,7 +35,7 @@ describe('PartyCreateForm', () => {
   it('handles submission errors', async () => {
     const onSubmit = jest.fn().mockRejectedValue(new Error('Failed'));
     renderForm({ onSubmit });
-    
+
     fireEvent.submit(screen.getByTestId('party-create-form'));
     await waitFor(() => expect(onSubmit).toHaveBeenCalled());
   });

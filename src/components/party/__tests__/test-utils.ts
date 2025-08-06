@@ -1,7 +1,7 @@
 // Test data
 const mockPartyData = {
   name: 'Test Party',
-  description: 'Test description', 
+  description: 'Test description',
   tags: [],
   isPublic: false,
   sharedWith: [],
@@ -12,10 +12,10 @@ export const createMockPartyData = () => mockPartyData;
 export const createMockPartyDataWithTags = () => ({ ...mockPartyData, tags: ['fantasy'] });
 
 // Mock factories
-export const createMockFetch = () => { 
-  const mock = jest.fn(); 
-  global.fetch = mock; 
-  return mock; 
+export const createMockFetch = () => {
+  const mock = jest.fn();
+  global.fetch = mock;
+  return mock;
 };
 
 export const createMockUseForm = (overrides = {}) => ({
