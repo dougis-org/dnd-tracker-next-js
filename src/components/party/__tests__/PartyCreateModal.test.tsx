@@ -34,22 +34,22 @@ jest.mock('@/components/modals/FormModal', () => ({
   )
 }));
 
-const renderModal = (props = {}) => {
-  const defaultProps = createModalProps(props);
-  return { ...render(<PartyCreateModal {...defaultProps} />), props: defaultProps };
-};
-
-const testApiCall = async (mockResponse: any, expectedToast: any) => {
-  const { props } = renderModal();
-  mockFetch.mockResolvedValueOnce(mockResponse);
-  
-  fireEvent.click(screen.getByTestId('modal-submit'));
-  await waitFor(() => expect(mockToast).toHaveBeenCalledWith(expectedToast));
-  return props;
-};
-
 describe('PartyCreateModal', () => {
   let mockFetch: jest.Mock;
+
+  const renderModal = (props = {}) => {
+    const defaultProps = createModalProps(props);
+    return { ...render(<PartyCreateModal {...defaultProps} />), props: defaultProps };
+  };
+
+  const testApiCall = async (mockResponse: any, expectedToast: any) => {
+    const { props } = renderModal();
+    mockFetch.mockResolvedValueOnce(mockResponse);
+    
+    fireEvent.click(screen.getByTestId('modal-submit'));
+    await waitFor(() => expect(mockToast).toHaveBeenCalledWith(expectedToast));
+    return props;
+  };
 
   beforeEach(() => {
     jest.clearAllMocks();
