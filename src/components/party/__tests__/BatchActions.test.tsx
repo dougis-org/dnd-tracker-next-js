@@ -14,6 +14,7 @@ jest.mock('@/hooks/use-toast', () => ({
 describe('BatchActions', () => {
   const defaultProps = {
     selectedCount: 3,
+    selectedParties: ['party1', 'party2', 'party3'],
     onClearSelection: jest.fn(),
     onRefetch: jest.fn(),
   };
@@ -121,7 +122,7 @@ describe('BatchActions', () => {
     });
 
     it('should render singular text for one party', () => {
-      renderBatchActions({ selectedCount: 1 });
+      renderBatchActions({ selectedCount: 1, selectedParties: ['party1'] });
       expect(screen.getByText('1 party selected')).toBeInTheDocument();
     });
 
@@ -140,6 +141,14 @@ describe('BatchActions', () => {
   });
 
   describe('Bulk Delete Functionality', () => {
+    // Mock fetch for API calls
+    const mockFetch = jest.fn();
+    global.fetch = mockFetch;
+
+    beforeEach(() => {
+      mockFetch.mockClear();
+    });
+
     it('should show confirmation dialog when delete button is clicked', async () => {
       const user = setupUserEvent();
       renderBatchActions();
@@ -163,7 +172,13 @@ describe('BatchActions', () => {
       });
     });
 
-    it('should handle delete confirmation and call callbacks', async () => {
+    it('should make API calls and handle successful deletion', async () => {
+      // Mock successful API responses
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: async () => ({ success: true, message: 'Party deleted successfully' }),
+      });
+
       const user = setupUserEvent();
       renderBatchActions();
 
@@ -171,29 +186,49 @@ describe('BatchActions', () => {
       await confirmDeleteAction(user);
 
       await waitFor(() => {
+        // Should have made 3 API calls (one for each selected party)
+        expect(mockFetch).toHaveBeenCalledTimes(3);
+        expect(mockFetch).toHaveBeenCalledWith('/api/parties/party1', { method: 'DELETE' });
+        expect(mockFetch).toHaveBeenCalledWith('/api/parties/party2', { method: 'DELETE' });
+        expect(mockFetch).toHaveBeenCalledWith('/api/parties/party3', { method: 'DELETE' });
+
         expectCallbacksCalled();
         expectSuccessToast('Parties deleted', '3 parties have been deleted successfully.');
       });
     });
 
-    it('should handle delete errors gracefully', async () => {
+    it('should handle API errors gracefully', async () => {
+      // Mock failed API response
+      mockFetch.mockResolvedValue({
+        ok: false,
+        json: async () => ({ error: 'Not authorized to delete party' }),
+      });
+
       const user = setupUserEvent();
-
-      // Mock an error by causing onRefetch to throw
-      const errorProps = {
-        ...defaultProps,
-        onRefetch: jest.fn().mockImplementation(() => {
-          throw new Error('Delete failed');
-        }),
-      };
-
-      renderBatchActions(errorProps);
+      renderBatchActions();
 
       await openDeleteDialog(user);
       await confirmDeleteAction(user);
 
       await waitFor(() => {
-        expectErrorToast('Failed to delete parties. Please try again.');
+        expect(mockFetch).toHaveBeenCalled();
+        expectErrorToast('Not authorized to delete party');
+      });
+    });
+
+    it('should handle network errors gracefully', async () => {
+      // Mock network error
+      mockFetch.mockRejectedValue(new Error('Network error'));
+
+      const user = setupUserEvent();
+      renderBatchActions();
+
+      await openDeleteDialog(user);
+      await confirmDeleteAction(user);
+
+      await waitFor(() => {
+        expect(mockFetch).toHaveBeenCalled();
+        expectErrorToast('Network error');
       });
     });
   });
@@ -231,17 +266,18 @@ describe('BatchActions', () => {
 
   describe('Edge Cases', () => {
     it('should handle zero selected count', () => {
-      renderBatchActions({ selectedCount: 0 });
+      renderBatchActions({ selectedCount: 0, selectedParties: [] });
       expect(screen.getByText('0 parties selected')).toBeInTheDocument();
     });
 
     it('should handle large selected count', () => {
-      renderBatchActions({ selectedCount: 100 });
+      const largePartyArray = Array.from({ length: 100 }, (_, i) => `party${i + 1}`);
+      renderBatchActions({ selectedCount: 100, selectedParties: largePartyArray });
       expect(screen.getByText('100 parties selected')).toBeInTheDocument();
     });
 
     it('should disable action buttons when no parties are selected', () => {
-      renderBatchActions({ selectedCount: 0 });
+      renderBatchActions({ selectedCount: 0, selectedParties: [] });
 
       expect(getButtonByName(/view/i)).toBeDisabled();
       expect(getButtonByName(/edit/i)).toBeDisabled();
