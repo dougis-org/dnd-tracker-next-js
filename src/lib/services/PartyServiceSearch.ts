@@ -145,7 +145,7 @@ export class PartyServiceSearch {
   }
 
   /**
-   * Build base query for user access (owned + shared + public)
+   * Build base query for user access (owned + shared + optionally public)
    */
   private static buildUserAccessQuery(userId: Types.ObjectId, filters: PartyFilters): any {
     const accessConditions: any[] = [
@@ -153,8 +153,8 @@ export class PartyServiceSearch {
       { sharedWith: userId }, // Party is shared with user
     ];
 
-    // Include public parties unless explicitly filtered out
-    if (filters.isPublic !== false) {
+    // Include public parties ONLY when explicitly requested via filters
+    if (filters.isPublic === true) {
       accessConditions.push({ isPublic: true });
     }
 

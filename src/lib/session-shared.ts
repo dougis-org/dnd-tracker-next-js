@@ -23,6 +23,12 @@ export function hasRequiredTier(
 ): boolean {
   const userTierIndex = SUBSCRIPTION_TIERS.indexOf(userTier);
   const requiredTierIndex = SUBSCRIPTION_TIERS.indexOf(requiredTier);
+
+  // If either tier is not found, return false
+  if (userTierIndex === -1 || requiredTierIndex === -1) {
+    return false;
+  }
+
   return userTierIndex >= requiredTierIndex;
 }
 

@@ -261,20 +261,20 @@ describe('API Middleware', () => {
       });
 
       it('should return true for exact tier match', () => {
-        const token = { subscriptionTier: 'premium' } as any;
-        const result = SessionUtils.hasSubscriptionTier(token, 'premium');
+        const token = { subscriptionTier: 'expert' } as any;
+        const result = SessionUtils.hasSubscriptionTier(token, 'expert');
         expect(result).toBe(true);
       });
 
       it('should return true for higher tier', () => {
-        const token = { subscriptionTier: 'pro' } as any;
-        const result = SessionUtils.hasSubscriptionTier(token, 'basic');
+        const token = { subscriptionTier: 'master' } as any;
+        const result = SessionUtils.hasSubscriptionTier(token, 'seasoned');
         expect(result).toBe(true);
       });
 
       it('should return false for lower tier', () => {
-        const token = { subscriptionTier: 'basic' } as any;
-        const result = SessionUtils.hasSubscriptionTier(token, 'pro');
+        const token = { subscriptionTier: 'seasoned' } as any;
+        const result = SessionUtils.hasSubscriptionTier(token, 'master');
         expect(result).toBe(false);
       });
 
