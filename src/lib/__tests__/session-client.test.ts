@@ -33,12 +33,12 @@ const createSessionWithUser = (userOverrides = {}) => {
     email: user.email,
     ...userOverrides
   };
-  
+
   // Only include subscriptionTier if it exists in the user or overrides
   if (user.subscriptionTier && !userOverrides.hasOwnProperty('subscriptionTier')) {
     sessionUser.subscriptionTier = user.subscriptionTier;
   }
-  
+
   return {
     user: sessionUser,
   };
