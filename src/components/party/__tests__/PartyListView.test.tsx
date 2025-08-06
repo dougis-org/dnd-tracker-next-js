@@ -83,6 +83,22 @@ jest.mock('../PartyListView/ContentSection', () => ({
   ),
 }));
 
+jest.mock('../PartyCreateModal', () => ({
+  PartyCreateModal: ({ open, onOpenChange, onPartyCreated }: any) => (
+    <div data-testid="party-create-modal" data-open={open}>
+      {open && (
+        <div>
+          <span>Create Party Modal</span>
+          <button onClick={() => onOpenChange(false)}>Close Modal</button>
+          <button onClick={() => { onPartyCreated?.(); onOpenChange(false); }}>
+            Create Party Success
+          </button>
+        </div>
+      )}
+    </div>
+  ),
+}));
+
 const mockRouter = {
   push: jest.fn(),
   back: jest.fn(),
@@ -254,15 +270,44 @@ describe('PartyListView', () => {
   });
 
   describe('Create Party', () => {
-    it('should handle create party action', () => {
-      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+    it('should open create party modal when create button is clicked', () => {
+      render(<PartyListView />);
+
+      // Modal should initially be closed
+      expect(screen.getByTestId('party-create-modal')).toHaveAttribute('data-open', 'false');
+
+      // Click create party button
+      fireEvent.click(screen.getByText('Create Party'));
+
+      // Modal should now be open
+      expect(screen.getByTestId('party-create-modal')).toHaveAttribute('data-open', 'true');
+      expect(screen.getByText('Create Party Modal')).toBeInTheDocument();
+    });
+
+    it('should close modal when close button is clicked', () => {
+      render(<PartyListView />);
+
+      // Open the modal
+      fireEvent.click(screen.getByText('Create Party'));
+      expect(screen.getByTestId('party-create-modal')).toHaveAttribute('data-open', 'true');
+
+      // Close the modal
+      fireEvent.click(screen.getByText('Close Modal'));
+      expect(screen.getByTestId('party-create-modal')).toHaveAttribute('data-open', 'false');
+    });
+
+    it('should refetch data when party is created', () => {
+      const mockRefetch = jest.fn();
+      setupMocks({ refetch: mockRefetch });
 
       render(<PartyListView />);
 
+      // Open modal and simulate successful party creation
       fireEvent.click(screen.getByText('Create Party'));
-      expect(consoleSpy).toHaveBeenCalledWith('Create new party');
+      fireEvent.click(screen.getByText('Create Party Success'));
 
-      consoleSpy.mockRestore();
+      // Should refetch the party data
+      expect(mockRefetch).toHaveBeenCalled();
     });
   });
 
