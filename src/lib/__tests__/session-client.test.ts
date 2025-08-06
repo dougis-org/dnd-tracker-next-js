@@ -28,13 +28,19 @@ jest.mock('next/navigation', () => ({
 
 const createSessionWithUser = (userOverrides = {}) => {
   const user = createMockUser(userOverrides);
+  const sessionUser = {
+    id: user.id || user._id,
+    email: user.email,
+    ...userOverrides
+  };
+  
+  // Only include subscriptionTier if it exists in the user or overrides
+  if (user.subscriptionTier && !userOverrides.hasOwnProperty('subscriptionTier')) {
+    sessionUser.subscriptionTier = user.subscriptionTier;
+  }
+  
   return {
-    user: {
-      id: user.id || user._id,
-      email: user.email,
-      subscriptionTier: user.subscriptionTier,
-      ...userOverrides
-    },
+    user: sessionUser,
   };
 };
 
@@ -254,33 +260,39 @@ describe('Client-side Session Management', () => {
   describe('ClientSessionUtils', () => {
     describe('hasSubscriptionTier', () => {
       it('should return false for null session', () => {
-        const result = ClientSessionUtils.hasSubscriptionTier(null, 'premium');
+        const result = ClientSessionUtils.hasSubscriptionTier(null, 'expert');
         expect(result).toBe(false);
       });
 
       it('should return true for exact tier match', () => {
-        const session = createSessionWithUser({ subscriptionTier: 'premium' });
+        const session = createSessionWithUser({ subscriptionTier: 'expert' });
         const result = ClientSessionUtils.hasSubscriptionTier(
           session,
-          'premium'
+          'expert'
         );
         expect(result).toBe(true);
       });
 
       it('should return true for higher tier', () => {
-        const session = createSessionWithUser({ subscriptionTier: 'pro' });
-        const result = ClientSessionUtils.hasSubscriptionTier(session, 'basic');
+        const session = createSessionWithUser({ subscriptionTier: 'master' });
+        const result = ClientSessionUtils.hasSubscriptionTier(session, 'seasoned');
         expect(result).toBe(true);
       });
 
       it('should return false for lower tier', () => {
-        const session = createSessionWithUser({ subscriptionTier: 'basic' });
-        const result = ClientSessionUtils.hasSubscriptionTier(session, 'pro');
+        const session = createSessionWithUser({ subscriptionTier: 'seasoned' });
+        const result = ClientSessionUtils.hasSubscriptionTier(session, 'master');
         expect(result).toBe(false);
       });
 
       it('should default to free tier when no subscriptionTier', () => {
-        const session = createSessionWithUser({});
+        const session = {
+          user: {
+            id: 'user123',
+            email: 'test@example.com',
+            // No subscriptionTier property - should default to 'free'
+          },
+        };
         const result = ClientSessionUtils.hasSubscriptionTier(session, 'free');
         expect(result).toBe(true);
       });

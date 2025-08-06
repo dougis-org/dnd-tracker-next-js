@@ -52,7 +52,7 @@ export function createMockUser(overrides: Partial<any> = {}): any {
     email: 'test@example.com',
     firstName: 'John',
     lastName: 'Doe',
-    subscriptionTier: 'premium',
+    subscriptionTier: 'expert',
     ...overrides,
   };
 }

@@ -22,8 +22,8 @@ const TestComponent = () => {
       <div data-testid="user-id">{context.userId || 'no-user'}</div>
       <div data-testid="user-email">{context.userEmail || 'no-email'}</div>
       <div data-testid="subscription-tier">{context.subscriptionTier}</div>
-      <div data-testid="has-premium">
-        {context.hasMinimumTier('premium') ? 'has-premium' : 'no-premium'}
+      <div data-testid="has-expert">
+        {context.hasMinimumTier('expert') ? 'has-expert' : 'no-expert'}
       </div>
     </div>
   );
@@ -68,7 +68,7 @@ describe('SessionContextProvider', () => {
       user: {
         id: '123',
         email: 'test@example.com',
-        subscriptionTier: 'premium',
+        subscriptionTier: 'expert',
       },
       expires: '2024-12-31',
     };
@@ -85,8 +85,8 @@ describe('SessionContextProvider', () => {
     expectTextContent('authenticated', 'authenticated');
     expectTextContent('user-id', '123');
     expectTextContent('user-email', 'test@example.com');
-    expectTextContent('subscription-tier', 'premium');
-    expectTextContent('has-premium', 'has-premium');
+    expectTextContent('subscription-tier', 'expert');
+    expectTextContent('has-expert', 'has-expert');
   });
 
   it('should provide unauthenticated state when no session', () => {
@@ -102,7 +102,7 @@ describe('SessionContextProvider', () => {
     expectTextContent('authenticated', 'not-authenticated');
     expectTextContent('user-id', 'no-user');
     expectTextContent('subscription-tier', 'free');
-    expectTextContent('has-premium', 'no-premium');
+    expectTextContent('has-expert', 'no-expert');
   });
 
   it('should default to free tier when no subscription tier provided', () => {
@@ -124,7 +124,7 @@ describe('SessionContextProvider', () => {
     renderWithContext();
 
     expectTextContent('subscription-tier', 'free');
-    expectTextContent('has-premium', 'no-premium');
+    expectTextContent('has-expert', 'no-expert');
   });
 
   it('should throw error when useSessionContext is used outside provider', () => {
@@ -150,28 +150,28 @@ describe('SessionContextProvider', () => {
           <div data-testid="has-free">
             {context.hasMinimumTier('free') ? 'yes' : 'no'}
           </div>
-          <div data-testid="has-basic">
-            {context.hasMinimumTier('basic') ? 'yes' : 'no'}
+          <div data-testid="has-seasoned">
+            {context.hasMinimumTier('seasoned') ? 'yes' : 'no'}
           </div>
-          <div data-testid="has-premium">
-            {context.hasMinimumTier('premium') ? 'yes' : 'no'}
+          <div data-testid="has-expert">
+            {context.hasMinimumTier('expert') ? 'yes' : 'no'}
           </div>
-          <div data-testid="has-pro">
-            {context.hasMinimumTier('pro') ? 'yes' : 'no'}
+          <div data-testid="has-master">
+            {context.hasMinimumTier('master') ? 'yes' : 'no'}
           </div>
-          <div data-testid="has-enterprise">
-            {context.hasMinimumTier('enterprise') ? 'yes' : 'no'}
+          <div data-testid="has-guild">
+            {context.hasMinimumTier('guild') ? 'yes' : 'no'}
           </div>
         </div>
       );
     };
 
-    // Test with premium tier user
+    // Test with expert tier user
     const mockSession = {
       user: {
         id: '123',
         email: 'test@example.com',
-        subscriptionTier: 'premium',
+        subscriptionTier: 'expert',
       },
       expires: '2024-12-31',
     };
@@ -188,11 +188,11 @@ describe('SessionContextProvider', () => {
       </SessionContextProvider>
     );
 
-    // Premium user should have access to free, basic, and premium, but not pro or enterprise
+    // Expert user should have access to free, seasoned, and expert, but not master or guild
     expectTextContent('has-free', 'yes');
-    expectTextContent('has-basic', 'yes');
-    expectTextContent('has-premium', 'yes');
-    expectTextContent('has-pro', 'no');
-    expectTextContent('has-enterprise', 'no');
+    expectTextContent('has-seasoned', 'yes');
+    expectTextContent('has-expert', 'yes');
+    expectTextContent('has-master', 'no');
+    expectTextContent('has-guild', 'no');
   });
 });
