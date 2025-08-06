@@ -1,13 +1,16 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { PartyCreateModal } from '../PartyCreateModal';
+import {
+  createMockFetch,
+  createMockToast,
+  createModalProps,
+  createSuccessResponse,
+  createErrorResponse,
+  createMockPartyData,
+} from './test-utils';
 
 // Mock the toast hook
-const mockToast = jest.fn();
-jest.mock('@/hooks/use-toast', () => ({
-  useToast: () => ({
-    toast: mockToast,
-  }),
-}));
+const mockToast = createMockToast();
 
 // Mock the form components
 jest.mock('../PartyCreateForm', () => ({
@@ -36,18 +39,7 @@ jest.mock('@/components/modals/FormModal', () => ({
             <button
               type="button"
               data-testid="modal-submit"
-              onClick={() => onSubmit({
-                name: 'Test Party',
-                description: 'Test description',
-                tags: [],
-                isPublic: false,
-                sharedWith: [],
-                settings: {
-                  allowJoining: false,
-                  requireApproval: true,
-                  maxMembers: 6,
-                },
-              })}
+              onClick={() => onSubmit(createMockPartyData())}
               disabled={false}
             >
               {config.submitText}
@@ -62,20 +54,12 @@ jest.mock('@/components/modals/FormModal', () => ({
   ),
 }));
 
-// Mock fetch
-const mockFetch = jest.fn();
-global.fetch = mockFetch;
-
 describe('PartyCreateModal', () => {
-  const defaultProps = {
-    open: true,
-    onOpenChange: jest.fn(),
-    onPartyCreated: jest.fn(),
-  };
+  let mockFetch: jest.Mock;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockFetch.mockReset();
+    mockFetch = createMockFetch();
   });
 
   afterEach(() => {
@@ -83,7 +67,8 @@ describe('PartyCreateModal', () => {
   });
 
   it('should render when open', () => {
-    render(<PartyCreateModal {...defaultProps} />);
+    const props = createModalProps();
+    render(<PartyCreateModal {...props} />);
 
     expect(screen.getByTestId('quick-add-modal')).toHaveAttribute('data-open', 'true');
     expect(screen.getByText('Create New Party')).toBeInTheDocument();
@@ -91,63 +76,32 @@ describe('PartyCreateModal', () => {
   });
 
   it('should not render when closed', () => {
-    render(<PartyCreateModal {...defaultProps} open={false} />);
+    const props = createModalProps({ open: false });
+    render(<PartyCreateModal {...props} />);
 
     expect(screen.getByTestId('quick-add-modal')).toHaveAttribute('data-open', 'false');
   });
 
   it('should call onOpenChange when cancelled', () => {
-    const onOpenChange = jest.fn();
-    render(<PartyCreateModal {...defaultProps} onOpenChange={onOpenChange} />);
+    const props = createModalProps();
+    render(<PartyCreateModal {...props} />);
 
     fireEvent.click(screen.getByText('Cancel'));
-    expect(onOpenChange).toHaveBeenCalledWith(false);
+    expect(props.onOpenChange).toHaveBeenCalledWith(false);
   });
 
   it('should handle successful party creation', async () => {
-    const onPartyCreated = jest.fn();
-    const onOpenChange = jest.fn();
+    const props = createModalProps();
+    mockFetch.mockResolvedValueOnce(createSuccessResponse());
 
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({
-        success: true,
-        party: {
-          id: '123',
-          name: 'Test Party',
-          description: 'Test description',
-        },
-      }),
-    });
-
-    render(
-      <PartyCreateModal
-        {...defaultProps}
-        onPartyCreated={onPartyCreated}
-        onOpenChange={onOpenChange}
-      />
-    );
-
+    render(<PartyCreateModal {...props} />);
     fireEvent.click(screen.getByTestId('modal-submit'));
 
     await waitFor(() => {
       expect(mockFetch).toHaveBeenCalledWith('/api/parties', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: 'Test Party',
-          description: 'Test description',
-          tags: [],
-          isPublic: false,
-          sharedWith: [],
-          settings: {
-            allowJoining: false,
-            requireApproval: true,
-            maxMembers: 6,
-          },
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(createMockPartyData()),
       });
     });
 
@@ -160,23 +114,16 @@ describe('PartyCreateModal', () => {
     });
 
     await waitFor(() => {
-      expect(onPartyCreated).toHaveBeenCalled();
-      expect(onOpenChange).toHaveBeenCalledWith(false);
+      expect(props.onPartyCreated).toHaveBeenCalled();
+      expect(props.onOpenChange).toHaveBeenCalledWith(false);
     });
   });
 
   it('should handle API errors', async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: false,
-      status: 400,
-      json: async () => ({
-        success: false,
-        message: 'Invalid party data',
-      }),
-    });
+    const props = createModalProps();
+    mockFetch.mockResolvedValueOnce(createErrorResponse());
 
-    render(<PartyCreateModal {...defaultProps} />);
-
+    render(<PartyCreateModal {...props} />);
     fireEvent.click(screen.getByTestId('modal-submit'));
 
     await waitFor(() => {
@@ -189,10 +136,10 @@ describe('PartyCreateModal', () => {
   });
 
   it('should handle network errors', async () => {
+    const props = createModalProps();
     mockFetch.mockRejectedValueOnce(new Error('Network error'));
 
-    render(<PartyCreateModal {...defaultProps} />);
-
+    render(<PartyCreateModal {...props} />);
     fireEvent.click(screen.getByTestId('modal-submit'));
 
     await waitFor(() => {
@@ -205,14 +152,10 @@ describe('PartyCreateModal', () => {
   });
 
   it('should handle server errors without message', async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: false,
-      status: 500,
-      json: async () => ({}),
-    });
+    const props = createModalProps();
+    mockFetch.mockResolvedValueOnce(createErrorResponse(500, undefined));
 
-    render(<PartyCreateModal {...defaultProps} />);
-
+    render(<PartyCreateModal {...props} />);
     fireEvent.click(screen.getByTestId('modal-submit'));
 
     await waitFor(() => {
@@ -225,15 +168,12 @@ describe('PartyCreateModal', () => {
   });
 
   it('should disable submit button while submitting', async () => {
+    const props = createModalProps();
     mockFetch.mockImplementationOnce(
-      () => new Promise(resolve => setTimeout(() => resolve({
-        ok: true,
-        json: async () => ({ success: true, party: {} }),
-      }), 100))
+      () => new Promise(resolve => setTimeout(() => resolve(createSuccessResponse()), 100))
     );
 
-    render(<PartyCreateModal {...defaultProps} />);
-
+    render(<PartyCreateModal {...props} />);
     fireEvent.click(screen.getByTestId('modal-submit'));
 
     // Form should show submitting state

@@ -148,11 +148,9 @@ This project follows a **GitHub Flow** branching strategy optimized for continuo
    ```
 
 5. **Automated Code Review Process**
-   - **Automatic Merging**: PRs are automatically merged when all checks pass
+   - **Automatic Merging**: PRs are automatically merged when all checks pass if set to auto merge
    - **Required Checks**: Build, tests, linting, TypeScript compilation,
-     Codacy quality gates
-   - **Manual Review Override**: Can be disabled for critical changes requiring
-     human review
+     Codacy quality gates, Codacy coverage gates
    - **Check Monitoring**: System waits for checks to complete before making
      merge decisions
    - **Failure Handling**: Failed checks must be addressed before re-attempting merge
