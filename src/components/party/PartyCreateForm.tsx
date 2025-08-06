@@ -18,7 +18,7 @@ export interface PartyCreateFormProps {
 
 export function PartyCreateForm({ onSubmit, isSubmitting = false, defaultValues }: PartyCreateFormProps) {
   const form = useForm<PartyCreate>({
-    resolver: zodResolver(partyCreateSchema),
+    resolver: zodResolver(partyCreateSchema) as any,
     defaultValues: {
       name: '',
       description: '',
