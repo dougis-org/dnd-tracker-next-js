@@ -39,7 +39,8 @@ export function PartyCreateForm({ onSubmit, isSubmitting = false, defaultValues 
       await onSubmit(data);
     } catch (error) {
       // Error handling is done by the parent modal component
-      throw error;
+      // No need to re-throw as parent handles the error gracefully
+      console.error('Form submission error:', error);
     }
   };
 

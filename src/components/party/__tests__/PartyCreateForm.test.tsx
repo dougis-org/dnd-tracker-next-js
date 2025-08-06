@@ -59,19 +59,15 @@ describe('PartyCreateForm', () => {
     const onSubmit = jest.fn().mockRejectedValue(new Error('Submission failed'));
     const props = createFormProps({ onSubmit });
 
-    // Catch the error to prevent it from failing the test
-    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-
     render(<PartyCreateForm {...props} />);
 
     const form = screen.getByTestId('party-create-form');
     fireEvent.submit(form);
 
+    // The form component should call onSubmit and handle the rejection
     await waitFor(() => {
       expect(onSubmit).toHaveBeenCalled();
     });
-
-    consoleSpy.mockRestore();
   });
 
   it('should display default values when provided', () => {

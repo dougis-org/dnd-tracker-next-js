@@ -59,7 +59,7 @@ export function PartyCreateModal({ open, onOpenChange, onPartyCreated }: PartyCr
         variant: 'destructive',
       });
 
-      throw error; // Re-throw to prevent modal from closing
+      // Don't re-throw - let the error be handled gracefully
     } finally {
       setIsSubmitting(false);
     }
