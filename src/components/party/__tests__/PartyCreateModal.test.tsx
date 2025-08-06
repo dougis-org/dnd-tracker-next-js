@@ -2,15 +2,17 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { PartyCreateModal } from '../PartyCreateModal';
 import {
   createMockFetch,
-  createMockToast,
   createModalProps,
   createSuccessResponse,
   createErrorResponse,
   createMockPartyData,
 } from './test-utils';
 
-// Mock the toast hook
-const mockToast = createMockToast();
+// Mock the toast hook properly at the top level
+const mockToast = jest.fn();
+jest.mock('@/hooks/use-toast', () => ({
+  useToast: () => ({ toast: mockToast }),
+}));
 
 // Mock the form components
 jest.mock('../PartyCreateForm', () => ({
@@ -26,32 +28,39 @@ jest.mock('../PartyCreateForm', () => ({
   ),
 }));
 
-// Mock the FormModal components
+// Mock the FormModal components  
 jest.mock('@/components/modals/FormModal', () => ({
-  QuickAddModal: ({ open, onOpenChange, onSubmit, children, config }: any) => (
-    <div data-testid="quick-add-modal" data-open={open}>
-      {open && (
-        <div>
-          <h2>{config.title}</h2>
-          <p>{config.description}</p>
-          <div data-testid="modal-content">
-            {children}
-            <button
-              type="button"
-              data-testid="modal-submit"
-              onClick={() => onSubmit(createMockPartyData())}
-              disabled={false}
-            >
-              {config.submitText}
-            </button>
-            <button type="button" onClick={() => onOpenChange(false)}>
-              {config.cancelText}
-            </button>
+  QuickAddModal: ({ open, onOpenChange, onSubmit, children, config }: any) => {
+    const handleSubmit = () => {
+      // Call the onSubmit handler with mock data
+      onSubmit(createMockPartyData());
+    };
+
+    return (
+      <div data-testid="quick-add-modal" data-open={open}>
+        {open && (
+          <div>
+            <h2>{config.title}</h2>
+            <p>{config.description}</p>
+            <div data-testid="modal-content">
+              {children}
+              <button
+                type="button"
+                data-testid="modal-submit"
+                onClick={handleSubmit}
+                disabled={false}
+              >
+                {config.submitText}
+              </button>
+              <button type="button" onClick={() => onOpenChange(false)}>
+                {config.cancelText}
+              </button>
+            </div>
           </div>
-        </div>
-      )}
-    </div>
-  ),
+        )}
+      </div>
+    );
+  },
 }));
 
 describe('PartyCreateModal', () => {
@@ -153,7 +162,12 @@ describe('PartyCreateModal', () => {
 
   it('should handle server errors without message', async () => {
     const props = createModalProps();
-    mockFetch.mockResolvedValueOnce(createErrorResponse(500, undefined));
+    // Use a custom response without a message to test the fallback behavior
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      status: 500,
+      json: async () => ({ success: false, message: undefined }),
+    });
 
     render(<PartyCreateModal {...props} />);
     fireEvent.click(screen.getByTestId('modal-submit'));

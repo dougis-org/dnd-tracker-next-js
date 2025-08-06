@@ -65,7 +65,7 @@ export const createSuccessResponse = (data = {}) => ({
 export const createErrorResponse = (status = 400, message = 'Invalid party data') => ({
   ok: false,
   status,
-  json: async () => ({ success: false, message }),
+  json: async () => ({ success: false, message: message === undefined ? undefined : message }),
 });
 
 // Common test props factories
