@@ -168,7 +168,7 @@ Additional review of other main application sections found 3 more mock data issu
 
 ### Phase 2 Complete When
 - [x] Users only see parties they own or are shared with ✅ (Issue #600 completed)
-- [ ] Delete operations actually remove data and update UI
+- [x] Delete operations actually remove data and update UI ✅ (Issue #601 completed)
 - [x] All mock data removed from production code ✅ (Issue #600 completed)
 - [ ] Data integrity verified across all operations
 
@@ -194,7 +194,7 @@ Additional review of other main application sections found 3 more mock data issu
 | #593  | Master| In Progress | Claude   | 2025-08-04 | Week 3          | All child issues |
 | #602  | 1.1   | ✅ Complete | PR #608  | 2025-08-05 | 2025-08-06      | None             |
 | #600  | 2.1   | ✅ Complete | PR #610  | 2025-08-06 | Day 2           | #602             |
-| #601  | 2.2   | Pending     | -        | -          | Day 2           | #602             |
+| #601  | 2.2   | ✅ Complete | PR #611  | 2025-08-06 | 2025-08-06      | #602             |
 | #603  | 3.1   | Pending     | -        | -          | Day 5           | #602, #600       |
 
 ### Phase 2: Secondary Mock Data Issues (P2 - Enhancement)
@@ -239,7 +239,8 @@ Additional review of other main application sections found 3 more mock data issu
 - ✅ **Issue #602 COMPLETED**: Full Party API backend implementation via PR #608
 - ✅ **Phase 1 ACHIEVED**: Complete REST API with CRUD operations, user isolation, and comprehensive testing
 - ✅ **Issue #600 COMPLETED**: User data isolation implemented via PR #610
-- 🎯 **Current Focus**: Phase 2 remaining items (Issues #601, #603)
+- ✅ **Issue #601 COMPLETED**: Real party deletion operations implemented via PR #611
+- 🎯 **Current Focus**: Phase 3 items (Issue #603)
 
 <!-- Issue References -->
 [issue-593]: https://github.com/dougis-org/dnd-tracker-next-js/issues/593
