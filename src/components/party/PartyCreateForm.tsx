@@ -38,8 +38,6 @@ export function PartyCreateForm({ onSubmit, isSubmitting = false, defaultValues 
     try {
       await onSubmit(data);
     } catch (error) {
-      // Error handling is done by the parent modal component
-      // No need to re-throw as parent handles the error gracefully
       console.error('Form submission error:', error);
     }
   };
@@ -55,7 +53,6 @@ export function PartyCreateForm({ onSubmit, isSubmitting = false, defaultValues 
     form.setValue('tags', tags);
   };
 
-  // Helper components to reduce duplication
   const SectionHeader = ({ title, description }: { title: string; description: string }) => (
     <div>
       <h3 className="text-lg font-medium">{title}</h3>
@@ -63,15 +60,7 @@ export function PartyCreateForm({ onSubmit, isSubmitting = false, defaultValues 
     </div>
   );
 
-  const SwitchField = ({
-    name,
-    label,
-    description
-  }: {
-    name: string;
-    label: string;
-    description: string;
-  }) => (
+  const SwitchField = ({ name, label, description }: { name: string; label: string; description: string }) => (
     <FormField
       control={form.control}
       name={name as any}

@@ -1,100 +1,52 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { PartyCreateForm } from '../PartyCreateForm';
-import {
-  createMockUseForm,
-  createFormProps,
-  createMockPartyDataWithTags,
-} from './test-utils';
+import { createMockUseForm, createFormProps, createMockPartyDataWithTags } from './test-utils';
 
-// Mock react-hook-form
 const mockUseForm = createMockUseForm();
-jest.mock('react-hook-form', () => ({
-  useForm: () => mockUseForm,
-}));
+jest.mock('react-hook-form', () => ({ useForm: () => mockUseForm }));
 
-// Mock form components
 jest.mock('@/components/ui/form', () => ({
-  FormField: ({ children }: any) => <div data-testid="form-field">{typeof children === 'function' ? children({ field: {} }) : children}</div>,
-  FormItem: ({ children }: any) => <div data-testid="form-item">{children}</div>,
-  FormLabel: ({ children }: any) => <label data-testid="form-label">{children}</label>,
-  FormControl: ({ children }: any) => <div data-testid="form-control">{children}</div>,
-  FormMessage: () => <div data-testid="form-message" />,
-  FormDescription: ({ children }: any) => <div data-testid="form-description">{children}</div>,
+  FormField: ({ children }: any) => <div>{typeof children === 'function' ? children({ field: {} }) : children}</div>,
+  FormItem: ({ children }: any) => <div>{children}</div>,
+  FormLabel: ({ children }: any) => <label>{children}</label>,
+  FormControl: ({ children }: any) => <div>{children}</div>,
+  FormMessage: () => <div />,
+  FormDescription: ({ children }: any) => <div>{children}</div>,
 }));
 
-jest.mock('@/components/ui/input', () => ({
-  Input: (props: any) => <input data-testid="input" {...props} />,
-}));
+jest.mock('@/components/ui/input', () => ({ Input: (props: any) => <input {...props} /> }));
+jest.mock('@/components/ui/textarea', () => ({ Textarea: (props: any) => <textarea {...props} /> }));
+jest.mock('@/components/ui/switch', () => ({ Switch: (props: any) => <input type="checkbox" {...props} /> }));
+jest.mock('@/components/ui/separator', () => ({ Separator: () => <hr /> }));
 
-jest.mock('@/components/ui/textarea', () => ({
-  Textarea: (props: any) => <textarea data-testid="textarea" {...props} />,
-}));
-
-jest.mock('@/components/ui/switch', () => ({
-  Switch: (props: any) => <input type="checkbox" data-testid="switch" {...props} />,
-}));
-
-jest.mock('@/components/ui/separator', () => ({
-  Separator: () => <hr data-testid="separator" />,
-}));
+const renderForm = (props = {}) => render(<PartyCreateForm {...createFormProps(props)} />);
 
 describe('PartyCreateForm', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
+  beforeEach(() => jest.clearAllMocks());
+
+  it('handles form submission', async () => {
+    const onSubmit = jest.fn().mockResolvedValue(undefined);
+    renderForm({ onSubmit });
+    
+    fireEvent.submit(screen.getByTestId('party-create-form'));
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledWith(createMockPartyDataWithTags()));
   });
 
-  it('should handle form submission', async () => {
-    const props = createFormProps({ onSubmit: jest.fn().mockResolvedValue(undefined) });
-    render(<PartyCreateForm {...props} />);
-
-    const form = screen.getByTestId('party-create-form');
-    fireEvent.submit(form);
-
-    await waitFor(() => {
-      expect(props.onSubmit).toHaveBeenCalledWith(createMockPartyDataWithTags());
-    });
+  it('handles submission errors', async () => {
+    const onSubmit = jest.fn().mockRejectedValue(new Error('Failed'));
+    renderForm({ onSubmit });
+    
+    fireEvent.submit(screen.getByTestId('party-create-form'));
+    await waitFor(() => expect(onSubmit).toHaveBeenCalled());
   });
 
-  it('should handle form submission errors', async () => {
-    const onSubmit = jest.fn().mockRejectedValue(new Error('Submission failed'));
-    const props = createFormProps({ onSubmit });
-
-    render(<PartyCreateForm {...props} />);
-
-    const form = screen.getByTestId('party-create-form');
-    fireEvent.submit(form);
-
-    // The form component should call onSubmit and handle the rejection
-    await waitFor(() => {
-      expect(onSubmit).toHaveBeenCalled();
-    });
-  });
-
-  it('should display default values when provided', () => {
-    const defaultValues = {
-      name: 'My Party',
-      description: 'My party description',
-      tags: ['adventure', 'homebrew'],
-      isPublic: true,
-      settings: {
-        allowJoining: true,
-        requireApproval: false,
-        maxMembers: 8,
-      },
-    };
-
-    const props = createFormProps({ defaultValues });
-    render(<PartyCreateForm {...props} />);
-
-    // Form renders successfully with default values (basic test)
+  it('renders form successfully', () => {
+    renderForm();
     expect(screen.getByTestId('party-create-form')).toBeInTheDocument();
   });
 
-  it('should disable form when submitting', () => {
-    const props = createFormProps({ isSubmitting: true });
-    render(<PartyCreateForm {...props} />);
-
-    const submitButton = screen.getByRole('button', { hidden: true });
-    expect(submitButton).toBeDisabled();
+  it('disables submit when submitting', () => {
+    renderForm({ isSubmitting: true });
+    expect(screen.getByRole('button', { hidden: true })).toBeDisabled();
   });
 });

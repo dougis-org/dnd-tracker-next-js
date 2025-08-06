@@ -16,50 +16,39 @@ export function PartyCreateModal({ open, onOpenChange, onPartyCreated }: PartyCr
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
+  const showToast = (title: string, description: string, variant: 'default' | 'destructive' = 'default') => {
+    toast({ title, description, variant });
+  };
+
+  const handleSuccess = (data: PartyCreate) => {
+    showToast('Party created successfully', `"${data.name}" has been created and is ready for members.`);
+    onPartyCreated?.();
+    onOpenChange(false);
+  };
+
+  const handleError = (error: unknown) => {
+    const message = error instanceof Error ? error.message : 'An unexpected error occurred';
+    showToast('Failed to create party', message, 'destructive');
+  };
+
   const handleSubmit = async (data: PartyCreate) => {
     setIsSubmitting(true);
     try {
       const response = await fetch('/api/parties', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
 
       const result = await response.json();
-
-      if (!response.ok) {
+      
+      if (!response.ok || !result.success) {
         throw new Error(result.message || `Failed to create party: ${response.status}`);
       }
 
-      if (!result.success) {
-        throw new Error(result.message || 'Failed to create party');
-      }
-
-      // Show success toast
-      toast({
-        title: 'Party created successfully',
-        description: `"${data.name}" has been created and is ready for members.`,
-        variant: 'default',
-      });
-
-      // Notify parent that party was created
-      onPartyCreated?.();
-
-      // Close modal
-      onOpenChange(false);
+      handleSuccess(data);
     } catch (error) {
-      console.error('Party creation error:', error);
-
-      // Show error toast
-      toast({
-        title: 'Failed to create party',
-        description: error instanceof Error ? error.message : 'An unexpected error occurred',
-        variant: 'destructive',
-      });
-
-      // Don't re-throw - let the error be handled gracefully
+      handleError(error);
     } finally {
       setIsSubmitting(false);
     }

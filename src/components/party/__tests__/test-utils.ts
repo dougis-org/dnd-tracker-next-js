@@ -1,83 +1,53 @@
-/**
- * Shared test utilities for Party components
- * Eliminates duplication across test files
- */
-
-// Test data factories
-export const createMockPartyData = () => ({
+// Test data
+const mockPartyData = {
   name: 'Test Party',
-  description: 'Test description',
+  description: 'Test description', 
   tags: [],
   isPublic: false,
   sharedWith: [],
-  settings: {
-    allowJoining: false,
-    requireApproval: true,
-    maxMembers: 6,
-  },
-});
-
-export const createMockPartyDataWithTags = () => ({
-  ...createMockPartyData(),
-  tags: ['fantasy'],
-});
-
-// Mock fetch factory
-export const createMockFetch = () => {
-  const mockFetch = jest.fn();
-  global.fetch = mockFetch;
-  return mockFetch;
+  settings: { allowJoining: false, requireApproval: true, maxMembers: 6 }
 };
 
-// Mock toast factory
-export const createMockToast = () => {
-  const mockToast = jest.fn();
-  jest.mock('@/hooks/use-toast', () => ({
-    useToast: () => ({ toast: mockToast }),
-  }));
-  return mockToast;
+export const createMockPartyData = () => mockPartyData;
+export const createMockPartyDataWithTags = () => ({ ...mockPartyData, tags: ['fantasy'] });
+
+// Mock factories
+export const createMockFetch = () => { 
+  const mock = jest.fn(); 
+  global.fetch = mock; 
+  return mock; 
 };
 
-// Mock react-hook-form factory
 export const createMockUseForm = (overrides = {}) => ({
   control: {},
-  handleSubmit: jest.fn((fn) => (e: any) => {
-    e.preventDefault();
-    fn(createMockPartyDataWithTags());
-  }),
-  watch: jest.fn((name) => {
-    if (name === 'tags') return ['fantasy'];
-    return '';
-  }),
+  handleSubmit: jest.fn(fn => (e: any) => { e.preventDefault(); fn(createMockPartyDataWithTags()); }),
+  watch: jest.fn(name => name === 'tags' ? ['fantasy'] : ''),
   setValue: jest.fn(),
-  ...overrides,
+  ...overrides
 });
 
-// API response factories
+// Response factories
 export const createSuccessResponse = (data = {}) => ({
   ok: true,
-  json: async () => ({
-    success: true,
-    party: { id: '123', ...createMockPartyData(), ...data },
-  }),
+  json: async () => ({ success: true, party: { id: '123', ...mockPartyData, ...data } })
 });
 
 export const createErrorResponse = (status = 400, message = 'Invalid party data') => ({
   ok: false,
   status,
-  json: async () => ({ success: false, message: message === undefined ? undefined : message }),
+  json: async () => ({ success: false, message })
 });
 
-// Common test props factories
+// Props factories
 export const createModalProps = (overrides = {}) => ({
   open: true,
   onOpenChange: jest.fn(),
   onPartyCreated: jest.fn(),
-  ...overrides,
+  ...overrides
 });
 
 export const createFormProps = (overrides = {}) => ({
   onSubmit: jest.fn(),
   isSubmitting: false,
-  ...overrides,
+  ...overrides
 });
