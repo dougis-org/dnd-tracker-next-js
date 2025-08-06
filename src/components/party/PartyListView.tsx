@@ -9,6 +9,7 @@ import { usePartySelection } from './hooks/usePartySelection';
 import { ErrorFallback } from './PartyListView/ErrorFallback';
 import { ControlsSection } from './PartyListView/ControlsSection';
 import { ContentSection } from './PartyListView/ContentSection';
+import { PartyCreateModal } from './PartyCreateModal';
 
 // Hook for managing party list state
 function usePartyListState() {
@@ -86,9 +87,15 @@ interface PartyListViewProps {
 
 export function PartyListView({ userId: _userId }: PartyListViewProps) {
   const { viewMode, setViewMode, filterState, dataState, selectionState } = usePartyListState();
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   const handleCreateParty = () => {
-    console.log('Create new party');
+    setIsCreateModalOpen(true);
+  };
+
+  const handlePartyCreated = () => {
+    // Refetch the party list to show the new party
+    dataState.refetch();
   };
 
   if (dataState.error) {
@@ -130,6 +137,13 @@ export function PartyListView({ userId: _userId }: PartyListViewProps) {
           onPageChange={dataState.goToPage}
         />
       )}
+
+      {/* Party creation modal */}
+      <PartyCreateModal
+        open={isCreateModalOpen}
+        onOpenChange={setIsCreateModalOpen}
+        onPartyCreated={handlePartyCreated}
+      />
     </div>
   );
 }
