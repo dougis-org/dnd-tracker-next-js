@@ -6,6 +6,18 @@ import { handleServiceOperation } from '../utils/serviceOperationUtils';
 import { convertCharactersToParticipantData } from '../utils/characterConversion';
 import type { Character } from '@/lib/validations/character';
 
+// Helper functions to reduce complexity
+const createParticipantData = (data: ParticipantFormData) => ({
+  ...data,
+  characterId: new Types.ObjectId().toString(),
+  currentHitPoints: data.maxHitPoints,
+});
+
+const createUpdateData = (formData: ParticipantFormData) => {
+  const { characterId: _characterId, ...updateData } = createParticipantData(formData);
+  return updateData;
+};
+
 interface ParticipantFormData {
   name: string;
   type: 'pc' | 'npc' | 'monster';
@@ -25,11 +37,6 @@ export const useParticipantOperations = (
   onUpdate?: (_updatedEncounter: IEncounter) => void
 ) => {
   const [isLoading, setIsLoading] = useState(false);
-  const createParticipantData = useCallback((data: ParticipantFormData) => ({
-    ...data,
-    characterId: new Types.ObjectId().toString(),
-    currentHitPoints: data.maxHitPoints,
-  }), []);
 
   const executeWithLoading = useCallback(async (operation: () => Promise<void>) => {
     setIsLoading(true);
@@ -69,21 +76,20 @@ export const useParticipantOperations = (
       'Participant added successfully',
       () => onSuccess()
     );
-  }, [encounter._id, createParticipantData, executeServiceOperation]);
+  }, [encounter._id, executeServiceOperation]);
 
   const updateParticipant = useCallback(async (
     participantId: string,
     formData: ParticipantFormData,
     onSuccess: () => void
   ) => {
-    // For updates, don't include characterId as it shouldn't be changed
-    const { characterId: _characterId, ...updateData } = createParticipantData(formData);
+    const updateData = createUpdateData(formData);
     await executeServiceOperation(
       () => EncounterService.updateParticipant(encounter._id.toString(), participantId, updateData),
       'Participant updated successfully',
       () => onSuccess()
     );
-  }, [encounter._id, createParticipantData, executeServiceOperation]);
+  }, [encounter._id, executeServiceOperation]);
 
   const removeParticipant = useCallback(async (participantId: string) => {
     await executeServiceOperation(
