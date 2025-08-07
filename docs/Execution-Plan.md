@@ -244,7 +244,7 @@ Additional review of other main application sections found 3 more mock data issu
 - 🎉 **Phase 1 COMPLETE**: All party system P1 MVP issues resolved - full CRUD functionality achieved
 - 🎯 **Next Focus**: Phase 2 enhancement issues (#604-#606)
 
-### Version 1.2 (2025-08-07) 
+### Version 1.2 (2025-08-07)
 - ✅ **Issue #594 COMPLETED**: Critical client-side runtime error resolved via PR #613
 - 🔧 **Bug Fix**: Fixed "Cannot read properties of undefined (reading 'Character')" blocking Characters and Encounters pages
 - 🏗️ **Architecture**: Improved client/server code separation by replacing mongoose model imports with validation types
@@ -253,7 +253,6 @@ Additional review of other main application sections found 3 more mock data issu
 
 <!-- Issue References -->
 [issue-593]: https://github.com/dougis-org/dnd-tracker-next-js/issues/593
-[issue-594]: https://github.com/dougis-org/dnd-tracker-next-js/issues/594
 [issue-600]: https://github.com/dougis-org/dnd-tracker-next-js/issues/600
 [issue-601]: https://github.com/dougis-org/dnd-tracker-next-js/issues/601
 [issue-602]: https://github.com/dougis-org/dnd-tracker-next-js/issues/602
