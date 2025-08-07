@@ -146,47 +146,56 @@ export function EncounterParticipantManager({
   }, [importParticipants, setImportOpen]);
 
   // Render helpers
-  const renderActionButtons = useCallback(() => (
-    <>
-      <AddParticipantDialog
-        isAddDialogOpen={dialogState.isAddOpen}
-        onAddDialogOpenChange={(open) => open ? openAddDialog() : handleCloseAddDialog()}
-        onAddParticipant={handleAddParticipant}
-        isLoading={isLoading}
-        formData={formData}
-        formErrors={formErrors}
-        onFormDataChange={setFormData}
-        onResetForm={resetForm}
-      />
-      <ImportParticipantDialog
-        isImportDialogOpen={dialogState.isImportOpen}
-        onImportDialogOpenChange={setImportOpen}
-        onImportCharacters={handleImportCharacters}
-        userId={session?.user?.id || ''}
-      />
-    </>
+  const renderAddDialog = useCallback(() => (
+    <AddParticipantDialog
+      isAddDialogOpen={dialogState.isAddOpen}
+      onAddDialogOpenChange={(open) => open ? openAddDialog() : handleCloseAddDialog()}
+      onAddParticipant={handleAddParticipant}
+      isLoading={isLoading}
+      formData={formData}
+      formErrors={formErrors}
+      onFormDataChange={setFormData}
+      onResetForm={resetForm}
+    />
   ), [
     dialogState.isAddOpen,
-    dialogState.isImportOpen,
     openAddDialog,
     handleCloseAddDialog,
     handleAddParticipant,
-    handleImportCharacters,
     isLoading,
     formData,
     formErrors,
     setFormData,
     resetForm,
-    session?.user?.id,
-    setImportOpen,
   ]);
+
+  const renderImportDialog = useCallback(() => (
+    <ImportParticipantDialog
+      isImportDialogOpen={dialogState.isImportOpen}
+      onImportDialogOpenChange={setImportOpen}
+      onImportCharacters={handleImportCharacters}
+      userId={session?.user?.id || ''}
+    />
+  ), [
+    dialogState.isImportOpen,
+    setImportOpen,
+    handleImportCharacters,
+    session?.user?.id,
+  ]);
+
+  const renderActionButtons = useCallback(() => (
+    <>
+      {renderAddDialog()}
+      {renderImportDialog()}
+    </>
+  ), [renderAddDialog, renderImportDialog]);
 
   // Empty state
   if (encounter.participants.length === 0) {
     return (
       <EmptyParticipantsState
-        renderAddDialog={renderActionButtons}
-        renderImportDialog={renderActionButtons}
+        renderAddDialog={renderAddDialog}
+        renderImportDialog={renderImportDialog}
       />
     );
   }
