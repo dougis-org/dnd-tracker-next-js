@@ -188,18 +188,62 @@ const authConfig = NextAuth({
         sameSite: 'lax',
         path: '/',
         secure: process.env.NODE_ENV === 'production',
+        // Fix for Issue #620: Extend cookie max age to match session max age
+        maxAge: SESSION_TIMEOUTS.MAX_AGE,
+        // Add domain configuration for production environments
+        ...(process.env.NODE_ENV === 'production' && {
+          domain: process.env.COOKIE_DOMAIN || undefined,
+        }),
       },
     },
+    // Add PKCE state cookie configuration for better security
+    ...(process.env.NODE_ENV === 'production' && {
+      pkceCodeVerifier: {
+        name: '__Secure-next-auth.pkce.code_verifier',
+        options: {
+          httpOnly: true,
+          sameSite: 'lax',
+          path: '/',
+          secure: true,
+          maxAge: 900, // 15 minutes
+        },
+      },
+    }),
   },
   callbacks: {
-    async jwt({ token, user }: { token: any; user?: any }) {
+    async jwt({ token, user, trigger }: { token: any; user?: any; trigger?: string }) {
       // If user is provided (on signin), store user data in token
       if (user) {
         token.id = user.id;
         token.subscriptionTier = user.subscriptionTier;
         token.email = user.email;
         token.name = user.name;
+        // Fix for Issue #620: Add timestamp for token creation tracking
+        token.createdAt = Date.now();
+        token.isEmailVerified = user.isEmailVerified ?? true;
       }
+
+      // Fix for Issue #620: Validate and refresh user data on token access
+      if (trigger === 'update' || (!user && token.email)) {
+        try {
+          // Refresh user data from database to ensure consistency
+          const userResult = await UserService.getUserByEmail(token.email);
+          if (userResult.success && userResult.data) {
+            const userData = userResult.data;
+            token.subscriptionTier = userData.subscriptionTier || 'free';
+            token.isEmailVerified = userData.isEmailVerified;
+            // Update user name if it has changed
+            const fullName = `${userData.firstName} ${userData.lastName}`;
+            if (fullName !== token.name) {
+              token.name = fullName;
+            }
+          }
+        } catch (error) {
+          console.warn('Failed to refresh user data in JWT callback:', error);
+          // Don't fail the token validation, just log the warning
+        }
+      }
+
       return token;
     },
     async session({ session, token }: { session: any; token: any }) {
@@ -209,11 +253,26 @@ const authConfig = NextAuth({
           return session;
         }
 
+        // Fix for Issue #620: Ensure all required fields are present
+        if (!token.id || !token.email) {
+          console.warn('Session callback: Invalid token data - missing required fields');
+          return null;
+        }
+
         // Add user data from JWT token to session
-        session.user.id = token.id || '';
+        session.user.id = token.id;
         session.user.subscriptionTier = token.subscriptionTier || 'free';
         session.user.email = token.email;
         session.user.name = token.name;
+        session.user.isEmailVerified = token.isEmailVerified ?? true;
+
+        // Fix for Issue #620: Add token metadata for debugging
+        if (process.env.NODE_ENV === 'development') {
+          session.debug = {
+            tokenCreatedAt: token.createdAt,
+            tokenAge: token.createdAt ? Date.now() - token.createdAt : null,
+          };
+        }
 
         return session;
       } catch (error) {
@@ -223,6 +282,33 @@ const authConfig = NextAuth({
     },
     async signIn({ user, account, profile: _profile, email: _email, credentials: _credentials }) {
       try {
+        // Fix for Issue #620: Enhanced signin validation with better error handling
+        if (!user?.email) {
+          console.warn('SignIn callback: Missing user email');
+          return false;
+        }
+
+        // For credentials provider, user is already authenticated by authorize function
+        if (account?.provider === 'credentials') {
+          // Additional validation: ensure user has required verification status
+          try {
+            const userResult = await UserService.getUserByEmail(user.email);
+            if (!userResult.success || !userResult.data) {
+              console.warn(`SignIn callback: User not found after credentials auth: ${user.email}`);
+              return false;
+            }
+
+            // Store email verification status in user object for token creation
+            user.isEmailVerified = userResult.data.isEmailVerified;
+
+            return true;
+          } catch (dbError) {
+            console.error('SignIn callback: Database error during user validation:', dbError);
+            return false;
+          }
+        }
+
+        // For other providers, use existing validation
         return await validateUserSignIn(user, account);
       } catch (error) {
         console.error('SignIn callback error:', error);
