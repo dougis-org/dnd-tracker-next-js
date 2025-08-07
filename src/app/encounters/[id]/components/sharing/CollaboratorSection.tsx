@@ -2,11 +2,10 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PlusIcon, XIcon } from 'lucide-react';
-import type { IEncounter } from '@/lib/models/encounter/interfaces';
-import type { Types } from 'mongoose';
+import type { Encounter } from '@/lib/validations/encounter';
 
 interface CollaboratorSectionProps {
-  encounter: IEncounter;
+  encounter: Encounter;
   showAddCollaborator: boolean;
   newCollaboratorEmail: string;
   onToggleAdd: () => void;
@@ -16,7 +15,7 @@ interface CollaboratorSectionProps {
 }
 
 interface CollaboratorItemProps {
-  collaboratorId: Types.ObjectId;
+  collaboratorId: string;
   index: number;
   onRemove: (_id: string) => void;
 }
@@ -40,7 +39,7 @@ function CollaboratorItem({ collaboratorId, index, onRemove }: CollaboratorItemP
 }
 
 interface CollaboratorListProps {
-  collaborators: Types.ObjectId[];
+  collaborators: string[];
   onRemoveCollaborator: (_id: string) => void;
 }
 

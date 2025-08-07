@@ -3,10 +3,10 @@ import { canStartCombat } from '@/lib/utils/encounter-utils';
 import { useCombatStart } from '@/lib/hooks/useCombatStart';
 import { ActionButtons } from './actions/ActionButtons';
 import { StartCombatDialog } from './actions/StartCombatDialog';
-import type { IEncounter } from '@/lib/models/encounter/interfaces';
+import type { Encounter } from '@/lib/validations/encounter';
 
 interface EncounterActionsProps {
-  encounter: IEncounter;
+  encounter: Encounter;
   onEdit: () => void;
   onStartCombat: () => void;
   onClone: () => void;

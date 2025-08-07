@@ -2,7 +2,7 @@
  * Combat readiness utilities and types
  */
 
-import type { IEncounter } from '@/lib/models/encounter/interfaces';
+import type { Encounter } from '@/lib/validations/encounter';
 
 export interface ReadinessCheck {
   category: string;
@@ -16,7 +16,7 @@ export type ReadinessStatus = 'ready' | 'warning' | 'error';
 /**
  * Check participant readiness
  */
-export const checkParticipants = (participants: IEncounter['participants']): ReadinessCheck => {
+export const checkParticipants = (participants: Encounter['participants']): ReadinessCheck => {
   const count = participants.length;
 
   if (count === 0) {
@@ -47,7 +47,7 @@ export const checkParticipants = (participants: IEncounter['participants']): Rea
 /**
  * Check initiative readiness
  */
-export const checkInitiative = (participants: IEncounter['participants']): ReadinessCheck => {
+export const checkInitiative = (participants: Encounter['participants']): ReadinessCheck => {
   const totalCount = participants.length;
   const withInitiative = participants.filter(p => p.initiative !== undefined).length;
 
@@ -87,7 +87,7 @@ export const checkInitiative = (participants: IEncounter['participants']): Readi
 /**
  * Check settings readiness
  */
-export const checkSettings = (settings: IEncounter['settings']): ReadinessCheck => {
+export const checkSettings = (settings: Encounter['settings']): ReadinessCheck => {
   const hasRequiredSettings = settings.autoRollInitiative !== undefined;
 
   if (hasRequiredSettings) {
@@ -109,7 +109,7 @@ export const checkSettings = (settings: IEncounter['settings']): ReadinessCheck 
 /**
  * Get all readiness checks for an encounter
  */
-export const getReadinessChecks = (encounter: IEncounter): ReadinessCheck[] => {
+export const getReadinessChecks = (encounter: Encounter): ReadinessCheck[] => {
   const participants = encounter.participants || [];
 
   return [

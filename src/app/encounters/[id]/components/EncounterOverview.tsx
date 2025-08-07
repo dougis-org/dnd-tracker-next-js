@@ -3,10 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BasicInfoGrid } from './overview/BasicInfoGrid';
 import { TagsDisplay } from './overview/TagsDisplay';
 import { DescriptionDisplay } from './overview/DescriptionDisplay';
-import type { IEncounter } from '@/lib/models/encounter/interfaces';
+import type { Encounter } from '@/lib/validations/encounter';
 
 interface EncounterOverviewProps {
-  encounter: IEncounter;
+  encounter: Encounter;
 }
 
 /**

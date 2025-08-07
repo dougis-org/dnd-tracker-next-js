@@ -6,10 +6,10 @@ import { ShareLinkSection } from './sharing/ShareLinkSection';
 import { CollaboratorSection } from './sharing/CollaboratorSection';
 import { ShareSettingsSection } from './sharing/ShareSettingsSection';
 import { useCollaborators } from '@/lib/hooks/useCollaborators';
-import type { IEncounter } from '@/lib/models/encounter/interfaces';
+import type { Encounter } from '@/lib/validations/encounter';
 
 interface SharingSectionProps {
-  encounter: IEncounter;
+  encounter: Encounter;
 }
 
 /**
@@ -50,7 +50,7 @@ export function SharingSection({ encounter }: SharingSectionProps) {
         {/* Share Link Generation */}
         <div className="space-y-2">
           <ShareLinkSection
-            encounterId={encounter._id}
+            encounterId={encounter._id || ''}
             showShareLink={showShareLink}
             onGenerateLink={handleGenerateShareLink}
           />

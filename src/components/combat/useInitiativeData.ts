@@ -1,14 +1,14 @@
 'use client';
 
 import { useMemo } from 'react';
-import { IEncounter, IInitiativeEntry, IParticipantReference } from '@/lib/models/encounter/interfaces';
+import { Encounter, InitiativeEntry, ParticipantReference } from '@/lib/validations/encounter';
 
 interface InitiativeWithParticipant {
-  entry: IInitiativeEntry;
-  participant: IParticipantReference;
+  entry: InitiativeEntry;
+  participant: ParticipantReference;
 }
 
-export function useInitiativeData(encounter: IEncounter) {
+export function useInitiativeData(encounter: Encounter) {
   const initiativeWithParticipants = useMemo(() => {
     const participantMap = new Map(
       encounter.participants.map(p => [p.characterId.toString(), p])

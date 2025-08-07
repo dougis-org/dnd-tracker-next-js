@@ -2,12 +2,12 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { IInitiativeEntry, IParticipantReference } from '@/lib/models/encounter/interfaces';
+import { InitiativeEntry, ParticipantReference } from '@/lib/validations/encounter';
 import { InitiativeCard } from './InitiativeCard';
 
 interface InitiativeWithParticipant {
-  entry: IInitiativeEntry;
-  participant: IParticipantReference;
+  entry: InitiativeEntry;
+  participant: ParticipantReference;
 }
 
 interface InitiativeListProps {

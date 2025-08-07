@@ -8,13 +8,13 @@ import { PreparationTools } from '../PreparationTools';
 import { SharingSection } from '../SharingSection';
 import { InitiativeTracker } from '@/components/combat/InitiativeTracker';
 import { useInitiativeTracker } from '@/lib/hooks/useInitiativeTracker';
-import type { IEncounter } from '@/lib/models/encounter/interfaces';
+import type { Encounter } from '@/lib/validations/encounter';
 
 interface EncounterLayoutProps {
-  encounter: IEncounter;
+  encounter: Encounter;
   isEditing: boolean;
   onToggleEdit: () => void;
-  onEncounterUpdate?: (_encounter: IEncounter) => void;
+  onEncounterUpdate?: (_encounter: Encounter) => void;
 }
 
 /**

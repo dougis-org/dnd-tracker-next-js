@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useEncounterSettings } from '@/lib/hooks/useEncounterSettings';
-import type { IEncounter } from '@/lib/models/encounter/interfaces';
+import type { Encounter } from '@/lib/validations/encounter';
 
 interface SettingRowProps {
   id: string;
@@ -53,7 +53,7 @@ function InfoRow({ label, value, suffix = '' }: InfoRowProps) {
 }
 
 interface EncounterSettingsProps {
-  encounter: IEncounter;
+  encounter: Encounter;
 }
 
 /**

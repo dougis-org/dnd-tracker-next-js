@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { IEncounter } from '@/lib/models/encounter/interfaces';
+import { Encounter } from '@/lib/validations/encounter';
 import { Card, CardContent } from '@/components/ui/card';
 import { CombatControlsSection } from './CombatControls';
 import { InitiativeList } from './InitiativeList';
@@ -23,7 +23,7 @@ interface InitiativeActions {
 }
 
 interface InitiativeTrackerProps {
-  encounter: IEncounter;
+  encounter: Encounter;
   combatActions: CombatActions;
   initiativeActions: InitiativeActions;
 }

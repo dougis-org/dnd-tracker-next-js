@@ -3,7 +3,7 @@
  */
 
 import type { Types } from 'mongoose';
-import type { IEncounter } from '@/lib/models/encounter/interfaces';
+import type { Encounter } from '@/lib/validations/encounter';
 
 /**
  * Format duration in minutes to human-readable string
@@ -51,14 +51,14 @@ export const copyToClipboard = async (text: string): Promise<boolean> => {
 /**
  * Check if encounter can start combat
  */
-export const canStartCombat = (encounter: IEncounter): boolean => {
+export const canStartCombat = (encounter: Encounter): boolean => {
   return encounter.participants.length > 0 && encounter.status !== 'active';
 };
 
 /**
  * Get encounter statistics
  */
-export const getEncounterStats = (encounter: IEncounter) => {
+export const getEncounterStats = (encounter: Encounter) => {
   const participants = encounter.participants || [];
 
   return {

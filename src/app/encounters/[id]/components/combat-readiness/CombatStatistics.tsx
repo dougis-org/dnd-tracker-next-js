@@ -1,9 +1,9 @@
 import React from 'react';
 import { getEncounterStats } from '@/lib/utils/encounter-utils';
-import type { IEncounter } from '@/lib/models/encounter/interfaces';
+import type { Encounter } from '@/lib/validations/encounter';
 
 interface CombatStatisticsProps {
-  encounter: IEncounter;
+  encounter: Encounter;
 }
 
 /**

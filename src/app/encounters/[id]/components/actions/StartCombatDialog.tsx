@@ -8,11 +8,11 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import type { IEncounter } from '@/lib/models/encounter/interfaces';
+import type { Encounter } from '@/lib/validations/encounter';
 
 interface StartCombatDialogProps {
   open: boolean;
-  encounter: IEncounter;
+  encounter: Encounter;
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -34,7 +34,7 @@ function SettingDisplay({ label, value }: SettingDisplayProps) {
 }
 
 interface CombatSummaryProps {
-  encounter: IEncounter;
+  encounter: Encounter;
 }
 
 /**

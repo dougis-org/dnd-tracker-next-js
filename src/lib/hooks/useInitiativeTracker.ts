@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useState } from 'react';
-import { IEncounter } from '@/lib/models/encounter/interfaces';
+import { Encounter } from '@/lib/validations/encounter';
 import {
   makeRequest,
   buildExportData,
@@ -12,8 +12,8 @@ import {
 } from '@/components/combat/useInitiativeHelpers';
 
 interface UseInitiativeTrackerProps {
-  encounter: IEncounter;
-  onEncounterUpdate?: (_encounter: IEncounter) => void;
+  encounter: Encounter;
+  onEncounterUpdate?: (_encounter: Encounter) => void;
 }
 
 interface UseInitiativeTrackerReturn {
