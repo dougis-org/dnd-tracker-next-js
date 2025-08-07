@@ -1,12 +1,12 @@
 'use client';
 
 import React from 'react';
-import { IInitiativeEntry, IParticipantReference } from '@/lib/models/encounter/interfaces';
+import { InitiativeEntry, ParticipantReference } from '@/lib/validations/encounter';
 import { CardContainer, InitiativeBadge, CharacterInfo, HPDisplay } from './InitiativeCardComponents';
 
 interface InitiativeCardProps {
-  entry: IInitiativeEntry;
-  participant: IParticipantReference;
+  entry: InitiativeEntry;
+  participant: ParticipantReference;
   isActive: boolean;
   isNext: boolean;
   onEditInitiative?: (_participantId: string, _newInitiative: number) => void;

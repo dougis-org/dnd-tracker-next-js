@@ -4,10 +4,10 @@ import { useEditableContent } from '@/lib/hooks/useEditableContent';
 import { EditableDescription } from './notes/EditableDescription';
 import { DescriptionDisplay, DescriptionHeader } from './notes/DescriptionDisplay';
 import { NotesSection } from './notes/NotesSection';
-import type { IEncounter } from '@/lib/models/encounter/interfaces';
+import type { Encounter } from '@/lib/validations/encounter';
 
 interface EncounterNotesProps {
-  encounter: IEncounter;
+  encounter: Encounter;
   isEditing: boolean;
   onToggleEdit: () => void;
 }

@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
-import type { IEncounter } from '@/lib/models/encounter/interfaces';
+import type { Encounter } from '@/lib/validations/encounter';
 
 interface PreparationToolsProps {
-  encounter: IEncounter;
+  encounter: Encounter;
 }
 
 interface PreparationItem {

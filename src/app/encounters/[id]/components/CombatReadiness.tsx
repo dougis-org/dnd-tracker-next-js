@@ -4,10 +4,10 @@ import { getReadinessChecks, getOverallStatus } from '@/lib/utils/combat-readine
 import { ReadinessCheckItem } from './combat-readiness/ReadinessCheck';
 import { ReadinessBadge } from './combat-readiness/ReadinessBadge';
 import { CombatStatistics } from './combat-readiness/CombatStatistics';
-import type { IEncounter } from '@/lib/models/encounter/interfaces';
+import type { Encounter } from '@/lib/validations/encounter';
 
 interface CombatReadinessProps {
-  encounter: IEncounter;
+  encounter: Encounter;
 }
 
 /**

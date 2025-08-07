@@ -1,10 +1,10 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { formatDuration, formatDifficulty, formatStatus } from '@/lib/utils/encounter-utils';
-import type { IEncounter } from '@/lib/models/encounter/interfaces';
+import type { Encounter } from '@/lib/validations/encounter';
 
 interface BasicInfoGridProps {
-  encounter: IEncounter;
+  encounter: Encounter;
 }
 
 /**

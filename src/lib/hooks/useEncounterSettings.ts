@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import type { IEncounterSettings } from '@/lib/models/encounter/interfaces';
+import type { EncounterSettings } from '@/lib/validations/encounter';
 
 interface UpdateOptions {
   optimistic?: boolean;
@@ -9,18 +9,18 @@ interface UseEncounterSettingsReturn {
   loading: boolean;
   error: string | null;
   updateSettings: (
-    _settings: Partial<IEncounterSettings>,
+    _settings: Partial<EncounterSettings>,
     _options?: UpdateOptions
   ) => Promise<void>;
   retry: () => Promise<void>;
 }
 
 interface LastUpdate {
-  settings: Partial<IEncounterSettings>;
+  settings: Partial<EncounterSettings>;
   options?: UpdateOptions;
 }
 
-async function makeApiRequest(encounterId: string, settings: Partial<IEncounterSettings>) {
+async function makeApiRequest(encounterId: string, settings: Partial<EncounterSettings>) {
   const response = await fetch(`/api/encounters/${encounterId}/settings`, {
     method: 'PATCH',
     headers: {
@@ -44,7 +44,7 @@ export function useEncounterSettings(encounterId: string): UseEncounterSettingsR
   const [lastUpdate, setLastUpdate] = useState<LastUpdate | null>(null);
 
   const updateSettings = useCallback(
-    async (settings: Partial<IEncounterSettings>, options?: UpdateOptions) => {
+    async (settings: Partial<EncounterSettings>, options?: UpdateOptions) => {
       try {
         setLoading(true);
         setError(null);

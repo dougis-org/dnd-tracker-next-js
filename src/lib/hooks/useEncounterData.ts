@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { EncounterService } from '@/lib/services/EncounterService';
-import type { IEncounter } from '@/lib/models/encounter/interfaces';
+import type { Encounter } from '@/lib/validations/encounter';
 
 /**
  * Extract error message from service result
@@ -17,7 +17,7 @@ const extractErrorMessage = (error: unknown): string => {
  * Custom hook for managing encounter data loading and state
  */
 export function useEncounterData(encounterId: string) {
-  const [encounter, setEncounter] = useState<IEncounter | null>(null);
+  const [encounter, setEncounter] = useState<Encounter | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -29,7 +29,8 @@ export function useEncounterData(encounterId: string) {
       const result = await EncounterService.getEncounterById(encounterId);
 
       if (result.success && result.data) {
-        setEncounter(result.data);
+        // Convert mongoose model to validation type (ObjectId -> string)
+        setEncounter(result.data as unknown as Encounter);
       } else {
         setError(extractErrorMessage(result.error));
       }
@@ -48,7 +49,7 @@ export function useEncounterData(encounterId: string) {
     loadEncounter();
   };
 
-  const updateEncounter = useCallback((updatedEncounter: IEncounter) => {
+  const updateEncounter = useCallback((updatedEncounter: Encounter) => {
     setEncounter(updatedEncounter);
   }, []);
 

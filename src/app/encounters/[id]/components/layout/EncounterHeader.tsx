@@ -1,9 +1,9 @@
 import React from 'react';
 import { EncounterActions } from '../EncounterActions';
-import type { IEncounter } from '@/lib/models/encounter/interfaces';
+import type { Encounter } from '@/lib/validations/encounter';
 
 interface EncounterHeaderProps {
-  encounter: IEncounter;
+  encounter: Encounter;
   onEdit: () => void;
   onStartCombat: () => void;
   onClone: () => void;
