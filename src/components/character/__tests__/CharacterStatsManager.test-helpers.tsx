@@ -4,7 +4,7 @@ import { CharacterStatsManager } from '../CharacterStatsManager';
 import { CharacterService } from '@/lib/services/CharacterService';
 import { createMockCharacter as createMockCharacterBase } from '@/lib/services/__tests__/CharacterService.test-helpers';
 
-// Convert service layer mock (with object skills) to component layer format 
+// Convert service layer mock (with object skills) to component layer format
 export const createMockCharacter = (overrides = {}) => {
   const baseMock = createMockCharacterBase(overrides);
   return {
