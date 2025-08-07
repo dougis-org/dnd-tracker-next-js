@@ -202,7 +202,7 @@ Additional review of other main application sections found 3 more mock data issu
 | Issue | Type | Status | Priority | Dependencies | Notes |
 |-------|------|--------|----------|--------------|-------|
 | #604  | Dashboard Stats | ✅ Complete | P2 | None | Hardcoded mock statistics → Real API data |
-| #605  | Dashboard Actions | Pending | P2 | None | Fake action button handlers |
+| #605  | Dashboard Actions | ✅ Complete | P2 | None | Fake action button handlers → Real navigation |
 | #606  | Combat Page UI | Pending | Post-MVP | None | Misleading placeholder interface |
 
 ## Dependencies & Prerequisites
@@ -218,18 +218,31 @@ Additional review of other main application sections found 3 more mock data issu
 - NextAuth session validation (operational)
 - Existing test infrastructure (operational)
 
+## Outstanding Issues
+
+### P1 MVP - Critical Issues Requiring Immediate Attention
+
+| Issue | Status | Priority | Description | Blocking |
+|-------|--------|----------|-------------|----------|
+| #594  | **OPEN** ❌ | P1 MVP | Client-side runtime error - mongoose model imports | Characters & Encounters pages |
+
+**Issue #594 Details:**
+- **Problem**: Client components importing `ICharacter` from `@/lib/models/Character` instead of `@/lib/validations/character`
+- **Impact**: Runtime error "Cannot read properties of undefined (reading 'Character')" blocks core functionality
+- **Solution**: Replace mongoose model imports with validation types in all client components
+- **Status**: Prematurely marked as fixed, but issue persists - requires proper implementation
+
 ## Next Actions
 
-1. **Immediate**: Begin work on Issue #602 (API Backend) as it blocks all other work
-2. **Planning**: Prepare detailed technical specifications for API endpoints
-3. **Testing**: Set up test environment for party management functionality
-4. **Documentation**: Begin API documentation structure
+1. **IMMEDIATE PRIORITY**: Fix Issue #594 - Critical P1 MVP blocking Characters and Encounters functionality
+2. **Secondary**: Continue with remaining P2 enhancement issues (#606)
+3. **Documentation**: Update patterns documentation to prevent similar client/server import issues
 
 ---
 
-**Document Version**: 1.2  
+**Document Version**: 1.3  
 **Last Updated**: 2025-08-07  
-**Next Review**: After Phase 2 completion  
+**Next Review**: After Issue #594 resolution  
 **Responsible**: Development Team  
 **Approver**: Technical Lead
 
@@ -245,11 +258,19 @@ Additional review of other main application sections found 3 more mock data issu
 - 🎯 **Next Focus**: Phase 2 enhancement issues (#604-#606)
 
 ### Version 1.2 (2025-08-07)
-- ✅ **Issue #594 COMPLETED**: Critical client-side runtime error resolved via PR #613
-- 🔧 **Bug Fix**: Fixed "Cannot read properties of undefined (reading 'Character')" blocking Characters and Encounters pages
-- 🏗️ **Architecture**: Improved client/server code separation by replacing mongoose model imports with validation types
-- 📈 **Quality**: Reduced code complexity in critical components and maintained test coverage
-- 🎯 **Impact**: Core application functionality restored for all authenticated users
+- ❌ **Issue #594 REOPENED**: Critical client-side runtime error is NOT actually fixed - issue was prematurely closed
+- 🔧 **Status**: "Cannot read properties of undefined (reading 'Character')" error still blocking Characters and Encounters pages
+- 🏗️ **Root Cause**: Client-side components still importing mongoose models instead of validation types
+- 📈 **Priority**: P1 MVP - Critical issue that needs immediate attention
+
+### Version 1.3 (2025-08-07)
+- ✅ **Issue #605 COMPLETED**: Dashboard action buttons now have real navigation functionality via PR #616
+- 🎯 **Implementation**: Replaced fake console.log handlers with proper router.push navigation
+- 📊 **Navigation Routes**: Create Character → `/characters`, Create Encounter → `/encounters/create`, Start Combat → `/combat`
+- 🧪 **Testing**: Added comprehensive navigation tests following TDD approach
+- 📈 **Quality**: All tests passing, Codacy clean, following established patterns
+- 🚨 **Outstanding**: Issue #594 remains critical P1 MVP priority requiring immediate attention
+- 🎯 **Next Focus**: Issue #594 requires proper fix - replace mongoose model imports with validation types
 
 <!-- Issue References -->
 [issue-593]: https://github.com/dougis-org/dnd-tracker-next-js/issues/593
