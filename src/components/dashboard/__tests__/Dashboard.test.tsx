@@ -1,9 +1,24 @@
-import { screen } from '@testing-library/react';
+import { screen, fireEvent } from '@testing-library/react';
 import { renderDashboard, expectElementToBeInDocument, expectTextToBeInDocument, expectButtonToBeInDocument } from './test-helpers';
 import * as useDashboardStatsModule from '@/hooks/use-dashboard-stats';
 
 // Mock the useDashboardStats hook
 jest.mock('@/hooks/use-dashboard-stats');
+
+// Mock Next.js router
+const mockPush = jest.fn();
+const mockRouter = {
+  push: mockPush,
+  replace: jest.fn(),
+  prefetch: jest.fn(),
+  back: jest.fn(),
+  forward: jest.fn(),
+  refresh: jest.fn(),
+};
+
+jest.mock('next/navigation', () => ({
+  useRouter: () => mockRouter,
+}));
 
 const mockUseDashboardStats = useDashboardStatsModule.useDashboardStats as jest.MockedFunction<
   typeof useDashboardStatsModule.useDashboardStats
@@ -15,6 +30,8 @@ jest.spyOn(console, 'log').mockImplementation(() => {});
 describe('Dashboard', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // Reset router mock
+    mockPush.mockClear();
     // Default mock implementation
     mockUseDashboardStats.mockReturnValue({
       stats: { characters: 0, encounters: 0, parties: 0 },
@@ -149,6 +166,46 @@ describe('Dashboard', () => {
     test('renders customization button', () => {
       renderDashboard();
       expectButtonToBeInDocument(/customize dashboard/i);
+    });
+  });
+
+  describe('Action Handler Navigation', () => {
+    test('Create Character button navigates to character creation', () => {
+      renderDashboard();
+      const createCharacterButton = screen.getByRole('button', { name: /create character/i });
+
+      fireEvent.click(createCharacterButton);
+
+      expect(mockPush).toHaveBeenCalledWith('/characters');
+    });
+
+    test('Create Encounter button navigates to encounter creation', () => {
+      renderDashboard();
+      const createEncounterButton = screen.getByRole('button', { name: /create encounter/i });
+
+      fireEvent.click(createEncounterButton);
+
+      expect(mockPush).toHaveBeenCalledWith('/encounters/create');
+    });
+
+    test('Start Combat button navigates to combat page', () => {
+      renderDashboard();
+      const startCombatButton = screen.getByRole('button', { name: /start combat/i });
+
+      fireEvent.click(startCombatButton);
+
+      expect(mockPush).toHaveBeenCalledWith('/combat');
+    });
+
+    test('Customize Dashboard button opens dashboard customization', () => {
+      renderDashboard();
+      const customizeButton = screen.getByRole('button', { name: /customize dashboard/i });
+
+      fireEvent.click(customizeButton);
+
+      // For now, this will test that console.log is called
+      // Later we can implement a proper customization modal
+      expect(console.log).toHaveBeenCalledWith('Customize dashboard clicked');
     });
   });
 });
