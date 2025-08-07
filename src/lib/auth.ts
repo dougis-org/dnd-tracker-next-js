@@ -218,7 +218,6 @@ const authConfig = NextAuth({
         token.subscriptionTier = user.subscriptionTier;
         token.email = user.email;
         token.name = user.name;
-        // Fix for Issue #620: Add timestamp for token creation tracking
         token.createdAt = Date.now();
         token.isEmailVerified = user.isEmailVerified ?? true;
       }
@@ -266,13 +265,6 @@ const authConfig = NextAuth({
         session.user.name = token.name;
         session.user.isEmailVerified = token.isEmailVerified ?? true;
 
-        // Fix for Issue #620: Add token metadata for debugging
-        if (process.env.NODE_ENV === 'development') {
-          session.debug = {
-            tokenCreatedAt: token.createdAt,
-            tokenAge: token.createdAt ? Date.now() - token.createdAt : null,
-          };
-        }
 
         return session;
       } catch (error) {

@@ -7,19 +7,20 @@ require('./src/__mocks__/jest-setup-node-globals');
 
 // Set database environment variables for all tests
 // For CI environment, these should be set in the GitHub workflow
-// For local testing, we use these defaults
+// For local testing, use the same Atlas connection as development
 if (!process.env.MONGODB_URI) {
   if (debug_logs) {
-    console.log('No MONGODB_URI set, using default for tests');
+    console.log('No MONGODB_URI set, using Atlas connection for tests');
   }
-  process.env.MONGODB_URI = 'mongodb://localhost:27017/testdb';
+  // Use Atlas connection for tests (same as development)
+  process.env.MONGODB_URI = process.env.JEST_MONGODB_URI || 'mongodb://localhost:27017/testdb';
 }
 
 if (!process.env.MONGODB_DB_NAME) {
   if (debug_logs) {
-    console.log('No MONGODB_DB_NAME set, using default for tests');
+    console.log('No MONGODB_DB_NAME set, using dnd-dev for tests');
   }
-  process.env.MONGODB_DB_NAME = 'testdb';
+  process.env.MONGODB_DB_NAME = 'dnd-dev';
 }
 
 // Log the MongoDB connection details for debugging

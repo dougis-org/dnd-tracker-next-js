@@ -4,6 +4,24 @@ import User from '../models/User';
 import type { PublicUser } from '../validations/user';
 
 /**
+ * Ensure User model is properly initialized
+ * Fix for Issue #620: Handle model initialization issues
+ */
+async function ensureUserModel() {
+  await connectToDatabase();
+
+  if (!User) {
+    throw new Error('User model is not properly initialized. Database connection may have failed.');
+  }
+
+  if (typeof User.findByEmail !== 'function') {
+    throw new Error('User model methods are not available. Model registration may have failed.');
+  }
+
+  return User;
+}
+
+/**
  * Helper functions for UserService to reduce complexity
  */
 
@@ -14,15 +32,15 @@ export async function checkUserExists(
   email: string,
   username: string
 ): Promise<void> {
-  // Ensure database connection before using model
-  await connectToDatabase();
+  // Fix for Issue #620: Ensure User model is properly initialized
+  const UserModel = await ensureUserModel();
 
-  const existingUserByEmail = await User.findByEmail(email);
+  const existingUserByEmail = await UserModel.findByEmail(email);
   if (existingUserByEmail) {
     throw new UserAlreadyExistsError('email', email);
   }
 
-  const existingUserByUsername = await User.findByUsername(username);
+  const existingUserByUsername = await UserModel.findByUsername(username);
   if (existingUserByUsername) {
     throw new UserAlreadyExistsError('username', username);
   }
@@ -36,18 +54,18 @@ export async function checkProfileUpdateConflicts(
   email?: string,
   username?: string
 ): Promise<void> {
-  // Ensure database connection before using model
-  await connectToDatabase();
+  // Fix for Issue #620: Ensure User model is properly initialized
+  const UserModel = await ensureUserModel();
 
   if (email) {
-    const existingUser = await User.findByEmail(email);
+    const existingUser = await UserModel.findByEmail(email);
     if (existingUser && existingUser._id.toString() !== userId) {
       throw new UserAlreadyExistsError('email', email);
     }
   }
 
   if (username) {
-    const existingUser = await User.findByUsername(username);
+    const existingUser = await UserModel.findByUsername(username);
     if (existingUser && existingUser._id.toString() !== userId) {
       throw new UserAlreadyExistsError('username', username);
     }
