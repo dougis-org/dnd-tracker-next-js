@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import type { ICharacter } from '@/lib/models/Character';
+import type { Character } from '@/lib/validations/character';
 import CharacterDetailView from '@/components/characters/CharacterDetailView';
 import { BackButton, LoadingState, ErrorState, NotFoundState } from './components/CharacterStates';
 import { useCharacterData } from './hooks/useCharacterData';
@@ -14,11 +14,13 @@ export function CharacterDetailClient({ id }: CharacterDetailClientProps) {
   const router = useRouter();
   const { character, loading, error } = useCharacterData(id);
 
-  const handleEdit = (character: ICharacter) => {
+  const handleEdit = (character: Character) => {
+    if (!character._id) return;
     router.push(`/characters/${character._id.toString()}/edit` as any);
   };
 
-  const handleShare = async (character: ICharacter) => {
+  const handleShare = async (character: Character) => {
+    if (!character._id) return;
     try {
       // Create shareable URL
       const shareUrl = `${window.location.origin}/characters/${character._id}`;

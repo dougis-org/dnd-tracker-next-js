@@ -1,4 +1,4 @@
-import type { ICharacter } from '@/lib/models/Character';
+import type { Character } from '@/lib/validations/character';
 import type { ParticipantFormData } from '../hooks/useParticipantForm';
 import type { IParticipantReference } from '@/lib/models/encounter/interfaces';
 
@@ -6,7 +6,7 @@ import type { IParticipantReference } from '@/lib/models/encounter/interfaces';
  * Converts a character document to participant form data
  * This utility handles the data transformation between character library and encounter participants
  */
-export function convertCharacterToParticipant(character: ICharacter): ParticipantFormData {
+export function convertCharacterToParticipant(character: Character): ParticipantFormData {
   return {
     name: character.name,
     type: character.type,
@@ -25,7 +25,10 @@ export function convertCharacterToParticipant(character: ICharacter): Participan
 /**
  * Converts a character to participant data with characterId for service operations
  */
-export function convertCharacterToParticipantData(character: ICharacter): Omit<IParticipantReference, 'characterId'> & { characterId: string } {
+export function convertCharacterToParticipantData(character: Character): Omit<IParticipantReference, 'characterId'> & { characterId: string } {
+  if (!character._id) {
+    throw new Error('Character must have an ID to be converted to participant data');
+  }
   return {
     characterId: character._id.toString(),
     name: character.name,
@@ -46,21 +49,21 @@ export function convertCharacterToParticipantData(character: ICharacter): Omit<I
 /**
  * Converts multiple characters to participant form data
  */
-export function convertCharactersToParticipants(characters: ICharacter[]): ParticipantFormData[] {
+export function convertCharactersToParticipants(characters: Character[]): ParticipantFormData[] {
   return characters.map(convertCharacterToParticipant);
 }
 
 /**
  * Converts multiple characters to participant data for service operations
  */
-export function convertCharactersToParticipantData(characters: ICharacter[]): Array<Omit<IParticipantReference, 'characterId'> & { characterId: string }> {
+export function convertCharactersToParticipantData(characters: Character[]): Array<Omit<IParticipantReference, 'characterId'> & { characterId: string }> {
   return characters.map(convertCharacterToParticipantData);
 }
 
 /**
  * Validates basic character fields
  */
-function validateBasicCharacterFields(character: ICharacter): string[] {
+function validateBasicCharacterFields(character: Character): string[] {
   const errors: string[] = [];
 
   if (!character.name?.trim()) {
@@ -85,7 +88,7 @@ function validateBasicCharacterFields(character: ICharacter): string[] {
 /**
  * Validates character ability scores
  */
-function validateCharacterAbilityScores(character: ICharacter): string[] {
+function validateCharacterAbilityScores(character: Character): string[] {
   const errors: string[] = [];
 
   if (!character.abilityScores) {
@@ -107,7 +110,7 @@ function validateCharacterAbilityScores(character: ICharacter): string[] {
 /**
  * Validates that a character can be converted to a participant
  */
-export function validateCharacterForConversion(character: ICharacter): { isValid: boolean; errors: string[] } {
+export function validateCharacterForConversion(character: Character): { isValid: boolean; errors: string[] } {
   const errors: string[] = [
     ...validateBasicCharacterFields(character),
     ...validateCharacterAbilityScores(character),
@@ -122,12 +125,12 @@ export function validateCharacterForConversion(character: ICharacter): { isValid
 /**
  * Validates multiple characters for conversion
  */
-export function validateCharactersForConversion(characters: ICharacter[]): {
-  validCharacters: ICharacter[];
-  invalidCharacters: { character: ICharacter; errors: string[] }[];
+export function validateCharactersForConversion(characters: Character[]): {
+  validCharacters: Character[];
+  invalidCharacters: { character: Character; errors: string[] }[];
 } {
-  const validCharacters: ICharacter[] = [];
-  const invalidCharacters: { character: ICharacter; errors: string[] }[] = [];
+  const validCharacters: Character[] = [];
+  const invalidCharacters: { character: Character; errors: string[] }[] = [];
 
   for (const character of characters) {
     const validation = validateCharacterForConversion(character);

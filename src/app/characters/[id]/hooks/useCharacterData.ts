@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
-import type { ICharacter } from '@/lib/models/Character';
+import type { Character } from '@/lib/validations/character';
 
 export const useCharacterData = (id: string) => {
   const { data: session } = useSession();
-  const [character, setCharacter] = useState<ICharacter | null>(null);
+  const [character, setCharacter] = useState<Character | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 

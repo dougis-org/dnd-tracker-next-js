@@ -3,7 +3,7 @@ import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { useCharacterPageActions } from '../useCharacterPageActions';
 import { CharacterService } from '@/lib/services/CharacterService';
-import type { ICharacter } from '@/lib/models/Character';
+import type { Character } from '@/lib/validations/character';
 
 // Mock dependencies
 jest.mock('next/navigation');
@@ -23,7 +23,7 @@ const mockSession = {
   user: { id: 'user123' },
 };
 
-const mockCharacter: ICharacter = {
+const mockCharacter: Character = {
   _id: 'char123',
   name: 'Test Character',
   userId: 'user123',
@@ -42,7 +42,7 @@ const mockCharacter: ICharacter = {
   },
   createdAt: new Date(),
   updatedAt: new Date(),
-} as ICharacter;
+} as Character;
 
 // Test helpers
 const setupAuthenticatedUser = () => {
@@ -64,7 +64,7 @@ const renderHookWithDefaults = () => renderHook(() => useCharacterPageActions())
 const testServiceCall = async (
   serviceMethod: jest.Mock,
   hookMethod: string,
-  character: ICharacter,
+  character: Character,
   expectedArgs: any[]
 ) => {
   const { SecureHookMethodCaller } = require('../../../../test-utils/secure-method-calls');
@@ -78,7 +78,7 @@ const testServiceCall = async (
 const testUnauthenticatedAction = async (
   serviceMethod: jest.Mock,
   hookMethod: string,
-  character: ICharacter
+  character: Character
 ) => {
   setupUnauthenticatedUser();
   const { result } = renderHookWithDefaults();

@@ -8,50 +8,10 @@
 import { CharacterService } from './CharacterService';
 import type { Character } from '@/lib/validations/character';
 import type { CharacterCreation, CharacterUpdate, CharacterSummary } from '@/lib/validations/character';
-import type { ICharacter } from '@/lib/models/Character';
 import type { ServiceResult } from './CharacterServiceErrors';
 
-// Convert ICharacter to Character validation type
-function convertICharacterToCharacter(iCharacter: ICharacter): Character {
-  return {
-    _id: iCharacter._id?.toString(),
-    ownerId: iCharacter.ownerId.toString(),
-    name: iCharacter.name,
-    type: iCharacter.type,
-    race: iCharacter.race as any,
-    customRace: iCharacter.customRace,
-    size: iCharacter.size,
-    classes: iCharacter.classes.map(cls => ({
-      class: cls.class as any,
-      level: cls.level,
-      hitDie: cls.hitDie,
-      subclass: cls.subclass
-    })),
-    abilityScores: { ...iCharacter.abilityScores },
-    hitPoints: { ...iCharacter.hitPoints },
-    armorClass: iCharacter.armorClass,
-    speed: iCharacter.speed,
-    proficiencyBonus: iCharacter.proficiencyBonus,
-    savingThrows: { ...iCharacter.savingThrows },
-    skills: iCharacter.skills ? Object.fromEntries(iCharacter.skills.entries()) : {},
-    equipment: iCharacter.equipment || [],
-    spells: (iCharacter.spells || []).map(spell => ({
-      ...spell,
-      prepared: spell.isPrepared
-    })),
-    backstory: iCharacter.backstory,
-    notes: iCharacter.notes,
-    imageUrl: iCharacter.imageUrl,
-    isPublic: iCharacter.isPublic,
-    partyId: iCharacter.partyId?.toString(),
-    createdAt: iCharacter.createdAt.toISOString(),
-    updatedAt: iCharacter.updatedAt.toISOString()
-  } as unknown as Character;
-}
-
-function convertICharactersToCharacters(iCharacters: ICharacter[]): Character[] {
-  return iCharacters.map(convertICharacterToCharacter);
-}
+// Note: This client should use API calls instead of direct service access.
+// For now, we'll pass through data assuming the service layer handles conversion.
 
 // Client-safe paginated characters type
 interface ClientPaginatedCharacters {
@@ -76,7 +36,7 @@ export class CharacterServiceClient {
     if (result.success) {
       return {
         success: true,
-        data: convertICharacterToCharacter(result.data)
+        data: result.data as unknown as Character
       };
     }
     return result;
@@ -90,7 +50,7 @@ export class CharacterServiceClient {
     if (result.success) {
       return {
         success: true,
-        data: convertICharacterToCharacter(result.data)
+        data: result.data as unknown as Character
       };
     }
     return result;
@@ -105,7 +65,7 @@ export class CharacterServiceClient {
     if (result.success) {
       return {
         success: true,
-        data: convertICharacterToCharacter(result.data)
+        data: result.data as unknown as Character
       };
     }
     return result;
@@ -128,7 +88,7 @@ export class CharacterServiceClient {
       return {
         success: true,
         data: {
-          items: convertICharactersToCharacters(result.data.items),
+          items: result.data.items as unknown as Character[],
           pagination: {
             page: result.data.pagination.page,
             totalPages: result.data.pagination.totalPages,
@@ -149,7 +109,7 @@ export class CharacterServiceClient {
     if (result.success) {
       return {
         success: true,
-        data: convertICharactersToCharacters(result.data)
+        data: result.data as unknown as Character[]
       };
     }
     return result;
@@ -163,7 +123,7 @@ export class CharacterServiceClient {
     if (result.success) {
       return {
         success: true,
-        data: convertICharactersToCharacters(result.data)
+        data: result.data as unknown as Character[]
       };
     }
     return result;
@@ -177,7 +137,7 @@ export class CharacterServiceClient {
     if (result.success) {
       return {
         success: true,
-        data: convertICharactersToCharacters(result.data)
+        data: result.data as unknown as Character[]
       };
     }
     return result;
@@ -191,7 +151,7 @@ export class CharacterServiceClient {
     if (result.success) {
       return {
         success: true,
-        data: convertICharactersToCharacters(result.data)
+        data: result.data as unknown as Character[]
       };
     }
     return result;

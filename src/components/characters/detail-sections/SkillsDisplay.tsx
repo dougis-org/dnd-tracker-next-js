@@ -1,13 +1,13 @@
 import React from 'react';
-import type { ICharacter } from '@/lib/models/Character';
+import type { Character } from '@/lib/validations/character';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { getSkillBonus, formatBonus, SKILL_ABILITIES, getSkillEntries, hasAnySkills } from './character-utils';
 
 interface SkillsDisplayProps {
-  character: ICharacter;
+  character: Character;
 }
 
-const SkillItem = ({ skillName, character }: { skillName: string; character: ICharacter }) => {
+const SkillItem = ({ skillName, character }: { skillName: string; character: Character }) => {
   const abilityKey = SKILL_ABILITIES[skillName] || 'wisdom';
   const abilityScore = character.abilityScores[abilityKey];
   const bonus = getSkillBonus(character, skillName, abilityScore);
