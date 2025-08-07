@@ -106,20 +106,9 @@ async function testNavigationFlow() {
   return errors;
 }
 
-// Install puppeteer if it's not available
-async function ensurePuppeteer() {
-  try {
-    require('puppeteer');
-  } catch (error) {
-    console.log('Installing puppeteer...');
-    const { execSync } = require('child_process');
-    execSync('npm install puppeteer', { stdio: 'inherit' });
-  }
-}
 
 async function main() {
   try {
-    await ensurePuppeteer();
     const errors = await testNavigationFlow();
     process.exit(errors.length === 0 ? 0 : 1);
   } catch (error) {
