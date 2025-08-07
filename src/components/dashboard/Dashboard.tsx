@@ -5,13 +5,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { SummaryCards } from './SummaryCards';
 import { QuickActions } from './QuickActions';
+import { useDashboardStats } from '@/hooks/use-dashboard-stats';
 
 export function Dashboard() {
-  // Placeholder data - will be replaced with real data later
-  const mockStats = {
-    characters: 0,
-    encounters: 0,
-    activeSessions: 0,
+  const { stats, isLoading, error } = useDashboardStats();
+
+  // Map the stats to match SummaryCards interface
+  const dashboardStats = {
+    characters: stats.characters,
+    encounters: stats.encounters,
+    activeSessions: stats.parties, // Map parties to activeSessions for now
   };
 
   const createHandler = (action: string) => () => {
@@ -34,7 +37,7 @@ export function Dashboard() {
       </div>
 
       {/* Summary Cards */}
-      <SummaryCards stats={mockStats} />
+      <SummaryCards stats={dashboardStats} isLoading={isLoading} error={error} />
 
       {/* Dashboard Grid */}
       <div data-testid="dashboard-widgets" className="grid grid-cols-1 lg:grid-cols-2 gap-6">

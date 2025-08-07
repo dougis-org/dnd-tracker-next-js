@@ -1,7 +1,29 @@
 import { screen } from '@testing-library/react';
 import { renderDashboard, expectElementToBeInDocument, expectTextToBeInDocument, expectButtonToBeInDocument } from './test-helpers';
+import * as useDashboardStatsModule from '@/hooks/use-dashboard-stats';
+
+// Mock the useDashboardStats hook
+jest.mock('@/hooks/use-dashboard-stats');
+
+const mockUseDashboardStats = useDashboardStatsModule.useDashboardStats as jest.MockedFunction<
+  typeof useDashboardStatsModule.useDashboardStats
+>;
+
+// Mock console.log to avoid noise in tests
+jest.spyOn(console, 'log').mockImplementation(() => {});
 
 describe('Dashboard', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    // Default mock implementation
+    mockUseDashboardStats.mockReturnValue({
+      stats: { characters: 0, encounters: 0, parties: 0 },
+      isLoading: false,
+      error: null,
+      refetch: jest.fn(),
+    });
+  });
+
   describe('Component Rendering', () => {
     test('renders without errors', () => {
       renderDashboard();
@@ -33,15 +55,54 @@ describe('Dashboard', () => {
       expectTextToBeInDocument('Active Sessions');
     });
 
-    test('summary cards display placeholder statistics', () => {
+    test('summary cards display real statistics from API', () => {
+      mockUseDashboardStats.mockReturnValue({
+        stats: { characters: 5, encounters: 3, parties: 2 },
+        isLoading: false,
+        error: null,
+        refetch: jest.fn(),
+      });
+
       renderDashboard();
       const characterValue = screen.getByTestId('characters-value');
       const encounterValue = screen.getByTestId('encounters-value');
       const sessionsValue = screen.getByTestId('active-sessions-value');
 
-      expect(characterValue).toHaveTextContent('0');
-      expect(encounterValue).toHaveTextContent('0');
-      expect(sessionsValue).toHaveTextContent('0');
+      expect(characterValue).toHaveTextContent('5');
+      expect(encounterValue).toHaveTextContent('3');
+      expect(sessionsValue).toHaveTextContent('2'); // parties mapped to activeSessions
+    });
+
+    test('summary cards display loading state', () => {
+      mockUseDashboardStats.mockReturnValue({
+        stats: { characters: 0, encounters: 0, parties: 0 },
+        isLoading: true,
+        error: null,
+        refetch: jest.fn(),
+      });
+
+      renderDashboard();
+      const characterValue = screen.getByTestId('characters-value');
+      const encounterValue = screen.getByTestId('encounters-value');
+      const sessionsValue = screen.getByTestId('active-sessions-value');
+
+      expect(characterValue).toHaveTextContent('...');
+      expect(encounterValue).toHaveTextContent('...');
+      expect(sessionsValue).toHaveTextContent('...');
+    });
+
+    test('summary cards display error state', () => {
+      mockUseDashboardStats.mockReturnValue({
+        stats: { characters: 0, encounters: 0, parties: 0 },
+        isLoading: false,
+        error: 'Failed to load dashboard statistics',
+        refetch: jest.fn(),
+      });
+
+      renderDashboard();
+
+      expect(screen.getByText('Error loading statistics')).toBeInTheDocument();
+      expect(screen.getByText('Failed to load dashboard statistics')).toBeInTheDocument();
     });
   });
 
