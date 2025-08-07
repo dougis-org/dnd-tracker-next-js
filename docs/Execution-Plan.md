@@ -201,7 +201,7 @@ Additional review of other main application sections found 3 more mock data issu
 
 | Issue | Type | Status | Priority | Dependencies | Notes |
 |-------|------|--------|----------|--------------|-------|
-| #604  | Dashboard Stats | Pending | P2 | None | Hardcoded mock statistics |
+| #604  | Dashboard Stats | ✅ Complete | P2 | None | Hardcoded mock statistics → Real API data |
 | #605  | Dashboard Actions | Pending | P2 | None | Fake action button handlers |
 | #606  | Combat Page UI | Pending | Post-MVP | None | Misleading placeholder interface |
 
