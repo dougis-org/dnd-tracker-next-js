@@ -3,7 +3,7 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { IInitiativeEntry, IParticipantReference } from '@/lib/models/encounter/interfaces';
+import { InitiativeEntry, ParticipantReference } from '@/lib/validations/encounter';
 
 interface InitiativeBadgeProps {
   initiative: number;
@@ -25,8 +25,8 @@ export function InitiativeBadge({ initiative, isActive }: InitiativeBadgeProps) 
 }
 
 interface CharacterInfoProps {
-  participant: IParticipantReference;
-  entry: IInitiativeEntry;
+  participant: ParticipantReference;
+  entry: InitiativeEntry;
   isActive: boolean;
 }
 
@@ -73,7 +73,7 @@ function ConditionsList({ conditions }: ConditionsListProps) {
 }
 
 interface HPDisplayProps {
-  participant: IParticipantReference;
+  participant: ParticipantReference;
 }
 
 /**

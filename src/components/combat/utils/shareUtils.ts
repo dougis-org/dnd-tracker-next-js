@@ -1,14 +1,14 @@
 'use client';
 
-import { IEncounter, IInitiativeEntry, IParticipantReference } from '@/lib/models/encounter/interfaces';
+import { Encounter, InitiativeEntry, ParticipantReference } from '@/lib/validations/encounter';
 
 /**
  * Formats an individual initiative entry line
  */
 function formatInitiativeEntry(
-  entry: IInitiativeEntry,
+  entry: InitiativeEntry,
   index: number,
-  participant: IParticipantReference | undefined,
+  participant: ParticipantReference | undefined,
   currentTurn: number
 ): string {
   const activeIndicator = index === currentTurn ? '→ ' : '   ';
@@ -22,7 +22,7 @@ function formatInitiativeEntry(
 /**
  * Helper function to build share text
  */
-export function buildShareText(encounter: IEncounter): string {
+export function buildShareText(encounter: Encounter): string {
   const header = `Initiative Order - ${encounter.name} (Round ${encounter.combatState.currentRound})\n\n`;
 
   // Create a Map for O(1) participant lookups instead of O(n) array.find()

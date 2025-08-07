@@ -1,11 +1,11 @@
 'use client';
 
-import { IEncounter, IInitiativeEntry, IParticipantReference } from '@/lib/models/encounter/interfaces';
+import { Encounter, InitiativeEntry, ParticipantReference } from '@/lib/validations/encounter';
 
 /**
  * Transforms an initiative entry for export
  */
-function transformInitiativeEntry(entry: IInitiativeEntry, participant: IParticipantReference | undefined) {
+function transformInitiativeEntry(entry: InitiativeEntry, participant: ParticipantReference | undefined) {
   return {
     name: participant?.name || 'Unknown',
     initiative: entry.initiative,
@@ -20,7 +20,7 @@ function transformInitiativeEntry(entry: IInitiativeEntry, participant: IPartici
 /**
  * Helper function to build export data
  */
-export function buildExportData(encounter: IEncounter) {
+export function buildExportData(encounter: Encounter) {
   // Create a Map for O(1) participant lookups instead of O(n) array.find()
   const participantMap = new Map(
     encounter.participants.map(p => [p.characterId.toString(), p])

@@ -258,19 +258,30 @@ Additional review of other main application sections found 3 more mock data issu
 - 🎯 **Next Focus**: Phase 2 enhancement issues (#604-#606)
 
 ### Version 1.2 (2025-08-07)
-- ❌ **Issue #594 REOPENED**: Critical client-side runtime error is NOT actually fixed - issue was prematurely closed
-- 🔧 **Status**: "Cannot read properties of undefined (reading 'Character')" error still blocking Characters and Encounters pages
-- 🏗️ **Root Cause**: Client-side components still importing mongoose models instead of validation types
+
+- ❌ **Issue #594 REOPENED**: Critical client-side runtime error is NOT
+  actually fixed - issue was prematurely closed
+- 🔧 **Status**: "Cannot read properties of undefined (reading 'Character')"
+  error still blocking Characters and Encounters pages
+- 🏗️ **Root Cause**: Client-side components still importing mongoose models
+  instead of validation types
 - 📈 **Priority**: P1 MVP - Critical issue that needs immediate attention
 
 ### Version 1.3 (2025-08-07)
-- ✅ **Issue #605 COMPLETED**: Dashboard action buttons now have real navigation functionality via PR #616
-- 🎯 **Implementation**: Replaced fake console.log handlers with proper router.push navigation
-- 📊 **Navigation Routes**: Create Character → `/characters`, Create Encounter → `/encounters/create`, Start Combat → `/combat`
+
+- ✅ **Issue #605 COMPLETED**: Dashboard action buttons now have real
+  navigation functionality via PR #616
+- 🎯 **Implementation**: Replaced fake console.log handlers with proper
+  router.push navigation
+- 📊 **Navigation Routes**: Create Character → `/characters`, Create Encounter
+  → `/encounters/create`, Start Combat → `/combat`
 - 🧪 **Testing**: Added comprehensive navigation tests following TDD approach
-- 📈 **Quality**: All tests passing, Codacy clean, following established patterns
-- 🚨 **Outstanding**: Issue #594 remains critical P1 MVP priority requiring immediate attention
-- 🎯 **Next Focus**: Issue #594 requires proper fix - replace mongoose model imports with validation types
+- 📈 **Quality**: All tests passing, Codacy clean, following established
+  patterns
+- 🚨 **Outstanding**: Issue #594 remains critical P1 MVP priority requiring
+  immediate attention
+- 🎯 **Next Focus**: Issue #594 requires proper fix - replace mongoose model
+  imports with validation types
 
 <!-- Issue References -->
 [issue-593]: https://github.com/dougis-org/dnd-tracker-next-js/issues/593

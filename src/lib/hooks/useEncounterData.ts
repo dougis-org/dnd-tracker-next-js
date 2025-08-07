@@ -29,7 +29,8 @@ export function useEncounterData(encounterId: string) {
       const result = await EncounterService.getEncounterById(encounterId);
 
       if (result.success && result.data) {
-        setEncounter(result.data);
+        // Convert mongoose model to validation type (ObjectId -> string)
+        setEncounter(result.data as unknown as Encounter);
       } else {
         setError(extractErrorMessage(result.error));
       }
