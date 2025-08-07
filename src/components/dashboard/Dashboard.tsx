@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { SummaryCards } from './SummaryCards';
@@ -8,6 +9,7 @@ import { QuickActions } from './QuickActions';
 import { useDashboardStats } from '@/hooks/use-dashboard-stats';
 
 export function Dashboard() {
+  const router = useRouter();
   const { stats, isLoading, error } = useDashboardStats();
 
   // Map the stats to match SummaryCards interface
@@ -17,14 +19,23 @@ export function Dashboard() {
     activeSessions: stats.parties, // Map parties to activeSessions for now
   };
 
-  const createHandler = (action: string) => () => {
-    console.log(`${action} clicked`);
+  // Real navigation handlers
+  const handleCreateCharacter = () => {
+    router.push('/characters');
   };
 
-  const handleCreateCharacter = createHandler('Create character');
-  const handleCreateEncounter = createHandler('Create encounter');
-  const handleStartCombat = createHandler('Start combat');
-  const handleCustomizeDashboard = createHandler('Customize dashboard');
+  const handleCreateEncounter = () => {
+    router.push('/encounters/create');
+  };
+
+  const handleStartCombat = () => {
+    router.push('/combat');
+  };
+
+  const handleCustomizeDashboard = () => {
+    console.log('Customize dashboard clicked');
+    // TODO: Implement dashboard customization modal in future
+  };
 
   return (
     <div data-testid="dashboard" className="p-6 space-y-6">
