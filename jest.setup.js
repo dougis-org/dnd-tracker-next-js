@@ -13,7 +13,7 @@ if (!process.env.MONGODB_URI) {
     console.log('No MONGODB_URI set, using Atlas connection for tests');
   }
   // Use Atlas connection for tests (same as development)
-  process.env.MONGODB_URI = 'mongodb+srv://dnd-dev-user:5jKuQAAslRErDOIz@dnd-data-cluster.qk0ultz.mongodb.net/dnd-dev?retryWrites=true&w=majority&appName=dnd-data-cluster';
+  process.env.MONGODB_URI = process.env.JEST_MONGODB_URI || 'mongodb://localhost:27017/testdb';
 }
 
 if (!process.env.MONGODB_DB_NAME) {
