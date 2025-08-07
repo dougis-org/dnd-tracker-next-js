@@ -17,7 +17,7 @@ interface AuthDiagnostics {
     id: string;
     email: string;
     isEmailVerified: boolean;
-    lastLoginAt?: Date;
+    lastLoginAt?: string | Date;
   };
   errors: string[];
 }
@@ -103,7 +103,7 @@ export async function testAuthentication(email: string, password: string): Promi
 
   try {
     // Test authentication
-    authResult = await UserService.authenticateUser({ email, password });
+    authResult = await UserService.authenticateUser({ email, password, rememberMe: false });
 
     if (!authResult.success) {
       errors.push(`Authentication failed: ${authResult.error?.message || 'Unknown error'}`);
@@ -189,7 +189,7 @@ export async function logAuthState(email?: string): Promise<void> {
       user: session?.user ? {
         id: session.user.id,
         email: session.user.email,
-        verified: session.user.isEmailVerified,
+        verified: (session.user as any).isEmailVerified,
         tier: session.user.subscriptionTier,
       } : null,
     });

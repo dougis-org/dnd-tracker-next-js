@@ -299,7 +299,7 @@ const authConfig = NextAuth({
             }
 
             // Store email verification status in user object for token creation
-            user.isEmailVerified = userResult.data.isEmailVerified;
+            (user as any).isEmailVerified = userResult.data.isEmailVerified;
 
             return true;
           } catch (dbError) {
