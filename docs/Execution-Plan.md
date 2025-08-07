@@ -258,10 +258,7 @@ Additional review of other main application sections found 3 more mock data issu
 - 🎯 **Next Focus**: Phase 2 enhancement issues (#604-#606)
 
 ### Version 1.2 (2025-08-07)
-- ❌ **Issue #594 REOPENED**: Critical client-side runtime error is NOT actually fixed - issue was prematurely closed
-- 🔧 **Status**: "Cannot read properties of undefined (reading 'Character')" error still blocking Characters and Encounters pages
-- 🏗️ **Root Cause**: Client-side components still importing mongoose models instead of validation types
-- 📈 **Priority**: P1 MVP - Critical issue that needs immediate attention
+- ❌ **Issue #594 REOPENED**: Critical client-side runtime error was found to be unresolved. See the "Outstanding Issues" section for details.
 
 ### Version 1.3 (2025-08-07)
 - ✅ **Issue #605 COMPLETED**: Dashboard action buttons now have real navigation functionality via PR #616
