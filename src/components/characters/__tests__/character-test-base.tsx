@@ -10,7 +10,7 @@ const BASE_CHARACTER_CONFIG = {
   name: 'Test Character',
   race: 'human',
   type: 'pc' as const,
-  level: 5,
+  classes: [{ class: 'fighter', level: 5, hitDie: 10 }],
 };
 
 // Common test setup

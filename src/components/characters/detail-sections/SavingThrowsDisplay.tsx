@@ -1,10 +1,10 @@
 import React from 'react';
-import type { ICharacter } from '@/lib/models/Character';
+import type { Character } from '@/lib/validations/character';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { getSavingThrowBonus, formatBonus } from './character-utils';
 
 interface SavingThrowsDisplayProps {
-  character: ICharacter;
+  character: Character;
 }
 
 const SavingThrowItem = ({
@@ -14,7 +14,7 @@ const SavingThrowItem = ({
   score
 }: {
   label: string;
-  character: ICharacter;
+  character: Character;
   ability: string;
   score: number;
 }) => (

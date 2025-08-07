@@ -1,7 +1,7 @@
-import type { ICharacter } from '@/lib/models/Character';
+import type { Character } from '@/lib/validations/character';
 
 // Define skill-to-ability mappings
-export const SKILL_ABILITIES: Record<string, keyof ICharacter['abilityScores']> = {
+export const SKILL_ABILITIES: Record<string, keyof Character['abilityScores']> = {
   'Athletics': 'strength',
   'Acrobatics': 'dexterity',
   'Sleight of Hand': 'dexterity',
@@ -37,21 +37,21 @@ const getProficiencyValue = (data: Map<string, boolean> | Record<string, boolean
   return data instanceof Map ? data.get(key) || false : data[key] || false;
 };
 
-const isProficientInSavingThrow = (character: ICharacter, ability: string): boolean => {
+const isProficientInSavingThrow = (character: Character, ability: string): boolean => {
   return getProficiencyValue(character.savingThrows, ability);
 };
 
-export const getSavingThrowBonus = (character: ICharacter, ability: string, score: number): number => {
+export const getSavingThrowBonus = (character: Character, ability: string, score: number): number => {
   const modifier = Math.floor((score - 10) / 2);
   const isProficient = isProficientInSavingThrow(character, ability);
   return isProficient ? modifier + character.proficiencyBonus : modifier;
 };
 
-const isProficientInSkill = (character: ICharacter, skillName: string): boolean => {
+const isProficientInSkill = (character: Character, skillName: string): boolean => {
   return getProficiencyValue(character.skills, skillName);
 };
 
-export const getSkillBonus = (character: ICharacter, skillName: string, abilityScore: number): number => {
+export const getSkillBonus = (character: Character, skillName: string, abilityScore: number): number => {
   const modifier = Math.floor((abilityScore - 10) / 2);
   const isProficient = isProficientInSkill(character, skillName);
   return isProficient ? modifier + character.proficiencyBonus : modifier;
@@ -88,11 +88,11 @@ const hasAnyEntries = (data: Map<string, any> | Record<string, any> | undefined)
 };
 
 // Utility for extracting skill entries from character
-export const getSkillEntries = (character: ICharacter) => {
+export const getSkillEntries = (character: Character) => {
   return getDataEntries(character.skills);
 };
 
 // Utility to check if character has any skills
-export const hasAnySkills = (character: ICharacter): boolean => {
+export const hasAnySkills = (character: Character): boolean => {
   return hasAnyEntries(character.skills);
 };

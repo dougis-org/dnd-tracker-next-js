@@ -4,12 +4,13 @@ import { CharacterStatsManager } from '../CharacterStatsManager';
 import { CharacterService } from '@/lib/services/CharacterService';
 import { createMockCharacter as createMockCharacterBase } from '@/lib/services/__tests__/CharacterService.test-helpers';
 
-// Convert service layer mock (with object skills) to component layer format (with Map skills)
+// Convert service layer mock (with object skills) to component layer format
 export const createMockCharacter = (overrides = {}) => {
   const baseMock = createMockCharacterBase(overrides);
   return {
     ...baseMock,
-    skills: new Map(Object.entries(baseMock.skills || {})),
+    // Keep skills as object for CharacterStatsManager component
+    skills: baseMock.skills || {},
   };
 };
 
@@ -47,11 +48,11 @@ export const createMockCharacterForStats = (overrides = {}) => ({
     wisdom: false,
     charisma: false
   },
-  skills: new Map([
-    ['athletics', true],
-    ['intimidation', true],
-    ['perception', false]
-  ]),
+  skills: {
+    athletics: true,
+    intimidation: true,
+    perception: false
+  },
   equipment: [
     {
       name: 'Longsword',

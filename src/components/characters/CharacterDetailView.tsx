@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import type { ICharacter } from '@/lib/models/Character';
+import type { Character } from '@/lib/validations/character';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CharacterOverview } from './detail-sections/CharacterOverview';
 import { CharacterStats } from './detail-sections/CharacterStats';
@@ -8,9 +8,9 @@ import { CharacterSpells } from './detail-sections/CharacterSpells';
 import { CharacterNotes } from './detail-sections/CharacterNotes';
 
 interface CharacterDetailViewProps {
-  character: ICharacter;
-  onEdit: (_character: ICharacter) => void;
-  onShare: (_character: ICharacter) => void;
+  character: Character;
+  onEdit: (_character: Character) => void;
+  onShare: (_character: Character) => void;
 }
 
 export default function CharacterDetailView({ character, onEdit, onShare }: CharacterDetailViewProps) {

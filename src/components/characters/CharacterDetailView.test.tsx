@@ -37,7 +37,7 @@ describe('CharacterDetailView', () => {
   it('should render character basic information', () => {
     const testCharacter = createBasicTestCharacter({
       name: 'Aragorn',
-      level: 10,
+      classes: [{ class: 'ranger', level: 10, hitDie: 10 }],
     });
 
     renderCharacterDetailView(testCharacter);

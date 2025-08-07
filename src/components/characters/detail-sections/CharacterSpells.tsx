@@ -1,11 +1,11 @@
 import React from 'react';
-import type { ICharacter } from '@/lib/models/Character';
+import type { Character } from '@/lib/validations/character';
 import { Badge } from '@/components/ui/badge';
 import { getOrdinalSuffix } from './character-utils';
 import { SectionCard } from './components/SectionCard';
 
 interface CharacterSpellsProps {
-  character: ICharacter;
+  character: Character;
 }
 
 const getSpellLevelTitle = (level: string): string => {

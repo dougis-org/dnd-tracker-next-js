@@ -10,7 +10,7 @@ import type {
   CharacterSummary,
   CharacterPreset,
 } from '../../validations/character';
-import type { ICharacter } from '../../models/Character';
+import type { Character } from '../../validations/character';
 
 // Mock Character model
 export const mockCharacterModel = {
@@ -156,28 +156,17 @@ export const createMockCharacterUpdate = (overrides: Partial<CharacterUpdate> = 
   ...overrides,
 });
 
-export const createMockCharacter = (overrides: Partial<ICharacter> = {}): ICharacter => {
+export const createMockCharacter = (overrides: Partial<Character> = {}): Character => {
   const baseCharacter = createMockCharacterCreation();
   return {
     ...baseCharacter,
     _id: '507f1f77bcf86cd799439011' as any,
     ownerId: '507f1f77bcf86cd799439012' as any,
     isPublic: false,
-    createdAt: new Date('2023-01-01T00:00:00.000Z'),
-    updatedAt: new Date('2023-01-01T00:00:00.000Z'),
-    level: 1,
-    getAbilityModifier: jest.fn((ability) => Math.floor((baseCharacter.abilityScores[ability] - 10) / 2)),
-    getInitiativeModifier: jest.fn(() => 2),
-    getEffectiveHP: jest.fn(() => baseCharacter.hitPoints.current + baseCharacter.hitPoints.temporary),
-    isAlive: jest.fn(() => baseCharacter.hitPoints.current > 0),
-    isUnconscious: jest.fn(() => baseCharacter.hitPoints.current <= 0),
-    takeDamage: jest.fn(),
-    heal: jest.fn(),
-    addTemporaryHP: jest.fn(),
-    toSummary: jest.fn(),
-    save: jest.fn(),
+    createdAt: '2023-01-01T00:00:00.000Z',
+    updatedAt: '2023-01-01T00:00:00.000Z',
     ...overrides,
-  } as unknown as ICharacter;
+  } as Character;
 };
 
 export const createMockCharacterSummary = (overrides: Partial<CharacterSummary> = {}): CharacterSummary => ({
@@ -259,7 +248,7 @@ export const expectError = <T>(result: ServiceResult<T>, expectedCode?: string):
 // Mock Database Helpers
 // ================================
 
-export const createMockCharacterArray = (count: number): ICharacter[] => {
+export const createMockCharacterArray = (count: number): Character[] => {
   return Array.from({ length: count }, (_, index) =>
     createMockCharacter({
       _id: `507f1f77bcf86cd79943901${index.toString().padStart(1, '0')}` as any,
