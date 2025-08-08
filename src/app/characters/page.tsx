@@ -1,18 +1,11 @@
 'use client';
 
-import { Metadata } from 'next';
 import { useSession } from 'next-auth/react';
 import { CharacterListView } from '@/components/character/CharacterListView';
 import { CharacterCreationForm } from '@/components/forms/character/CharacterCreationForm';
 import { Button } from '@/components/ui/button';
 import { PlusIcon } from 'lucide-react';
 import { useCharacterPageActions } from './hooks/useCharacterPageActions';
-
-// Note: Metadata export won't work in client components, but keeping for reference
-const _metadata: Metadata = {
-  title: 'Characters - D&D Encounter Tracker',
-  description: 'Manage and organize your D&D characters',
-};
 
 function LoadingState() {
   return (
