@@ -108,6 +108,32 @@ export function validateNextAuthUrl(inputUrl?: string): string | undefined {
   }
 }
 
+/**
+ * Refresh user data with retry logic for Issue #620
+ * Enhanced database query reliability for JWT token validation
+ */
+async function refreshUserDataWithRetry(email: string, maxAttempts: number = 2): Promise<any> {
+  let lastError: any = null;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const userResult = await UserService.getUserByEmail(email);
+      return userResult;
+    } catch (error) {
+      lastError = error;
+      console.warn(`User refresh attempt ${attempt} failed for ${email}:`, error);
+
+      if (attempt < maxAttempts) {
+        // Wait before retrying
+        await new Promise(resolve => setTimeout(resolve, 50 * attempt));
+      }
+    }
+  }
+
+  // All attempts failed
+  throw lastError;
+}
+
 // Note: MongoDB client setup removed since we're using JWT strategy
 // The UserService handles its own database connections for user management
 
@@ -212,59 +238,116 @@ const authConfig = NextAuth({
   },
   callbacks: {
     async jwt({ token, user, trigger }: { token: any; user?: any; trigger?: string }) {
-      // If user is provided (on signin), store user data in token
-      if (user) {
-        token.id = user.id;
-        token.subscriptionTier = user.subscriptionTier;
-        token.email = user.email;
-        token.name = user.name;
-        token.createdAt = Date.now();
-        token.isEmailVerified = user.isEmailVerified ?? true;
-      }
+      try {
+        // If user is provided (on signin), store user data in token
+        if (user) {
+          token.id = user.id;
+          token.subscriptionTier = user.subscriptionTier;
+          token.email = user.email;
+          token.name = user.name;
+          token.createdAt = Date.now();
+          token.isEmailVerified = user.isEmailVerified ?? true;
+          // Fix for Issue #620: Add token validation timestamp
+          token.lastValidated = Date.now();
+          return token;
+        }
 
-      // Fix for Issue #620: Validate and refresh user data on token access
-      if (trigger === 'update' || (!user && token.email)) {
-        try {
-          // Refresh user data from database to ensure consistency
-          const userResult = await UserService.getUserByEmail(token.email);
-          if (userResult.success && userResult.data) {
-            const userData = userResult.data;
-            token.subscriptionTier = userData.subscriptionTier || 'free';
-            token.isEmailVerified = userData.isEmailVerified;
-            // Update user name if it has changed
-            const fullName = `${userData.firstName} ${userData.lastName}`;
-            if (fullName !== token.name) {
-              token.name = fullName;
+        // Fix for Issue #620: Enhanced token validation and refresh logic
+        if (trigger === 'update' || (!user && token.email)) {
+          const now = Date.now();
+          const lastValidated = token.lastValidated || 0;
+          const validationInterval = 5 * 60 * 1000; // 5 minutes
+
+          // Only refresh if enough time has passed or if explicitly triggered
+          if (trigger === 'update' || (now - lastValidated) > validationInterval) {
+            try {
+              // Refresh user data from database with retry logic for Issue #620
+              const userResult = await refreshUserDataWithRetry(token.email);
+              if (userResult.success && userResult.data) {
+                const userData = userResult.data;
+
+                // Update token with fresh user data
+                token.subscriptionTier = userData.subscriptionTier || 'free';
+                token.isEmailVerified = userData.isEmailVerified;
+                token.lastValidated = now;
+
+                // Update user name if it has changed
+                const fullName = `${userData.firstName} ${userData.lastName}`;
+                if (fullName !== token.name) {
+                  token.name = fullName;
+                }
+              } else {
+                // Fix for Issue #620: Handle case where user no longer exists
+                console.warn(`JWT validation failed: User not found for email ${token.email}`);
+                return null; // Invalid token - user deleted
+              }
+            } catch (error) {
+              console.warn('Failed to refresh user data in JWT callback:', error);
+
+              // Fix for Issue #620: Don't fail token validation for transient errors
+              // but mark as needing validation
+              token.needsValidation = true;
             }
           }
-        } catch (error) {
-          console.warn('Failed to refresh user data in JWT callback:', error);
-          // Don't fail the token validation, just log the warning
         }
-      }
 
-      return token;
+        // Fix for Issue #620: Validate token integrity
+        if (!token.email || !token.id) {
+          console.warn('JWT validation failed: Missing required token fields');
+          return null;
+        }
+
+        return token;
+      } catch (error) {
+        console.error('JWT callback error:', error);
+        return null;
+      }
     },
     async session({ session, token }: { session: any; token: any }) {
       try {
+        // Fix for Issue #620: Enhanced session validation
         if (!session?.user || !token) {
           console.warn('Session callback: Missing session or token data');
-          return session;
+          return null;
         }
 
-        // Fix for Issue #620: Ensure all required fields are present
+        // Fix for Issue #620: Comprehensive token validation
         if (!token.id || !token.email) {
           console.warn('Session callback: Invalid token data - missing required fields');
           return null;
         }
 
-        // Add user data from JWT token to session
+        // Fix for Issue #620: Check if token needs validation due to previous errors
+        if (token.needsValidation) {
+          console.warn(`Session callback: Token needs validation for user ${token.email}`);
+          try {
+            // Attempt to refresh user data one more time
+            const userResult = await refreshUserDataWithRetry(token.email, 1);
+            if (!userResult.success || !userResult.data) {
+              console.warn(`Session callback: User validation failed for ${token.email}`);
+              return null;
+            }
+          } catch (error) {
+            console.warn(`Session callback: Failed to validate user ${token.email}:`, error);
+            return null;
+          }
+        }
+
+        // Fix for Issue #620: Validate session user object integrity
+        if (!session.user) {
+          session.user = {};
+        }
+
+        // Add user data from JWT token to session with validation
         session.user.id = token.id;
         session.user.subscriptionTier = token.subscriptionTier || 'free';
         session.user.email = token.email;
-        session.user.name = token.name;
+        session.user.name = token.name || 'Unknown User';
         session.user.isEmailVerified = token.isEmailVerified ?? true;
 
+        // Fix for Issue #620: Add session metadata for debugging
+        session.lastValidated = token.lastValidated;
+        session.tokenAge = Date.now() - (token.createdAt || 0);
 
         return session;
       } catch (error) {
