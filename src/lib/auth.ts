@@ -112,8 +112,8 @@ export function validateNextAuthUrl(inputUrl?: string): string | undefined {
  * Refresh user data with retry logic for Issue #620
  * Enhanced database query reliability for JWT token validation
  */
-async function refreshUserDataWithRetry(email: string, maxAttempts: number = 2): Promise<any> {
-  let lastError: any = null;
+async function refreshUserDataWithRetry(email: string, maxAttempts: number = 2): Promise<Awaited<ReturnType<typeof UserService.getUserByEmail>>> {
+  let lastError: unknown = null;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
@@ -124,8 +124,8 @@ async function refreshUserDataWithRetry(email: string, maxAttempts: number = 2):
       console.warn(`User refresh attempt ${attempt} failed for ${email}:`, error);
 
       if (attempt < maxAttempts) {
-        // Wait before retrying
-        await new Promise(resolve => setTimeout(resolve, 50 * Math.pow(2, attempt - 1)));
+        // Wait before retrying (exponential backoff matching UserServiceAuth)
+        await new Promise(resolve => setTimeout(resolve, Math.min(100 * Math.pow(2, attempt - 1), 1000)));
       }
     }
   }
