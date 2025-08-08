@@ -156,6 +156,11 @@ All comprehensive project documentation is in the `docs/` folder:
 - **[Product Requirements Document.md](./docs/Product%20Requirements%20Document.md):** Business requirements
 - **[QUICK REFERENCE FOR OTHER CHATS.md](./docs/QUICK%20REFERENCE%20FOR%20OTHER%20CHATS.md):** Quick orientation guide
 
+Repository Summary
+There is a repository summary file in the root folder named `repomix-output.xml`
+
+If this file is missing, execute this command from the root of the project to build it `npx repomix --compress`
+
 ## Project-Specific Conventions
 
 ### Code Standards
