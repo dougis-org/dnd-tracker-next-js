@@ -13,13 +13,46 @@ jest.mock('next-auth/react', () => ({
 const mockFetch = fetch as jest.MockedFunction<typeof fetch>;
 const mockUseSession = useSession as jest.MockedFunction<typeof useSession>;
 
+// Test helpers
+const createMockEncounter = (overrides = {}) => ({
+  _id: 'encounter1',
+  name: 'Dragon Fight',
+  combatState: {
+    isActive: true,
+    currentRound: 3,
+    currentTurn: 2,
+    initiativeOrder: [
+      { participantId: 'pc1', initiative: 18, isActive: true, hasActed: false },
+      { participantId: 'dragon', initiative: 15, isActive: false, hasActed: false },
+    ],
+  },
+  participants: [
+    { characterId: 'pc1', name: 'Aragorn', type: 'pc' },
+    { characterId: 'dragon', name: 'Red Dragon', type: 'monster' },
+  ],
+  ...overrides,
+});
+
+const setupMockSession = (sessionData = null, status = 'authenticated') => {
+  mockUseSession.mockReturnValue({
+    data: sessionData || (status === 'authenticated' ? { user: { id: 'user123', email: 'test@example.com' } } : null),
+    status,
+  });
+};
+
+const setupMockResponse = (data, ok = true) => {
+  const status = ok ? 200 : (data?.status || 500);
+  mockFetch.mockResolvedValueOnce({
+    ok,
+    status,
+    json: async () => data,
+  } as Response);
+};
+
 describe('useActiveCombatSessions', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockUseSession.mockReturnValue({
-      data: { user: { id: 'user123', email: 'test@example.com' } },
-      status: 'authenticated',
-    });
+    setupMockSession();
   });
 
   afterEach(() => {
@@ -39,30 +72,8 @@ describe('useActiveCombatSessions', () => {
 
   describe('Successful API calls', () => {
     test('should fetch and return active combat sessions', async () => {
-      const mockEncounters = [
-        {
-          _id: 'encounter1',
-          name: 'Dragon Fight',
-          combatState: {
-            isActive: true,
-            currentRound: 3,
-            currentTurn: 2,
-            initiativeOrder: [
-              { participantId: 'pc1', initiative: 18, isActive: true, hasActed: false },
-              { participantId: 'dragon', initiative: 15, isActive: false, hasActed: false },
-            ],
-          },
-          participants: [
-            { characterId: 'pc1', name: 'Aragorn', type: 'pc' },
-            { characterId: 'dragon', name: 'Red Dragon', type: 'monster' },
-          ],
-        },
-      ];
-
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ encounters: mockEncounters }),
-      } as Response);
+      const mockEncounters = [createMockEncounter()];
+      setupMockResponse({ encounters: mockEncounters });
 
       const { result } = renderHook(() => useActiveCombatSessions());
 
@@ -81,10 +92,7 @@ describe('useActiveCombatSessions', () => {
     });
 
     test('should handle empty encounters response', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ encounters: [] }),
-      } as Response);
+      setupMockResponse({ encounters: [] });
 
       const { result } = renderHook(() => useActiveCombatSessions());
 
@@ -97,10 +105,7 @@ describe('useActiveCombatSessions', () => {
     });
 
     test('should handle response without encounters field', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({}),
-      } as Response);
+      setupMockResponse({});
 
       const { result } = renderHook(() => useActiveCombatSessions());
 
@@ -178,21 +183,13 @@ describe('useActiveCombatSessions', () => {
 
   describe('Authentication states', () => {
     test('should not fetch data when session is loading', () => {
-      mockUseSession.mockReturnValue({
-        data: null,
-        status: 'loading',
-      });
-
+      setupMockSession(null, 'loading');
       renderHook(() => useActiveCombatSessions());
-
       expect(mockFetch).not.toHaveBeenCalled();
     });
 
     test('should set loading to false when unauthenticated', async () => {
-      mockUseSession.mockReturnValue({
-        data: null,
-        status: 'unauthenticated',
-      });
+      setupMockSession(null, 'unauthenticated');
 
       const { result } = renderHook(() => useActiveCombatSessions());
 
@@ -204,10 +201,7 @@ describe('useActiveCombatSessions', () => {
     });
 
     test('should not fetch data when user ID is missing', async () => {
-      mockUseSession.mockReturnValue({
-        data: { user: { email: 'test@example.com' } }, // Missing id
-        status: 'authenticated',
-      });
+      setupMockSession({ user: { email: 'test@example.com' } }, 'authenticated'); // Missing id
 
       const { result } = renderHook(() => useActiveCombatSessions());
 
@@ -222,19 +216,11 @@ describe('useActiveCombatSessions', () => {
 
   describe('Refetch functionality', () => {
     test('should refetch data when refetch is called', async () => {
-      const mockEncounters = [
-        {
-          _id: 'encounter1',
-          name: 'Test Combat',
-          combatState: {
-            isActive: true,
-            currentRound: 1,
-            currentTurn: 0,
-            initiativeOrder: [],
-          },
-          participants: [],
-        },
-      ];
+      const mockEncounters = [createMockEncounter({
+        name: 'Test Combat',
+        combatState: { ...createMockEncounter().combatState, currentRound: 1, currentTurn: 0, initiativeOrder: [] },
+        participants: []
+      })];
 
       mockFetch.mockResolvedValue({
         ok: true,
@@ -263,10 +249,7 @@ describe('useActiveCombatSessions', () => {
 
     test('should handle refetch errors', async () => {
       // Initial successful fetch
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ encounters: [] }),
-      } as Response);
+      setupMockResponse({ encounters: [] });
 
       const { result } = renderHook(() => useActiveCombatSessions());
 
@@ -290,26 +273,13 @@ describe('useActiveCombatSessions', () => {
   describe('Session changes', () => {
     test('should refetch when session changes from unauthenticated to authenticated', async () => {
       // Start with unauthenticated
-      mockUseSession.mockReturnValue({
-        data: null,
-        status: 'unauthenticated',
-      });
-
+      setupMockSession(null, 'unauthenticated');
       const { rerender } = renderHook(() => useActiveCombatSessions());
-
       expect(mockFetch).not.toHaveBeenCalled();
 
-      // Mock successful fetch
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ encounters: [] }),
-      } as Response);
-
-      // Change to authenticated
-      mockUseSession.mockReturnValue({
-        data: { user: { id: 'user123', email: 'test@example.com' } },
-        status: 'authenticated',
-      });
+      // Mock successful fetch and change to authenticated
+      setupMockResponse({ encounters: [] });
+      setupMockSession();
 
       rerender();
 
