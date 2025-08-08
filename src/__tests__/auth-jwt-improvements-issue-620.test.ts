@@ -228,7 +228,7 @@ describe('JWT Token Improvements for Issue #620', () => {
       let result;
       try {
         result = await mockUserService.getUserByEmail(mockUser.email);
-      } catch (error) {
+      } catch {
         // Retry once
         result = await mockUserService.getUserByEmail(mockUser.email);
       }
