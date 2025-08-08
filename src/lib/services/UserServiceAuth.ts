@@ -311,7 +311,8 @@ export class UserServiceAuth {
       }
     }
 
-    // All attempts failed
+    // All attempts failed - log the final error for debugging
+    console.error(`Authentication failed after ${maxRetries} attempts:`, lastError);
     return {
       success: false,
       error: {
