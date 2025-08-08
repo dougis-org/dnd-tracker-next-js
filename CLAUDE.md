@@ -225,32 +225,6 @@ Use the provided PR template (`.github/pull_request_template.md`) which includes
 - **Testing** - How changes were tested
 - **Checklist** - Quality assurance items
 
-### Emergency Procedures
-
-#### Hotfix Process
-
-```bash
-# For critical production issues
-git checkout main
-git pull origin main
-git checkout -b hotfix/critical-{description}
-
-# Make minimal fix
-git commit -m "hotfix: resolve critical login issue"
-git push -u origin hotfix/critical-{description}
-
-# Create emergency PR with expedited review
-gh pr create --title "HOTFIX: Critical login issue" --label "hotfix"
-```
-
-#### Rollback Process
-
-```bash
-# If needed, revert to previous stable commit
-git revert {commit-hash}
-git push origin main
-```
-
 ## Architecture Overview
 
 ### Project Structure (to be created during development)
