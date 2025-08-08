@@ -34,7 +34,7 @@ describe('JWT Token Improvements for Issue #620', () => {
     // The actual JWT/session callback integration is validated through the real-world test scenarios
     // and manual testing. Full integration testing of NextAuth callbacks would require complex mocking
     // of NextAuth internals which may be brittle across version updates.
-    
+
     it('should add validation timestamp to new tokens', () => {
       // This test validates the timestamp logic concept used in JWT callback
       const now = Date.now();
