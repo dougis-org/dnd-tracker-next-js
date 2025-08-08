@@ -105,34 +105,51 @@ export class UserServiceAuth {
 
   /**
    * Create and save a new user with email verification token
+   * Fixed for Issue #620: Improved error handling and model initialization
    */
   private static async createAndSaveUser(validatedData: any) {
-    // Import User model after database connection is established
-    const User = (await import('../models/User')).default;
+    try {
+      // Import User model after database connection is established
+      const User = (await import('../models/User')).default;
 
-    // Check if email verification should be bypassed for MVP
-    const bypassEmailVerification = this.shouldBypassEmailVerification();
+      // Check if email verification should be bypassed for MVP
+      const bypassEmailVerification = this.shouldBypassEmailVerification();
 
-    const newUser = new User({
-      email: validatedData.email,
-      username: validatedData.username,
-      firstName: validatedData.firstName,
-      lastName: validatedData.lastName,
-      passwordHash: validatedData.password, // Will be hashed by middleware
-      role: 'user',
-      subscriptionTier: 'free',
-      isEmailVerified: bypassEmailVerification,
-    });
+      const newUser = new User({
+        email: validatedData.email,
+        username: validatedData.username,
+        firstName: validatedData.firstName,
+        lastName: validatedData.lastName,
+        passwordHash: validatedData.password, // Will be hashed by middleware
+        role: 'user',
+        subscriptionTier: 'free',
+        isEmailVerified: bypassEmailVerification,
+      });
 
-    // Only generate email verification token if bypass is not enabled
-    if (!bypassEmailVerification) {
-      await UserServiceDatabase.generateAndSaveEmailToken(newUser);
-    } else {
-      // Save user without generating email token when bypass is enabled
-      await UserServiceDatabase.saveUserSafely(newUser);
+      // Fix for Issue #620: Validate password was properly set before proceeding
+      if (!newUser.passwordHash || newUser.passwordHash.length < 8) {
+        throw new Error('Password validation failed during user creation');
+      }
+
+      // Only generate email verification token if bypass is not enabled
+      if (!bypassEmailVerification) {
+        await UserServiceDatabase.generateAndSaveEmailToken(newUser);
+      } else {
+        // Save user without generating email token when bypass is enabled
+        await UserServiceDatabase.saveUserSafely(newUser);
+      }
+
+      // Fix for Issue #620: Verify user was actually saved and password hashed
+      const savedUser = await User.findByEmail(validatedData.email);
+      if (!savedUser || !savedUser.passwordHash.startsWith('$2')) {
+        throw new Error('User creation failed - invalid password hash');
+      }
+
+      return savedUser; // Return the verified saved user
+    } catch (error) {
+      console.error('Error in createAndSaveUser:', error);
+      throw error; // Re-throw to be handled by caller
     }
-
-    return newUser;
   }
 
   /**
@@ -212,6 +229,7 @@ export class UserServiceAuth {
 
   /**
    * Authenticate user login
+   * Fixed for Issue #620: Enhanced error handling and connection stability
    */
   static async authenticateUser(
     loginData: UserLogin
@@ -219,28 +237,59 @@ export class UserServiceAuth {
     ServiceResult<{ user: PublicUser; requiresVerification: boolean }>
   > {
     try {
+      // Fix for Issue #620: Ensure database connection before authentication
+      await connectToDatabase();
+
       // Validate input data
       const validatedData =
         UserServiceValidation.validateAndParseLogin(loginData);
 
-      // Find user by email
-      const user = await UserServiceLookup.findUserByEmailNullable(
+      // Find user by email with retry logic for Issue #620
+      let user = await UserServiceLookup.findUserByEmailNullable(
         validatedData.email
       );
+
+      // Fix for Issue #620: Retry database query if user not found initially
       if (!user) {
+        // Wait briefly and retry once to handle transient connection issues
+        await new Promise(resolve => setTimeout(resolve, 50));
+        user = await UserServiceLookup.findUserByEmailNullable(
+          validatedData.email
+        );
+      }
+
+      if (!user) {
+        console.warn(`Authentication failed: User not found for email ${validatedData.email}`);
         throw new InvalidCredentialsError();
       }
 
-      // Verify password
-      const isPasswordValid = await user.comparePassword(
-        validatedData.password
-      );
+      // Fix for Issue #620: Validate user object and password hash integrity
+      if (!user.passwordHash || !user.passwordHash.startsWith('$2')) {
+        console.error(`Authentication failed: Invalid password hash format for user ${user.email}`);
+        throw new InvalidCredentialsError();
+      }
+
+      // Verify password with enhanced error handling
+      let isPasswordValid = false;
+      try {
+        isPasswordValid = await user.comparePassword(validatedData.password);
+      } catch (passwordError) {
+        console.error(`Password comparison error for user ${user.email}:`, passwordError);
+        throw new InvalidCredentialsError();
+      }
+
       if (!isPasswordValid) {
+        console.warn(`Authentication failed: Invalid password for user ${user.email}`);
         throw new InvalidCredentialsError();
       }
 
-      // Update last login timestamp
-      await UserServiceDatabase.updateLastLogin(user);
+      // Update last login timestamp with error handling
+      try {
+        await UserServiceDatabase.updateLastLogin(user);
+      } catch (updateError) {
+        console.warn(`Failed to update last login for user ${user.email}:`, updateError);
+        // Don't fail authentication just because we couldn't update login time
+      }
 
       return UserServiceResponseHelpers.createSuccessResponse({
         user: UserServiceResponseHelpers.safeToPublicJSON(user),
@@ -250,6 +299,9 @@ export class UserServiceAuth {
       if (error instanceof InvalidCredentialsError) {
         return UserServiceResponseHelpers.createErrorResponse(error);
       }
+
+      // Enhanced error logging for Issue #620 debugging
+      console.error('Unexpected authentication error:', error);
 
       // Fallback for test compatibility
       return {
