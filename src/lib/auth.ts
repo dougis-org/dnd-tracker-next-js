@@ -125,7 +125,7 @@ async function refreshUserDataWithRetry(email: string, maxAttempts: number = 2):
 
       if (attempt < maxAttempts) {
         // Wait before retrying
-        await new Promise(resolve => setTimeout(resolve, 50 * attempt));
+        await new Promise(resolve => setTimeout(resolve, 50 * Math.pow(2, attempt - 1)));
       }
     }
   }
