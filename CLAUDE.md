@@ -4,7 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a D&D Encounter Tracker - a Next.js 15 full-stack web application for Dungeon Masters to manage combat encounters efficiently. The project is currently in **active development** with 46 GitHub issues created for a 12-week MVP development timeline.
+This is a D&D Encounter Tracker,
+a Next.js 15 full-stack web application for Dungeon Masters to manage combat encounters efficiently.
+The project is currently in **active development** with 46 GitHub issues created for a 12-week MVP development timeline.
 
 ### Key Features
 
@@ -53,16 +55,19 @@ npm run db:seed      # Seed development data
 ## Project-Specific Workflow Extensions
 
 ### Branch Naming Convention
+
 - **Feature branches:** `feature/issue-{number}-{short-description}`
 - **Bugfix branches:** `bugfix/issue-{number}-{short-description}`
 - **Hotfix branches:** `hotfix/critical-{description}`
 
 ### PR Title Format
+
 ```
 Issue: #{number} {Description}
 ```
 
 ### PR Body Template
+
 ```
 CLOSES: #{number}
 
@@ -70,6 +75,7 @@ CLOSES: #{number}
 ```
 
 ### Tab Title Convention
+
 ```
 ISSUE#{number}-{Description}
 ```
@@ -181,16 +187,20 @@ All comprehensive project documentation is in the `docs/` folder:
 ### Phase 1: Project Foundation (100% Complete) ✅
 
 #### **Week 1-2 - Core Infrastructure:**
+
 - ✅ **Issues #2-9:** Next.js 15, TypeScript, MongoDB Atlas, development environment
 - ✅ **Issues #5-7:** Tailwind CSS, shadcn/ui, design system
 - ✅ **Issues #45-46:** Jest testing, Vercel deployment
 
 #### **Week 3 - Core Components:**
+
 - ✅ **Issues #40, #43-44:** Application layout, forms, modals
 
 #### **Previous Service Layer Work:**
+
 - ✅ **Issue #17:** User Service Layer Implementation (modular architecture, 32 tests, 88%+ coverage)
 
 ### Next Steps
 
-Continue with Phase 2 authentication and data layer issues following the established workflow and quality standards defined in the primary CLAUDE.md file.
+Continue with Phase 2 authentication and data layer issues following the established workflow
+and quality standards defined in the primary CLAUDE.md file

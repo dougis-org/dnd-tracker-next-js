@@ -8,7 +8,6 @@ import { UserServiceAuth } from '@/lib/services/UserServiceAuth';
 import { connectToDatabase } from '@/lib/db';
 import { UserServiceLookup } from '@/lib/services/UserServiceLookup';
 import { UserServiceDatabase } from '@/lib/services/UserServiceDatabase';
-import { InvalidCredentialsError } from '@/lib/services/UserServiceErrors';
 
 // Mock modules
 jest.mock('@/lib/db');
