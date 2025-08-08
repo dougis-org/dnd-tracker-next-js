@@ -332,7 +332,7 @@ export class UserServiceAuth {
     // Fix for Issue #620: Enhanced retry logic for database queries
     if (!user && attempt <= 2) {
       // Wait progressively longer and retry
-      const waitTime = 50 * attempt;
+      const waitTime = 50 * Math.pow(2, attempt - 1);
       await new Promise(resolve => setTimeout(resolve, waitTime));
 
       // Force a fresh database connection
