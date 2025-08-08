@@ -19,10 +19,18 @@ jest.mock('@/lib/models/User', () => ({
 }));
 jest.mock('@/lib/services/UserServiceLookup');
 jest.mock('@/lib/services/UserServiceDatabase');
+jest.mock('@/lib/services/UserServiceValidation');
+jest.mock('@/lib/services/UserServiceHelpers');
+jest.mock('@/lib/utils/password-security');
 
 const mockConnectToDatabase = connectToDatabase as jest.MockedFunction<typeof connectToDatabase>;
 const mockUserServiceLookup = UserServiceLookup as jest.Mocked<typeof UserServiceLookup>;
 const mockUserServiceDatabase = UserServiceDatabase as jest.Mocked<typeof UserServiceDatabase>;
+
+// Mock the validation and helper methods
+const { UserServiceValidation } = jest.requireMock('@/lib/services/UserServiceValidation');
+const { checkUserExists } = jest.requireMock('@/lib/services/UserServiceHelpers');
+const { validatePasswordStrength, isPasswordHashed } = jest.requireMock('@/lib/utils/password-security');
 
 describe('Authentication Issue #620 Comprehensive Coverage', () => {
   const testCredentials = {
@@ -48,6 +56,30 @@ describe('Authentication Issue #620 Comprehensive Coverage', () => {
     mockConnectToDatabase.mockResolvedValue();
     mockUser.comparePassword = jest.fn().mockResolvedValue(true);
     mockUserServiceDatabase.updateLastLogin = jest.fn().mockResolvedValue();
+
+    // Mock validation methods
+    UserServiceValidation.validateAndParseLogin = jest.fn().mockReturnValue(testCredentials);
+    UserServiceValidation.validateAndParseRegistration = jest.fn().mockReturnValue({
+      ...testCredentials,
+      username: 'testuser',
+      firstName: 'Test',
+      lastName: 'User'
+    });
+    UserServiceValidation.validateAndParsePasswordChange = jest.fn().mockReturnValue({
+      currentPassword: 'OldPassword123!',
+      newPassword: 'NewPassword456!'
+    });
+    UserServiceValidation.validateAndParsePasswordResetRequest = jest.fn().mockReturnValue({ email: 'test@example.com' });
+    UserServiceValidation.validateAndParsePasswordReset = jest.fn().mockReturnValue({
+      token: 'reset-token-123',
+      password: 'NewPassword789!'
+    });
+    UserServiceValidation.validateAndParseEmailVerification = jest.fn().mockReturnValue({ token: 'verify-token-123' });
+
+    // Mock helper methods
+    checkUserExists.mockResolvedValue(undefined);
+    validatePasswordStrength.mockReturnValue({ isValid: true, errors: [] });
+    isPasswordHashed.mockReturnValue(false);
   });
 
   afterEach(() => {
@@ -356,6 +388,150 @@ describe('Authentication Issue #620 Comprehensive Coverage', () => {
 
       expect(result.success).toBe(true);
       expect(mockUserServiceLookup.findUserByEmailNullable).toHaveBeenCalled();
+    });
+  });
+
+  describe('User Creation and Password Management Coverage', () => {
+    it('should test password validation helper methods', async () => {
+      // Mock weak password validation
+      validatePasswordStrength.mockReturnValue({
+        isValid: false,
+        errors: ['Password must be at least 8 characters long']
+      });
+
+      // Test validatePasswordStrength path
+      const weakCredentials = {
+        email: 'test@example.com',
+        password: '123', // Weak password
+        username: 'testuser',
+        firstName: 'Test',
+        lastName: 'User',
+      };
+
+      const result = await UserServiceAuth.createUser(weakCredentials);
+      expect(result.success).toBe(false);
+      expect(result.error?.code).toBe('INVALID_PASSWORD');
+    });
+
+    it('should test password reset request functionality', async () => {
+      mockUserServiceLookup.findUserByEmailNullable = jest.fn()
+        .mockResolvedValue(mockUser);
+
+      // Mock the database method
+      const mockGenerateAndSaveResetToken = jest.fn().mockResolvedValue('reset-token-123');
+      const UserServiceDatabase = require('@/lib/services/UserServiceDatabase');
+      UserServiceDatabase.generateAndSaveResetToken = mockGenerateAndSaveResetToken;
+
+      const resetData = { email: 'test@example.com' };
+      const result = await UserServiceAuth.requestPasswordReset(resetData);
+
+      expect(result.success).toBe(true);
+      expect(result.data).toBe('reset-token-123');
+    });
+
+    it('should test email verification functionality', async () => {
+      const mockUserWithToken = {
+        ...mockUser,
+        emailVerificationToken: 'verify-token-123',
+      };
+
+      mockUserServiceLookup.findUserByVerificationTokenOrThrow = jest.fn()
+        .mockResolvedValue(mockUserWithToken);
+
+      // Mock the database method
+      const mockMarkEmailVerified = jest.fn().mockResolvedValue(undefined);
+      const UserServiceDatabase = require('@/lib/services/UserServiceDatabase');
+      UserServiceDatabase.markEmailVerified = mockMarkEmailVerified;
+
+      const verificationData = { token: 'verify-token-123' };
+      const result = await UserServiceAuth.verifyEmail(verificationData);
+
+      expect(result.success).toBe(true);
+      expect(result.data?.email).toBe(mockUser.email);
+    });
+
+    it('should test change password functionality', async () => {
+      mockUserServiceLookup.findUserByIdOrThrow = jest.fn()
+        .mockResolvedValue(mockUser);
+
+      // Mock password comparison to succeed
+      mockUser.comparePassword = jest.fn().mockResolvedValue(true);
+
+      // Mock the database method
+      const mockUpdatePasswordAndClearTokens = jest.fn().mockResolvedValue(undefined);
+      const UserServiceDatabase = require('@/lib/services/UserServiceDatabase');
+      UserServiceDatabase.updatePasswordAndClearTokens = mockUpdatePasswordAndClearTokens;
+
+      const changePasswordData = {
+        currentPassword: 'OldPassword123!',
+        newPassword: 'NewPassword456!',
+      };
+
+      const result = await UserServiceAuth.changePassword('user-id', changePasswordData);
+
+      expect(result.success).toBe(true);
+      expect(mockUser.comparePassword).toHaveBeenCalledWith('OldPassword123!');
+      expect(mockUpdatePasswordAndClearTokens).toHaveBeenCalledWith(mockUser, 'NewPassword456!');
+    });
+
+    it('should test reset password with token functionality', async () => {
+      const mockUserWithResetToken = {
+        ...mockUser,
+        passwordResetToken: 'reset-token-123',
+      };
+
+      mockUserServiceLookup.findUserByResetTokenOrThrow = jest.fn()
+        .mockResolvedValue(mockUserWithResetToken);
+
+      // Mock the database method
+      const mockUpdatePasswordAndClearTokens = jest.fn().mockResolvedValue(undefined);
+      const UserServiceDatabase = require('@/lib/services/UserServiceDatabase');
+      UserServiceDatabase.updatePasswordAndClearTokens = mockUpdatePasswordAndClearTokens;
+
+      const resetData = {
+        token: 'reset-token-123',
+        password: 'NewPassword789!',
+      };
+
+      const result = await UserServiceAuth.resetPassword(resetData);
+
+      expect(result.success).toBe(true);
+      expect(mockUpdatePasswordAndClearTokens).toHaveBeenCalledWith(mockUserWithResetToken, 'NewPassword789!');
+    });
+
+    it('should test resend verification email functionality', async () => {
+      const unverifiedUser = {
+        ...mockUser,
+        isEmailVerified: false,
+      };
+
+      mockUserServiceLookup.findUserByEmailOrThrow = jest.fn()
+        .mockResolvedValue(unverifiedUser);
+
+      // Mock the database method
+      const mockGenerateAndSaveEmailToken = jest.fn().mockResolvedValue(undefined);
+      const UserServiceDatabase = require('@/lib/services/UserServiceDatabase');
+      UserServiceDatabase.generateAndSaveEmailToken = mockGenerateAndSaveEmailToken;
+
+      const result = await UserServiceAuth.resendVerificationEmail('test@example.com');
+
+      expect(result.success).toBe(true);
+      expect(mockGenerateAndSaveEmailToken).toHaveBeenCalledWith(unverifiedUser);
+    });
+
+    it('should handle already verified email in resend verification', async () => {
+      const verifiedUser = {
+        ...mockUser,
+        isEmailVerified: true,
+      };
+
+      mockUserServiceLookup.findUserByEmailOrThrow = jest.fn()
+        .mockResolvedValue(verifiedUser);
+
+      const result = await UserServiceAuth.resendVerificationEmail('test@example.com');
+
+      expect(result.success).toBe(false);
+      expect(result.error?.code).toBe('EMAIL_ALREADY_VERIFIED');
     });
   });
 
