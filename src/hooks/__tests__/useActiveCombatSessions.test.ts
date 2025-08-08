@@ -295,7 +295,7 @@ describe('useActiveCombatSessions', () => {
         status: 'unauthenticated',
       });
 
-      const { result, rerender } = renderHook(() => useActiveCombatSessions());
+      const { rerender } = renderHook(() => useActiveCombatSessions());
 
       expect(mockFetch).not.toHaveBeenCalled();
 
