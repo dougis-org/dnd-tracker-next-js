@@ -53,7 +53,10 @@ export function useActiveCombatSessions(): UseActiveCombatSessionsReturn {
 
   // Function to fetch active combat sessions
   const fetchActiveCombatSessions = useCallback(async () => {
-    if (!session?.user?.id) return;
+    if (!session?.user?.id) {
+      setIsLoading(false);
+      return;
+    }
 
     setIsLoading(true);
     setError(null);
