@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -40,6 +40,10 @@ export function CharacterLibraryInterface({
   });
   const [loadingState, setLoadingState] = useState<'idle' | 'loading' | 'searching' | 'error'>('idle');
   const [error, setError] = useState<string | null>(null);
+
+  // Performance optimization: Memoize selectable characters to avoid recomputing on every render
+  const selectableCharacters = useMemo(() => characters.filter(c => c._id), [characters]);
+  const selectableCharactersCount = selectableCharacters.length;
 
   const loadCharacters = useCallback(async () => {
     setLoadingState('loading');
@@ -150,8 +154,7 @@ export function CharacterLibraryInterface({
   };
 
   const handleSelectAll = () => {
-    const selectableCharacters = characters.filter(c => c._id);
-    if (selectedCharacters.length === selectableCharacters.length) {
+    if (selectedCharacters.length === selectableCharactersCount) {
       setSelectedCharacters([]);
     } else {
       setSelectedCharacters([...selectableCharacters]);
@@ -304,11 +307,12 @@ export function CharacterLibraryInterface({
         <div className="flex items-center space-x-2">
           <Checkbox
             id="select-all"
-            checked={selectedCharacters.length === characters.filter(c => c._id).length}
+            checked={selectedCharacters.length === selectableCharactersCount && selectableCharactersCount > 0}
+            disabled={selectableCharactersCount === 0}
             onCheckedChange={handleSelectAll}
           />
           <Label htmlFor="select-all" className="text-sm">
-            Select all ({characters.filter(c => c._id).length})
+            Select all ({selectableCharactersCount})
           </Label>
         </div>
 
