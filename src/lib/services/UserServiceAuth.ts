@@ -229,90 +229,181 @@ export class UserServiceAuth {
 
   /**
    * Authenticate user login
-   * Fixed for Issue #620: Enhanced error handling and connection stability
+   * Fixed for Issue #620: Enhanced error handling, connection stability, and retry logic
    */
   static async authenticateUser(
     loginData: UserLogin
   ): Promise<
     ServiceResult<{ user: PublicUser; requiresVerification: boolean }>
   > {
-    try {
-      // Fix for Issue #620: Ensure database connection before authentication
-      await connectToDatabase();
+    const maxRetries = 3;
+    let lastError: any = null;
 
-      // Validate input data
-      const validatedData =
-        UserServiceValidation.validateAndParseLogin(loginData);
-
-      // Find user by email with retry logic for Issue #620
-      let user = await UserServiceLookup.findUserByEmailNullable(
-        validatedData.email
-      );
-
-      // Fix for Issue #620: Retry database query if user not found initially
-      if (!user) {
-        // Wait briefly and retry once to handle transient connection issues
-        await new Promise(resolve => setTimeout(resolve, 50));
-        user = await UserServiceLookup.findUserByEmailNullable(
-          validatedData.email
-        );
-      }
-
-      if (!user) {
-        console.warn(`Authentication failed: User not found for email ${validatedData.email}`);
-        throw new InvalidCredentialsError();
-      }
-
-      // Fix for Issue #620: Validate user object and password hash integrity
-      if (!user.passwordHash || !user.passwordHash.startsWith('$2')) {
-        console.error(`Authentication failed: Invalid password hash format for user ${user.email}`);
-        throw new InvalidCredentialsError();
-      }
-
-      // Verify password with enhanced error handling
-      let isPasswordValid = false;
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        isPasswordValid = await user.comparePassword(validatedData.password);
-      } catch (passwordError) {
-        console.error(`Password comparison error for user ${user.email}:`, passwordError);
-        throw new InvalidCredentialsError();
+        // Fix for Issue #620: Ensure database connection with retry logic
+        await connectToDatabase();
+
+        // Validate input data
+        const validatedData =
+          UserServiceValidation.validateAndParseLogin(loginData);
+
+        // Find user by email with enhanced retry logic for Issue #620
+        const user = await this.findUserWithRetry(validatedData.email, attempt);
+
+        if (!user) {
+          console.warn(`Authentication failed: User not found for email ${validatedData.email} (attempt ${attempt})`);
+          throw new InvalidCredentialsError();
+        }
+
+        // Fix for Issue #620: Enhanced user object and password hash validation
+        const validationError = await this.validateUserAuthentication(user);
+        if (validationError) {
+          throw validationError;
+        }
+
+        // Verify password with enhanced error handling and retry
+        const isPasswordValid = await this.verifyPasswordWithRetry(user, validatedData.password);
+        if (!isPasswordValid) {
+          console.warn(`Authentication failed: Invalid password for user ${user.email} (attempt ${attempt})`);
+          throw new InvalidCredentialsError();
+        }
+
+        // Update last login timestamp with error handling
+        try {
+          await UserServiceDatabase.updateLastLogin(user);
+        } catch (updateError) {
+          console.warn(`Failed to update last login for user ${user.email}:`, updateError);
+          // Don't fail authentication just because we couldn't update login time
+        }
+
+        // Fix for Issue #620: Final user state validation before returning success
+        const finalUser = await UserServiceLookup.findUserByEmailNullable(validatedData.email);
+        if (!finalUser) {
+          console.error(`Critical: User disappeared during authentication for ${validatedData.email}`);
+          throw new InvalidCredentialsError();
+        }
+
+        return UserServiceResponseHelpers.createSuccessResponse({
+          user: UserServiceResponseHelpers.safeToPublicJSON(finalUser),
+          requiresVerification: !finalUser.isEmailVerified,
+        });
+      } catch (error) {
+        lastError = error;
+
+        if (error instanceof InvalidCredentialsError) {
+          // Don't retry for credential errors - they are definitive
+          return UserServiceResponseHelpers.createErrorResponse(error);
+        }
+
+        // Log the error and check if we should retry
+        console.warn(`Authentication attempt ${attempt} failed for email ${loginData.email}:`, error);
+
+        if (attempt === maxRetries) {
+          // Final attempt failed
+          console.error(`All ${maxRetries} authentication attempts failed for email ${loginData.email}:`, error);
+          break;
+        }
+
+        // Wait before retrying (exponential backoff)
+        const waitTime = Math.min(100 * Math.pow(2, attempt - 1), 1000);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
       }
-
-      if (!isPasswordValid) {
-        console.warn(`Authentication failed: Invalid password for user ${user.email}`);
-        throw new InvalidCredentialsError();
-      }
-
-      // Update last login timestamp with error handling
-      try {
-        await UserServiceDatabase.updateLastLogin(user);
-      } catch (updateError) {
-        console.warn(`Failed to update last login for user ${user.email}:`, updateError);
-        // Don't fail authentication just because we couldn't update login time
-      }
-
-      return UserServiceResponseHelpers.createSuccessResponse({
-        user: UserServiceResponseHelpers.safeToPublicJSON(user),
-        requiresVerification: !user.isEmailVerified,
-      });
-    } catch (error) {
-      if (error instanceof InvalidCredentialsError) {
-        return UserServiceResponseHelpers.createErrorResponse(error);
-      }
-
-      // Enhanced error logging for Issue #620 debugging
-      console.error('Unexpected authentication error:', error);
-
-      // Fallback for test compatibility
-      return {
-        success: false,
-        error: {
-          message: 'Invalid email or password',
-          code: 'INVALID_CREDENTIALS',
-          statusCode: 401,
-        },
-      };
     }
+
+    // All attempts failed - log the final error for debugging
+    console.error(`Authentication failed after ${maxRetries} attempts:`, lastError);
+    return {
+      success: false,
+      error: {
+        message: 'Authentication temporarily unavailable. Please try again.',
+        code: 'AUTHENTICATION_FAILED',
+        statusCode: 503,
+      },
+    };
+  }
+
+  /**
+   * Find user with retry logic for Issue #620
+   * Enhanced database query reliability
+   */
+  private static async findUserWithRetry(email: string, attempt: number) {
+    let user = await UserServiceLookup.findUserByEmailNullable(email);
+
+    // Fix for Issue #620: Enhanced retry logic for database queries
+    if (!user && attempt <= 2) {
+      // Wait progressively longer and retry (exponential backoff)
+      const waitTime = Math.min(100 * Math.pow(2, attempt - 1), 1000);
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+
+      // Force a fresh database connection
+      await connectToDatabase();
+      user = await UserServiceLookup.findUserByEmailNullable(email);
+    }
+
+    return user;
+  }
+
+  /**
+   * Validate user authentication state for Issue #620
+   * Comprehensive user object and password hash validation
+   */
+  private static async validateUserAuthentication(user: any): Promise<InvalidCredentialsError | null> {
+    // Fix for Issue #620: Enhanced user object validation
+    if (!user.email || !user._id) {
+      console.error(`Authentication failed: Incomplete user object for ${user.email || 'unknown'}`);
+      return new InvalidCredentialsError();
+    }
+
+    // Fix for Issue #620: Enhanced password hash validation
+    if (!user.passwordHash) {
+      console.error(`Authentication failed: Missing password hash for user ${user.email}`);
+      return new InvalidCredentialsError();
+    }
+
+    if (typeof user.passwordHash !== 'string' || user.passwordHash.length < 10) {
+      console.error(`Authentication failed: Invalid password hash length for user ${user.email}`);
+      return new InvalidCredentialsError();
+    }
+
+    if (!user.passwordHash.startsWith('$2')) {
+      console.error(`Authentication failed: Invalid password hash format for user ${user.email}`);
+      return new InvalidCredentialsError();
+    }
+
+    // Fix for Issue #620: Check if comparePassword method exists
+    if (typeof user.comparePassword !== 'function') {
+      console.error(`Authentication failed: Missing comparePassword method for user ${user.email}`);
+      return new InvalidCredentialsError();
+    }
+
+    return null;
+  }
+
+  /**
+   * Verify password with retry logic for Issue #620
+   * Enhanced password comparison with error handling
+   */
+  private static async verifyPasswordWithRetry(user: any, password: string): Promise<boolean> {
+    const maxAttempts = 2;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        const isValid = await user.comparePassword(password);
+        return isValid;
+      } catch (passwordError) {
+        console.error(`Password comparison error for user ${user.email} (attempt ${attempt}):`, passwordError);
+
+        if (attempt === maxAttempts) {
+          throw new InvalidCredentialsError();
+        }
+
+        // Brief wait before retry
+        await new Promise(resolve => setTimeout(resolve, 10));
+      }
+    }
+
+    return false;
   }
 
   /**
