@@ -10,8 +10,7 @@ A modern web application for D&D Dungeon Masters to manage combat encounters eff
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4+-blue?logo=tailwindcss)](https://tailwindcss.com/)
 
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/e478010b1e694f089b87b1bcf52fcf97)](https://app.codacy.com/gh/dougis-org/dnd-tracker-next-js/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
-[![Codacy Badge](https://app.codacy.com/project/badge/Coverage/b7170c5437b5477798c76af55973470d)](https://app.codacy.com/gh/dougis-org/dnd-tracker-next-js/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_coverage)
-
+[![Codacy Badge](https://app.codacy.com/project/badge/Coverage/e478010b1e694f089b87b1bcf52fcf97)](https://app.codacy.com/gh/dougis-org/dnd-tracker-next-js/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_coverage)
 ## 🎯 **Project Status: Active Development**
 
 - ✅ **Planning Phase Complete**: All business requirements, technical architecture, and development planning finished
