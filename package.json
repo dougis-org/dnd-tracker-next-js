@@ -32,7 +32,10 @@
     "deploy:production": "bash scripts/deploy-with-migrations.sh production",
     "test:production:setup": "node scripts/setup-production-test-user.js",
     "test:production:auth": "node scripts/test-production-auth.js",
-    "test:production:full": "node scripts/run-production-auth-tests.js"
+    "test:production:full": "node scripts/run-production-auth-tests.js",
+    "test:e2e": "jest --config jest.config.e2e.js",
+    "test:e2e:watch": "jest --config jest.config.e2e.js --watch",
+    "test:e2e:issue-620": "jest --config jest.config.e2e.js --testPathPatterns=auth-issue-620-comprehensive-e2e"
   },
   "dependencies": {
     "@auth/mongodb-adapter": "^3.10.0",
