@@ -139,6 +139,9 @@ export function CharacterLibraryInterface({
   }, [filters.type, filters.class, filters.race, filters.search, handleFilter, loadCharacters]);
 
   const handleCharacterSelect = (character: Character) => {
+    if (!character._id) {
+      return; // Do not allow selecting characters without an ID
+    }
     setSelectedCharacters(prev =>
       prev.find(c => c._id === character._id)
         ? prev.filter(c => c._id !== character._id)
@@ -147,10 +150,11 @@ export function CharacterLibraryInterface({
   };
 
   const handleSelectAll = () => {
-    if (selectedCharacters.length === characters.length) {
+    const selectableCharacters = characters.filter(c => c._id);
+    if (selectedCharacters.length === selectableCharacters.length) {
       setSelectedCharacters([]);
     } else {
-      setSelectedCharacters([...characters]);
+      setSelectedCharacters([...selectableCharacters]);
     }
   };
 
@@ -300,11 +304,11 @@ export function CharacterLibraryInterface({
         <div className="flex items-center space-x-2">
           <Checkbox
             id="select-all"
-            checked={selectedCharacters.length === characters.length}
+            checked={selectedCharacters.length === characters.filter(c => c._id).length}
             onCheckedChange={handleSelectAll}
           />
           <Label htmlFor="select-all" className="text-sm">
-            Select all ({characters.length})
+            Select all ({characters.filter(c => c._id).length})
           </Label>
         </div>
 
