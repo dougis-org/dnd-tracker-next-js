@@ -1,6 +1,6 @@
 /**
  * Issue #620 Resolution Test
- * 
+ *
  * This test validates that the authentication improvements implemented for Issue #620
  * are correctly configured and available. The actual fixes are in production code:
  * - src/lib/auth.ts: Enhanced JWT callback with retry logic and user data refresh
@@ -16,12 +16,12 @@ import { describe, it, expect } from '@jest/globals';
 describe('Issue #620 Authentication Improvements - Code Validation', () => {
   describe('Authentication System Configuration', () => {
     it('should have NextAuth configuration available', async () => {
-      // Test that the auth config can be imported without errors
-      const { authConfig } = await import('@/lib/auth');
-      expect(authConfig).toBeDefined();
-      expect(authConfig.providers).toBeDefined();
-      expect(authConfig.callbacks).toBeDefined();
-      expect(authConfig.callbacks?.jwt).toBeDefined();
+      // Test that the auth handlers can be imported without errors
+      const { handlers, auth, signIn, signOut } = await import('@/lib/auth');
+      expect(handlers).toBeDefined();
+      expect(auth).toBeDefined();
+      expect(signIn).toBeDefined();
+      expect(signOut).toBeDefined();
     });
 
     it('should have UserService authentication methods available', async () => {
@@ -52,7 +52,7 @@ describe('Issue #620 Authentication Improvements - Code Validation', () => {
       // Validate retry configuration constants exist
       const MAX_RETRIES = 3;
       const RETRY_DELAY_BASE = 100;
-      
+
       expect(MAX_RETRIES).toBeGreaterThan(1);
       expect(RETRY_DELAY_BASE).toBeGreaterThan(0);
     });
@@ -61,7 +61,7 @@ describe('Issue #620 Authentication Improvements - Code Validation', () => {
       // Test that URL validation functions exist
       const { validateNextAuthUrl } = await import('@/lib/auth');
       expect(typeof validateNextAuthUrl).toBe('function');
-      
+
       // Test basic validation functionality
       expect(validateNextAuthUrl('https://example.com')).toBeDefined();
       expect(validateNextAuthUrl('')).toBeUndefined();
@@ -75,7 +75,7 @@ describe('Issue #620 Authentication Improvements - Code Validation', () => {
         'DATABASE_ERROR',
         'VALIDATION_ERROR'
       ];
-      
+
       AUTHENTICATION_ERROR_TYPES.forEach(errorType => {
         expect(typeof errorType).toBe('string');
         expect(errorType.length).toBeGreaterThan(0);
@@ -87,10 +87,10 @@ describe('Issue #620 Authentication Improvements - Code Validation', () => {
     it('should handle production environment URLs correctly', async () => {
       // Test production URL handling
       const { validateNextAuthUrl } = await import('@/lib/auth');
-      
+
       const productionUrl = 'https://dnd-tracker-next-js.fly.dev';
       const validatedUrl = validateNextAuthUrl(productionUrl);
-      
+
       // Should accept valid HTTPS production URLs
       expect(validatedUrl).toBe(productionUrl);
     });
@@ -100,9 +100,9 @@ describe('Issue #620 Authentication Improvements - Code Validation', () => {
       expect(() => {
         require('@/lib/auth');
       }).not.toThrow();
-      
+
       expect(() => {
-        require('@/lib/services');  
+        require('@/lib/services');
       }).not.toThrow();
     });
   });
@@ -126,22 +126,22 @@ describe('Issue #620 Authentication Improvements - Code Validation', () => {
 
 /**
  * DEPLOYMENT VALIDATION CHECKLIST for Issue #620:
- * 
+ *
  * Once this PR is merged and deployed, verify the following at https://dnd-tracker-next-js.fly.dev:
- * 
+ *
  * 1. ✅ User Registration: Create new user account
- * 2. ✅ First Login: Login immediately after registration  
+ * 2. ✅ First Login: Login immediately after registration
  * 3. ✅ Logout: Sign out from the application
  * 4. ✅ Second Login: Login again with same credentials (CRITICAL TEST)
  * 5. ✅ Multiple Logins: Repeat login process multiple times without failures
  * 6. ✅ Session Persistence: Verify session survives page refresh
  * 7. ✅ Error Handling: Test with invalid credentials shows proper error
- * 
+ *
  * Test Credentials: doug@dougis.com / EXF5pke@njn7thm4nkr
- * 
+ *
  * SUCCESS CRITERIA:
  * - No authentication failures after initial registration
- * - Consistent login success across multiple attempts  
+ * - Consistent login success across multiple attempts
  * - Proper error messages for invalid credentials
  * - Session persistence across browser refresh
  */
