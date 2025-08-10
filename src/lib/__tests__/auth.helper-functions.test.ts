@@ -92,5 +92,88 @@ describe('NextAuth Helper Functions Tests', () => {
         testEnvWithConditionalImport(env, shouldWarn);
       });
     });
+
+    // Test validateMongoDbUri function - Issue #480
+    it('should validate MONGODB_URI in non-production environments', async () => {
+      // Test production environment - should not validate
+      setupEnvironment({ NODE_ENV: 'production', MONGODB_URI: undefined });
+      jest.resetModules();
+      const authModule = await import('../auth');
+      expect(authModule).toBeDefined();
+
+      // Test development environment without MONGODB_URI - should throw
+      expect(() => {
+        setupEnvironment({ NODE_ENV: 'development', MONGODB_URI: undefined });
+        jest.resetModules();
+        require('../auth');
+      }).toThrow('MONGODB_URI environment variable is required in non-production environments');
+
+      // Test test environment without MONGODB_URI - should throw
+      expect(() => {
+        setupEnvironment({ NODE_ENV: 'test', MONGODB_URI: undefined });
+        jest.resetModules();
+        require('../auth');
+      }).toThrow('MONGODB_URI environment variable is required in non-production environments');
+
+      // Test with invalid MONGODB_URI format - should throw
+      expect(() => {
+        setupEnvironment({ NODE_ENV: 'development', MONGODB_URI: 'invalid-uri-format' });
+        jest.resetModules();
+        require('../auth');
+      }).toThrow('MONGODB_URI must be a valid MongoDB connection string starting with mongodb:// or mongodb+srv://');
+
+      // Test with valid MONGODB_URI - should not throw
+      setupEnvironment({ NODE_ENV: 'development', MONGODB_URI: 'mongodb://localhost:27017/test' });
+      jest.resetModules();
+      const authModuleValid = await import('../auth');
+      expect(authModuleValid).toBeDefined();
+
+      // Test with valid mongodb+srv URI - should not throw
+      setupEnvironment({ NODE_ENV: 'development', MONGODB_URI: 'mongodb+srv://user:pass@cluster.mongodb.net/test' });
+      jest.resetModules();
+      const authModuleSrv = await import('../auth');
+      expect(authModuleSrv).toBeDefined();
+    });
+
+    // Direct unit tests for validateMongoDbUri function - Issue #480
+    it('should test validateMongoDbUri function directly', async () => {
+      // Reset modules and set environment for testing
+      setupEnvironment({ NODE_ENV: 'development', MONGODB_URI: 'mongodb://localhost:27017/test' });
+      jest.resetModules();
+
+      // Import the function directly
+      const { validateMongoDbUri } = await import('../auth');
+
+      // Test production environment - should not throw
+      const originalNodeEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = 'production';
+      delete process.env.MONGODB_URI;
+      expect(() => validateMongoDbUri()).not.toThrow();
+
+      // Test development environment without MONGODB_URI - should throw
+      process.env.NODE_ENV = 'development';
+      delete process.env.MONGODB_URI;
+      expect(() => validateMongoDbUri()).toThrow('MONGODB_URI environment variable is required in non-production environments');
+
+      // Test development environment with invalid format - should throw
+      process.env.MONGODB_URI = 'invalid-format';
+      expect(() => validateMongoDbUri()).toThrow('MONGODB_URI must be a valid MongoDB connection string');
+
+      // Test development environment with valid mongodb:// format - should not throw
+      process.env.MONGODB_URI = 'mongodb://localhost:27017/test';
+      expect(() => validateMongoDbUri()).not.toThrow();
+
+      // Test development environment with valid mongodb+srv:// format - should not throw
+      process.env.MONGODB_URI = 'mongodb+srv://user:pass@cluster.mongodb.net/test';
+      expect(() => validateMongoDbUri()).not.toThrow();
+
+      // Test test environment - should validate like development
+      process.env.NODE_ENV = 'test';
+      delete process.env.MONGODB_URI;
+      expect(() => validateMongoDbUri()).toThrow('MONGODB_URI environment variable is required in non-production environments');
+
+      // Restore environment
+      process.env.NODE_ENV = originalNodeEnv;
+    });
   });
 });
