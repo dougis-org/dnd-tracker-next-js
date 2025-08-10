@@ -101,23 +101,29 @@ describe('NextAuth Helper Functions Tests', () => {
       const authModule = await import('../auth');
       expect(authModule).toBeDefined();
 
+      // Test CI environment - should not validate (even in test/dev mode)
+      setupEnvironment({ NODE_ENV: 'test', MONGODB_URI: undefined, CI: 'true' });
+      jest.resetModules();
+      const authModuleCI = await import('../auth');
+      expect(authModuleCI).toBeDefined();
+
       // Test development environment without MONGODB_URI - should throw
       expect(() => {
-        setupEnvironment({ NODE_ENV: 'development', MONGODB_URI: undefined });
+        setupEnvironment({ NODE_ENV: 'development', MONGODB_URI: undefined, CI: undefined });
         jest.resetModules();
         require('../auth');
       }).toThrow('MONGODB_URI environment variable is required in non-production environments');
 
-      // Test test environment without MONGODB_URI - should throw
+      // Test test environment without MONGODB_URI (non-CI) - should throw
       expect(() => {
-        setupEnvironment({ NODE_ENV: 'test', MONGODB_URI: undefined });
+        setupEnvironment({ NODE_ENV: 'test', MONGODB_URI: undefined, CI: undefined });
         jest.resetModules();
         require('../auth');
       }).toThrow('MONGODB_URI environment variable is required in non-production environments');
 
       // Test with invalid MONGODB_URI format - should throw
       expect(() => {
-        setupEnvironment({ NODE_ENV: 'development', MONGODB_URI: 'invalid-uri-format' });
+        setupEnvironment({ NODE_ENV: 'development', MONGODB_URI: 'invalid-uri-format', CI: undefined });
         jest.resetModules();
         require('../auth');
       }).toThrow('MONGODB_URI must be a valid MongoDB connection string starting with mongodb:// or mongodb+srv://');
@@ -146,12 +152,21 @@ describe('NextAuth Helper Functions Tests', () => {
 
       // Test production environment - should not throw
       const originalNodeEnv = process.env.NODE_ENV;
+      const originalCI = process.env.CI;
+      
       process.env.NODE_ENV = 'production';
       delete process.env.MONGODB_URI;
       expect(() => validateMongoDbUri()).not.toThrow();
 
-      // Test development environment without MONGODB_URI - should throw
+      // Test CI environment - should not throw
+      process.env.NODE_ENV = 'test';
+      process.env.CI = 'true';
+      delete process.env.MONGODB_URI;
+      expect(() => validateMongoDbUri()).not.toThrow();
+      
+      // Test development environment without MONGODB_URI (non-CI) - should throw
       process.env.NODE_ENV = 'development';
+      delete process.env.CI;
       delete process.env.MONGODB_URI;
       expect(() => validateMongoDbUri()).toThrow('MONGODB_URI environment variable is required in non-production environments');
 
@@ -167,13 +182,14 @@ describe('NextAuth Helper Functions Tests', () => {
       process.env.MONGODB_URI = 'mongodb+srv://user:pass@cluster.mongodb.net/test';
       expect(() => validateMongoDbUri()).not.toThrow();
 
-      // Test test environment - should validate like development
+      // Test test environment (non-CI) - should validate like development
       process.env.NODE_ENV = 'test';
       delete process.env.MONGODB_URI;
       expect(() => validateMongoDbUri()).toThrow('MONGODB_URI environment variable is required in non-production environments');
 
       // Restore environment
       process.env.NODE_ENV = originalNodeEnv;
+      process.env.CI = originalCI;
     });
   });
 });

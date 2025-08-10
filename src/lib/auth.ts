@@ -114,8 +114,13 @@ export function validateNextAuthUrl(inputUrl?: string): string | undefined {
  * Exported for reuse in test files to prevent code duplication
  */
 export function validateMongoDbUri(): void {
-  // Only validate in non-production environments
+  // Skip validation in production environments
   if (process.env.NODE_ENV === 'production') {
+    return;
+  }
+
+  // Skip validation in CI environments where MongoDB may not be available
+  if (process.env.CI === 'true') {
     return;
   }
 
