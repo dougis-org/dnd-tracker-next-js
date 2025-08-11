@@ -133,10 +133,11 @@ export function validateMongoDbUri(): void {
     );
   }
 
-  // Basic validation of URI format
-  if (!mongoUri.startsWith('mongodb://') && !mongoUri.startsWith('mongodb+srv://')) {
+  // More robust validation of MongoDB URI format using regular expression
+  const mongoUriPattern = /^mongodb(?:\+srv)?:\/\/([a-zA-Z0-9._-]+(?::[^@]*)?@)?[a-zA-Z0-9._-]+(?:\.[a-zA-Z0-9._-]+)*(?::\d+)?(\/[^\s]*)?$/;
+  if (!mongoUriPattern.test(mongoUri)) {
     throw new Error(
-      'MONGODB_URI must be a valid MongoDB connection string starting with mongodb:// or mongodb+srv://'
+      'MONGODB_URI must be a valid MongoDB connection string, e.g. mongodb://user:pass@host:port/db or mongodb+srv://host/db'
     );
   }
 }

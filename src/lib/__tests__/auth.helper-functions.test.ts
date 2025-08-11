@@ -112,21 +112,21 @@ describe('NextAuth Helper Functions Tests', () => {
         setupEnvironment({ NODE_ENV: 'development', MONGODB_URI: undefined, CI: undefined });
         jest.resetModules();
         require('../auth');
-      }).toThrow('MONGODB_URI environment variable is required in non-production environments');
+      }).toThrow('MONGODB_URI environment variable is required in non-production environments. Please set MONGODB_URI in your .env.local file for development.');
 
       // Test test environment without MONGODB_URI (non-CI) - should throw
       expect(() => {
         setupEnvironment({ NODE_ENV: 'test', MONGODB_URI: undefined, CI: undefined });
         jest.resetModules();
         require('../auth');
-      }).toThrow('MONGODB_URI environment variable is required in non-production environments');
+      }).toThrow('MONGODB_URI environment variable is required in non-production environments. Please set MONGODB_URI in your .env.local file for development.');
 
       // Test with invalid MONGODB_URI format - should throw
       expect(() => {
         setupEnvironment({ NODE_ENV: 'development', MONGODB_URI: 'invalid-uri-format', CI: undefined });
         jest.resetModules();
         require('../auth');
-      }).toThrow('MONGODB_URI must be a valid MongoDB connection string starting with mongodb:// or mongodb+srv://');
+      }).toThrow('MONGODB_URI must be a valid MongoDB connection string, e.g. mongodb://user:pass@host:port/db or mongodb+srv://host/db');
 
       // Test with valid MONGODB_URI - should not throw
       setupEnvironment({ NODE_ENV: 'development', MONGODB_URI: 'mongodb://localhost:27017/test' });
@@ -143,53 +143,38 @@ describe('NextAuth Helper Functions Tests', () => {
 
     // Direct unit tests for validateMongoDbUri function - Issue #480
     it('should test validateMongoDbUri function directly', async () => {
-      // Reset modules and set environment for testing
+      // Import function in a clean environment
       setupEnvironment({ NODE_ENV: 'development', MONGODB_URI: 'mongodb://localhost:27017/test' });
       jest.resetModules();
-
-      // Import the function directly
       const { validateMongoDbUri } = await import('../auth');
 
       // Test production environment - should not throw
-      const originalNodeEnv = process.env.NODE_ENV;
-      const originalCI = process.env.CI;
-      
-      process.env.NODE_ENV = 'production';
-      delete process.env.MONGODB_URI;
+      setupEnvironment({ NODE_ENV: 'production', MONGODB_URI: undefined });
       expect(() => validateMongoDbUri()).not.toThrow();
 
       // Test CI environment - should not throw
-      process.env.NODE_ENV = 'test';
-      process.env.CI = 'true';
-      delete process.env.MONGODB_URI;
+      setupEnvironment({ NODE_ENV: 'test', MONGODB_URI: undefined, CI: 'true' });
       expect(() => validateMongoDbUri()).not.toThrow();
-      
+
       // Test development environment without MONGODB_URI (non-CI) - should throw
-      process.env.NODE_ENV = 'development';
-      delete process.env.CI;
-      delete process.env.MONGODB_URI;
-      expect(() => validateMongoDbUri()).toThrow('MONGODB_URI environment variable is required in non-production environments');
+      setupEnvironment({ NODE_ENV: 'development', MONGODB_URI: undefined, CI: undefined });
+      expect(() => validateMongoDbUri()).toThrow('MONGODB_URI environment variable is required in non-production environments. Please set MONGODB_URI in your .env.local file for development.');
 
       // Test development environment with invalid format - should throw
-      process.env.MONGODB_URI = 'invalid-format';
-      expect(() => validateMongoDbUri()).toThrow('MONGODB_URI must be a valid MongoDB connection string');
+      setupEnvironment({ NODE_ENV: 'development', MONGODB_URI: 'invalid-format', CI: undefined });
+      expect(() => validateMongoDbUri()).toThrow('MONGODB_URI must be a valid MongoDB connection string, e.g. mongodb://user:pass@host:port/db or mongodb+srv://host/db');
 
       // Test development environment with valid mongodb:// format - should not throw
-      process.env.MONGODB_URI = 'mongodb://localhost:27017/test';
+      setupEnvironment({ NODE_ENV: 'development', MONGODB_URI: 'mongodb://localhost:27017/test' });
       expect(() => validateMongoDbUri()).not.toThrow();
 
       // Test development environment with valid mongodb+srv:// format - should not throw
-      process.env.MONGODB_URI = 'mongodb+srv://user:pass@cluster.mongodb.net/test';
+      setupEnvironment({ NODE_ENV: 'development', MONGODB_URI: 'mongodb+srv://user:pass@cluster.mongodb.net/test' });
       expect(() => validateMongoDbUri()).not.toThrow();
 
       // Test test environment (non-CI) - should validate like development
-      process.env.NODE_ENV = 'test';
-      delete process.env.MONGODB_URI;
-      expect(() => validateMongoDbUri()).toThrow('MONGODB_URI environment variable is required in non-production environments');
-
-      // Restore environment
-      process.env.NODE_ENV = originalNodeEnv;
-      process.env.CI = originalCI;
+      setupEnvironment({ NODE_ENV: 'test', MONGODB_URI: undefined, CI: undefined });
+      expect(() => validateMongoDbUri()).toThrow('MONGODB_URI environment variable is required in non-production environments. Please set MONGODB_URI in your .env.local file for development.');
     });
   });
 });
