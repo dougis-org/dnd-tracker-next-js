@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 import { isProtectedApiRoute } from '@/lib/middleware';
+import { getNextAuthSecret, getNextAuthUrl, getSessionCookieName } from '@/lib/config/env-config';
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -12,10 +13,8 @@ export async function middleware(request: NextRequest) {
   try {
     const token = await getToken({
       req: request,
-      secret: process.env.NEXTAUTH_SECRET,
-      cookieName: process.env.NODE_ENV === 'production'
-        ? '__Secure-next-auth.session-token'
-        : 'next-auth.session-token',
+      secret: getNextAuthSecret(),
+      cookieName: getSessionCookieName(),
     });
 
     if (!token || !token.sub) {
@@ -28,7 +27,7 @@ export async function middleware(request: NextRequest) {
 
       // Fix callback URL to use production domain instead of localhost
       const callbackUrl = new URL(request.nextUrl.pathname + request.nextUrl.search,
-                                  process.env.NEXTAUTH_URL || request.url);
+                                  getNextAuthUrl() || request.url);
       signinUrl.searchParams.set('callbackUrl', callbackUrl.toString());
 
       return NextResponse.redirect(signinUrl);
@@ -47,7 +46,7 @@ export async function middleware(request: NextRequest) {
 
     // Fix callback URL to use production domain
     const callbackUrl = new URL(request.nextUrl.pathname + request.nextUrl.search,
-                                process.env.NEXTAUTH_URL || request.url);
+                                getNextAuthUrl() || request.url);
     signinUrl.searchParams.set('callbackUrl', callbackUrl.toString());
 
     return NextResponse.redirect(signinUrl);
