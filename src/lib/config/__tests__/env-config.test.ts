@@ -2,11 +2,11 @@
  * Tests for environment configuration utilities (Issue #482)
  */
 
-import { 
-  getNextAuthSecret, 
-  getNextAuthUrl, 
+import {
+  getNextAuthSecret,
+  getNextAuthUrl,
   getSessionCookieName,
-  validateEnvironmentConfig 
+  validateEnvironmentConfig
 } from '../env-config';
 
 describe('Environment Configuration Utilities', () => {

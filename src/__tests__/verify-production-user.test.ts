@@ -45,10 +45,10 @@ describe('Production User Authentication Verification', () => {
 
           // Test 3: Test NextAuth authorize function directly
           console.log('\n3. Testing NextAuth authorize function...');
-          const { validateNextAuthUrl } = await import('@/lib/auth');
+          const { validateNextAuthUrl: _validateNextAuthUrl } = await import('@/lib/auth');
 
           // Import the auth configuration
-          const authModule = await import('@/lib/auth');
+          const _authModule = await import('@/lib/auth');
           console.log('NextAuth configuration imported successfully');
 
           console.log('\n✅ ALL AUTHENTICATION COMPONENTS ARE WORKING');

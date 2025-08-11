@@ -1,7 +1,7 @@
 /**
  * Test to verify if the production test user exists
  */
-import { describe, it, expect } from '@jest/globals';
+import { describe, it } from '@jest/globals';
 import { connectToDatabase } from '@/lib/db';
 import { UserService } from '@/lib/services';
 
