@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 import { isProtectedApiRoute } from '@/lib/middleware';
-import { getNextAuthSecret, getNextAuthUrl, getSessionCookieName } from '@/lib/config/env-config';
+import { getNextAuthSecret, getNextAuthUrl } from '@/lib/config/env-config';
+import { SESSION_COOKIE_NAME } from '@/lib/constants/session-constants';
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -14,7 +15,7 @@ export async function middleware(request: NextRequest) {
     const token = await getToken({
       req: request,
       secret: getNextAuthSecret(),
-      cookieName: getSessionCookieName(),
+      cookieName: SESSION_COOKIE_NAME,
     });
 
     if (!token || !token.sub) {

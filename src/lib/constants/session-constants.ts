@@ -36,3 +36,11 @@ export const TRUSTED_DOMAINS = [
  * Default database name
  */
 export const DEFAULT_DATABASE_NAME = 'dnd-tracker';
+
+/**
+ * Session cookie name based on environment (Issue #585)
+ * Centralized to prevent duplication between auth.ts and middleware.ts
+ */
+export const SESSION_COOKIE_NAME = process.env.NODE_ENV === 'production'
+  ? '__Secure-next-auth.session-token'
+  : 'next-auth.session-token';
