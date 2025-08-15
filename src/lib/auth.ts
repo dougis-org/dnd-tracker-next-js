@@ -109,6 +109,40 @@ export function validateNextAuthUrl(inputUrl?: string): string | undefined {
 }
 
 /**
+ * Validates MONGODB_URI in non-production environments
+ * Ensures database connection string is available when needed (Issue #480)
+ * Exported for reuse in test files to prevent code duplication
+ */
+export function validateMongoDbUri(): void {
+  // Skip validation in production environments
+  if (process.env.NODE_ENV === 'production') {
+    return;
+  }
+
+  // Skip validation in CI environments where MongoDB may not be available
+  if (process.env.CI === 'true') {
+    return;
+  }
+
+  const mongoUri = process.env.MONGODB_URI;
+
+  if (!mongoUri) {
+    throw new Error(
+      'MONGODB_URI environment variable is required in non-production environments. ' +
+      'Please set MONGODB_URI in your .env.local file for development.'
+    );
+  }
+
+  // More robust validation of MongoDB URI format using regular expression
+  const mongoUriPattern = /^mongodb(?:\+srv)?:\/\/([a-zA-Z0-9._-]+(?::[^@]*)?@)?[a-zA-Z0-9._-]+(?:\.[a-zA-Z0-9._-]+)*(?::\d+)?(\/[^\s]*)?$/;
+  if (!mongoUriPattern.test(mongoUri)) {
+    throw new Error(
+      'MONGODB_URI must be a valid MongoDB connection string, e.g. mongodb://user:pass@host:port/db or mongodb+srv://host/db'
+    );
+  }
+}
+
+/**
  * Refresh user data with retry logic for Issue #620
  * Enhanced database query reliability for JWT token validation
  */
@@ -140,6 +174,8 @@ async function refreshUserDataWithRetry(email: string, maxAttempts: number = 2):
 // Validate NEXTAUTH_URL to prevent invalid redirects (Issue #438)
 const validatedNextAuthUrl = validateNextAuthUrl();
 
+// Validate MONGODB_URI in non-production environments (Issue #480)
+validateMongoDbUri();
 
 const authConfig = NextAuth({
   // Note: When using JWT strategy, we don't use a database adapter
