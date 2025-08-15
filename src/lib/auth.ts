@@ -1,7 +1,7 @@
 import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { UserService } from '@/lib/services';
-import {SESSION_TIMEOUTS} from "@/lib/constants/session-constants";
+import {SESSION_TIMEOUTS, SESSION_COOKIE_NAME} from "@/lib/constants/session-constants";
 
 /**
  * Helper function to check if hostname is a local/invalid IP
@@ -242,9 +242,7 @@ const authConfig = NextAuth({
   },
   cookies: {
     sessionToken: {
-      name: process.env.NODE_ENV === 'production'
-        ? '__Secure-next-auth.session-token'
-        : 'next-auth.session-token',
+      name: SESSION_COOKIE_NAME,
       options: {
         httpOnly: true,
         sameSite: 'lax',
