@@ -41,10 +41,10 @@ export interface IUser extends Document {
 
   // Instance methods
   comparePassword(_password: string): Promise<boolean>;
-  generatePasswordResetToken(): Promise<string>;
-  generateEmailVerificationToken(): Promise<string>;
+  generatePasswordResetToken(_options?: { session?: any }): Promise<string>;
+  generateEmailVerificationToken(_options?: { session?: any }): Promise<string>;
   toPublicJSON(): PublicUser;
-  updateLastLogin(): Promise<void>;
+  updateLastLogin(_options?: { session?: any }): Promise<void>;
   isSubscriptionActive(): boolean;
   canAccessFeature(_feature: SubscriptionFeature, _quantity: number): boolean;
 }
@@ -373,7 +373,7 @@ userSchema.methods.comparePassword = async function (
 
 // Instance method to generate password reset token
 userSchema.methods.generatePasswordResetToken =
-  async function (): Promise<string> {
+  async function (options?: { session?: any }): Promise<string> {
     // Generate a random token
     const resetToken = crypto.randomBytes(32).toString('hex');
 
@@ -381,23 +381,31 @@ userSchema.methods.generatePasswordResetToken =
     this.passwordResetToken = resetToken;
     this.passwordResetExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-    // Save the user
-    await this.save();
+    // Save the user with optional session for transactions
+    if (options?.session) {
+      await this.save({ session: options.session });
+    } else {
+      await this.save();
+    }
 
     return resetToken;
   };
 
 // Instance method to generate email verification token
 userSchema.methods.generateEmailVerificationToken =
-  async function (): Promise<string> {
+  async function (options?: { session?: any }): Promise<string> {
     // Generate a random token
     const verificationToken = crypto.randomBytes(32).toString('hex');
 
     // Store the token
     this.emailVerificationToken = verificationToken;
 
-    // Save the user
-    await this.save();
+    // Save the user with optional session for transactions
+    if (options?.session) {
+      await this.save({ session: options.session });
+    } else {
+      await this.save();
+    }
 
     return verificationToken;
   };
@@ -430,9 +438,13 @@ userSchema.methods.toPublicJSON = function (): PublicUser {
 };
 
 // Instance method to update last login time
-userSchema.methods.updateLastLogin = async function (): Promise<void> {
+userSchema.methods.updateLastLogin = async function (options?: { session?: any }): Promise<void> {
   this.lastLoginAt = new Date();
-  await this.save();
+  if (options?.session) {
+    await this.save({ session: options.session });
+  } else {
+    await this.save();
+  }
 };
 
 // Instance method to check if subscription is active
