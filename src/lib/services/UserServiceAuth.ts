@@ -26,6 +26,9 @@ import {
   isPasswordHashed
 } from '../utils/password-security';
 
+// Constants for validation
+const BCRYPT_HASH_PREFIX = '$2';
+
 /**
  * Authentication operations for UserService
  * Handles user registration, login, password management, and email verification
@@ -179,7 +182,7 @@ export class UserServiceAuth {
       );
 
       // Fix for Issue #620: Verify user was actually saved and password hashed
-      if (!savedUser || !savedUser.passwordHash.startsWith('$2')) {
+      if (!savedUser || !savedUser.passwordHash.startsWith(BCRYPT_HASH_PREFIX)) {
         throw new Error('User creation failed - invalid password hash');
       }
 

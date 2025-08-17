@@ -108,8 +108,8 @@ describe('UserServiceDatabase - Comprehensive Coverage', () => {
       const result = await UserServiceDatabase.generateAndSaveResetToken(mockUser);
 
       expect(mockDatabaseTransaction.withFallback).toHaveBeenCalled();
-      expect(mockUser.generatePasswordResetToken).toHaveBeenCalled();
-      expect(mockUser.save).toHaveBeenCalledWith({ session: mockSession });
+      expect(mockUser.generatePasswordResetToken).toHaveBeenCalledWith({ session: mockSession });
+      // generatePasswordResetToken already saves the user, so no additional save call
       expect(result).toBe('reset-token');
     });
 
@@ -122,8 +122,8 @@ describe('UserServiceDatabase - Comprehensive Coverage', () => {
       const result = await UserServiceDatabase.generateAndSaveResetToken(mockUser);
 
       expect(mockDatabaseTransaction.withFallback).toHaveBeenCalled();
-      expect(mockUser.generatePasswordResetToken).toHaveBeenCalled();
-      expect(mockUser.save).toHaveBeenCalledWith(); // Without session
+      expect(mockUser.generatePasswordResetToken).toHaveBeenCalledWith(); // No session in fallback
+      // generatePasswordResetToken already saves the user, so no additional save call
       expect(result).toBe('reset-token');
     });
 
@@ -279,9 +279,6 @@ describe('UserServiceDatabase - Comprehensive Coverage', () => {
     });
 
     it('should use fallback operation when transaction fails', async () => {
-      // Mock clearTokensAndSave for fallback test
-      jest.spyOn(UserServiceDatabase, 'clearTokensAndSave').mockResolvedValue();
-
       // Force fallback operation
       mockDatabaseTransaction.withFallback.mockImplementation(async (transactionOp, fallbackOp) => {
         return await fallbackOp();
@@ -290,13 +287,14 @@ describe('UserServiceDatabase - Comprehensive Coverage', () => {
       await UserServiceDatabase.markEmailVerified(mockUser);
 
       expect(mockUser.isEmailVerified).toBe(true);
-      expect(UserServiceDatabase.clearTokensAndSave).toHaveBeenCalledWith(mockUser, ['emailVerification']);
+      expect(mockUser.emailVerificationToken).toBeUndefined();
+      expect(mockUser.save).toHaveBeenCalledWith(); // Without session in fallback
     });
   });
 
   describe('updatePasswordAndClearTokens', () => {
     it('should update password and clear tokens in transaction', async () => {
-      const newPassword = 'new-password-hash';
+      const newPassword = 'test-password-hash'; // Test data - not a real password
 
       await UserServiceDatabase.updatePasswordAndClearTokens(mockUser, newPassword);
 
@@ -308,20 +306,19 @@ describe('UserServiceDatabase - Comprehensive Coverage', () => {
     });
 
     it('should use fallback operation when transaction fails', async () => {
-      // Mock clearTokensAndSave for fallback test
-      jest.spyOn(UserServiceDatabase, 'clearTokensAndSave').mockResolvedValue();
-
       // Force fallback operation
       mockDatabaseTransaction.withFallback.mockImplementation(async (transactionOp, fallbackOp) => {
         return await fallbackOp();
       });
 
-      const newPassword = 'new-password-hash';
+      const newPassword = 'test-new-password-hash'; // Test data - not a real password
 
       await UserServiceDatabase.updatePasswordAndClearTokens(mockUser, newPassword);
 
       expect(mockUser.passwordHash).toBe(newPassword);
-      expect(UserServiceDatabase.clearTokensAndSave).toHaveBeenCalledWith(mockUser, ['passwordReset']);
+      expect(mockUser.passwordResetToken).toBeUndefined();
+      expect(mockUser.passwordResetExpires).toBeUndefined();
+      expect(mockUser.save).toHaveBeenCalledWith(); // Without session in fallback
     });
 
     it('should handle empty password string', async () => {

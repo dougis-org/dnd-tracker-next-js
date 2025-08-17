@@ -1,6 +1,7 @@
 import '../__test-helpers__/test-setup';
 import { DatabaseTransaction } from '../DatabaseTransaction';
 import { UserServiceDatabase } from '../UserServiceDatabase';
+import User from '../../models/User';
 
 // Mock mongoose and database connection
 jest.mock('mongoose', () => ({
@@ -121,8 +122,7 @@ describe('UserService Transaction Logic', () => {
       // This test verifies the TypeScript interfaces are correctly defined
       // We've updated the User model interface to accept session options
 
-      // Import the User model to check type definitions
-      const User = require('../../models/User').default;
+      // User model is already imported at the top for consistency
 
       // Verify the model exists (it's mocked in tests)
       expect(User).toBeDefined();

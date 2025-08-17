@@ -46,14 +46,14 @@ export class UserServiceDatabase {
   static async generateAndSaveResetToken(user: any): Promise<string> {
     return await DatabaseTransaction.withFallback(
       async (session: ClientSession) => {
-        // Transaction operation
+        // Transaction operation - pass session to ensure atomicity
         let resetToken = 'dummy-token';
 
         if (user && typeof user.generatePasswordResetToken === 'function') {
-          resetToken = await user.generatePasswordResetToken();
+          resetToken = await user.generatePasswordResetToken({ session });
         }
 
-        await this.saveUserSafelyWithSession(user, session);
+        // generatePasswordResetToken already saves the user, so no additional save needed
         return resetToken;
       },
       async () => {
@@ -64,7 +64,7 @@ export class UserServiceDatabase {
           resetToken = await user.generatePasswordResetToken();
         }
 
-        await this.saveUserSafely(user);
+        // generatePasswordResetToken already saves the user, so no additional save needed
         return resetToken;
       }
     );
@@ -158,9 +158,10 @@ export class UserServiceDatabase {
         await this.saveUserSafelyWithSession(user, session);
       },
       async () => {
-        // Fallback operation (non-transactional)
+        // Fallback operation (non-transactional) - avoid nested fallback calls
         user.isEmailVerified = true;
-        await this.clearTokensAndSave(user, ['emailVerification']);
+        user.emailVerificationToken = undefined;
+        await this.saveUserSafely(user);
       }
     );
   }
@@ -182,9 +183,11 @@ export class UserServiceDatabase {
         await this.saveUserSafelyWithSession(user, session);
       },
       async () => {
-        // Fallback operation (non-transactional)
+        // Fallback operation (non-transactional) - avoid nested fallback calls
         user.passwordHash = newPassword; // Will be hashed by middleware
-        await this.clearTokensAndSave(user, ['passwordReset']);
+        user.passwordResetToken = undefined;
+        user.passwordResetExpires = undefined;
+        await this.saveUserSafely(user);
       }
     );
   }
