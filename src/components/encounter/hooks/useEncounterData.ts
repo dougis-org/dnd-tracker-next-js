@@ -49,7 +49,7 @@ export function useEncounterData({
 
   const handleErrorResponse = useCallback((error: any) => {
     const { errorMessage } = processErrorResponse(error);
-    setError(errorMessage);
+    setError(errorMessage || 'An unknown error occurred while fetching encounters.');
     setEncounters([]);
     setPagination(null);
   }, []);
