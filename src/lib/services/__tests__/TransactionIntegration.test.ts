@@ -83,8 +83,8 @@ describe('Transaction Integration Tests', () => {
         const result = await UserServiceDatabase.generateAndSaveResetToken(mockUser);
 
         expect(withFallbackSpy).toHaveBeenCalled();
-        expect(mockUser.generatePasswordResetToken).toHaveBeenCalled();
-        expect(mockUser.save).toHaveBeenCalledWith({ session: expect.any(Object) });
+        expect(mockUser.generatePasswordResetToken).toHaveBeenCalledWith({ session: expect.any(Object) });
+        // generatePasswordResetToken already saves the user internally, so no separate save call
         expect(result).toBe('new-reset-token');
 
         withFallbackSpy.mockRestore();
@@ -99,9 +99,6 @@ describe('Transaction Integration Tests', () => {
           save: jest.fn().mockResolvedValue(undefined),
         };
 
-        // Mock clearTokensAndSave to test fallback path
-        const clearTokensSpy = jest.spyOn(UserServiceDatabase, 'clearTokensAndSave').mockResolvedValue();
-
         // Mock DatabaseTransaction.withFallback to call the fallback operation
         const withFallbackSpy = jest.spyOn(DatabaseTransaction, 'withFallback').mockImplementation(
           async (_transactionOp, fallbackOp) => {
@@ -114,10 +111,10 @@ describe('Transaction Integration Tests', () => {
 
         expect(withFallbackSpy).toHaveBeenCalled();
         expect(mockUser.isEmailVerified).toBe(true);
-        expect(clearTokensSpy).toHaveBeenCalledWith(mockUser, ['emailVerification']);
+        expect(mockUser.emailVerificationToken).toBeUndefined();
+        expect(mockUser.save).toHaveBeenCalledWith(); // Without session in fallback
 
         withFallbackSpy.mockRestore();
-        clearTokensSpy.mockRestore();
       });
 
       it('should properly fallback for password updates', async () => {
@@ -127,9 +124,6 @@ describe('Transaction Integration Tests', () => {
           passwordResetExpires: new Date(),
           save: jest.fn().mockResolvedValue(undefined),
         };
-
-        // Mock clearTokensAndSave to test fallback path
-        const clearTokensSpy = jest.spyOn(UserServiceDatabase, 'clearTokensAndSave').mockResolvedValue();
 
         // Mock DatabaseTransaction.withFallback to call the fallback operation
         const withFallbackSpy = jest.spyOn(DatabaseTransaction, 'withFallback').mockImplementation(
@@ -143,10 +137,11 @@ describe('Transaction Integration Tests', () => {
 
         expect(withFallbackSpy).toHaveBeenCalled();
         expect(mockUser.passwordHash).toBe(newPassword);
-        expect(clearTokensSpy).toHaveBeenCalledWith(mockUser, ['passwordReset']);
+        expect(mockUser.passwordResetToken).toBeUndefined();
+        expect(mockUser.passwordResetExpires).toBeUndefined();
+        expect(mockUser.save).toHaveBeenCalledWith(); // Without session in fallback
 
         withFallbackSpy.mockRestore();
-        clearTokensSpy.mockRestore();
       });
     });
 
@@ -174,12 +169,8 @@ describe('Transaction Integration Tests', () => {
         const mockUser = {
           isEmailVerified: false,
           emailVerificationToken: 'test-token',
-          save: jest.fn().mockResolvedValue(undefined),
+          save: jest.fn().mockRejectedValue(new Error('Fallback save failed')),
         };
-
-        // Mock clearTokensAndSave to fail in fallback
-        const clearTokensSpy = jest.spyOn(UserServiceDatabase, 'clearTokensAndSave')
-          .mockRejectedValue(new Error('Fallback operation failed'));
 
         const withFallbackSpy = jest.spyOn(DatabaseTransaction, 'withFallback').mockImplementation(
           async (transactionOp, fallbackOp) => {
@@ -187,10 +178,9 @@ describe('Transaction Integration Tests', () => {
           }
         );
 
-        await expect(UserServiceDatabase.markEmailVerified(mockUser)).rejects.toThrow('Fallback operation failed');
+        await expect(UserServiceDatabase.markEmailVerified(mockUser)).rejects.toThrow('Fallback save failed');
 
         withFallbackSpy.mockRestore();
-        clearTokensSpy.mockRestore();
       });
     });
 
@@ -315,10 +305,9 @@ describe('Transaction Integration Tests', () => {
       UserServiceDatabase.markEmailVerified(mockUser);
       UserServiceDatabase.updatePasswordAndClearTokens(mockUser, 'new-pass');
       UserServiceDatabase.generateAndSaveResetToken(mockUser);
-      UserServiceDatabase.clearTokensAndSave(mockUser, ['passwordReset']);
       UserServiceDatabase.updateUserFieldsAndSave(mockUser, {});
 
-      expect(withFallbackSpy).toHaveBeenCalledTimes(5);
+      expect(withFallbackSpy).toHaveBeenCalledTimes(4);
 
       withFallbackSpy.mockRestore();
     });
