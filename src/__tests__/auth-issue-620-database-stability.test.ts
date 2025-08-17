@@ -14,13 +14,13 @@ import {
 } from '@/lib/db-connection-manager';
 import { UserService } from '@/lib/services';
 
-// Test credentials from Issue #620
+// Test credentials from Issue #620 - use environment variables for security
 const TEST_CREDENTIALS = {
-  email: 'doug@dougis.com',
-  password: 'dvg!ZGV*prh9uyr5thp',
-  username: 'dougtest620',
-  firstName: 'Doug',
-  lastName: 'Test'
+  email: process.env.TEST_EMAIL || 'test@example.com',
+  password: process.env.TEST_PASSWORD || 'test-password-123',
+  username: process.env.TEST_USERNAME || 'testuser620',
+  firstName: process.env.TEST_FIRST_NAME || 'Test',
+  lastName: process.env.TEST_LAST_NAME || 'User'
 };
 
 describe('Database Connection Stability - Issue #620', () => {

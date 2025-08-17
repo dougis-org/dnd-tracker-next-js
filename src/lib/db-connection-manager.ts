@@ -8,6 +8,10 @@ import mongoose from 'mongoose';
  * and reconnection logic for low-usage scenarios.
  */
 
+// Connection state constants for better readability
+const MONGOOSE_DISCONNECTED = 0;
+const MONGOOSE_CONNECTED = 1;
+
 type ConnectionStatus = {
   state: number;
   connected: boolean;
@@ -46,7 +50,7 @@ class DatabaseConnectionManager {
     const readyState = mongoose.connection.readyState;
     return {
       state: readyState,
-      connected: readyState === 1,
+      connected: readyState === MONGOOSE_CONNECTED,
       healthy: this.isConnectionHealthy(),
       lastChecked: Date.now()
     };
@@ -57,7 +61,7 @@ class DatabaseConnectionManager {
    */
   private isConnectionHealthy(): boolean {
     return (
-      mongoose.connection.readyState === 1 &&
+      mongoose.connection.readyState === MONGOOSE_CONNECTED &&
       mongoose.connection.db != null
     );
   }
@@ -99,7 +103,7 @@ class DatabaseConnectionManager {
         console.log(`Database connection attempt ${attempt}/${this.RECONNECT_ATTEMPTS}`);
 
         // Close existing connection if it's in a bad state
-        if (mongoose.connection.readyState === 0) {
+        if (mongoose.connection.readyState === MONGOOSE_DISCONNECTED) {
           await this.forceCloseConnection();
         }
 
@@ -155,7 +159,8 @@ class DatabaseConnectionManager {
       heartbeatFrequencyMS: 10000, // Check server health every 10 seconds
       maxIdleTimeMS: 30000, // Close connections after 30 seconds of inactivity
       retryWrites: true, // Retry failed writes
-      compressors: ['zlib' as const], // Enable compression for better performance
+      // Enable compression conditionally - may introduce CPU overhead
+      ...(process.env.ENABLE_DB_COMPRESSION === 'true' ? { compressors: ['zlib' as const] } : {}),
     };
 
     await mongoose.connect(mongoUri, options);
@@ -267,7 +272,7 @@ class DatabaseConnectionManager {
 
     this.stopHealthChecks();
 
-    if (mongoose.connection.readyState !== 0) {
+    if (mongoose.connection.readyState !== MONGOOSE_DISCONNECTED) {
       await mongoose.connection.close();
       console.log('Database connection closed gracefully');
     }
