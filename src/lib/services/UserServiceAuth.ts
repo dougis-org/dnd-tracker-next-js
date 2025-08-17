@@ -19,11 +19,15 @@ import { checkUserExists } from './UserServiceHelpers';
 import { UserServiceValidation } from './UserServiceValidation';
 import { UserServiceResponseHelpers } from './UserServiceResponseHelpers';
 import { UserServiceDatabase } from './UserServiceDatabase';
+import { DatabaseTransaction } from './DatabaseTransaction';
 import { UserServiceLookup } from './UserServiceLookup';
 import {
   validatePasswordStrength,
   isPasswordHashed
 } from '../utils/password-security';
+
+// Constants for validation
+const BCRYPT_HASH_PREFIX = '$2';
 
 /**
  * Authentication operations for UserService
@@ -106,6 +110,7 @@ export class UserServiceAuth {
   /**
    * Create and save a new user with email verification token
    * Fixed for Issue #620: Improved error handling and model initialization
+   * Enhanced with transaction support for atomic user creation
    */
   private static async createAndSaveUser(validatedData: any) {
     try {
@@ -115,33 +120,69 @@ export class UserServiceAuth {
       // Check if email verification should be bypassed for MVP
       const bypassEmailVerification = this.shouldBypassEmailVerification();
 
-      const newUser = new User({
-        email: validatedData.email,
-        username: validatedData.username,
-        firstName: validatedData.firstName,
-        lastName: validatedData.lastName,
-        passwordHash: validatedData.password, // Will be hashed by middleware
-        role: 'user',
-        subscriptionTier: 'free',
-        isEmailVerified: bypassEmailVerification,
-      });
+      // Use transaction to ensure atomic user creation and token generation
+      const savedUser = await DatabaseTransaction.withFallback(
+        async (session) => {
+          // Transaction operation - create user and generate token atomically
+          const newUser = new User({
+            email: validatedData.email,
+            username: validatedData.username,
+            firstName: validatedData.firstName,
+            lastName: validatedData.lastName,
+            passwordHash: validatedData.password, // Will be hashed by middleware
+            role: 'user',
+            subscriptionTier: 'free',
+            isEmailVerified: bypassEmailVerification,
+          });
 
-      // Fix for Issue #620: Validate password was properly set before proceeding
-      if (!newUser.passwordHash || newUser.passwordHash.length < 8) {
-        throw new Error('Password validation failed during user creation');
-      }
+          // Fix for Issue #620: Validate password was properly set before proceeding
+          if (!newUser.passwordHash || newUser.passwordHash.length < 8) {
+            throw new Error('Password validation failed during user creation');
+          }
 
-      // Only generate email verification token if bypass is not enabled
-      if (!bypassEmailVerification) {
-        await UserServiceDatabase.generateAndSaveEmailToken(newUser);
-      } else {
-        // Save user without generating email token when bypass is enabled
-        await UserServiceDatabase.saveUserSafely(newUser);
-      }
+          // Save user first within transaction
+          await newUser.save({ session });
+
+          // Only generate email verification token if bypass is not enabled
+          if (!bypassEmailVerification) {
+            await newUser.generateEmailVerificationToken({ session });
+          }
+
+          // Return the user created within the transaction
+          return newUser;
+        },
+        async () => {
+          // Fallback operation (non-transactional)
+          const newUser = new User({
+            email: validatedData.email,
+            username: validatedData.username,
+            firstName: validatedData.firstName,
+            lastName: validatedData.lastName,
+            passwordHash: validatedData.password, // Will be hashed by middleware
+            role: 'user',
+            subscriptionTier: 'free',
+            isEmailVerified: bypassEmailVerification,
+          });
+
+          // Fix for Issue #620: Validate password was properly set before proceeding
+          if (!newUser.passwordHash || newUser.passwordHash.length < 8) {
+            throw new Error('Password validation failed during user creation');
+          }
+
+          // Only generate email verification token if bypass is not enabled
+          if (!bypassEmailVerification) {
+            await UserServiceDatabase.generateAndSaveEmailToken(newUser);
+          } else {
+            // Save user without generating email token when bypass is enabled
+            await UserServiceDatabase.saveUserSafely(newUser);
+          }
+
+          return newUser;
+        }
+      );
 
       // Fix for Issue #620: Verify user was actually saved and password hashed
-      const savedUser = await User.findByEmail(validatedData.email);
-      if (!savedUser || !savedUser.passwordHash.startsWith('$2')) {
+      if (!savedUser || !savedUser.passwordHash.startsWith(BCRYPT_HASH_PREFIX)) {
         throw new Error('User creation failed - invalid password hash');
       }
 

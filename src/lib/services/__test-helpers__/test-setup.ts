@@ -15,6 +15,7 @@ const findByVerificationTokenMock = jest.fn();
 const countDocumentsMock = jest.fn();
 const aggregateMock = jest.fn();
 const findByIdAndDeleteMock = jest.fn();
+const deleteManyMock = jest.fn().mockResolvedValue({ deletedCount: 0 });
 
 // Create a mock constructor
 const UserMock = jest.fn().mockImplementation(data => {
@@ -56,6 +57,7 @@ findMock.mockReturnValue({
 (UserMock as any).countDocuments = countDocumentsMock;
 (UserMock as any).aggregate = aggregateMock;
 (UserMock as any).findByIdAndDelete = findByIdAndDeleteMock;
+(UserMock as any).deleteMany = deleteManyMock;
 
 // Mock the User model
 jest.mock('../../models/User', () => ({
@@ -85,6 +87,7 @@ export {
   countDocumentsMock,
   aggregateMock,
   findByIdAndDeleteMock,
+  deleteManyMock,
 };
 
 // Mock user data
