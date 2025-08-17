@@ -152,6 +152,9 @@ export class EncounterServiceSearch {
 
   private static addOwnerFilter(mongoQuery: any, params: any): void {
     if (params.ownerId) {
+      if (!EncounterServiceValidation.isValidObjectId(params.ownerId)) {
+        throw new InvalidEncounterIdError(params.ownerId);
+      }
       mongoQuery.ownerId = params.ownerId;
     }
   }

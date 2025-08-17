@@ -196,7 +196,7 @@ export class CharacterAccessUtils {
     userId: string
   ): Promise<ServiceResult<object>> {
     try {
-      if (!Types.ObjectId.isValid(userId)) {
+      if (!userId || !Types.ObjectId.isValid(userId)) {
         return createErrorResult(CharacterServiceErrors.invalidOwnerId(userId));
       }
 
