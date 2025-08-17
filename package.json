@@ -19,7 +19,7 @@
     "test:coverage:watch": "jest --coverage --watch",
     "test:ci": "jest --watchAll=false --ci --forceExit --detectOpenHandles",
     "test:parallel": "jest --maxWorkers=75%",
-    "test:parallel:ci": "jest --coverage --watchAll=false --ci --forceExit --detectOpenHandles --maxWorkers=2",
+    "test:parallel:ci": "npm run test:ci -- --coverage --maxWorkers=75%",
     "migrate:status": "bash scripts/migrate-wrapper.sh status",
     "migrate:up": "bash scripts/migrate-wrapper.sh up",
     "migrate:down": "bash scripts/migrate-wrapper.sh down",

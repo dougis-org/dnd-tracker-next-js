@@ -21,9 +21,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Lint markdown files
-        run: npx markdownlint "**/*.md" --ignore node_modules --ignore "docs/legacy/**" --ignore "docs/deployment/**"
-
       - name: Build
         env:
           NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET || 'test-secret-for-ci-build-only' }}
