@@ -273,8 +273,13 @@ class DatabaseConnectionManager {
     this.stopHealthChecks();
 
     if (mongoose.connection.readyState !== MONGOOSE_DISCONNECTED) {
-      await mongoose.connection.close();
-      console.log('Database connection closed gracefully');
+      try {
+        await mongoose.connection.close();
+        console.log('Database connection closed gracefully');
+      } catch (error) {
+        console.warn('Error during graceful shutdown:', error);
+        // Don't throw - graceful shutdown should not fail
+      }
     }
   }
 
