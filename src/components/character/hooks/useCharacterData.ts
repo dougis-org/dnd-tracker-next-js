@@ -46,7 +46,7 @@ export function useCharacterData(userId: string): UseCharacterDataResult {
       } else {
         setError(result.error?.message || 'An unknown error occurred while fetching characters.');
       }
-    } catch (err) {
+    } catch {
       setError('An unexpected error occurred. Please try again later.');
     } finally {
       setLoading(false);
