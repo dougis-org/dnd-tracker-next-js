@@ -49,7 +49,7 @@ describe('Database Connection Stability - Issue #620', () => {
           'closed'
         ];
 
-        return connectionErrorKeywords.some(keyword => 
+        return connectionErrorKeywords.some(keyword =>
           errorMessage.toLowerCase().includes(keyword)
         );
       };
@@ -221,7 +221,7 @@ describe('Database Connection Stability - Issue #620', () => {
                 'socket',
                 'closed'
               ];
-              return connectionErrorKeywords.some(keyword => 
+              return connectionErrorKeywords.some(keyword =>
                 errorMessage.toLowerCase().includes(keyword)
               );
             };
@@ -352,7 +352,7 @@ describe('Database Connection Stability - Issue #620', () => {
         'closed'
       ];
 
-      const wouldRetry = connectionErrorKeywords.some(keyword => 
+      const wouldRetry = connectionErrorKeywords.some(keyword =>
         bufferingError.toLowerCase().includes(keyword)
       );
       expect(wouldRetry).toBe(true);
