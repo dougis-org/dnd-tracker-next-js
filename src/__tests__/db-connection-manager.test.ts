@@ -42,7 +42,7 @@ describe('Database Connection Manager - Issue #620', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Reset environment variables
     process.env = {
       ...originalEnv,
@@ -247,7 +247,7 @@ describe('Database Connection Manager - Issue #620', () => {
       mockedMongoose.connection.readyState = 0; // Initially disconnected
 
       const mockOperation = jest.fn().mockResolvedValue('success');
-      
+
       // Mock connection establishment
       mockedMongoose.connect.mockResolvedValueOnce(undefined);
       const mockPing = jest.fn().mockResolvedValue({ ok: 1 });
@@ -262,7 +262,7 @@ describe('Database Connection Manager - Issue #620', () => {
 
     it('should retry operation once on connection error', async () => {
       // Start connected to avoid initial connection logic
-      mockedMongoose.connection.readyState = 1; 
+      mockedMongoose.connection.readyState = 1;
       mockedMongoose.connection.db = { admin: () => ({ ping: jest.fn().mockResolvedValue({ ok: 1 }) }) } as any;
 
       const connectionError = new Error('buffering timed out after 10000ms');
@@ -350,7 +350,7 @@ describe('Database Connection Manager - Issue #620', () => {
 
       // Graceful shutdown should handle errors internally without throwing
       await expect(gracefulShutdown()).resolves.not.toThrow();
-      
+
       // Verify close was attempted
       expect(mockedMongoose.connection.close).toHaveBeenCalled();
     });
@@ -377,7 +377,7 @@ describe('Database Connection Manager - Issue #620', () => {
 
       // Resolve the connection
       connectResolve!();
-      
+
       await Promise.all([connection1, connection2, connection3]);
 
       // Should only call connect once despite multiple requests
@@ -416,10 +416,10 @@ describe('Database Connection Manager - Issue #620', () => {
   describe('Error Scenarios and Edge Cases', () => {
     it('should handle exponential backoff pattern correctly', async () => {
       mockedMongoose.connection.readyState = 0; // Disconnected
-      
+
       // Clear existing calls from beforeEach
       jest.clearAllMocks();
-      
+
       // Mock first failure, then success to test retry pattern
       mockedMongoose.connect
         .mockRejectedValueOnce(new Error('Attempt 1 failed'))
@@ -447,10 +447,10 @@ describe('Database Connection Manager - Issue #620', () => {
 
       // These should not be treated as connection errors
       await expect(executeWithConnection(mockOperation)).rejects.toBeNull();
-      
+
       jest.clearAllMocks();
       await expect(executeWithConnection(mockOperation)).rejects.toBeUndefined();
-      
+
       jest.clearAllMocks();
       await expect(executeWithConnection(mockOperation)).rejects.toEqual({ message: null });
     });
