@@ -179,13 +179,9 @@ export class CharacterAccessUtils {
   /**
    * Create MongoDB filter for user ownership only
    */
-  static createOwnershipFilter(userId: string): { ownerId: Types.ObjectId | string } {
-    try {
-      return { ownerId: new Types.ObjectId(userId) };
-    } catch {
-      // Fallback for testing environments where Types.ObjectId might not work
-      return { ownerId: userId };
-    }
+  static createOwnershipFilter(userId: string | Types.ObjectId): { ownerId: Types.ObjectId } {
+    const userObjectId = userId instanceof Types.ObjectId ? userId : new Types.ObjectId(userId);
+    return { ownerId: userObjectId };
   }
 
   /**
@@ -193,14 +189,14 @@ export class CharacterAccessUtils {
    */
   static async prepareUserAccessQuery(
     baseFilter: object,
-    userId: string
+    userId: string | Types.ObjectId
   ): Promise<ServiceResult<object>> {
     try {
       if (!userId || !Types.ObjectId.isValid(userId)) {
-        return createErrorResult(CharacterServiceErrors.invalidOwnerId(userId));
+        return createErrorResult(CharacterServiceErrors.invalidOwnerId(userId as string));
       }
 
-      const accessFilter = this.createUserAccessFilter(userId);
+      const accessFilter = this.createUserAccessFilter(userId.toString());
       const combinedFilter = {
         $and: [accessFilter, baseFilter],
       };
