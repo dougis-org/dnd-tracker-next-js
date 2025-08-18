@@ -1,10 +1,11 @@
-import User from '../models/User';
+import User from '@/lib/models/User';
 import {
   UserNotFoundError,
   TokenInvalidError,
   ServiceResult,
-} from './UserServiceErrors';
-import { UserServiceResponseHelpers } from './UserServiceResponseHelpers';
+} from '@/lib/services/UserServiceErrors';
+import { UserServiceResponseHelpers } from '@/lib/services/UserServiceResponseHelpers';
+import { executeWithConnection } from '@/lib/db-connection-manager';
 
 /**
  * User lookup utilities for UserService
@@ -14,9 +15,10 @@ export class UserServiceLookup {
 
   /**
    * Find user by ID and return standardized error if not found
+   * Enhanced with connection management for Issue #620
    */
   static async findUserOrError(userId: string): Promise<ServiceResult<any>> {
-    const user = await User.findById(userId);
+    const user = await executeWithConnection(() => User.findById(userId));
     if (!user) {
       return UserServiceResponseHelpers.createErrorResponse(
         new UserNotFoundError(userId)
@@ -27,9 +29,10 @@ export class UserServiceLookup {
 
   /**
    * Find user by ID or throw UserNotFoundError
+   * Enhanced with connection management for Issue #620
    */
   static async findUserByIdOrThrow(userId: string): Promise<any> {
-    const user = await User.findById(userId);
+    const user = await executeWithConnection(() => User.findById(userId));
     if (!user) {
       throw new UserNotFoundError(userId);
     }
@@ -38,9 +41,10 @@ export class UserServiceLookup {
 
   /**
    * Find user by email or throw UserNotFoundError
+   * Enhanced with connection management for Issue #620
    */
   static async findUserByEmailOrThrow(email: string): Promise<any> {
-    const user = await User.findByEmail(email);
+    const user = await executeWithConnection(() => User.findByEmail(email));
     if (!user) {
       throw new UserNotFoundError(email);
     }
@@ -49,16 +53,18 @@ export class UserServiceLookup {
 
   /**
    * Find user by email (nullable return for security operations)
+   * Enhanced with connection management for Issue #620
    */
   static async findUserByEmailNullable(email: string): Promise<any | null> {
-    return await User.findByEmail(email);
+    return await executeWithConnection(() => User.findByEmail(email));
   }
 
   /**
    * Find user by password reset token or throw TokenInvalidError
+   * Enhanced with connection management for Issue #620
    */
   static async findUserByResetTokenOrThrow(token: string): Promise<any> {
-    const user = await User.findByResetToken(token);
+    const user = await executeWithConnection(() => User.findByResetToken(token));
     if (!user) {
       throw new TokenInvalidError('Password reset');
     }
@@ -67,9 +73,10 @@ export class UserServiceLookup {
 
   /**
    * Find user by email verification token or throw TokenInvalidError
+   * Enhanced with connection management for Issue #620
    */
   static async findUserByVerificationTokenOrThrow(token: string): Promise<any> {
-    const user = await User.findByVerificationToken(token);
+    const user = await executeWithConnection(() => User.findByVerificationToken(token));
     if (!user) {
       throw new TokenInvalidError('Email verification');
     }

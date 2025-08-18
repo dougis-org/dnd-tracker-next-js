@@ -1,10 +1,10 @@
-import { connectToDatabase } from '../db';
+import { connectToDatabase } from '@/lib/db-connection-manager';
 import {
   ServiceResult,
   UserAlreadyExistsError,
   InvalidCredentialsError,
   UserServiceError,
-} from './UserServiceErrors';
+} from '@/lib/services/UserServiceErrors';
 import {
   type UserRegistration,
   type UserLogin,
@@ -14,17 +14,17 @@ import {
   type EmailVerification,
   type PublicUser,
   type UserRegistrationResponse,
-} from '../validations/user';
-import { checkUserExists } from './UserServiceHelpers';
-import { UserServiceValidation } from './UserServiceValidation';
-import { UserServiceResponseHelpers } from './UserServiceResponseHelpers';
-import { UserServiceDatabase } from './UserServiceDatabase';
-import { DatabaseTransaction } from './DatabaseTransaction';
-import { UserServiceLookup } from './UserServiceLookup';
+} from '@/lib/validations/user';
+import { checkUserExists } from '@/lib/services/UserServiceHelpers';
+import { UserServiceValidation } from '@/lib/services/UserServiceValidation';
+import { UserServiceResponseHelpers } from '@/lib/services/UserServiceResponseHelpers';
+import { UserServiceDatabase } from '@/lib/services/UserServiceDatabase';
+import { DatabaseTransaction } from '@/lib/services/DatabaseTransaction';
+import { UserServiceLookup } from '@/lib/services/UserServiceLookup';
 import {
   validatePasswordStrength,
   isPasswordHashed
-} from '../utils/password-security';
+} from '@/lib/utils/password-security';
 
 // Constants for validation
 const BCRYPT_HASH_PREFIX = '$2';
