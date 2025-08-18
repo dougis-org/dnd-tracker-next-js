@@ -268,6 +268,24 @@ describe('CharacterAccessUtils', () => {
       expect(result.success).toBe(false);
       expect(result.error.code).toBe(CHARACTER_ERROR_CODES.INVALID_OWNER_ID);
     });
+
+    it('should fail for empty user ID', async () => {
+      const result = await CharacterAccessUtils.prepareUserAccessQuery({}, '');
+      expect(result.success).toBe(false);
+      expect(result.error.code).toBe(CHARACTER_ERROR_CODES.INVALID_OWNER_ID);
+    });
+
+    it('should fail for null user ID', async () => {
+      const result = await CharacterAccessUtils.prepareUserAccessQuery({}, null as any);
+      expect(result.success).toBe(false);
+      expect(result.error.code).toBe(CHARACTER_ERROR_CODES.INVALID_OWNER_ID);
+    });
+
+    it('should fail for undefined user ID', async () => {
+      const result = await CharacterAccessUtils.prepareUserAccessQuery({}, undefined as any);
+      expect(result.success).toBe(false);
+      expect(result.error.code).toBe(CHARACTER_ERROR_CODES.INVALID_OWNER_ID);
+    });
   });
 
   describe('checkCharacterInUse', () => {
