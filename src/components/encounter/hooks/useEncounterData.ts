@@ -48,6 +48,7 @@ export function useEncounterData({
   }, [limit]);
 
   const handleErrorResponse = useCallback((error: any) => {
+    console.error('An error occurred while fetching encounters:', error);
     const { errorMessage } = processErrorResponse(error);
     setError(errorMessage || 'An unknown error occurred while fetching encounters.');
     setEncounters([]);
