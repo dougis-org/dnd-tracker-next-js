@@ -27,6 +27,13 @@ export interface IUser extends Document {
   experienceLevel?: 'new' | 'beginner' | 'intermediate' | 'experienced' | 'veteran';
   primaryRole?: 'dm' | 'player' | 'both';
   profileSetupCompleted: boolean;
+
+  // Clerk integration fields
+  clerkId?: string;            // Primary Clerk identifier
+  imageUrl?: string;           // Synced from Clerk profile
+  lastClerkSync?: Date;        // Track last sync time
+  syncStatus: 'active' | 'pending' | 'error'; // Sync health
+  authProvider: 'local' | 'clerk'; // Track authentication provider
   preferences: {
     theme: 'light' | 'dark' | 'system';
     emailNotifications: boolean;
@@ -59,6 +66,9 @@ export interface UserModel extends Model<IUser> {
   findByVerificationToken(_token: string): Promise<IUser | null>;
   createUser(_userData: CreateUserInput): Promise<IUser>;
   validateUser(_email: string, _password: string): Promise<IUser>;
+  findByClerkId(_clerkId: string): Promise<IUser | null>;
+  createClerkUser(_clerkUserData: ClerkUserData): Promise<IUser>;
+  updateFromClerkData(_clerkId: string, _clerkUserData: ClerkUserData): Promise<IUser>;
 }
 
 /**
@@ -107,6 +117,19 @@ export interface CreateUserInput {
     diceRollAnimations?: boolean;
     autoSaveEncounters?: boolean;
   };
+}
+
+/**
+ * Clerk user data interface
+ */
+export interface ClerkUserData {
+  clerkId: string;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  username?: string;
+  imageUrl?: string;
+  emailVerified?: boolean;
 }
 
 /**
@@ -197,7 +220,36 @@ const userSchema = new Schema<IUser, UserModel>(
     },
     passwordHash: {
       type: String,
-      required: [true, 'Password hash is required'],
+      required: function() {
+        // Password hash only required for local auth users
+        return this.authProvider === 'local';
+      },
+    },
+    clerkId: {
+      type: String,
+      unique: true,
+      sparse: true, // Allow null values while maintaining uniqueness
+      index: true,
+    },
+    imageUrl: {
+      type: String,
+      trim: true,
+    },
+    lastClerkSync: {
+      type: Date,
+      index: { background: true },
+    },
+    syncStatus: {
+      type: String,
+      enum: ['active', 'pending', 'error'],
+      default: 'pending',
+      index: true,
+    },
+    authProvider: {
+      type: String,
+      enum: ['local', 'clerk'],
+      default: 'local',
+      index: true,
     },
     role: {
       type: String,
@@ -591,6 +643,106 @@ userSchema.statics.validateUser = async function (
   // Update last login time
   await user.updateLastLogin();
 
+  return user;
+};
+
+// Static method to find user by Clerk ID
+userSchema.statics.findByClerkId = async function (
+  clerkId: string
+): Promise<IUser | null> {
+  return this.findOne({ clerkId });
+};
+
+// Helper function to generate unique username from email
+function generateUsernameFromEmail(email: string): string {
+  const baseUsername = email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
+  return baseUsername.substring(0, 20); // Limit length
+}
+
+// Static method to create a user from Clerk data
+userSchema.statics.createClerkUser = async function (
+  clerkUserData: ClerkUserData
+): Promise<IUser> {
+  // Check if user already exists
+  const existingUser = await this.findByClerkId(clerkUserData.clerkId);
+  if (existingUser) {
+    throw new Error('User with this Clerk ID already exists');
+  }
+
+  // Generate username if not provided
+  let username = clerkUserData.username;
+  if (!username) {
+    const baseUsername = generateUsernameFromEmail(clerkUserData.email);
+    username = baseUsername;
+
+    // Check for duplicates and add suffix if needed
+    let counter = 1;
+    while (await this.findByUsername(username)) {
+      username = `${baseUsername}${counter}`;
+      counter++;
+    }
+  } else {
+    // Check if username already exists
+    const existingUsername = await this.findByUsername(username);
+    if (existingUsername) {
+      let counter = 1;
+      const baseUsername = username;
+      while (await this.findByUsername(username)) {
+        username = `${baseUsername}${counter}`;
+        counter++;
+      }
+    }
+  }
+
+  // Create the user
+  const user = new this({
+    clerkId: clerkUserData.clerkId,
+    email: clerkUserData.email.toLowerCase(),
+    username: username.toLowerCase(),
+    firstName: clerkUserData.firstName || '',
+    lastName: clerkUserData.lastName || '',
+    imageUrl: clerkUserData.imageUrl,
+    isEmailVerified: clerkUserData.emailVerified || false,
+    authProvider: 'clerk',
+    syncStatus: 'active',
+    lastClerkSync: new Date(),
+    role: 'user',
+    subscriptionTier: 'free',
+    preferences: {
+      theme: 'system',
+      emailNotifications: true,
+      browserNotifications: false,
+      timezone: 'UTC',
+      language: 'en',
+      diceRollAnimations: true,
+      autoSaveEncounters: true,
+    },
+  });
+
+  await user.save();
+  return user;
+};
+
+// Static method to update user from Clerk data
+userSchema.statics.updateFromClerkData = async function (
+  clerkId: string,
+  clerkUserData: ClerkUserData
+): Promise<IUser> {
+  const user = await this.findByClerkId(clerkId);
+  if (!user) {
+    throw new Error('User not found');
+  }
+
+  // Update fields that might have changed in Clerk
+  user.email = clerkUserData.email.toLowerCase();
+  user.firstName = clerkUserData.firstName || user.firstName;
+  user.lastName = clerkUserData.lastName || user.lastName;
+  user.imageUrl = clerkUserData.imageUrl || user.imageUrl;
+  user.isEmailVerified = clerkUserData.emailVerified ?? user.isEmailVerified;
+  user.lastClerkSync = new Date();
+  user.syncStatus = 'active';
+
+  await user.save();
   return user;
 };
 
