@@ -18,14 +18,6 @@ export const createMockSessionUser = (overrides: Partial<SessionUser> = {}): Ses
   name: 'Test User',
   email: 'test@example.com',
   subscriptionTier: 'free',
-  notifications: {
-    email: true,
-    combat: true,
-    encounters: true,
-    weeklyDigest: false,
-    productUpdates: false,
-    securityAlerts: true,
-  },
   ...overrides,
 });
 
@@ -45,14 +37,6 @@ export const mockUsers = {
     name: 'Paid User',
     email: 'paid@example.com',
     subscriptionTier: 'seasoned',
-    notifications: {
-      email: true,
-      combat: false,
-      encounters: true,
-      weeklyDigest: true,
-      productUpdates: false,
-      securityAlerts: true,
-    },
   }),
 
   premiumUser: createMockSessionUser({
@@ -60,14 +44,6 @@ export const mockUsers = {
     name: 'Premium User',
     email: 'premium@example.com',
     subscriptionTier: 'master',
-    notifications: {
-      email: false,
-      combat: true,
-      encounters: true,
-      weeklyDigest: true,
-      productUpdates: true,
-      securityAlerts: true,
-    },
   }),
 };
 

@@ -1,76 +1,54 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getToken } from 'next-auth/jwt';
-import { isProtectedApiRoute } from '@/lib/middleware';
-import { getNextAuthSecret, getNextAuthUrl } from '@/lib/config/env-config';
-import { SESSION_COOKIE_NAME } from '@/lib/constants/session-constants';
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
+import { NextResponse } from 'next/server';
 
-export async function middleware(request: NextRequest) {
+// Define protected routes that require authentication
+const isProtectedRoute = createRouteMatcher([
+  '/dashboard(.*)',
+  '/characters(.*)',
+  '/encounters(.*)',
+  '/parties(.*)',
+  '/combat(.*)',
+  '/settings(.*)',
+  '/api/users(.*)',
+  '/api/characters(.*)',
+  '/api/encounters(.*)',
+  '/api/combat(.*)',
+  '/api/parties(.*)'
+]);
+
+export default clerkMiddleware(async (auth, request) => {
   const { pathname } = request.nextUrl;
 
-  if (!isProtectedRoute(pathname)) {
-    return NextResponse.next();
-  }
-
-  try {
-    const token = await getToken({
-      req: request,
-      secret: getNextAuthSecret(),
-      cookieName: SESSION_COOKIE_NAME,
-    });
-
-    if (!token || !token.sub) {
-      if (isProtectedApiRoute(pathname)) {
-        return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+  // Protect all routes defined in isProtectedRoute
+  if (isProtectedRoute(request)) {
+    // For API routes, return JSON error if not authenticated
+    if (pathname.startsWith('/api/')) {
+      const { userId } = await auth();
+      if (!userId) {
+        return NextResponse.json(
+          { error: 'Authentication required' },
+          { status: 401 }
+        );
       }
-
-      // Create signin URL with callback parameter
-      const signinUrl = new URL('/signin', request.url);
-
-      // Fix callback URL to use production domain instead of localhost
-      const callbackUrl = new URL(request.nextUrl.pathname + request.nextUrl.search,
-                                  getNextAuthUrl() || request.url);
-      signinUrl.searchParams.set('callbackUrl', callbackUrl.toString());
-
-      return NextResponse.redirect(signinUrl);
+    } else {
+      // For regular routes, redirect to sign-in
+      const authObj = await auth();
+      if (!authObj.userId) {
+        const signInUrl = new URL('/sign-in', request.url);
+        signInUrl.searchParams.set('redirect_url', request.url);
+        return NextResponse.redirect(signInUrl);
+      }
     }
-
-    return NextResponse.next();
-  } catch (error) {
-    console.error('Middleware authentication error:', error);
-
-    if (isProtectedApiRoute(pathname)) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
-    }
-
-    // Redirect to signin on any authentication error
-    const signinUrl = new URL('/signin', request.url);
-
-    // Fix callback URL to use production domain
-    const callbackUrl = new URL(request.nextUrl.pathname + request.nextUrl.search,
-                                getNextAuthUrl() || request.url);
-    signinUrl.searchParams.set('callbackUrl', callbackUrl.toString());
-
-    return NextResponse.redirect(signinUrl);
   }
-}
 
-function isProtectedRoute(pathname: string): boolean {
-  const protectedPaths = ['/dashboard', '/characters', '/encounters', '/parties', '/combat', '/settings'];
-  return protectedPaths.some(path => pathname.startsWith(path)) || isProtectedApiRoute(pathname);
-}
+  return NextResponse.next();
+});
 
 export const config = {
   matcher: [
-    '/dashboard/:path*',
-    '/characters/:path*',
-    '/encounters/:path*',
-    '/parties/:path*',
-    '/combat/:path*',
-    '/settings/:path*',
-    '/api/users/:path*',
-    '/api/characters/:path*',
-    '/api/encounters/:path*',
-    '/api/combat/:path*',
-    '/api/parties/:path*',
+    // Skip Next.js internals and all static files, unless found in search params
+    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+    // Always run for API routes
+    '/(api|trpc)(.*)',
   ],
 };

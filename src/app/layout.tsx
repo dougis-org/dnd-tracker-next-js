@@ -3,7 +3,7 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { ThemeProvider } from '@/components/theme-provider';
-import { SessionProvider } from '@/components/providers/SessionProvider';
+import { ClerkProvider } from '@clerk/nextjs';
 import { Toaster } from 'sonner';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -19,15 +19,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
-        <SessionProvider>
+    <ClerkProvider>
+      <html lang="en">
+        <body className={inter.className}>
           <ThemeProvider defaultTheme="system" storageKey="dnd-tracker-theme">
             <AppLayout>{children}</AppLayout>
             <Toaster />
           </ThemeProvider>
-        </SessionProvider>
-      </body>
-    </html>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }
