@@ -1,34 +1,24 @@
 const nextJest = require('next/jest');
 
 const createJestConfig = nextJest({
-  // Provide the path to your Next.js app to load next.config.js and .env files
   dir: './',
 });
 
-// Add any custom config to be passed to Jest
 const customJestConfig = {
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
-  // Global MongoDB setup disabled - individual tests can start MongoDB when needed
-  // globalSetup: '<rootDir>/jest.global-setup.js',
-  // globalTeardown: '<rootDir>/jest.global-teardown.js',
   testEnvironment: 'jest-environment-jsdom',
-  // Parallel execution configuration
-  maxWorkers: process.env.CI ? 1 : '75%', // Use 1 worker in CI to prevent resource exhaustion, 75% of available cores locally
-  maxConcurrency: process.env.CI ? 5 : 10, // Lower concurrency in CI to prevent resource exhaustion
-  testSequencer: '<rootDir>/jest.sequencer.js', // Custom sequencer for optimal test ordering
-  // Worker configuration for better resource management
-  workerIdleMemoryLimit: '512MB', // Restart workers if they exceed memory limit
-  // Test execution configuration
-  testTimeout: process.env.CI ? 10000 : 30000, // 10 second timeout in CI, 30 seconds locally
-  // Performance optimizations
-  cacheDirectory: '<rootDir>/.jest-cache', // Custom cache directory for better performance
-  clearMocks: true, // Clear mocks between tests to prevent memory leaks
+  maxWorkers: process.env.CI ? 1 : '75%',
+  maxConcurrency: process.env.CI ? 5 : 10,
+  testSequencer: '<rootDir>/jest.sequencer.js',
+  workerIdleMemoryLimit: '512MB',
+  testTimeout: process.env.CI ? 10000 : 30000,
+  cacheDirectory: '<rootDir>/.jest-cache',
+  clearMocks: true,
   testPathIgnorePatterns: [
     '<rootDir>/.next/',
     '<rootDir>/node_modules/',
     '<rootDir>/src/components/forms/character/__tests__/CharacterCreationForm.test.tsx',
     '<rootDir>/src/lib/hooks/__tests__/useInitiativeTracker.test.ts',
-    // Temporarily exclude slower tests in CI to prevent timeouts
     ...(process.env.CI ? [
       '<rootDir>/src/app/characters/hooks/__tests__/useCharacterPageActions.test.ts',
       '<rootDir>/src/components/party/hooks/__tests__/usePartyData.test.ts',
@@ -56,7 +46,6 @@ const customJestConfig = {
   ],
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html', 'json-summary'],
-  // Temporarily relaxed for CI coverage reporting
   coverageThreshold: {
     global: {
       branches: 0,
@@ -67,12 +56,16 @@ const customJestConfig = {
   },
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
-    '^next-auth$': '<rootDir>/src/__mocks__/next-auth.js',
-    '^next-auth/react$': '<rootDir>/src/__mocks__/next-auth/react.js',
-    '^next-auth/jwt$': '<rootDir>/src/__mocks__/next-auth/jwt.js',
   },
-  transformIgnorePatterns: ['node_modules/(?!(bson|@auth)/)'],
+  transform: {
+    '^.+\.(ts|tsx|js|jsx)$' : ['ts-jest', {
+      tsconfig: 'tsconfig.jest.json',
+    }],
+    '^.+\.mjs$': 'jest-esm-transformer',
+  },
+  transformIgnorePatterns: [
+    'node_modules/(?!(?:@clerk/backend|@clerk/nextjs)/)',
+  ],
 };
 
-// createJestConfig is exported this way to ensure that next/jest can load the Next.js config which is async
 module.exports = createJestConfig(customJestConfig);

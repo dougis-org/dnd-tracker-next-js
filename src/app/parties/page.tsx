@@ -3,6 +3,8 @@ import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth';
 import { PartyListView } from '@/components/party/PartyListView';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'Parties - D&D Encounter Tracker',
   description: 'Manage and organize your D&D parties',
