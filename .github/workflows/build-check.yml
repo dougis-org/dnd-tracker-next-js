@@ -27,4 +27,6 @@ jobs:
           NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL || 'http://localhost:3000' }}
           MONGODB_URI: ${{ secrets.MONGODB_URI || 'mongodb://localhost:27017/test' }}
           MONGODB_DB_NAME: ${{ secrets.MONGODB_DB_NAME || 'testdb' }}
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || 'unknown' }}
+          CLERK_SECRET_KEY: ${{ secrets.MONGODB_DB_NAME || 'unknown' }}
         run: npm run build
