@@ -2,6 +2,7 @@ import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import { CharacterStatsManager } from '../CharacterStatsManager';
 import { CharacterService } from '@/lib/services/CharacterService';
+import { CharacterServiceClient } from '@/lib/services/CharacterServiceClient';
 import { createMockCharacter as createMockCharacterBase } from '@/lib/services/__tests__/CharacterService.test-helpers';
 
 // Convert service layer mock (with object skills) to component layer format
@@ -124,20 +125,41 @@ export const waitForElement = async (testId: string) => {
 
 // Helper to setup successful service mocks
 export const setupSuccessfulMocks = (mockCharacter?: any, mockStats?: any) => {
-  (CharacterService.getCharacterById as jest.Mock).mockResolvedValue({
+  // Mock CharacterServiceClient for character data
+  (CharacterServiceClient.getCharacterById as jest.Mock).mockResolvedValue({
     success: true,
     data: mockCharacter || createMockCharacter()
   });
+  (CharacterServiceClient.updateCharacter as jest.Mock).mockResolvedValue({
+    success: true,
+    data: mockCharacter || createMockCharacter()
+  });
+
+  // Mock CharacterService for stats calculation
   (CharacterService.calculateCharacterStats as jest.Mock).mockResolvedValue({
     success: true,
     data: mockStats || createMockStats()
+  });
+  (CharacterService.updateCharacter as jest.Mock).mockResolvedValue({
+    success: true,
+    data: mockCharacter || createMockCharacter()
+  });
+  (CharacterService.saveDraftChanges as jest.Mock).mockResolvedValue({
+    success: true
+  });
+  (CharacterService.clearDraftChanges as jest.Mock).mockResolvedValue({
+    success: true
+  });
+  (CharacterService.getDraftChanges as jest.Mock).mockResolvedValue({
+    success: true,
+    data: null
   });
 };
 
 // Helper to setup error mocks
 export const setupErrorMocks = (characterError?: string, statsError?: string) => {
   if (characterError) {
-    (CharacterService.getCharacterById as jest.Mock).mockResolvedValue({
+    (CharacterServiceClient.getCharacterById as jest.Mock).mockResolvedValue({
       success: false,
       error: { message: characterError, code: 'ERROR' }
     });

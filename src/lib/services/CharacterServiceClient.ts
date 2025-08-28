@@ -9,6 +9,7 @@ import { CharacterService } from './CharacterService';
 import type { Character } from '@/lib/validations/character';
 import type { CharacterCreation, CharacterUpdate, CharacterSummary } from '@/lib/validations/character';
 import type { ServiceResult } from './CharacterServiceErrors';
+import { toClientCharacter, toClientCharacters } from './utils/transformations';
 
 // Note: This client should use API calls instead of direct service access.
 // For now, we'll pass through data assuming the service layer handles conversion.
@@ -36,7 +37,7 @@ export class CharacterServiceClient {
     if (result.success) {
       return {
         success: true,
-        data: result.data as unknown as Character
+        data: toClientCharacter(result.data)
       };
     }
     return result;
@@ -50,7 +51,7 @@ export class CharacterServiceClient {
     if (result.success) {
       return {
         success: true,
-        data: result.data as unknown as Character
+        data: toClientCharacter(result.data)
       };
     }
     return result;
@@ -65,7 +66,7 @@ export class CharacterServiceClient {
     if (result.success) {
       return {
         success: true,
-        data: result.data as unknown as Character
+        data: toClientCharacter(result.data)
       };
     }
     return result;
@@ -88,7 +89,7 @@ export class CharacterServiceClient {
       return {
         success: true,
         data: {
-          items: result.data.items as unknown as Character[],
+          items: toClientCharacters(result.data.items),
           pagination: {
             page: result.data.pagination.page,
             totalPages: result.data.pagination.totalPages,
@@ -109,7 +110,7 @@ export class CharacterServiceClient {
     if (result.success) {
       return {
         success: true,
-        data: result.data as unknown as Character[]
+        data: toClientCharacters(result.data)
       };
     }
     return result;
@@ -123,7 +124,7 @@ export class CharacterServiceClient {
     if (result.success) {
       return {
         success: true,
-        data: result.data as unknown as Character[]
+        data: toClientCharacters(result.data)
       };
     }
     return result;
@@ -137,7 +138,7 @@ export class CharacterServiceClient {
     if (result.success) {
       return {
         success: true,
-        data: result.data as unknown as Character[]
+        data: toClientCharacters(result.data)
       };
     }
     return result;
@@ -151,7 +152,7 @@ export class CharacterServiceClient {
     if (result.success) {
       return {
         success: true,
-        data: result.data as unknown as Character[]
+        data: toClientCharacters(result.data)
       };
     }
     return result;

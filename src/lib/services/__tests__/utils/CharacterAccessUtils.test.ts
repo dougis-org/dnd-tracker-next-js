@@ -17,10 +17,13 @@ jest.mock('../../../models/Character', () => ({
 jest.mock('mongoose', () => ({
   Types: {
     ObjectId: jest.fn().mockImplementation((id) => ({ toString: () => id })),
-    ObjectId: {
-      isValid: jest.fn(),
-    },
+    isValid: jest.fn(),
   },
+  Schema: {
+    Types: {
+      ObjectId: jest.fn()
+    }
+  }
 }));
 
 describe('CharacterAccessUtils', () => {
