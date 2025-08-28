@@ -6,7 +6,7 @@ import { CharacterServiceErrors } from '../../CharacterServiceErrors';
 jest.mock('mongoose', () => {
   const MOCK_OBJECT_ID = '507f1f77bcf86cd799439011'; // Consistent valid ObjectId hex string
   const mockObjectIdClass = jest.fn();
-  
+
   const MockSchema = jest.fn().mockImplementation(function(definition, options) {
     this.definition = definition;
     this.options = options;
@@ -21,7 +21,7 @@ jest.mock('mongoose', () => {
     this.methods = {};
     this.statics = {};
   });
-  
+
   MockSchema.Types = {
     ObjectId: mockObjectIdClass
   };
@@ -71,7 +71,7 @@ describe('CharacterAccessUtils', () => {
           $and: [
             {
               $or: [
-                { ownerId: expect.objectContaining({ toHexString: expect.any(Function), toString: expect.any(Function) }) }, 
+                { ownerId: expect.objectContaining({ toHexString: expect.any(Function), toString: expect.any(Function) }) },
                 { isPublic: true }
               ],
             },

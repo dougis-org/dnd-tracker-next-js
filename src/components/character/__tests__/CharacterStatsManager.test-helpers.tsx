@@ -134,7 +134,7 @@ export const setupSuccessfulMocks = (mockCharacter?: any, mockStats?: any) => {
     success: true,
     data: mockCharacter || createMockCharacter()
   });
-  
+
   // Mock CharacterService for stats calculation
   (CharacterService.calculateCharacterStats as jest.Mock).mockResolvedValue({
     success: true,
