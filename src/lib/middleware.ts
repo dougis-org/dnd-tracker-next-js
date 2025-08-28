@@ -97,7 +97,7 @@ type AuthenticatedHandler = (
 ) => Promise<NextResponse>;
 
 /**
- * Higher-order function to create authenticated API handlers
+ * Higher-order function to create authenticated API handlers with enhanced error handling
  */
 export function createAuthenticatedHandler(handler: AuthenticatedHandler) {
   return async function authenticatedHandler(
@@ -106,15 +106,30 @@ export function createAuthenticatedHandler(handler: AuthenticatedHandler) {
     const userId = await getUserFromAuth();
 
     if (!userId) {
+      console.debug('createAuthenticatedHandler: Authentication failed, returning 401');
       return createUnauthorizedResponse();
     }
 
     try {
+      console.debug(`createAuthenticatedHandler: Executing handler for user ${userId}`);
       return await handler(request, userId);
     } catch (error) {
-      console.error('Authenticated handler error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorId = Math.random().toString(36).substring(7);
+
+      console.error(`createAuthenticatedHandler: Handler execution failed [${errorId}]:`, {
+        userId,
+        error: errorMessage,
+        stack: error instanceof Error ? error.stack : undefined,
+        url: request.url,
+        method: request.method
+      });
+
       return NextResponse.json(
-        { error: 'Internal server error' },
+        {
+          error: 'Internal server error',
+          errorId: process.env.NODE_ENV === 'development' ? errorId : undefined
+        },
         { status: 500 }
       );
     }
@@ -173,6 +188,7 @@ export class ApiResponse {
 
 /**
  * Session utilities for checking authentication state with Clerk
+ * Enhanced error handling for improved debuggability
  */
 export class SessionUtils {
 
@@ -180,14 +196,17 @@ export class SessionUtils {
    * Check if user has required subscription tier
    * Note: This now requires separate database query since Clerk doesn't store custom user data
    */
-  static async hasSubscriptionTier(_requiredTier: string): Promise<boolean> {
+  static async hasSubscriptionTier(requiredTier: string): Promise<boolean> {
     try {
       const { userId } = await auth();
-      if (!userId) return false;
+      if (!userId) {
+        console.debug('SessionUtils.hasSubscriptionTier: No authenticated user');
+        return false;
+      }
 
       // TODO: Implement subscription tier check with database query
       // This will need to be implemented when user data is integrated
-      console.warn('SessionUtils.hasSubscriptionTier not yet implemented for Clerk');
+      console.warn(`SessionUtils.hasSubscriptionTier: Not yet implemented for Clerk (required: ${requiredTier}, user: ${userId})`);
       return false;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -224,9 +243,15 @@ export class SessionUtils {
    */
   static async getUserEmail(): Promise<string | null> {
     try {
+      const { userId } = await auth();
+      if (!userId) {
+        console.debug('SessionUtils.getUserEmail: No authenticated user');
+        return null;
+      }
+
       // Note: Getting user email requires additional Clerk API call
       // For now, this is not implemented as it requires user data fetching
-      console.warn('SessionUtils.getUserEmail not yet implemented for Clerk');
+      console.warn(`SessionUtils.getUserEmail: Not yet implemented for Clerk (user: ${userId})`);
       return null;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -256,6 +281,32 @@ export class SessionUtils {
         stack: error instanceof Error ? error.stack : undefined
       });
       return false;
+    }
+  }
+
+  /**
+   * Get comprehensive auth state for debugging
+   */
+  static async getAuthDebugInfo(): Promise<{
+    isAuthenticated: boolean;
+    userId: string | null;
+    error: string | null;
+  }> {
+    try {
+      const { userId } = await auth();
+      return {
+        isAuthenticated: !!userId,
+        userId,
+        error: null
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown auth error';
+      console.error('SessionUtils.getAuthDebugInfo: Auth check failed:', error);
+      return {
+        isAuthenticated: false,
+        userId: null,
+        error: errorMessage
+      };
     }
   }
 }
