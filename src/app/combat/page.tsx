@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@clerk/nextjs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -277,7 +277,7 @@ function RealTimeUpdatesCard() {
 }
 
 export default function CombatPage() {
-  const { status } = useSession();
+  const { isLoaded, isSignedIn } = useAuth();
   const router = useRouter();
   const { encounters, isLoading, error, refetch } = useActiveCombatSessions();
 
@@ -292,7 +292,7 @@ export default function CombatPage() {
   };
 
   // Authentication states
-  if (status === 'loading') {
+  if (!isLoaded) {
     return (
       <main className="container mx-auto px-4 py-8">
         <div className="text-center py-8">
@@ -303,7 +303,7 @@ export default function CombatPage() {
     );
   }
 
-  if (status === 'unauthenticated') {
+  if (!isSignedIn) {
     return (
       <main className="container mx-auto px-4 py-8">
         <div className="text-center py-8">

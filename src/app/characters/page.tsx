@@ -1,6 +1,6 @@
 'use client';
 
-import { useSession } from 'next-auth/react';
+import { useUser } from '@clerk/nextjs';
 import { CharacterListView } from '@/components/character/CharacterListView';
 import { CharacterCreationForm } from '@/components/forms/character/CharacterCreationForm';
 import { Button } from '@/components/ui/button';
@@ -16,10 +16,10 @@ function LoadingState() {
 }
 
 export default function CharactersPage() {
-  const { data: session, status } = useSession();
+  const { user, isLoaded } = useUser();
   const actions = useCharacterPageActions();
 
-  if (status === 'loading') {
+  if (!isLoaded) {
     return <LoadingState />;
   }
 
@@ -41,7 +41,7 @@ export default function CharactersPage() {
 
       {/* Character List */}
       <CharacterListView
-        userId={session?.user?.id || ''}
+        userId={user?.id || ''}
         onCharacterSelect={actions.selectCharacter}
         onCharacterEdit={actions.editCharacter}
         onCharacterDelete={actions.deleteCharacter}
@@ -51,7 +51,7 @@ export default function CharactersPage() {
 
       {/* Character Creation Modal */}
       <CharacterCreationForm
-        ownerId={session?.user?.id || ''}
+        ownerId={user?.id || ''}
         isOpen={actions.isCreationFormOpen}
         onSuccess={actions.handleCreationSuccess}
         onCancel={actions.closeCreationForm}

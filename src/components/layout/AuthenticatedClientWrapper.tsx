@@ -1,7 +1,7 @@
 'use client';
 
 import { ReactNode } from 'react';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@clerk/nextjs';
 
 interface AuthenticatedClientWrapperProps {
   children: ReactNode;
@@ -10,13 +10,13 @@ interface AuthenticatedClientWrapperProps {
 export default function AuthenticatedClientWrapper({
   children,
 }: AuthenticatedClientWrapperProps) {
-  const { status } = useSession();
+  const { isLoaded, isSignedIn } = useAuth();
 
-  if (status === 'loading') {
+  if (!isLoaded) {
     return <div>Loading...</div>;
   }
 
-  if (status === 'unauthenticated') {
+  if (!isSignedIn) {
     return <div>Please sign in to continue.</div>;
   }
 

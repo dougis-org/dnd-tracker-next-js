@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, useParams } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import { useUser } from '@clerk/nextjs';
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { characterCreationSchema, CharacterCreation } from '@/lib/validations/character';
@@ -184,7 +184,7 @@ function transformCharacterToFormData(character: Character): CharacterCreation {
 export default function CharacterEditPage() {
   const router = useRouter();
   const params = useParams();
-  const { data: session } = useSession();
+  const { user } = useUser();
   const characterId = params?.id as string;
 
   const [character, setCharacter] = useState<Character | null>(null);
@@ -202,7 +202,7 @@ export default function CharacterEditPage() {
   });
 
   useEffect(() => {
-    if (!characterId || !session?.user?.id) return;
+    if (!characterId || !user?.id) return;
 
     const fetchCharacter = async () => {
       try {
@@ -231,7 +231,7 @@ export default function CharacterEditPage() {
     };
 
     fetchCharacter();
-  }, [characterId, session?.user?.id, form]);
+  }, [characterId, user?.id, form]);
 
   // Unified navigation handler to eliminate duplication
   const navigateToCharacterDetail = () => {

@@ -1,60 +1,47 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { useSession } from 'next-auth/react';
-import { useProfileForm } from './hooks';
-import { LoadingState, SuccessState, ProfileForm } from './components';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@clerk/nextjs';
 
+/**
+ * Profile Setup Redirect Page
+ * Redirects to Clerk's user profile management
+ */
 export default function ProfileSetupPage() {
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const { isSignedIn, isLoaded } = useAuth();
 
-  const {
-    formState,
-    formData,
-    updateField,
-    handleSubmit,
-    handleSkip,
-    getFieldError,
-  } = useProfileForm(session?.user?.name || '', session?.user?.id);
-
-  // Update display name when session is loaded
   useEffect(() => {
-    if (session?.user?.name && !formData.displayName) {
-      updateField('displayName', session.user.name);
+    if (isLoaded) {
+      if (isSignedIn) {
+        // Redirect to dashboard since profile setup is handled by Clerk
+        router.push('/');
+      } else {
+        // Not signed in, redirect to Clerk's sign-in
+        window.location.href = '/sign-in';
+        return;
+      }
     }
-  }, [session, formData.displayName, updateField]);
+  }, [isSignedIn, isLoaded, router]);
 
-  // Redirect if user is not authenticated
-  useEffect(() => {
-    if (status === 'loading') return;
-    if (!session) {
-      router.push('/signin' as any);
-      return;
-    }
-  }, [session, status, router]);
-
-  // Loading state
-  if (status === 'loading') {
-    return <LoadingState />;
+  if (!isLoaded) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center space-y-2">
+          <h1 className="text-2xl font-bold">Loading...</h1>
+          <p className="text-muted-foreground">Checking authentication status</p>
+        </div>
+      </div>
+    );
   }
 
-  // Success state
-  if (formState.success) {
-    return <SuccessState />;
-  }
-
-  // Main form
   return (
-    <ProfileForm
-      formData={formData}
-      updateField={updateField}
-      handleSubmit={handleSubmit}
-      handleSkip={handleSkip}
-      getFieldError={getFieldError}
-      isSubmitting={formState.isSubmitting}
-      errors={formState.errors}
-    />
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="text-center space-y-2">
+        <h1 className="text-2xl font-bold">Redirecting...</h1>
+        <p className="text-muted-foreground">Taking you to profile setup</p>
+      </div>
+    </div>
   );
 }

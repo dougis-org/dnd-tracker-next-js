@@ -1,11 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getToken, JWT } from 'next-auth/jwt';
-import {
-  hasRequiredTier,
-  getUserTier,
-  extractUserId,
-  extractUserEmail,
-} from './session-shared';
+import { auth } from '@clerk/nextjs/server';
 
 /**
  * List of protected API route prefixes that require authentication
@@ -54,16 +48,14 @@ export function extractBearerToken(headers: Headers): string | null {
 }
 
 /**
- * Extract and validate JWT token from request
+ * Get user ID from Clerk auth
  */
-async function getValidatedToken(request: NextRequest): Promise<JWT | null> {
+async function getUserFromAuth(): Promise<string | null> {
   try {
-    return await getToken({
-      req: request,
-      secret: process.env.NEXTAUTH_SECRET,
-    });
+    const { userId } = await auth();
+    return userId;
   } catch (error) {
-    console.error('Token validation error:', error);
+    console.error('Auth error:', error);
     return null;
   }
 }
@@ -83,10 +75,10 @@ function createUnauthorizedResponse(): NextResponse {
  * Returns null if authenticated, or error response if not
  */
 export async function requireAuthentication(
-  request: NextRequest
+  _request: NextRequest
 ): Promise<NextResponse | null> {
-  const token = await getValidatedToken(request);
-  return token ? null : createUnauthorizedResponse();
+  const userId = await getUserFromAuth();
+  return userId ? null : createUnauthorizedResponse();
 }
 
 /**
@@ -94,7 +86,7 @@ export async function requireAuthentication(
  */
 type AuthenticatedHandler = (
   _request: NextRequest,
-  _token: JWT
+  _userId: string
 ) => Promise<NextResponse>;
 
 /**
@@ -104,14 +96,14 @@ export function createAuthenticatedHandler(handler: AuthenticatedHandler) {
   return async function authenticatedHandler(
     request: NextRequest
   ): Promise<NextResponse> {
-    const token = await getValidatedToken(request);
+    const userId = await getUserFromAuth();
 
-    if (!token) {
+    if (!userId) {
       return createUnauthorizedResponse();
     }
 
     try {
-      return await handler(request, token);
+      return await handler(request, userId);
     } catch (error) {
       console.error('Authenticated handler error:', error);
       return NextResponse.json(
@@ -178,35 +170,17 @@ export class ApiResponse {
 export class SessionUtils {
 
   /**
-   * Check if user has required subscription tier
+   * Get user ID from auth
    */
-  static hasSubscriptionTier(token: JWT | null, requiredTier: string): boolean {
-    if (!token) return false;
-    const userTier = getUserTier(token);
-    return hasRequiredTier(userTier, requiredTier);
+  static async getUserId(): Promise<string | null> {
+    return await getUserFromAuth();
   }
 
   /**
-   * Get user ID from token
+   * Check if user is authenticated
    */
-  static getUserId(token: JWT | null): string | null {
-    if (!token) return null;
-    return extractUserId(token);
-  }
-
-  /**
-   * Get user email from token
-   */
-  static getUserEmail(token: JWT | null): string | null {
-    if (!token) return null;
-    return extractUserEmail(token);
-  }
-
-  /**
-   * Check if token is expired
-   */
-  static isTokenExpired(token: JWT | null): boolean {
-    if (!token || !token.exp) return true;
-    return Date.now() >= token.exp * 1000;
+  static async isAuthenticated(): Promise<boolean> {
+    const userId = await getUserFromAuth();
+    return !!userId;
   }
 }

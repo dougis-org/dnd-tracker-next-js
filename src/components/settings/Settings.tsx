@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useSession, signOut } from 'next-auth/react';
+import { useUser, useClerk } from '@clerk/nextjs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useSettingsForm } from './hooks/useSettingsForm';
 import { ProfileSection } from './components/ProfileSection';
@@ -13,7 +13,8 @@ import { UpgradeModal, PasswordModal, DeleteModal } from './components/SettingsM
 import { type SubscriptionTier } from './constants';
 
 export function Settings() {
-  const { data: session, status } = useSession();
+  const { user, isLoaded } = useUser();
+  const { signOut } = useClerk();
   const {
     profileData,
     setProfileData,
@@ -33,23 +34,23 @@ export function Settings() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  if (status !== 'authenticated' || !session?.user) {
+  if (!isLoaded || !user) {
     return null;
   }
 
-  const currentTier = (session.user.subscriptionTier as SubscriptionTier) || 'free';
+  const currentTier = 'free' as SubscriptionTier; // TODO: Get subscription tier from Clerk metadata
 
   /**
    * Handles account deletion with proper confirmation flow
    */
   const handleDeleteAccount = async () => {
-    if (!session?.user?.id) return;
+    if (!user?.id) return;
 
     setIsDeleting(true);
     setDeleteError(null);
 
     try {
-      const response = await fetch(`/api/users/${session.user.id}/profile`, {
+      const response = await fetch(`/api/users/${user.id}/profile`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -63,10 +64,7 @@ export function Settings() {
       }
 
       // Sign out the user and redirect to home page
-      await signOut({
-        callbackUrl: '/',
-        redirect: true,
-      });
+      await signOut({ redirectUrl: '/' });
 
       setShowDeleteModal(false);
     } catch (error) {

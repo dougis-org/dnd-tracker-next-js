@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useCallback } from 'react';
-import { useSession } from 'next-auth/react';
+import { useUser } from '@clerk/nextjs';
 import { Card, CardContent } from '@/components/ui/card';
 import type { IEncounter, IParticipantReference } from '@/lib/models/encounter/interfaces';
 import { ParticipantList } from './ParticipantList';
@@ -96,7 +96,7 @@ export function EncounterParticipantManager({
   onUpdate,
 }: EncounterParticipantManagerProps) {
   // Hooks
-  const { data: session } = useSession();
+  const { user } = useUser();
   const { isLoading, addParticipant, updateParticipant, removeParticipant, reorderParticipants, importParticipants } = useParticipantOperations(encounter, onUpdate);
   const { formData, setFormData, formErrors, resetForm, loadParticipantData, isFormValid } = useParticipantForm();
   const { dialogState, openAddDialog, closeAddDialog, openEditDialog, closeEditDialog, setImportOpen } = useDialogState();
@@ -174,13 +174,13 @@ export function EncounterParticipantManager({
       isImportDialogOpen={dialogState.isImportOpen}
       onImportDialogOpenChange={setImportOpen}
       onImportCharacters={handleImportCharacters}
-      userId={session?.user?.id || ''}
+      userId={user?.id || ''}
     />
   ), [
     dialogState.isImportOpen,
     setImportOpen,
     handleImportCharacters,
-    session?.user?.id,
+    user?.id,
   ]);
 
   const renderActionButtons = useCallback(() => (

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@clerk/nextjs';
 import { AppLayout } from './AppLayout';
 
 interface AuthenticatedPageProps {
@@ -15,23 +15,23 @@ export function AuthenticatedPage({
   loadingMessage = 'Loading...',
   unauthenticatedMessage = 'Please sign in to access this page.'
 }: AuthenticatedPageProps) {
-  const { status } = useSession();
+  const { isLoaded, isSignedIn } = useAuth();
 
   return (
     <AppLayout>
-      {status === 'loading' && (
+      {!isLoaded && (
         <div className="flex items-center justify-center h-64">
           <div className="text-muted-foreground">{loadingMessage}</div>
         </div>
       )}
 
-      {status === 'unauthenticated' && (
+      {isLoaded && !isSignedIn && (
         <div className="flex items-center justify-center h-64">
           <div className="text-muted-foreground">{unauthenticatedMessage}</div>
         </div>
       )}
 
-      {status === 'authenticated' && children}
+      {isLoaded && isSignedIn && children}
     </AppLayout>
   );
 }

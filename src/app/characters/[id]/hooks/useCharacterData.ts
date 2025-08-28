@@ -1,15 +1,15 @@
 import { useEffect, useState } from 'react';
-import { useSession } from 'next-auth/react';
+import { useUser } from '@clerk/nextjs';
 import type { Character } from '@/lib/validations/character';
 
 export const useCharacterData = (id: string) => {
-  const { data: session } = useSession();
+  const { user } = useUser();
   const [character, setCharacter] = useState<Character | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!id || !session?.user?.id) {
+    if (!id || !user?.id) {
       setLoading(false);
       return;
     }
@@ -21,7 +21,7 @@ export const useCharacterData = (id: string) => {
       try {
         const response = await fetch(`/api/characters/${id}`, {
           headers: {
-            'x-user-id': session.user.id,
+            'x-user-id': user.id,
           },
         });
 
@@ -41,7 +41,7 @@ export const useCharacterData = (id: string) => {
     };
 
     fetchCharacter();
-  }, [id, session?.user?.id]);
+  }, [id, user?.id]);
 
   return { character, loading, error };
 };

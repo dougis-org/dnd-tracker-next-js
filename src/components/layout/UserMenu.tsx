@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useSession, signOut } from 'next-auth/react';
+import { useUser, useClerk } from '@clerk/nextjs';
 
 const LoadingState = () => (
   <div
@@ -37,9 +37,9 @@ const UserInfo = ({ displayName, displayEmail }: { displayName: string; displayE
   </div>
 );
 
-const SignOutButton = () => (
+const SignOutButton = ({ onSignOut }: { onSignOut: () => void }) => (
   <button
-    onClick={() => signOut({ callbackUrl: '/' })}
+    onClick={onSignOut}
     className="w-full text-left px-2 py-1 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-sm transition-colors"
     aria-label="Sign Out"
   >
@@ -48,18 +48,19 @@ const SignOutButton = () => (
 );
 
 export function UserMenu() {
-  const { data: session, status } = useSession();
+  const { user, isLoaded } = useUser();
+  const { signOut } = useClerk();
 
-  if (status === 'loading') {
+  if (!isLoaded) {
     return <LoadingState />;
   }
 
-  if (status !== 'authenticated' || !session?.user) {
+  if (!user) {
     return null;
   }
 
-  const displayName = session.user.name || session.user.email || 'User';
-  const displayEmail = session.user.email || undefined;
+  const displayName = user.firstName || user.emailAddresses[0]?.emailAddress || 'User';
+  const displayEmail = user.emailAddresses[0]?.emailAddress || undefined;
 
   return (
     <div
@@ -74,7 +75,7 @@ export function UserMenu() {
         </div>
 
         {/* Sign Out Button */}
-        <SignOutButton />
+        <SignOutButton onSignOut={() => signOut({ redirectUrl: '/' })} />
       </div>
     </div>
   );
