@@ -28,9 +28,8 @@ env:
   FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN_PROD }}
   MONGODB_URI: ${{ secrets.MONGODB_URI_PROD }}
   MONGODB_DB_NAME: ${{ secrets.MONGODB_DB_NAME }}
-  NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
-  NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL_PROD }}
-
+  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+  CLERK_SECRET_KEY: ${{ secrets.MONGODB_DB_NAME }}
 jobs:
   validate-input:
     name: Validate Production Deployment
