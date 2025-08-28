@@ -53,7 +53,7 @@ export default clerkMiddleware(async (auth, req) => {
   // Check if route needs protection
   const isApiRoute = isProtectedApiRoute(req);
   const isPageRoute = isProtectedRoute(req);
-  
+
   // If route doesn't need protection, continue
   if (!isApiRoute && !isPageRoute) {
     return NextResponse.next();
@@ -61,7 +61,7 @@ export default clerkMiddleware(async (auth, req) => {
 
   // Get auth session once for efficiency
   const session = await auth();
-  
+
   // Handle unauthenticated requests
   if (!session.userId) {
     if (isApiRoute) {
