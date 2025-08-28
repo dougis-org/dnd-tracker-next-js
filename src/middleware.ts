@@ -12,11 +12,17 @@ const isProtectedRoute = createRouteMatcher([
   '/parties(.*)',
   '/combat(.*)',
   '/settings(.*)',
+]);
+
+/**
+ * Define protected API routes that require authentication
+ */
+const isProtectedApiRoute = createRouteMatcher([
   '/api/users(.*)',
   '/api/characters(.*)',
   '/api/encounters(.*)',
+  '/api/parties(.*)',
   '/api/combat(.*)',
-  '/api/parties(.*)'
 ]);
 
 /**
@@ -39,55 +45,31 @@ function createSignInRedirect(request: NextRequest): NextResponse {
 }
 
 /**
- * Handles authentication for protected API routes
+ * Optimized Clerk middleware handler with efficiency improvements
+ * - Calls auth() only once per request for better performance
+ * - Early return for unprotected routes
  */
-async function handleApiRouteAuthentication(
-  auth: () => Promise<any>,
-  _request: NextRequest
-): Promise<NextResponse | null> {
-  const { userId } = await auth();
-
-  if (!userId) {
-    return createUnauthenticatedApiResponse();
-  }
-
-  return null; // Continue processing
-}
-
-/**
- * Handles authentication for protected UI routes
- */
-async function handleUiRouteAuthentication(
-  auth: () => Promise<any>,
-  request: NextRequest
-): Promise<NextResponse | null> {
-  const authObj = await auth();
-
-  if (!authObj.userId) {
-    return createSignInRedirect(request);
-  }
-
-  return null; // Continue processing
-}
-
-/**
- * Main Clerk middleware handler with improved structure and clarity
- */
-export default clerkMiddleware(async (auth, request) => {
-  const { pathname } = request.nextUrl;
-
-  // Check if the current route requires authentication
-  if (!isProtectedRoute(request)) {
+export default clerkMiddleware(async (auth, req) => {
+  // Check if route needs protection
+  const isApiRoute = isProtectedApiRoute(req);
+  const isPageRoute = isProtectedRoute(req);
+  
+  // If route doesn't need protection, continue
+  if (!isApiRoute && !isPageRoute) {
     return NextResponse.next();
   }
 
-  // Handle protected routes based on type (API vs UI)
-  if (pathname.startsWith('/api/')) {
-    const response = await handleApiRouteAuthentication(auth, request);
-    if (response) return response;
-  } else {
-    const response = await handleUiRouteAuthentication(auth, request);
-    if (response) return response;
+  // Get auth session once for efficiency
+  const session = await auth();
+  
+  // Handle unauthenticated requests
+  if (!session.userId) {
+    if (isApiRoute) {
+      return createUnauthenticatedApiResponse();
+    } else {
+      // Redirect to Clerk's sign-in page for page routes
+      return createSignInRedirect(req);
+    }
   }
 
   return NextResponse.next();

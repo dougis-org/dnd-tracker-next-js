@@ -48,14 +48,21 @@ export function extractBearerToken(headers: Headers): string | null {
 }
 
 /**
- * Get user ID from Clerk auth
+ * Get authenticated user from Clerk with enhanced error logging
  */
 async function getUserFromAuth(): Promise<string | null> {
   try {
     const { userId } = await auth();
+    if (!userId) {
+      console.debug('getUserFromAuth: No authenticated user found');
+    }
     return userId;
   } catch (error) {
-    console.error('Auth error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('getUserFromAuth: Authentication check failed:', {
+      error: errorMessage,
+      stack: error instanceof Error ? error.stack : undefined
+    });
     return null;
   }
 }
@@ -165,22 +172,90 @@ export class ApiResponse {
 }
 
 /**
- * Session utilities for checking authentication state
+ * Session utilities for checking authentication state with Clerk
  */
 export class SessionUtils {
 
   /**
-   * Get user ID from auth
+   * Check if user has required subscription tier
+   * Note: This now requires separate database query since Clerk doesn't store custom user data
    */
-  static async getUserId(): Promise<string | null> {
-    return await getUserFromAuth();
+  static async hasSubscriptionTier(_requiredTier: string): Promise<boolean> {
+    try {
+      const { userId } = await auth();
+      if (!userId) return false;
+
+      // TODO: Implement subscription tier check with database query
+      // This will need to be implemented when user data is integrated
+      console.warn('SessionUtils.hasSubscriptionTier not yet implemented for Clerk');
+      return false;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error('SessionUtils.hasSubscriptionTier: Subscription tier check failed:', {
+        error: errorMessage,
+        stack: error instanceof Error ? error.stack : undefined
+      });
+      return false;
+    }
   }
 
   /**
-   * Check if user is authenticated
+   * Get current user ID from Clerk with enhanced error logging
+   */
+  static async getUserId(): Promise<string | null> {
+    try {
+      const { userId } = await auth();
+      if (!userId) {
+        console.debug('SessionUtils.getUserId: No authenticated user found');
+      }
+      return userId;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error('SessionUtils.getUserId: Auth check failed:', {
+        error: errorMessage,
+        stack: error instanceof Error ? error.stack : undefined
+      });
+      return null;
+    }
+  }
+
+  /**
+   * Get user email from Clerk with enhanced error logging
+   */
+  static async getUserEmail(): Promise<string | null> {
+    try {
+      // Note: Getting user email requires additional Clerk API call
+      // For now, this is not implemented as it requires user data fetching
+      console.warn('SessionUtils.getUserEmail not yet implemented for Clerk');
+      return null;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error('SessionUtils.getUserEmail: Email retrieval failed:', {
+        error: errorMessage,
+        stack: error instanceof Error ? error.stack : undefined
+      });
+      return null;
+    }
+  }
+
+  /**
+   * Check if user is authenticated with enhanced error logging
    */
   static async isAuthenticated(): Promise<boolean> {
-    const userId = await getUserFromAuth();
-    return !!userId;
+    try {
+      const { userId } = await auth();
+      const isAuth = !!userId;
+      if (!isAuth) {
+        console.debug('SessionUtils.isAuthenticated: No authenticated user found');
+      }
+      return isAuth;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error('SessionUtils.isAuthenticated: Authentication check failed:', {
+        error: errorMessage,
+        stack: error instanceof Error ? error.stack : undefined
+      });
+      return false;
+    }
   }
 }
