@@ -48,14 +48,21 @@ export function extractBearerToken(headers: Headers): string | null {
 }
 
 /**
- * Get user ID from Clerk auth
+ * Get authenticated user from Clerk with enhanced error logging
  */
 async function getUserFromAuth(): Promise<string | null> {
   try {
     const { userId } = await auth();
+    if (!userId) {
+      console.debug('getUserFromAuth: No authenticated user found');
+    }
     return userId;
   } catch (error) {
-    console.error('Auth error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('getUserFromAuth: Authentication check failed:', {
+      error: errorMessage,
+      stack: error instanceof Error ? error.stack : undefined
+    });
     return null;
   }
 }
@@ -90,7 +97,7 @@ type AuthenticatedHandler = (
 ) => Promise<NextResponse>;
 
 /**
- * Higher-order function to create authenticated API handlers
+ * Higher-order function to create authenticated API handlers with enhanced error handling
  */
 export function createAuthenticatedHandler(handler: AuthenticatedHandler) {
   return async function authenticatedHandler(
@@ -99,15 +106,30 @@ export function createAuthenticatedHandler(handler: AuthenticatedHandler) {
     const userId = await getUserFromAuth();
 
     if (!userId) {
+      console.debug('createAuthenticatedHandler: Authentication failed, returning 401');
       return createUnauthorizedResponse();
     }
 
     try {
+      console.debug(`createAuthenticatedHandler: Executing handler for user ${userId}`);
       return await handler(request, userId);
     } catch (error) {
-      console.error('Authenticated handler error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorId = Math.random().toString(36).substring(7);
+
+      console.error(`createAuthenticatedHandler: Handler execution failed [${errorId}]:`, {
+        userId,
+        error: errorMessage,
+        stack: error instanceof Error ? error.stack : undefined,
+        url: request.url,
+        method: request.method
+      });
+
       return NextResponse.json(
-        { error: 'Internal server error' },
+        {
+          error: 'Internal server error',
+          errorId: process.env.NODE_ENV === 'development' ? errorId : undefined
+        },
         { status: 500 }
       );
     }
@@ -165,22 +187,126 @@ export class ApiResponse {
 }
 
 /**
- * Session utilities for checking authentication state
+ * Session utilities for checking authentication state with Clerk
+ * Enhanced error handling for improved debuggability
  */
 export class SessionUtils {
 
   /**
-   * Get user ID from auth
+   * Check if user has required subscription tier
+   * Note: This now requires separate database query since Clerk doesn't store custom user data
    */
-  static async getUserId(): Promise<string | null> {
-    return await getUserFromAuth();
+  static async hasSubscriptionTier(requiredTier: string): Promise<boolean> {
+    try {
+      const { userId } = await auth();
+      if (!userId) {
+        console.debug('SessionUtils.hasSubscriptionTier: No authenticated user');
+        return false;
+      }
+
+      // TODO: Implement subscription tier check with database query
+      // This will need to be implemented when user data is integrated
+      console.warn(`SessionUtils.hasSubscriptionTier: Not yet implemented for Clerk (required: ${requiredTier}, user: ${userId})`);
+      return false;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error('SessionUtils.hasSubscriptionTier: Subscription tier check failed:', {
+        error: errorMessage,
+        stack: error instanceof Error ? error.stack : undefined
+      });
+      return false;
+    }
   }
 
   /**
-   * Check if user is authenticated
+   * Get current user ID from Clerk with enhanced error logging
+   */
+  static async getUserId(): Promise<string | null> {
+    try {
+      const { userId } = await auth();
+      if (!userId) {
+        console.debug('SessionUtils.getUserId: No authenticated user found');
+      }
+      return userId;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error('SessionUtils.getUserId: Auth check failed:', {
+        error: errorMessage,
+        stack: error instanceof Error ? error.stack : undefined
+      });
+      return null;
+    }
+  }
+
+  /**
+   * Get user email from Clerk with enhanced error logging
+   */
+  static async getUserEmail(): Promise<string | null> {
+    try {
+      const { userId } = await auth();
+      if (!userId) {
+        console.debug('SessionUtils.getUserEmail: No authenticated user');
+        return null;
+      }
+
+      // Note: Getting user email requires additional Clerk API call
+      // For now, this is not implemented as it requires user data fetching
+      console.warn(`SessionUtils.getUserEmail: Not yet implemented for Clerk (user: ${userId})`);
+      return null;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error('SessionUtils.getUserEmail: Email retrieval failed:', {
+        error: errorMessage,
+        stack: error instanceof Error ? error.stack : undefined
+      });
+      return null;
+    }
+  }
+
+  /**
+   * Check if user is authenticated with enhanced error logging
    */
   static async isAuthenticated(): Promise<boolean> {
-    const userId = await getUserFromAuth();
-    return !!userId;
+    try {
+      const { userId } = await auth();
+      const isAuth = !!userId;
+      if (!isAuth) {
+        console.debug('SessionUtils.isAuthenticated: No authenticated user found');
+      }
+      return isAuth;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error('SessionUtils.isAuthenticated: Authentication check failed:', {
+        error: errorMessage,
+        stack: error instanceof Error ? error.stack : undefined
+      });
+      return false;
+    }
+  }
+
+  /**
+   * Get comprehensive auth state for debugging
+   */
+  static async getAuthDebugInfo(): Promise<{
+    isAuthenticated: boolean;
+    userId: string | null;
+    error: string | null;
+  }> {
+    try {
+      const { userId } = await auth();
+      return {
+        isAuthenticated: !!userId,
+        userId,
+        error: null
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown auth error';
+      console.error('SessionUtils.getAuthDebugInfo: Auth check failed:', error);
+      return {
+        isAuthenticated: false,
+        userId: null,
+        error: errorMessage
+      };
+    }
   }
 }
