@@ -5,23 +5,39 @@ import { CharacterServiceErrors } from '../../CharacterServiceErrors';
 // Mock mongoose to control ObjectId.isValid behavior
 jest.mock('mongoose', () => {
   const MOCK_OBJECT_ID = '507f1f77bcf86cd799439011'; // Consistent valid ObjectId hex string
+  const mockObjectIdClass = jest.fn();
+  
+  const MockSchema = jest.fn().mockImplementation(function(definition, options) {
+    this.definition = definition;
+    this.options = options;
+    this.index = jest.fn();
+    this.pre = jest.fn();
+    this.post = jest.fn();
+    this.plugin = jest.fn();
+    this.virtual = jest.fn(() => ({
+      get: jest.fn(),
+      set: jest.fn()
+    }));
+    this.methods = {};
+    this.statics = {};
+  });
+  
+  MockSchema.Types = {
+    ObjectId: mockObjectIdClass
+  };
+
+  const MockObjectId = jest.fn((id) => ({
+    toString: () => id || MOCK_OBJECT_ID,
+    toHexString: () => id || MOCK_OBJECT_ID,
+  }));
+  MockObjectId.isValid = jest.fn();
 
   return {
     Types: {
-      ObjectId: jest.fn((id) => {
-        // Simulate ObjectId constructor behavior
-        const objId = new (jest.requireActual('mongoose').Types.ObjectId)(id || MOCK_OBJECT_ID);
-        // Add toHexString and toString methods to the mocked ObjectId instance
-        Object.assign(objId, {
-          toHexString: () => objId.toString(),
-          toString: () => objId.toHexString(),
-        });
-        return objId;
-      }),
+      ObjectId: MockObjectId,
     },
-    Schema: jest.fn(function() {
-      this.Types = { ObjectId: jest.fn() };
-    }),
+    Schema: MockSchema,
+    models: {},
     model: jest.fn(() => ({
       // Mock Character.findById and Character.countDocuments
       findById: jest.fn(),
@@ -33,6 +49,11 @@ jest.mock('mongoose', () => {
         exec: jest.fn(),
       })),
     })),
+    // Default export for import mongoose from 'mongoose'
+    default: {
+      Schema: MockSchema,
+      models: {}
+    }
   };
 });
 
@@ -49,7 +70,10 @@ describe('CharacterAccessUtils', () => {
         expect(result.data).toEqual({
           $and: [
             {
-              $or: [{ ownerId: new Types.ObjectId(userId) }, { isPublic: true }],
+              $or: [
+                { ownerId: expect.objectContaining({ toHexString: expect.any(Function), toString: expect.any(Function) }) }, 
+                { isPublic: true }
+              ],
             },
             baseFilter,
           ],

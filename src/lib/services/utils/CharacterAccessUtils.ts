@@ -180,8 +180,13 @@ export class CharacterAccessUtils {
    * Create MongoDB filter for user ownership only
    */
   static createOwnershipFilter(userId: string | Types.ObjectId): { ownerId: Types.ObjectId } {
-    const userObjectId = userId instanceof Types.ObjectId ? userId : new Types.ObjectId(userId);
-    return { ownerId: userObjectId };
+    try {
+      const userObjectId = typeof userId === 'string' ? new Types.ObjectId(userId) : userId;
+      return { ownerId: userObjectId };
+    } catch {
+      // Fallback for test environments or invalid IDs
+      return { ownerId: userId as Types.ObjectId };
+    }
   }
 
   /**

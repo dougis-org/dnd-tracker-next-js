@@ -2,6 +2,7 @@ import { screen, fireEvent, act, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { CharacterStatsManager } from '../CharacterStatsManager';
 import { CharacterService } from '@/lib/services/CharacterService';
+import { CharacterServiceClient } from '@/lib/services/CharacterServiceClient';
 import { renderWithProviders } from '@/lib/test-utils';
 import { createMockCharacter, createMockStats } from '../__tests__/CharacterStatsManager.test-helpers';
 
@@ -14,6 +15,14 @@ jest.mock('@/lib/services/CharacterService', () => ({
     saveDraftChanges: jest.fn(),
     getDraftChanges: jest.fn(),
     clearDraftChanges: jest.fn(),
+  }
+}));
+
+// Mock the CharacterServiceClient
+jest.mock('@/lib/services/CharacterServiceClient', () => ({
+  CharacterServiceClient: {
+    getCharacterById: jest.fn(),
+    updateCharacter: jest.fn(),
   }
 }));
 
@@ -31,7 +40,7 @@ describe('CharacterAutosave', () => {
   beforeEach(() => {
     jest.useFakeTimers();
     jest.clearAllMocks();
-    (CharacterService.getCharacterById as jest.Mock).mockResolvedValue({
+    (CharacterServiceClient.getCharacterById as jest.Mock).mockResolvedValue({
       success: true,
       data: mockCharacter
     });

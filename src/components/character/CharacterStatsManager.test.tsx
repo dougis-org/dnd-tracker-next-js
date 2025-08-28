@@ -1,6 +1,7 @@
 import { screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { CharacterService } from '@/lib/services/CharacterService';
+import { CharacterServiceClient } from '@/lib/services/CharacterServiceClient';
 import {
   createMockCharacter,
   createMockStats,
@@ -19,6 +20,17 @@ jest.mock('@/lib/services/CharacterService', () => ({
   CharacterService: {
     getCharacterById: jest.fn(),
     calculateCharacterStats: jest.fn(),
+    updateCharacter: jest.fn(),
+    saveDraftChanges: jest.fn(),
+    clearDraftChanges: jest.fn(),
+    getDraftChanges: jest.fn(),
+  }
+}));
+
+// Mock the CharacterServiceClient
+jest.mock('@/lib/services/CharacterServiceClient', () => ({
+  CharacterServiceClient: {
+    getCharacterById: jest.fn(),
     updateCharacter: jest.fn(),
   }
 }));
@@ -198,7 +210,7 @@ describe('CharacterStatsManager', () => {
   describe('Save Functionality', () => {
     it('should save changes when save button is clicked', async () => {
       const user = userEvent.setup();
-      (CharacterService.updateCharacter as jest.Mock).mockResolvedValue({
+      (CharacterServiceClient.updateCharacter as jest.Mock).mockResolvedValue({
         success: true,
         data: mockCharacter
       });
@@ -216,7 +228,7 @@ describe('CharacterStatsManager', () => {
       await user.click(saveButton);
 
       await waitForElement('character-stats-manager');
-      expect(CharacterService.updateCharacter).toHaveBeenCalledWith(
+      expect(CharacterServiceClient.updateCharacter).toHaveBeenCalledWith(
         '507f1f77bcf86cd799439011',
         '507f1f77bcf86cd799439012',
         expect.objectContaining({
