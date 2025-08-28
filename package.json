@@ -38,7 +38,7 @@
     "test:e2e:issue-620": "jest --config jest.config.e2e.js --testPathPatterns=auth-issue-620-comprehensive-e2e"
   },
   "dependencies": {
-    "@auth/mongodb-adapter": "^3.10.0",
+    "@clerk/nextjs": "^6.31.6",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/modifiers": "^9.0.0",
     "@dnd-kit/sortable": "^10.0.0",
@@ -67,7 +67,6 @@
     "lucide-react": "^0.525.0",
     "mongoose": "^8.16.0",
     "next": "^15.0.0",
-    "next-auth": "^5.0.0-beta.29",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.58.1",

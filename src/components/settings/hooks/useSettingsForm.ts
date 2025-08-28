@@ -1,20 +1,20 @@
 import { useState } from 'react';
-import { useSession } from 'next-auth/react';
+import { useUser } from '@clerk/nextjs';
 import { DEFAULT_NOTIFICATION_PREFERENCES } from '../constants';
 import { NotificationPreferences } from '@/types/auth';
 import { useFormSubmission } from './useFormSubmission';
 
 export function useSettingsForm() {
-  const { data: session } = useSession();
+  const { user } = useUser();
 
   const [profileData, setProfileData] = useState({
-    name: session?.user?.name || '',
-    email: session?.user?.email || '',
+    name: user?.firstName || user?.fullName || '',
+    email: user?.primaryEmailAddress?.emailAddress || '',
   });
 
   const [notifications, setNotifications] = useState<NotificationPreferences>({
     ...DEFAULT_NOTIFICATION_PREFERENCES,
-    ...(session?.user?.notifications || {}),
+    // TODO: Get notification preferences from Clerk metadata or database
   });
 
   const {
@@ -24,7 +24,7 @@ export function useSettingsForm() {
     formErrors,
     handleProfileSubmit: submitProfile,
     handleNotificationsSubmit: submitNotifications,
-  } = useFormSubmission(session?.user?.id || '');
+  } = useFormSubmission(user?.id || '');
 
   const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

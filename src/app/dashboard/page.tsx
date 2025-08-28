@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useSession } from 'next-auth/react';
+import { useUser } from '@clerk/nextjs';
 import { Dashboard } from '@/components/dashboard';
 import { Metadata } from 'next';
 
@@ -12,9 +12,9 @@ const _metadata: Metadata = {
 };
 
 export default function DashboardPage() {
-  const { data: session, status } = useSession();
+  const { user, isLoaded } = useUser();
 
-  if (status === 'loading') {
+  if (!isLoaded) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-muted-foreground">Loading...</div>
@@ -22,7 +22,7 @@ export default function DashboardPage() {
     );
   }
 
-  if (status === 'unauthenticated') {
+  if (!user) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-muted-foreground">Please sign in to view your dashboard.</div>
@@ -35,7 +35,7 @@ export default function DashboardPage() {
       <header className="mb-8">
         <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
         <p className="text-muted-foreground mt-2">
-          Welcome back, {session?.user?.name || session?.user?.email}!
+          Welcome back, {user.firstName || user.emailAddresses[0]?.emailAddress}!
         </p>
       </header>
 

@@ -1,76 +1,103 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getToken } from 'next-auth/jwt';
-import { isProtectedApiRoute } from '@/lib/middleware';
-import { getNextAuthSecret, getNextAuthUrl } from '@/lib/config/env-config';
-import { SESSION_COOKIE_NAME } from '@/lib/constants/session-constants';
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
+import { NextResponse, NextRequest } from 'next/server';
 
-export async function middleware(request: NextRequest) {
+/**
+ * Protected routes that require authentication
+ * These routes will trigger authentication checks
+ */
+const isProtectedRoute = createRouteMatcher([
+  '/dashboard(.*)',
+  '/characters(.*)',
+  '/encounters(.*)',
+  '/parties(.*)',
+  '/combat(.*)',
+  '/settings(.*)',
+  '/api/users(.*)',
+  '/api/characters(.*)',
+  '/api/encounters(.*)',
+  '/api/combat(.*)',
+  '/api/parties(.*)'
+]);
+
+/**
+ * Creates a JSON response for unauthenticated API requests
+ */
+function createUnauthenticatedApiResponse(): NextResponse {
+  return NextResponse.json(
+    { error: 'Authentication required' },
+    { status: 401 }
+  );
+}
+
+/**
+ * Creates a redirect response to sign-in page for unauthenticated UI routes
+ */
+function createSignInRedirect(request: NextRequest): NextResponse {
+  const signInUrl = new URL('/sign-in', request.url);
+  signInUrl.searchParams.set('redirect_url', request.url);
+  return NextResponse.redirect(signInUrl);
+}
+
+/**
+ * Handles authentication for protected API routes
+ */
+async function handleApiRouteAuthentication(
+  auth: () => Promise<any>,
+  _request: NextRequest
+): Promise<NextResponse | null> {
+  const { userId } = await auth();
+
+  if (!userId) {
+    return createUnauthenticatedApiResponse();
+  }
+
+  return null; // Continue processing
+}
+
+/**
+ * Handles authentication for protected UI routes
+ */
+async function handleUiRouteAuthentication(
+  auth: () => Promise<any>,
+  request: NextRequest
+): Promise<NextResponse | null> {
+  const authObj = await auth();
+
+  if (!authObj.userId) {
+    return createSignInRedirect(request);
+  }
+
+  return null; // Continue processing
+}
+
+/**
+ * Main Clerk middleware handler with improved structure and clarity
+ */
+export default clerkMiddleware(async (auth, request) => {
   const { pathname } = request.nextUrl;
 
-  if (!isProtectedRoute(pathname)) {
+  // Check if the current route requires authentication
+  if (!isProtectedRoute(request)) {
     return NextResponse.next();
   }
 
-  try {
-    const token = await getToken({
-      req: request,
-      secret: getNextAuthSecret(),
-      cookieName: SESSION_COOKIE_NAME,
-    });
-
-    if (!token || !token.sub) {
-      if (isProtectedApiRoute(pathname)) {
-        return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
-      }
-
-      // Create signin URL with callback parameter
-      const signinUrl = new URL('/signin', request.url);
-
-      // Fix callback URL to use production domain instead of localhost
-      const callbackUrl = new URL(request.nextUrl.pathname + request.nextUrl.search,
-                                  getNextAuthUrl() || request.url);
-      signinUrl.searchParams.set('callbackUrl', callbackUrl.toString());
-
-      return NextResponse.redirect(signinUrl);
-    }
-
-    return NextResponse.next();
-  } catch (error) {
-    console.error('Middleware authentication error:', error);
-
-    if (isProtectedApiRoute(pathname)) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
-    }
-
-    // Redirect to signin on any authentication error
-    const signinUrl = new URL('/signin', request.url);
-
-    // Fix callback URL to use production domain
-    const callbackUrl = new URL(request.nextUrl.pathname + request.nextUrl.search,
-                                getNextAuthUrl() || request.url);
-    signinUrl.searchParams.set('callbackUrl', callbackUrl.toString());
-
-    return NextResponse.redirect(signinUrl);
+  // Handle protected routes based on type (API vs UI)
+  if (pathname.startsWith('/api/')) {
+    const response = await handleApiRouteAuthentication(auth, request);
+    if (response) return response;
+  } else {
+    const response = await handleUiRouteAuthentication(auth, request);
+    if (response) return response;
   }
-}
 
-function isProtectedRoute(pathname: string): boolean {
-  const protectedPaths = ['/dashboard', '/characters', '/encounters', '/parties', '/combat', '/settings'];
-  return protectedPaths.some(path => pathname.startsWith(path)) || isProtectedApiRoute(pathname);
-}
+  return NextResponse.next();
+});
 
 export const config = {
   matcher: [
-    '/dashboard/:path*',
-    '/characters/:path*',
-    '/encounters/:path*',
-    '/parties/:path*',
-    '/combat/:path*',
-    '/settings/:path*',
-    '/api/users/:path*',
-    '/api/characters/:path*',
-    '/api/encounters/:path*',
-    '/api/combat/:path*',
-    '/api/parties/:path*',
+    // Skip Next.js internals and all static files, unless found in search params
+    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+    // Always run for API routes
+    '/(api|trpc)(.*)',
   ],
 };

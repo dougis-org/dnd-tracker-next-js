@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useSession } from 'next-auth/react';
+import { useUser } from '@clerk/nextjs';
 
 // Types for combat data
 interface CombatParticipant {
@@ -46,14 +46,14 @@ interface UseActiveCombatSessionsReturn {
  * with proper authentication and error handling.
  */
 export function useActiveCombatSessions(): UseActiveCombatSessionsReturn {
-  const { data: session, status } = useSession();
+  const { user, isLoaded } = useUser();
   const [encounters, setEncounters] = useState<ActiveEncounter[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Function to fetch active combat sessions
   const fetchActiveCombatSessions = useCallback(async () => {
-    if (!session?.user?.id) {
+    if (!user?.id) {
       setIsLoading(false);
       return;
     }
@@ -82,16 +82,16 @@ export function useActiveCombatSessions(): UseActiveCombatSessionsReturn {
     } finally {
       setIsLoading(false);
     }
-  }, [session?.user?.id]);
+  }, [user?.id]);
 
-  // Load data on mount and when session changes
+  // Load data on mount and when user changes
   useEffect(() => {
-    if (status === 'authenticated') {
+    if (isLoaded && user) {
       fetchActiveCombatSessions();
-    } else if (status === 'unauthenticated') {
+    } else if (isLoaded && !user) {
       setIsLoading(false);
     }
-  }, [status, fetchActiveCombatSessions]);
+  }, [isLoaded, user, fetchActiveCombatSessions]);
 
   return {
     encounters,

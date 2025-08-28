@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import { useUser } from '@clerk/nextjs';
 import { useConfirmationDialog } from '@/components/modals/ConfirmationDialog';
 import { CharacterService } from '@/lib/services/CharacterService';
 import type { Character } from '@/lib/validations/character';
@@ -11,7 +11,7 @@ import type { Character } from '@/lib/validations/character';
  */
 export function useCharacterPageActions() {
   const router = useRouter();
-  const { data: session } = useSession();
+  const { user } = useUser();
   const { confirm, ConfirmationDialog } = useConfirmationDialog();
   const [isCreationFormOpen, setIsCreationFormOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -33,7 +33,7 @@ export function useCharacterPageActions() {
 
   const characterActions = {
     deleteCharacter: async (character: Character) => {
-      if (!session?.user?.id) {
+      if (!user?.id) {
         return;
       }
 
@@ -53,7 +53,7 @@ export function useCharacterPageActions() {
           try {
             const result = await CharacterService.deleteCharacter(
               character._id.toString(),
-              session.user.id
+              user.id
             );
 
             if (!result.success) {
@@ -75,7 +75,7 @@ export function useCharacterPageActions() {
     },
 
     duplicateCharacter: async (character: Character) => {
-      if (!session?.user?.id) {
+      if (!user?.id) {
         return;
       }
 
@@ -94,7 +94,7 @@ export function useCharacterPageActions() {
       try {
         const result = await CharacterService.cloneCharacter(
           character._id.toString(),
-          session.user.id,
+          user.id,
           newName
         );
 

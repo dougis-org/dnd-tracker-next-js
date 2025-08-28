@@ -1,6 +1,10 @@
-import { Session } from 'next-auth';
-
-export type SessionUser = NonNullable<Session['user']>;
+export interface SessionUser {
+  id: string;
+  email: string | null;
+  name: string | null;
+  subscriptionTier?: string;
+  notifications?: NotificationPreferences;
+}
 
 export interface NotificationPreferences {
   email: boolean;
