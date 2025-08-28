@@ -3,6 +3,7 @@ export interface SessionUser {
   email: string | null;
   name: string | null;
   subscriptionTier?: string;
+  notifications?: NotificationPreferences;
 }
 
 export interface NotificationPreferences {

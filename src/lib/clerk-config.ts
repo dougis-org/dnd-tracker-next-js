@@ -6,15 +6,20 @@
  */
 
 /**
+ * Required Clerk environment variables
+ */
+type ClerkEnvVar = 'NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY' | 'CLERK_SECRET_KEY';
+
+/**
  * Validates that required Clerk environment variables are set
  */
 export function validateClerkEnvVars(): void {
-  const requiredVars = [
+  const requiredVars: readonly ClerkEnvVar[] = [
     'NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY',
     'CLERK_SECRET_KEY'
   ] as const;
 
-  const missingVars = requiredVars.filter(varName => !process.env[varName]);
+  const missingVars = requiredVars.filter((varName: ClerkEnvVar) => !process.env[varName]);
 
   if (missingVars.length > 0) {
     throw new Error(
@@ -68,7 +73,8 @@ export function isProtectedRoute(pathname: string): boolean {
  * Helper function to check if a route is public
  */
 export function isPublicRoute(pathname: string): boolean {
-  return CLERK_CONFIG.PUBLIC_ROUTES.includes(pathname as any) ||
+  const publicRoutes = CLERK_CONFIG.PUBLIC_ROUTES as readonly string[];
+  return publicRoutes.includes(pathname) ||
     CLERK_CONFIG.AUTH_ROUTES.some(route => pathname.startsWith(route));
 }
 
