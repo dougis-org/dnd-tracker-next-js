@@ -5,12 +5,14 @@
 ### Completed Tasks
 
 #### ✅ Issue #651 - Clerk SDK Setup and Configuration
+
 - Installed @clerk/nextjs dependency
 - Set up Clerk configuration files
 - Environment variables configured
 - Status: **MERGED**
 
-#### ✅ Issue #652 - Implement Clerk Authentication Middleware  
+#### ✅ Issue #652 - Implement Clerk Authentication Middleware
+
 - Replaced NextAuth middleware with clerkMiddleware()
 - Implemented route protection for pages and API endpoints
 - Added enhanced error handling and logging
@@ -18,12 +20,14 @@
 - Status: **MERGED** (PR #660)
 
 #### ✅ Issue #662 - Replace SignIn/SignUp Pages with Clerk Components
+
 - Converted existing auth pages to use Clerk components (`<SignIn />`, `<SignUp />`)
 - Updated routing and page structure
 - Removed NextAuth signin/signup page logic
 - Status: **MERGED** (PR #666)
 
 #### ✅ Issue #664 - Registration Flow Integration and User Profile Setup
+
 - Integrated Clerk user creation with application user profiles
 - Set up initial user data structure in MongoDB
 - Implemented subscription tier assignments
@@ -58,27 +62,31 @@
    - ✅ Validate complete user creation workflow
 
 #### Implementation Summary
+
 - [x] Create branch for Issue #653
 - [x] Analyze current signin page and registration components
-- [x] Implement Clerk SignUp component integration  
+- [x] Implement Clerk SignUp component integration
 - [x] Set up user data sync with MongoDB Users collection
 - [x] Test complete registration and user creation flow
 
 ### Current Priority: Next Steps in Epic
 
 #### ✅ Issue #654 - User Login/Logout Flows (COMPLETED)
+
 - Replaced login/logout functionality with Clerk's `<SignIn />` and `<SignOut />` components.
 - Session management is now handled by Clerk's `auth()` middleware and `useUser` hook.
 - Dashboard components are decoupled from the authentication logic and work seamlessly with Clerk.
 
 #### ✅ Issue #655 - Remove NextAuth Code (COMPLETED)
+
 - Clean up remaining NextAuth dependencies
 - Remove unused auth files
 - Clean up legacy authentication utilities
 
 #### Future Epic Tasks
 
-#### Issue #658 - Update UI Components for Clerk  
+#### Issue #658 - Update UI Components for Clerk
+
 - Convert auth-related UI components
 - Update user profile components
 - Ensure consistent Clerk theming
@@ -89,12 +97,14 @@
 completing the Clerk migration cleanup.
 
 **Files Removed**:
+
 - `src/__mocks__/next-auth.js` - NextAuth mock file
-- `src/__mocks__/@auth/` - Auth mock directory structure  
+- `src/__mocks__/@auth/` - Auth mock directory structure
 - `src/lib/auth/auth-callbacks.ts` - NextAuth callback functions
 - `src/lib/auth/` - Entire auth directory
 
 **Code Updates**:
+
 - Renamed `setupNextAuthMocks` to `setupClerkMocks` in test utilities
 - Updated session constants to use Clerk cookie naming patterns
 - Fixed cookie manipulation tests to use `clerk-session` instead of `next-auth.session-token`
@@ -102,6 +112,7 @@ completing the Clerk migration cleanup.
 - Cleaned up `.env.local` and `.env.example` NextAuth variables
 
 **New Test Infrastructure**:
+
 - `src/__tests__/nextauth-cleanup-verification.test.ts` - Comprehensive cleanup verification
   - Validates complete package dependency removal
   - Scans all source files for remaining NextAuth patterns
@@ -109,6 +120,7 @@ completing the Clerk migration cleanup.
   - Ensures middleware uses Clerk instead of NextAuth
 
 **Verification Results**:
+
 - ✅ All NextAuth cleanup verification tests pass
 - ✅ No NextAuth dependencies in package.json
 - ✅ No NextAuth code references remain in codebase
@@ -116,11 +128,13 @@ completing the Clerk migration cleanup.
 - ✅ ESLint compliance maintained
 
 #### Issue #656 - Clean Up Environment Variables
+
 - Remove NextAuth environment variables
 - Update documentation
 - Clean up .env.example file
 
 #### Issue #657 - Migrate Tests to Clerk
+
 - Update authentication tests
 - Mock Clerk in test environment
 - Ensure test coverage for Clerk flows
@@ -128,6 +142,7 @@ completing the Clerk migration cleanup.
 ### Technical Implementation Notes
 
 #### Key Files Modified
+
 - `src/middleware.ts` - Main middleware using clerkMiddleware()
 - `src/lib/middleware.ts` - Authentication utilities with Clerk
 - `src/lib/api/session-route-helpers.ts` - Session helpers using Clerk auth()
@@ -138,12 +153,14 @@ completing the Clerk migration cleanup.
 - `src/app/api/webhooks/clerk/route.ts` - Webhook handlers for user synchronization
 
 #### New Test Infrastructure
+
 - `src/lib/models/__tests__/User.registration.test.ts` - User model registration tests
 - `src/lib/services/__tests__/UserServiceRegistration.test.ts` - Service integration tests
 - `src/app/api/webhooks/clerk/__tests__/registration-integration.test.ts` - Webhook integration tests
 - `src/test-utils/user-registration-mocks.ts` - Shared test utilities for registration flows
 
 #### Clerk Patterns Established
+
 ```typescript
 // Middleware pattern
 export default clerkMiddleware(async (auth, req) => {
@@ -157,6 +174,7 @@ const { userId } = await auth();
 ```
 
 #### Current Architecture
+
 - Next.js 15 App Router with Clerk middleware
 - Clerk SignIn/SignUp components replacing NextAuth pages
 - MongoDB Users collection with Clerk integration
@@ -170,6 +188,7 @@ const { userId } = await auth();
 **MAJOR MILESTONE: Core Registration Flow Complete** ✅
 
 The fundamental Clerk integration is now operational:
+
 - ✅ **Authentication Infrastructure**: Middleware and route protection implemented
 - ✅ **User Registration**: Complete flow from Clerk signup to MongoDB user creation
 - ✅ **UI Components**: Clerk components integrated into existing app structure
@@ -191,10 +210,36 @@ The fundamental Clerk integration is now operational:
 - 🟡 **Minor**: Additional webhook event validation may be needed
 - 🟢 **Ready for next phase**: Login/logout flow implementation
 
+### 🚨 CURRENT HIGH PRIORITY: Issue #675 - Clerk Public Key Configuration for Build Process
+
+**Status**: BLOCKING - Must be completed before deployment
+
+**Problem**: Build process fails during static page prerendering because Clerk public key is not accessible to the
+build environment.
+This prevents successful deployment and static site generation.
+
+**Requirements**:
+
+- Move Clerk public key to centralized, easy-to-update location
+- Ensure key is accessible during Next.js static generation
+- Fix build/prerendering failures
+- Document public vs private key management
+
+**GitHub Issue**: [#675](https://github.com/dougis-org/dnd-tracker-next-js/issues/675)
+
+#### Future Epic Tasks
+
+#### Issue #656 - Clean Up Environment Variables
+
+- Remove NextAuth environment variables
+- Update documentation
+- Clean up .env.example file
+
 ## Notes for Resumption
 
 - Working directory: `/home/doug/ai-dev-1/dnd-tracker-next-js`
 - Last completed: Issue #655 - NextAuth Code Removal (PR #674)
-- Next priority: Issue #656 - Clean Up Environment Variables
+- **URGENT NEXT**: Issue #675 - Clerk Public Key Configuration (BLOCKING)
+- Next after #675: Issue #656 - Clean Up Environment Variables
 - Quality checks required: ESLint, TypeScript, Codacy scan after each change
 - Continue TDD approach with comprehensive testing

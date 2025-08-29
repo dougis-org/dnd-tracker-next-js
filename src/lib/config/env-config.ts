@@ -3,24 +3,34 @@
  *
  * Centralized and secure access to environment variables
  * Updated to use Clerk authentication
+ *
+ * NOTE: For Clerk-specific configuration, prefer using @/lib/config/clerk
+ * which provides build-time validation and better error handling.
  */
+
+import {
+  getClerkPublishableKey as getCentralizedPublishableKey,
+  getClerkSecretKey as getCentralizedSecretKey,
+} from './clerk';
 
 /**
  * Safely retrieves Clerk publishable key environment variable
  *
+ * @deprecated Use getClerkPublishableKey from @/lib/config/clerk instead
  * @returns The Clerk publishable key or undefined if not available
  */
-export function getClerkPublishableKey(): string | undefined {
-  return process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+export function getClerkPublishableKey(): string {
+  return getCentralizedPublishableKey();
 }
 
 /**
  * Safely retrieves Clerk secret key environment variable
  *
+ * @deprecated Use getClerkSecretKey from @/lib/config/clerk instead
  * @returns The Clerk secret key or undefined if not available
  */
-export function getClerkSecretKey(): string | undefined {
-  return process.env.CLERK_SECRET_KEY;
+export function getClerkSecretKey(): string {
+  return getCentralizedSecretKey();
 }
 
 /**
