@@ -74,9 +74,10 @@ Before creating a PR, ensure:
 
 ### TypeScript & Code Organization
 
-- Use strict mode; no `any` types without justification.
+- Use strict mode; no `any` types.
 - Provide proper type definitions for all functions and components.
 - Use interfaces for complex objects.
+- All imports should use @ notation, not referential paths of ../../
 - Organize code as follows:
   - `src/app/` – Next.js app router pages and layouts
   - `src/components/` – Reusable React components
