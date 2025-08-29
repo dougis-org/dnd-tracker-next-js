@@ -1,0 +1,12 @@
+# Add patterns to ignore here, one per line
+# Example:
+# \*.log
+# tmp/
+
+/node_modules
+/docs/legacy/**
+/docs/deployment/**
+/docs/design/**
+/.jest-cache
+/.claude
+/.codacy

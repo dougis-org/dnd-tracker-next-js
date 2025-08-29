@@ -46,6 +46,7 @@ Before creating a PR, ensure:
 - [ ] All new dependencies are installed and scanned (see Security below)
 - [ ] Environment variables are documented in `.env.example`
 - [ ] Code follows all project conventions and best practices
+- [ ] repomix has been run to update the repomix-output.xml file with new data
 
 ### 4. Pull Request Creation
 
