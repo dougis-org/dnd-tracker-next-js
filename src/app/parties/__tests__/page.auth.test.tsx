@@ -3,17 +3,53 @@
  */
 
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
-import { auth } from '@/lib/auth';
+import { auth } from '@clerk/nextjs/server';
 import PartiesPage from '../page';
-import {
-  createMockSession,
-  setupNextAuthMocks,
-  setupUnauthenticatedState,
-  SHARED_API_TEST_CONSTANTS
-} from '@/lib/test-utils/shared-api-test-helpers';
 
-// Mock the auth function from Next Auth
-jest.mock('@/lib/auth', () => ({
+// Inline minimal test helpers for Clerk
+const SHARED_API_TEST_CONSTANTS = {
+  TEST_USER_ID: 'test-user-123',
+};
+
+function createMockSession(userId: string) {
+  return {
+    userId,
+    publicMetadata: { role: 'user' },
+    sessionClaims: {
+      sub: userId,
+      __raw: '',
+      iss: 'https://clerk.example.com',
+      sid: 'sid-123',
+      nbf: 0,
+      exp: Date.now() / 1000 + 3600,
+      iat: Date.now() / 1000,
+    },
+    sessionId: 'sess-123',
+    sessionStatus: 'active' as any,
+    actor: undefined,
+    tokenType: 'session_token' as const,
+    getToken: async () => null,
+    has: () => true,
+    debug: () => ({}),
+    isAuthenticated: true,
+    orgId: undefined,
+    orgRole: undefined,
+    orgSlug: undefined,
+    orgPermissions: [],
+    factorVerificationAge: null,
+  };
+}
+
+function setupNextAuthMocks(mockAuth: jest.MockedFunction<any>) {
+  mockAuth.mockReset();
+}
+
+function setupUnauthenticatedState(mockAuth: jest.MockedFunction<any>) {
+  mockAuth.mockResolvedValue({ userId: undefined });
+}
+
+// Mock Clerk's auth function
+jest.mock('@clerk/nextjs/server', () => ({
   auth: jest.fn(),
 }));
 
