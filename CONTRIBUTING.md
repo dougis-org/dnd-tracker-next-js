@@ -70,6 +70,7 @@ Before creating a PR, ensure:
 - Update task status and remove `in-progress` label after merge.
   - Issue should auto close due to PR labeling
 - Prune local branches after merge.
+- Only **AFTER** the PR merges should any status documentation be updated
 
 ---
 
