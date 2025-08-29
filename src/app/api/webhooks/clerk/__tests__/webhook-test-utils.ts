@@ -96,9 +96,9 @@ export function setupWebhookMocks() {
   // Mock environment variable
   process.env.CLERK_WEBHOOK_SECRET = 'test-webhook-secret';
 
-  // Mock headers function
+  // Mock headers function - use mockReturnValue for sync behavior
   const mockHeadersFunction = require('next/headers').headers;
-  mockHeadersFunction.mockResolvedValue({
+  mockHeadersFunction.mockReturnValue({
     get: jest.fn((key: string) => mockHeaders[key as keyof typeof mockHeaders]),
   });
 }

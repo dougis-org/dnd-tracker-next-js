@@ -11,6 +11,14 @@ import {
   type SubscriptionTier,
 } from '../validations/user';
 
+// Profile setup specific type
+interface ProfileSetupData {
+  profileSetupCompleted?: boolean;
+  experienceLevel?: 'beginner' | 'intermediate' | 'advanced' | 'expert';
+  primaryRole?: 'player' | 'dm' | 'both';
+  dndEdition?: string;
+}
+
 import { ServiceResult } from './UserServiceErrors';
 import { UserServiceAuth } from './UserServiceAuth';
 import { UserServiceProfile } from './UserServiceProfile';
@@ -20,6 +28,7 @@ import {
   type QueryFilters,
   type UserStats,
 } from './UserServiceStats';
+import User, { IUser, ClerkUserData } from '../models/User';
 
 /**
  * User Service Layer for D&D Encounter Tracker
@@ -123,13 +132,28 @@ export class UserService {
   }
 
   /**
-   * Update user profile
+   * Update user profile - regular profile updates
    */
   static async updateUserProfile(
     userId: string,
     updateData: UserProfileUpdate
   ): Promise<ServiceResult<PublicUser>> {
     return UserServiceProfile.updateUserProfile(userId, updateData);
+  }
+
+  /**
+   * Update user profile setup data - for onboarding flow
+   */
+  static async updateUserProfileSetup(
+    userId: string,
+    setupData: ProfileSetupData
+  ): Promise<IUser | null> {
+    try {
+      const updatedUser = await User.findByIdAndUpdate(userId, setupData, { new: true });
+      return updatedUser;
+    } catch (error) {
+      throw error;
+    }
   }
 
   /**
@@ -147,6 +171,46 @@ export class UserService {
    */
   static async deleteUser(userId: string): Promise<ServiceResult<void>> {
     return UserServiceProfile.deleteUser(userId);
+  }
+
+  // ================================
+  // Clerk Integration Operations
+  // ================================
+
+  /**
+   * Create user from Clerk webhook data
+   */
+  static async createUserFromClerkData(clerkUserData: ClerkUserData): Promise<IUser> {
+    return User.createClerkUser(clerkUserData);
+  }
+
+  /**
+   * Update user from Clerk webhook data
+   */
+  static async updateUserFromClerkData(clerkId: string, clerkUserData: ClerkUserData): Promise<IUser> {
+    return User.updateFromClerkData(clerkId, clerkUserData);
+  }
+
+  /**
+   * Get user by Clerk ID
+   */
+  static async getUserByClerkId(clerkId: string): Promise<IUser | null> {
+    return User.findByClerkId(clerkId);
+  }
+
+  /**
+   * Clean up incomplete user registrations
+   */
+  static async cleanupIncompleteRegistration(clerkId: string): Promise<void> {
+    const user = await User.findByClerkId(clerkId);
+    if (user && user.syncStatus === 'error') {
+      // Mark for cleanup - in a real implementation you might:
+      // - Remove orphaned data
+      // - Reset sync status
+      // - Log the cleanup action
+      user.syncStatus = 'pending';
+      await user.save();
+    }
   }
 
   // ================================
@@ -171,6 +235,9 @@ export class UserService {
     return UserServiceStats.getUserStats();
   }
 }
+
+// Default export
+export default UserService;
 
 // Re-export types for convenience
 export type {
