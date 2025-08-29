@@ -4,8 +4,13 @@
  */
 
 import UserService from '../UserService';
-import User, { ClerkUserData } from '@/lib/models/User';
+import User from '@/lib/models/User';
 import { connectToDatabase } from '@/lib/db';
+import {
+  createMockUser,
+  createMockClerkUserData,
+  createMinimalClerkUserData,
+} from '@/test-utils/user-registration-mocks';
 
 // Mock dependencies
 jest.mock('@/lib/models/User', () => ({
@@ -20,35 +25,7 @@ jest.mock('@/lib/models/User', () => ({
 jest.mock('@/lib/db');
 
 describe('UserService - Registration Integration', () => {
-  const mockUser = {
-    _id: 'user123',
-    clerkId: 'clerk_123',
-    email: 'test@example.com',
-    firstName: 'John',
-    lastName: 'Doe',
-    subscriptionTier: 'free',
-    profileSetupCompleted: false,
-    authProvider: 'clerk',
-    syncStatus: 'active',
-    preferences: {
-      theme: 'system',
-      emailNotifications: true,
-      browserNotifications: false,
-      timezone: 'UTC',
-      language: 'en',
-      diceRollAnimations: true,
-      autoSaveEncounters: true,
-    },
-    isSubscriptionActive: jest.fn(() => true),
-    canAccessFeature: jest.fn((_feature, _quantity) => true),
-    toPublicJSON: jest.fn(() => ({
-      id: 'user123',
-      email: 'test@example.com',
-      subscriptionTier: 'free',
-    })),
-    save: jest.fn(),
-    updateLastLogin: jest.fn(),
-  };
+  const mockUser = createMockUser();
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -59,15 +36,7 @@ describe('UserService - Registration Integration', () => {
     it('should handle complete user registration workflow', async () => {
       (User.createClerkUser as jest.Mock).mockResolvedValue(mockUser);
 
-      const clerkUserData: ClerkUserData = {
-        clerkId: 'clerk_123',
-        email: 'test@example.com',
-        firstName: 'John',
-        lastName: 'Doe',
-        username: 'johndoe',
-        imageUrl: 'https://example.com/avatar.jpg',
-        emailVerified: true,
-      };
+      const clerkUserData = createMockClerkUserData();
 
       const result = await UserService.createUserFromClerkData(clerkUserData);
 
@@ -78,10 +47,7 @@ describe('UserService - Registration Integration', () => {
     it('should validate subscription setup during registration', async () => {
       (User.createClerkUser as jest.Mock).mockResolvedValue(mockUser);
 
-      const clerkUserData: ClerkUserData = {
-        clerkId: 'clerk_123',
-        email: 'test@example.com',
-      };
+      const clerkUserData = createMinimalClerkUserData();
 
       const result = await UserService.createUserFromClerkData(clerkUserData);
 
@@ -93,10 +59,7 @@ describe('UserService - Registration Integration', () => {
     it('should handle user profile initialization', async () => {
       (User.createClerkUser as jest.Mock).mockResolvedValue(mockUser);
 
-      const clerkUserData: ClerkUserData = {
-        clerkId: 'clerk_123',
-        email: 'test@example.com',
-      };
+      const clerkUserData = createMinimalClerkUserData();
 
       const result = await UserService.createUserFromClerkData(clerkUserData);
 
@@ -124,8 +87,7 @@ describe('UserService - Registration Integration', () => {
     });
 
     it('should handle subscription feature access validation', async () => {
-      const mockUserWithFeatureCheck = {
-        ...mockUser,
+      const mockUserWithFeatureCheck = createMockUser({
         canAccessFeature: jest.fn((feature: string, quantity: number) => {
           const limits = {
             parties: 1,
@@ -134,7 +96,7 @@ describe('UserService - Registration Integration', () => {
           };
           return quantity <= limits[feature as keyof typeof limits];
         }),
-      };
+      });
 
       (User.findByClerkId as jest.Mock).mockResolvedValue(mockUserWithFeatureCheck);
 
@@ -149,8 +111,7 @@ describe('UserService - Registration Integration', () => {
     });
 
     it('should handle subscription tier upgrades', async () => {
-      const upgradedUser = {
-        ...mockUser,
+      const upgradedUser = createMockUser({
         subscriptionTier: 'seasoned',
         canAccessFeature: jest.fn((feature: string, quantity: number) => {
           const limits = {
@@ -160,7 +121,7 @@ describe('UserService - Registration Integration', () => {
           };
           return quantity <= limits[feature as keyof typeof limits];
         }),
-      };
+      });
 
       (User.findByClerkId as jest.Mock).mockResolvedValue(upgradedUser);
 
@@ -176,10 +137,9 @@ describe('UserService - Registration Integration', () => {
 
   describe('Profile Setup Management', () => {
     it('should track profile setup completion status', async () => {
-      const incompleteProfile = {
-        ...mockUser,
+      const incompleteProfile = createMockUser({
         profileSetupCompleted: false,
-      };
+      });
 
       (User.findByClerkId as jest.Mock).mockResolvedValue(incompleteProfile);
 
@@ -189,13 +149,12 @@ describe('UserService - Registration Integration', () => {
     });
 
     it('should handle profile setup completion workflow', async () => {
-      const updatedUser = {
-        ...mockUser,
+      const updatedUser = createMockUser({
         profileSetupCompleted: true,
         experienceLevel: 'intermediate',
         primaryRole: 'dm',
         dndEdition: '5th Edition',
-      };
+      });
 
       (User.findByClerkId as jest.Mock).mockResolvedValue(updatedUser);
       (User.findByIdAndUpdate as jest.Mock).mockResolvedValue(updatedUser);
@@ -212,7 +171,7 @@ describe('UserService - Registration Integration', () => {
           dndEdition: '5th Edition',
         };
 
-        await UserService.updateUserProfile(user._id.toString(), profileData);
+        await UserService.updateUserProfileSetup(user._id.toString(), profileData);
 
         expect(User.findByIdAndUpdate).toHaveBeenCalledWith(
           user._id.toString(),
@@ -229,10 +188,10 @@ describe('UserService - Registration Integration', () => {
         new Error('Database constraint violation')
       );
 
-      const clerkUserData: ClerkUserData = {
+      const clerkUserData = createMinimalClerkUserData({
         clerkId: 'clerk_error',
         email: 'error@example.com',
-      };
+      });
 
       await expect(UserService.createUserFromClerkData(clerkUserData))
         .rejects.toThrow('Database constraint violation');
@@ -240,14 +199,14 @@ describe('UserService - Registration Integration', () => {
 
     it('should handle incomplete registration cleanup', async () => {
       // Mock a partial creation scenario
-      const partialUser = {
+      const partialUser = createMockUser({
         _id: 'partial123',
         clerkId: 'clerk_partial',
         email: 'partial@example.com',
         syncStatus: 'error',
         save: jest.fn(),
         remove: jest.fn(),
-      };
+      });
 
       (User.findByClerkId as jest.Mock).mockResolvedValue(partialUser);
 
@@ -263,18 +222,17 @@ describe('UserService - Registration Integration', () => {
     });
 
     it('should handle subscription setup failures', async () => {
-      const mockUserWithError = {
-        ...mockUser,
+      const mockUserWithError = createMockUser({
         subscriptionTier: 'free',
         isSubscriptionActive: jest.fn(() => false),
-      };
+      });
 
-      mockedUser.createClerkUser = jest.fn().mockResolvedValue(mockUserWithError);
+      (User.createClerkUser as jest.Mock).mockResolvedValue(mockUserWithError);
 
-      const clerkUserData: ClerkUserData = {
+      const clerkUserData = createMinimalClerkUserData({
         clerkId: 'clerk_sub_error',
         email: 'suberror@example.com',
-      };
+      });
 
       const result = await UserService.createUserFromClerkData(clerkUserData);
 
@@ -288,10 +246,10 @@ describe('UserService - Registration Integration', () => {
     it('should maintain sync status during registration', async () => {
       (User.createClerkUser as jest.Mock).mockResolvedValue(mockUser);
 
-      const clerkUserData: ClerkUserData = {
+      const clerkUserData = createMinimalClerkUserData({
         clerkId: 'clerk_sync',
         email: 'sync@example.com',
-      };
+      });
 
       const result = await UserService.createUserFromClerkData(clerkUserData);
 
@@ -300,20 +258,18 @@ describe('UserService - Registration Integration', () => {
     });
 
     it('should handle sync status updates during profile changes', async () => {
-      const syncedUser = {
-        ...mockUser,
+      const syncedUser = createMockUser({
         syncStatus: 'active',
         lastClerkSync: new Date(),
-      };
+      });
 
       (User.updateFromClerkData as jest.Mock).mockResolvedValue(syncedUser);
 
-      const updatedData: ClerkUserData = {
-        clerkId: 'clerk_123',
+      const updatedData = createMockClerkUserData({
         email: 'updated@example.com',
         firstName: 'Updated',
         lastName: 'User',
-      };
+      });
 
       const result = await UserService.updateUserFromClerkData('clerk_123', updatedData);
 

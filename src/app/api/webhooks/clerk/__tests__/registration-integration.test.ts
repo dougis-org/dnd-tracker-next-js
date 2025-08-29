@@ -9,6 +9,9 @@ import { POST } from '../route';
 import User from '@/lib/models/User';
 import { connectToDatabase } from '@/lib/db';
 import {
+  createMockUser,
+} from '@/test-utils/user-registration-mocks';
+import {
   setupWebhookTestEnvironment,
   setupWebhookMocks,
   cleanupWebhookMocks,
@@ -46,28 +49,11 @@ describe('Enhanced Registration Flow Integration', () => {
 
   describe('Complete User Profile Setup', () => {
     it('should create user with complete profile structure', async () => {
-      const expectedUser = {
+      const expectedUser = createMockUser({
         _id: 'user123',
         clerkId: 'clerk_user_123',
-        email: 'test@example.com',
-        firstName: 'John',
-        lastName: 'Doe',
         username: 'johndoe',
-        subscriptionTier: 'free',
-        profileSetupCompleted: false,
-        authProvider: 'clerk',
-        syncStatus: 'active',
-        preferences: {
-          theme: 'system',
-          emailNotifications: true,
-          browserNotifications: false,
-          timezone: 'UTC',
-          language: 'en',
-          diceRollAnimations: true,
-          autoSaveEncounters: true,
-        },
-        save: jest.fn(),
-      };
+      });
 
       (User.createClerkUser as jest.Mock).mockResolvedValue(expectedUser);
 
@@ -110,14 +96,11 @@ describe('Enhanced Registration Flow Integration', () => {
         image_url: null,
       };
 
-      const expectedUser = {
+      const expectedUser = createMockUser({
         _id: 'user_minimal',
         clerkId: 'clerk_user_minimal',
         email: 'minimal@example.com',
-        subscriptionTier: 'free',
-        profileSetupCompleted: false,
-        save: jest.fn(),
-      };
+      });
 
       (User.createClerkUser as jest.Mock).mockResolvedValue(expectedUser);
 
@@ -140,12 +123,10 @@ describe('Enhanced Registration Flow Integration', () => {
 
   describe('Subscription Tier Assignment', () => {
     it('should assign default free subscription tier', async () => {
-      const mockUser = {
+      const mockUser = createMockUser({
         _id: 'user123',
         clerkId: 'clerk_user_123',
-        subscriptionTier: 'free',
-        save: jest.fn(),
-      };
+      });
 
       (User.createClerkUser as jest.Mock).mockResolvedValue(mockUser);
 
@@ -164,17 +145,15 @@ describe('Enhanced Registration Flow Integration', () => {
     });
 
     it('should handle subscription setup integration points', async () => {
-      const mockUser = {
+      const mockUser = createMockUser({
         _id: 'user123',
         clerkId: 'clerk_user_123',
-        subscriptionTier: 'free',
         isSubscriptionActive: jest.fn(() => true),
         canAccessFeature: jest.fn((feature, quantity) => {
           const limits = { parties: 1, encounters: 3, characters: 10 };
           return quantity <= limits[feature as keyof typeof limits];
         }),
-        save: jest.fn(),
-      };
+      });
 
       (User.createClerkUser as jest.Mock).mockResolvedValue(mockUser);
 
@@ -221,7 +200,7 @@ describe('Enhanced Registration Flow Integration', () => {
         image_url: 'https://images.clerk.com/test.jpg',
       };
 
-      const expectedUser = { _id: 'user123', save: jest.fn() };
+      const expectedUser = createMockUser({ _id: 'user123' });
       (User.createClerkUser as jest.Mock).mockResolvedValue(expectedUser);
 
       const request = createWebhookRequest('user.created', clerkData);
@@ -283,15 +262,11 @@ describe('Enhanced Registration Flow Integration', () => {
 
   describe('Registration Completion Workflow', () => {
     it('should mark user as needing profile setup completion', async () => {
-      const mockUser = {
+      const mockUser = createMockUser({
         _id: 'user123',
         clerkId: 'clerk_user_123',
-        profileSetupCompleted: false,
-        authProvider: 'clerk',
-        syncStatus: 'active',
         lastClerkSync: expect.any(Date),
-        save: jest.fn(),
-      };
+      });
 
       (User.createClerkUser as jest.Mock).mockResolvedValue(mockUser);
 
@@ -303,12 +278,10 @@ describe('Enhanced Registration Flow Integration', () => {
     });
 
     it('should set appropriate sync status for new users', async () => {
-      const mockUser = {
+      const mockUser = createMockUser({
         _id: 'user123',
-        syncStatus: 'active',
         lastClerkSync: new Date(),
-        save: jest.fn(),
-      };
+      });
 
       (User.createClerkUser as jest.Mock).mockResolvedValue(mockUser);
 
@@ -322,19 +295,9 @@ describe('Enhanced Registration Flow Integration', () => {
 
   describe('Integration with User Management System', () => {
     it('should integrate with user preference system', async () => {
-      const mockUser = {
+      const mockUser = createMockUser({
         _id: 'user123',
-        preferences: {
-          theme: 'system',
-          emailNotifications: true,
-          browserNotifications: false,
-          timezone: 'UTC',
-          language: 'en',
-          diceRollAnimations: true,
-          autoSaveEncounters: true,
-        },
-        save: jest.fn(),
-      };
+      });
 
       (User.createClerkUser as jest.Mock).mockResolvedValue(mockUser);
 
@@ -346,12 +309,10 @@ describe('Enhanced Registration Flow Integration', () => {
     });
 
     it('should handle user role assignment correctly', async () => {
-      const mockUser = {
+      const mockUser = createMockUser({
         _id: 'user123',
         role: 'user', // Default role
-        authProvider: 'clerk',
-        save: jest.fn(),
-      };
+      });
 
       (User.createClerkUser as jest.Mock).mockResolvedValue(mockUser);
 

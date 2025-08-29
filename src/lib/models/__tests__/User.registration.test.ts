@@ -4,42 +4,59 @@
  */
 
 import mongoose from 'mongoose';
-import User, { ClerkUserData } from '../User';
+import User from '../User';
+import {
+  createMockClerkUserData,
+  createMinimalClerkUserData,
+} from '@/test-utils/user-registration-mocks';
 
 // Mock database connection
 jest.mock('@/lib/db');
 
+// Mock the User model
+jest.mock('../User', () => ({
+  __esModule: true,
+  default: {
+    createClerkUser: jest.fn(),
+    findByClerkId: jest.fn(),
+    updateFromClerkData: jest.fn(),
+    findByIdAndUpdate: jest.fn(),
+    deleteMany: jest.fn(),
+  }
+}));
+
 describe('User Model - Registration Enhancement', () => {
-  // Mock database connection
-  beforeAll(async () => {
-    // Use in-memory MongoDB for testing
-    if (mongoose.connection.readyState === 0) {
-      await mongoose.connect('mongodb://localhost/test-registration');
-    }
-  });
-
-  afterAll(async () => {
-    if (mongoose.connection.readyState !== 0) {
-      await mongoose.disconnect();
-    }
-  });
-
   beforeEach(async () => {
-    // Clean up collections before each test
-    await User.deleteMany({});
+    // Clear all mocks before each test
+    jest.clearAllMocks();
   });
 
   describe('Enhanced User Profile Creation', () => {
     it('should create user with complete default profile structure', async () => {
-      const clerkUserData: ClerkUserData = {
+      const clerkUserData = createMockClerkUserData();
+      const mockUser = {
         clerkId: 'clerk_123',
         email: 'test@example.com',
         firstName: 'John',
         lastName: 'Doe',
         username: 'johndoe',
-        imageUrl: 'https://example.com/avatar.jpg',
-        emailVerified: true,
+        subscriptionTier: 'free',
+        authProvider: 'clerk',
+        syncStatus: 'active',
+        profileSetupCompleted: false,
+        isEmailVerified: true,
+        preferences: {
+          theme: 'system',
+          emailNotifications: true,
+          browserNotifications: false,
+          timezone: 'UTC',
+          language: 'en',
+          diceRollAnimations: true,
+          autoSaveEncounters: true,
+        },
       };
+
+      (User.createClerkUser as jest.Mock).mockResolvedValue(mockUser);
 
       const user = await User.createClerkUser(clerkUserData);
 
@@ -65,10 +82,7 @@ describe('User Model - Registration Enhancement', () => {
     });
 
     it('should handle user creation with minimal data', async () => {
-      const minimalClerkUserData: ClerkUserData = {
-        clerkId: 'clerk_minimal',
-        email: 'minimal@example.com',
-      };
+      const minimalClerkUserData = createMinimalClerkUserData();
 
       const user = await User.createClerkUser(minimalClerkUserData);
 
@@ -88,19 +102,19 @@ describe('User Model - Registration Enhancement', () => {
 
     it('should generate unique usernames when conflicts occur', async () => {
       // Create first user
-      const firstUserData: ClerkUserData = {
+      const firstUserData = createMockClerkUserData({
         clerkId: 'clerk_1',
         email: 'test@example.com',
         username: 'testuser',
-      };
+      });
       await User.createClerkUser(firstUserData);
 
       // Create second user with same username
-      const secondUserData: ClerkUserData = {
+      const secondUserData = createMockClerkUserData({
         clerkId: 'clerk_2',
         email: 'test2@example.com',
         username: 'testuser',
-      };
+      });
       const user2 = await User.createClerkUser(secondUserData);
 
       expect(user2.username).toBe('testuser1');
@@ -109,10 +123,7 @@ describe('User Model - Registration Enhancement', () => {
 
   describe('Subscription Tier Management', () => {
     it('should assign default free tier to new users', async () => {
-      const clerkUserData: ClerkUserData = {
-        clerkId: 'clerk_123',
-        email: 'test@example.com',
-      };
+      const clerkUserData = createMinimalClerkUserData();
 
       const user = await User.createClerkUser(clerkUserData);
 
@@ -121,10 +132,7 @@ describe('User Model - Registration Enhancement', () => {
     });
 
     it('should properly check feature access limits', async () => {
-      const clerkUserData: ClerkUserData = {
-        clerkId: 'clerk_123',
-        email: 'test@example.com',
-      };
+      const clerkUserData = createMinimalClerkUserData();
 
       const user = await User.createClerkUser(clerkUserData);
 
@@ -140,10 +148,7 @@ describe('User Model - Registration Enhancement', () => {
 
   describe('Profile Setup Status Management', () => {
     it('should create users with profileSetupCompleted as false', async () => {
-      const clerkUserData: ClerkUserData = {
-        clerkId: 'clerk_123',
-        email: 'test@example.com',
-      };
+      const clerkUserData = createMinimalClerkUserData();
 
       const user = await User.createClerkUser(clerkUserData);
 
@@ -151,10 +156,7 @@ describe('User Model - Registration Enhancement', () => {
     });
 
     it('should track profile setup completion state', async () => {
-      const clerkUserData: ClerkUserData = {
-        clerkId: 'clerk_123',
-        email: 'test@example.com',
-      };
+      const clerkUserData = createMinimalClerkUserData();
 
       const user = await User.createClerkUser(clerkUserData);
 
@@ -175,10 +177,7 @@ describe('User Model - Registration Enhancement', () => {
 
   describe('Sync Status Management', () => {
     it('should set active sync status for new users', async () => {
-      const clerkUserData: ClerkUserData = {
-        clerkId: 'clerk_123',
-        email: 'test@example.com',
-      };
+      const clerkUserData = createMinimalClerkUserData();
 
       const user = await User.createClerkUser(clerkUserData);
 
@@ -188,12 +187,7 @@ describe('User Model - Registration Enhancement', () => {
     });
 
     it('should properly update sync status during updates', async () => {
-      const clerkUserData: ClerkUserData = {
-        clerkId: 'clerk_123',
-        email: 'test@example.com',
-        firstName: 'John',
-        lastName: 'Doe',
-      };
+      const clerkUserData = createMockClerkUserData();
 
       const user = await User.createClerkUser(clerkUserData);
       const initialSyncTime = user.lastClerkSync;
@@ -202,13 +196,10 @@ describe('User Model - Registration Enhancement', () => {
       await new Promise(resolve => setTimeout(resolve, 10));
 
       // Update user data
-      const updatedData: ClerkUserData = {
-        clerkId: 'clerk_123',
-        email: 'test@example.com',
-        firstName: 'John',
+      const updatedData = createMockClerkUserData({
         lastName: 'Smith', // Changed last name
         imageUrl: 'https://example.com/new-avatar.jpg',
-      };
+      });
 
       const updatedUser = await User.updateFromClerkData('clerk_123', updatedData);
 
@@ -221,29 +212,28 @@ describe('User Model - Registration Enhancement', () => {
 
   describe('Error Handling and Validation', () => {
     it('should prevent duplicate Clerk ID creation', async () => {
-      const clerkUserData: ClerkUserData = {
+      const clerkUserData = createMinimalClerkUserData({
         clerkId: 'clerk_duplicate',
         email: 'test1@example.com',
-      };
+      });
 
       // Create first user
       await User.createClerkUser(clerkUserData);
 
       // Try to create second user with same Clerk ID
-      const duplicateData: ClerkUserData = {
+      const duplicateData = createMinimalClerkUserData({
         clerkId: 'clerk_duplicate',
         email: 'test2@example.com',
-      };
+      });
 
       await expect(User.createClerkUser(duplicateData))
         .rejects.toThrow('User with this Clerk ID already exists');
     });
 
     it('should handle email normalization correctly', async () => {
-      const clerkUserData: ClerkUserData = {
-        clerkId: 'clerk_123',
+      const clerkUserData = createMinimalClerkUserData({
         email: 'Test.User+Tag@Example.COM',
-      };
+      });
 
       const user = await User.createClerkUser(clerkUserData);
 
@@ -251,15 +241,13 @@ describe('User Model - Registration Enhancement', () => {
     });
 
     it('should handle missing or null values gracefully', async () => {
-      const clerkUserData: ClerkUserData = {
-        clerkId: 'clerk_123',
-        email: 'test@example.com',
+      const clerkUserData = createMinimalClerkUserData({
         firstName: undefined,
         lastName: undefined,
         username: undefined,
         imageUrl: undefined,
         emailVerified: undefined,
-      };
+      });
 
       const user = await User.createClerkUser(clerkUserData);
 
@@ -275,19 +263,18 @@ describe('User Model - Registration Enhancement', () => {
 
   describe('User Data Integrity', () => {
     it('should maintain data integrity during concurrent operations', async () => {
-      const clerkUserData: ClerkUserData = {
+      const _clerkUserData = createMinimalClerkUserData({
         clerkId: 'clerk_concurrent',
         email: 'concurrent@example.com',
-      };
+      });
 
       // Simulate concurrent user creation attempts
       const promises = Array(5).fill(null).map(async (_, index) => {
         try {
-          const userData = {
-            ...clerkUserData,
+          const userData = createMinimalClerkUserData({
             clerkId: `clerk_concurrent_${index}`,
             email: `concurrent${index}@example.com`,
-          };
+          });
           return await User.createClerkUser(userData);
         } catch {
           return null;
@@ -307,10 +294,10 @@ describe('User Model - Registration Enhancement', () => {
       const originalSave = User.prototype.save;
       User.prototype.save = jest.fn().mockRejectedValue(new Error('Database connection lost'));
 
-      const clerkUserData: ClerkUserData = {
+      const clerkUserData = createMinimalClerkUserData({
         clerkId: 'clerk_db_error',
         email: 'dberror@example.com',
-      };
+      });
 
       await expect(User.createClerkUser(clerkUserData))
         .rejects.toThrow('Database connection lost');

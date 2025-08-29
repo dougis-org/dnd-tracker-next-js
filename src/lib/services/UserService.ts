@@ -11,6 +11,14 @@ import {
   type SubscriptionTier,
 } from '../validations/user';
 
+// Profile setup specific type
+interface ProfileSetupData {
+  profileSetupCompleted?: boolean;
+  experienceLevel?: 'beginner' | 'intermediate' | 'advanced' | 'expert';
+  primaryRole?: 'player' | 'dm' | 'both';
+  dndEdition?: string;
+}
+
 import { ServiceResult } from './UserServiceErrors';
 import { UserServiceAuth } from './UserServiceAuth';
 import { UserServiceProfile } from './UserServiceProfile';
@@ -124,26 +132,28 @@ export class UserService {
   }
 
   /**
-   * Update user profile
+   * Update user profile - regular profile updates
    */
   static async updateUserProfile(
     userId: string,
-    updateData: UserProfileUpdate | any
-  ): Promise<ServiceResult<PublicUser> | IUser | null> {
-    // If updateData includes specific profile fields, use direct User model update
-    if (updateData.profileSetupCompleted !== undefined ||
-        updateData.experienceLevel !== undefined ||
-        updateData.primaryRole !== undefined ||
-        updateData.dndEdition !== undefined) {
-      try {
-        const updatedUser = await User.findByIdAndUpdate(userId, updateData, { new: true });
-        return updatedUser;
-      } catch (error) {
-        throw error;
-      }
-    }
-
+    updateData: UserProfileUpdate
+  ): Promise<ServiceResult<PublicUser>> {
     return UserServiceProfile.updateUserProfile(userId, updateData);
+  }
+
+  /**
+   * Update user profile setup data - for onboarding flow
+   */
+  static async updateUserProfileSetup(
+    userId: string,
+    setupData: ProfileSetupData
+  ): Promise<IUser | null> {
+    try {
+      const updatedUser = await User.findByIdAndUpdate(userId, setupData, { new: true });
+      return updatedUser;
+    } catch (error) {
+      throw error;
+    }
   }
 
   /**
