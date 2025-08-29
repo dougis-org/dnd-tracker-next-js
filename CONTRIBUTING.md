@@ -47,7 +47,7 @@ Before creating a PR, ensure:
 - [ ] Environment variables are documented in `.env.example`
 - [ ] Code follows all project conventions and best practices
 
-### 4. Pull Request Creation
+### 4. Pull Request Creation and monitoring
 
 - Use the GitHub CLI to create PRs with auto-merge enabled:
 
@@ -60,12 +60,14 @@ Before creating a PR, ensure:
 - Include the related GitHub issue in the PR description.
 - Use the provided PR description template (see below).
 - Enable auto-merge and use squash merge.
+- Wait 45 seconds and then address **ALL** PR comments
+- Monitor for CI/CD failures and address promptly.
+- PR will auto-merge once all requirements are satisfied.
 
 ### 5. Post-PR Process
 
-- Monitor for CI/CD failures and address promptly.
-- PR will auto-merge once all requirements are satisfied.
 - Update task status and remove `in-progress` label after merge.
+  - Issue should auto close due to PR labeling
 - Prune local branches after merge.
 
 ---
