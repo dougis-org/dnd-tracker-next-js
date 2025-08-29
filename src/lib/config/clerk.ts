@@ -34,10 +34,13 @@ export function isValidPublishableKey(key: string | undefined): key is string {
 }
 
 /**
- * Clerk publishable key constant (read from environment variable)
+ * Clerk publishable key constant (read from environment variable, with fallback)
  * This value is safe to expose to the client.
+ * Falls back to a hardcoded test key if the environment variable is not set.
  */
-export const CLERK_PUBLISHABLE_KEY = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+export const CLERK_PUBLISHABLE_KEY =
+  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ||
+  'pk_test_bGVnYWwtd2FzcC0xNi5jbGVyay5hY2NvdW50cy5kZXYk';
 
 export function getClerkPublishableKey(): string {
   if (!isValidPublishableKey(CLERK_PUBLISHABLE_KEY)) {
