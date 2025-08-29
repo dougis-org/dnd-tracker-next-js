@@ -10,7 +10,7 @@ import {
   createErrorResponse,
   handleZodValidationError
 } from '@/lib/api/route-helpers';
-import { auth } from '@/lib/auth';
+import { auth } from '@clerk/nextjs/server';
 
 export async function GET(
   request: NextRequest,

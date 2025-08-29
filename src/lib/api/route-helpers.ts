@@ -1,6 +1,6 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { ZodError } from 'zod';
-import { auth } from '@/lib/auth';
+import { auth } from '@clerk/nextjs/server';
 
 /**
  * Shared API route helpers for authentication and access control

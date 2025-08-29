@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { DeploymentMonitor, AlertConfig } from '@/lib/monitoring/deployment-monitor';
-import { auth } from '@/lib/auth';
+import { auth } from '@clerk/nextjs/server';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 

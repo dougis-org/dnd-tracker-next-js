@@ -4,7 +4,7 @@ import {
   createErrorResponse,
   createSuccessResponse
 } from './api-helpers';
-import { auth } from '@/lib/auth';
+import { auth } from '@clerk/nextjs/server';
 
 /**
  * Common route initialization - handles DB connection and authentication

@@ -1,6 +1,6 @@
 import { Metadata } from 'next';
 import { redirect } from 'next/navigation';
-import { auth } from '@/lib/auth';
+import { auth } from '@clerk/nextjs/server';
 import { PartyListView } from '@/components/party/PartyListView';
 
 export const dynamic = 'force-dynamic';

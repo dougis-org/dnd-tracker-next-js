@@ -9,7 +9,7 @@ import {
   handlePaginatedResult,
   validateCharacterCreation
 } from './helpers/route-helpers';
-import { auth } from '@/lib/auth';
+import { auth } from '@clerk/nextjs/server';
 
 export async function GET(request: NextRequest) {
   try {
