@@ -1,14 +1,14 @@
 import { headers } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import { Webhook } from 'svix';
-import { WebhookEvent, UserJSON } from '@clerk/nextjs/server';
+import { WebhookEvent, UserJSON, DeletedObjectJSON } from '@clerk/nextjs/server';
 import User from '@/lib/models/User';
 import { connectToDatabase } from '@/lib/db';
 
 /**
  * Helper function to extract primary email from Clerk user data
  */
-function getPrimaryEmail(userData: UserJSON): { email_address: string; verification: { status: string } } {
+function getPrimaryEmail(userData: UserJSON) {
   const primaryEmail = userData.email_addresses?.find(
     (email) => email.id === userData.primary_email_address_id
   );
@@ -32,7 +32,7 @@ function getPrimaryEmail(userData: UserJSON): { email_address: string; verificat
 export async function POST(req: NextRequest) {
   try {
     // Get the headers
-    const headersList = headers();
+    const headersList = await headers();
     const svix_id = headersList.get('svix-id');
     const svix_timestamp = headersList.get('svix-timestamp');
     const svix_signature = headersList.get('svix-signature');
@@ -148,9 +148,9 @@ async function handleUserCreated(userData: UserJSON) {
   const clerkUserData = {
     clerkId: userData.id,
     email: primaryEmail.email_address,
-    firstName: userData.first_name || '',
-    lastName: userData.last_name || '',
-    username: userData.username,
+    firstName: userData.first_name || undefined,
+    lastName: userData.last_name || undefined,
+    username: userData.username || undefined,
     imageUrl: userData.image_url,
     emailVerified: primaryEmail.verification?.status === 'verified',
   };
@@ -175,9 +175,9 @@ async function handleUserUpdated(userData: UserJSON) {
   const clerkUserData = {
     clerkId: userData.id,
     email: primaryEmail.email_address,
-    firstName: userData.first_name,
-    lastName: userData.last_name,
-    username: userData.username,
+    firstName: userData.first_name || undefined,
+    lastName: userData.last_name || undefined,
+    username: userData.username || undefined,
     imageUrl: userData.image_url,
     emailVerified: primaryEmail.verification?.status === 'verified',
   };
@@ -192,8 +192,13 @@ async function handleUserUpdated(userData: UserJSON) {
 /**
  * Handle user.deleted webhook event
  */
-async function handleUserDeleted(userData: UserJSON) {
+async function handleUserDeleted(userData: DeletedObjectJSON) {
   console.log('Handling user deletion from Clerk webhook:', userData.id);
+
+  if (!userData.id) {
+    console.error('No user ID provided for deletion');
+    return;
+  }
 
   const user = await User.findByClerkId(userData.id);
   if (!user) {
