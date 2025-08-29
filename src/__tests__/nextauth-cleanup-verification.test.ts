@@ -103,7 +103,7 @@ describe('NextAuth Cleanup Verification - Issue #655', () => {
           // Prevent directory traversal by normalizing entry
           const sanitizedEntry = normalize(entry).replace(/^(\.\.\/)+/, '');
           const fullPath = resolve(dir, sanitizedEntry);
-          
+
           // Ensure path is still within the original directory
           if (!fullPath.startsWith(resolve(dir))) {
             continue;

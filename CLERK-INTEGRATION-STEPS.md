@@ -85,7 +85,7 @@
 
 #### ✅ Issue #655 - Remove NextAuth Code (COMPLETED - PR #674)
 
-**Summary**: Systematically removed all NextAuth code and dependencies from the codebase, 
+**Summary**: Systematically removed all NextAuth code and dependencies from the codebase,
 completing the Clerk migration cleanup.
 
 **Files Removed**:
