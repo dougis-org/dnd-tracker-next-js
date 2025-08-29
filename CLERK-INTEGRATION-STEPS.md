@@ -71,10 +71,10 @@
 - Session management is now handled by Clerk's `auth()` middleware and `useUser` hook.
 - Dashboard components are decoupled from the authentication logic and work seamlessly with Clerk.
 
-#### 🎯 Issue #658 - Update UI Components for Clerk (NEXT PRIORITY)
-- Convert auth-related UI components
-- Update user profile components
-- Ensure consistent Clerk theming
+#### 🎯 Issue #655 - Remove NextAuth Code (NEXT PRIORITY)
+- Clean up remaining NextAuth dependencies
+- Remove unused auth files
+- Clean up legacy authentication utilities
 
 #### Future Epic Tasks
 
@@ -151,7 +151,7 @@ The fundamental Clerk integration is now operational:
 
 ### Immediate Next Steps
 
-1. **Issue #658** - Focus on updating UI components for Clerk to ensure a consistent user experience.
+1. **Issue #655** - Focus on removing NextAuth code to finalize the migration.
 2. **Validate webhook system** - Ensure all Clerk events are properly handled
 3. **UI/UX polish** - Ensure consistent user experience across auth flows
 4. **Performance optimization** - Review and optimize authentication middleware performance
@@ -167,9 +167,6 @@ The fundamental Clerk integration is now operational:
 ## Notes for Resumption
 
 - Working directory: `/home/doug/ai-dev-1/dnd-tracker-next-js`
-- Current branch: `feature/issue-654-login-logout-flows`
-- Repository: `dougis-org/dnd-tracker-next-js`
-- Epic: NextAuth to Clerk Migration (#650) - ~70% complete
-- Next priority: Issue #658 - Update UI Components for Clerk
+- Next priority: Issue #655 - Remove NextAuth Code
 - Quality checks required: ESLint, TypeScript, Codacy scan after each change
 - Continue TDD approach with comprehensive testing
