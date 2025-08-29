@@ -1,54 +1,41 @@
-import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import User, { ClerkUserData } from '../User';
+import {
+  setupUserTestEnvironment,
+  setupUserTestDatabase,
+  cleanupUserTestDatabase,
+  clearUserTestCollections,
+  sampleClerkUserData,
+  sampleClerkUserDataWithoutUsername,
+  sampleClerkUserDataMinimal,
+  sampleClerkUserDataForUpdate,
+  sampleClerkUserDataUpdated,
+  sampleClerkUserDataPartial,
+  expectValidClerkUser,
+  expectDefaultPreferences,
+} from './user-test-utils';
 
-// Setup test timeout
-jest.setTimeout(30000);
+// Setup test environment
+setupUserTestEnvironment();
 
 describe('User Model - Clerk Integration', () => {
   let mongoServer: MongoMemoryServer;
 
   beforeAll(async () => {
-    // Disconnect any existing connections
-    if (mongoose.connection.readyState !== 0) {
-      await mongoose.connection.close();
-    }
-
-    mongoServer = await MongoMemoryServer.create();
-    const mongoUri = mongoServer.getUri();
-    await mongoose.connect(mongoUri);
+    mongoServer = await setupUserTestDatabase();
   });
 
   afterAll(async () => {
-    if (mongoose.connection.readyState !== 0) {
-      await mongoose.connection.close();
-    }
-    if (mongoServer) {
-      await mongoServer.stop();
-    }
+    await cleanupUserTestDatabase(mongoServer);
   });
 
   beforeEach(async () => {
-    // Clear all collections
-    const collections = mongoose.connection.collections;
-    for (const key in collections) {
-      await collections[key].deleteMany({});
-    }
+    await clearUserTestCollections();
   });
 
   describe('findByClerkId', () => {
     it('should find user by Clerk ID', async () => {
-      const clerkUserData: ClerkUserData = {
-        clerkId: 'clerk_123',
-        email: 'test@example.com',
-        firstName: 'John',
-        lastName: 'Doe',
-        username: 'johndoe',
-        imageUrl: 'https://example.com/avatar.jpg',
-        emailVerified: true,
-      };
-
-      await User.createClerkUser(clerkUserData);
+      await User.createClerkUser(sampleClerkUserData);
       const foundUser = await User.findByClerkId('clerk_123');
 
       expect(foundUser).toBeTruthy();
@@ -64,42 +51,12 @@ describe('User Model - Clerk Integration', () => {
 
   describe('createClerkUser', () => {
     it('should create a new user from Clerk data', async () => {
-      const clerkUserData: ClerkUserData = {
-        clerkId: 'clerk_123',
-        email: 'test@example.com',
-        firstName: 'John',
-        lastName: 'Doe',
-        username: 'johndoe',
-        imageUrl: 'https://example.com/avatar.jpg',
-        emailVerified: true,
-      };
-
-      const user = await User.createClerkUser(clerkUserData);
-
-      expect(user.clerkId).toBe('clerk_123');
-      expect(user.email).toBe('test@example.com');
-      expect(user.firstName).toBe('John');
-      expect(user.lastName).toBe('Doe');
-      expect(user.username).toBe('johndoe');
-      expect(user.imageUrl).toBe('https://example.com/avatar.jpg');
-      expect(user.isEmailVerified).toBe(true);
-      expect(user.authProvider).toBe('clerk');
-      expect(user.syncStatus).toBe('active');
-      expect(user.role).toBe('user');
-      expect(user.subscriptionTier).toBe('free');
-      expect(user.lastClerkSync).toBeDefined();
+      const user = await User.createClerkUser(sampleClerkUserData);
+      expectValidClerkUser(user, sampleClerkUserData);
     });
 
     it('should create user without username and generate one', async () => {
-      const clerkUserData: ClerkUserData = {
-        clerkId: 'clerk_456',
-        email: 'jane@example.com',
-        firstName: 'Jane',
-        lastName: 'Smith',
-        emailVerified: false,
-      };
-
-      const user = await User.createClerkUser(clerkUserData);
+      const user = await User.createClerkUser(sampleClerkUserDataWithoutUsername);
 
       expect(user.clerkId).toBe('clerk_456');
       expect(user.email).toBe('jane@example.com');
@@ -164,21 +121,8 @@ describe('User Model - Clerk Integration', () => {
     });
 
     it('should set default preferences correctly', async () => {
-      const clerkUserData: ClerkUserData = {
-        clerkId: 'clerk_prefs',
-        email: 'prefs@example.com',
-        emailVerified: true,
-      };
-
-      const user = await User.createClerkUser(clerkUserData);
-
-      expect(user.preferences.theme).toBe('system');
-      expect(user.preferences.emailNotifications).toBe(true);
-      expect(user.preferences.browserNotifications).toBe(false);
-      expect(user.preferences.timezone).toBe('UTC');
-      expect(user.preferences.language).toBe('en');
-      expect(user.preferences.diceRollAnimations).toBe(true);
-      expect(user.preferences.autoSaveEncounters).toBe(true);
+      const user = await User.createClerkUser(sampleClerkUserDataMinimal);
+      expectDefaultPreferences(user);
     });
   });
 
@@ -186,29 +130,11 @@ describe('User Model - Clerk Integration', () => {
     let existingUser: any;
 
     beforeEach(async () => {
-      const clerkUserData: ClerkUserData = {
-        clerkId: 'clerk_update',
-        email: 'original@example.com',
-        firstName: 'Original',
-        lastName: 'User',
-        username: 'originaluser',
-        emailVerified: false,
-      };
-      existingUser = await User.createClerkUser(clerkUserData);
+      existingUser = await User.createClerkUser(sampleClerkUserDataForUpdate);
     });
 
     it('should update user data from Clerk', async () => {
-      const updatedClerkData: ClerkUserData = {
-        clerkId: 'clerk_update',
-        email: 'updated@example.com',
-        firstName: 'Updated',
-        lastName: 'User',
-        username: 'updateduser',
-        imageUrl: 'https://example.com/new-avatar.jpg',
-        emailVerified: true,
-      };
-
-      const updatedUser = await User.updateFromClerkData('clerk_update', updatedClerkData);
+      const updatedUser = await User.updateFromClerkData('clerk_update', sampleClerkUserDataUpdated);
 
       expect(updatedUser.email).toBe('updated@example.com');
       expect(updatedUser.firstName).toBe('Updated');
@@ -220,14 +146,7 @@ describe('User Model - Clerk Integration', () => {
     });
 
     it('should preserve existing data when Clerk data is missing', async () => {
-      const partialClerkData: ClerkUserData = {
-        clerkId: 'clerk_update',
-        email: 'newemail@example.com',
-        // firstName, lastName, etc. are missing
-        emailVerified: true,
-      };
-
-      const updatedUser = await User.updateFromClerkData('clerk_update', partialClerkData);
+      const updatedUser = await User.updateFromClerkData('clerk_update', sampleClerkUserDataPartial);
 
       expect(updatedUser.email).toBe('newemail@example.com');
       expect(updatedUser.firstName).toBe('Original'); // Should preserve original
@@ -253,13 +172,7 @@ describe('User Model - Clerk Integration', () => {
       // Wait a bit to ensure timestamp difference
       await new Promise(resolve => setTimeout(resolve, 10));
 
-      const updatedClerkData: ClerkUserData = {
-        clerkId: 'clerk_update',
-        email: 'updated@example.com',
-        emailVerified: true,
-      };
-
-      const updatedUser = await User.updateFromClerkData('clerk_update', updatedClerkData);
+      const updatedUser = await User.updateFromClerkData('clerk_update', sampleClerkUserDataPartial);
 
       expect(updatedUser.lastClerkSync.getTime()).toBeGreaterThan(originalSyncTime.getTime());
     });

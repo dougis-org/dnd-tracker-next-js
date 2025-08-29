@@ -1,16 +1,23 @@
-import { NextRequest } from 'next/server';
 import { POST } from '../route';
 import User from '@/lib/models/User';
 import { connectToDatabase } from '@/lib/db';
-import { Webhook } from 'svix';
+import {
+  setupWebhookTestEnvironment,
+  setupWebhookMocks,
+  cleanupWebhookMocks,
+  createMockWebhook,
+  createWebhookRequest,
+  expectSuccessfulWebhookResponse,
+  expectFailedWebhookResponse,
+  mockClerkUserData,
+} from './webhook-test-utils';
 
 // Mock dependencies
 jest.mock('@/lib/models/User');
 jest.mock('@/lib/db');
-jest.mock('svix');
-jest.mock('next/headers', () => ({
-  headers: jest.fn(),
-}));
+
+// Setup test environment
+setupWebhookTestEnvironment();
 
 describe('/api/webhooks/clerk', () => {
   const mockUser = {
@@ -22,46 +29,16 @@ describe('/api/webhooks/clerk', () => {
     save: jest.fn(),
   };
 
-  const mockHeaders = {
-    'svix-id': 'msg_test_id',
-    'svix-timestamp': '1234567890',
-    'svix-signature': 'v1,signature',
-  };
-
-  const mockClerkUserData = {
-    id: 'clerk_user_123',
-    first_name: 'John',
-    last_name: 'Doe',
-    username: 'johndoe',
-    image_url: 'https://example.com/avatar.jpg',
-    primary_email_address_id: 'email_123',
-    email_addresses: [
-      {
-        id: 'email_123',
-        email_address: 'test@example.com',
-        verification: { status: 'verified' },
-      },
-    ],
-  };
-
   beforeEach(() => {
     jest.clearAllMocks();
-
-    // Mock environment variable
-    process.env.CLERK_WEBHOOK_SECRET = 'test-webhook-secret';
-
-    // Mock headers
-    const mockHeadersFunction = require('next/headers').headers;
-    mockHeadersFunction.mockReturnValue({
-      get: jest.fn((key: string) => mockHeaders[key as keyof typeof mockHeaders]),
-    });
+    setupWebhookMocks();
 
     // Mock database connection
     (connectToDatabase as jest.Mock).mockResolvedValue(undefined);
   });
 
   afterEach(() => {
-    delete process.env.CLERK_WEBHOOK_SECRET;
+    cleanupWebhookMocks();
   });
 
   describe('Webhook Signature Verification', () => {
@@ -145,28 +122,17 @@ describe('/api/webhooks/clerk', () => {
 
   describe('user.created Event', () => {
     beforeEach(() => {
-      const mockWebhook = {
-        verify: jest.fn().mockReturnValue({
-          type: 'user.created',
-          data: mockClerkUserData,
-        }),
-      };
-      (Webhook as jest.Mock).mockImplementation(() => mockWebhook);
+      createMockWebhook('user.created', mockClerkUserData);
     });
 
     it('should create a new user successfully', async () => {
       (User.createClerkUser as jest.Mock).mockResolvedValue(mockUser);
 
-      const request = new NextRequest('http://localhost/api/webhooks/clerk', {
-        method: 'POST',
-        body: JSON.stringify({ type: 'user.created', data: mockClerkUserData }),
-      });
-
+      const request = createWebhookRequest('user.created', mockClerkUserData);
       const response = await POST(request);
       const data = await response.json();
 
-      expect(response.status).toBe(200);
-      expect(data.message).toBe('Webhook processed successfully');
+      expectSuccessfulWebhookResponse(response, data);
       expect(User.createClerkUser).toHaveBeenCalledWith({
         clerkId: 'clerk_user_123',
         email: 'test@example.com',
@@ -207,43 +173,27 @@ describe('/api/webhooks/clerk', () => {
     it('should handle user creation errors', async () => {
       (User.createClerkUser as jest.Mock).mockRejectedValue(new Error('User creation failed'));
 
-      const request = new NextRequest('http://localhost/api/webhooks/clerk', {
-        method: 'POST',
-        body: JSON.stringify({ type: 'user.created', data: mockClerkUserData }),
-      });
-
+      const request = createWebhookRequest('user.created', mockClerkUserData);
       const response = await POST(request);
       const data = await response.json();
 
-      expect(response.status).toBe(500);
-      expect(data.error).toBe('Failed to process webhook');
+      expectFailedWebhookResponse(response, data, 500, 'Failed to process webhook');
     });
   });
 
   describe('user.updated Event', () => {
     beforeEach(() => {
-      const mockWebhook = {
-        verify: jest.fn().mockReturnValue({
-          type: 'user.updated',
-          data: mockClerkUserData,
-        }),
-      };
-      (Webhook as jest.Mock).mockImplementation(() => mockWebhook);
+      createMockWebhook('user.updated', mockClerkUserData);
     });
 
     it('should update an existing user successfully', async () => {
       (User.updateFromClerkData as jest.Mock).mockResolvedValue(mockUser);
 
-      const request = new NextRequest('http://localhost/api/webhooks/clerk', {
-        method: 'POST',
-        body: JSON.stringify({ type: 'user.updated', data: mockClerkUserData }),
-      });
-
+      const request = createWebhookRequest('user.updated', mockClerkUserData);
       const response = await POST(request);
       const data = await response.json();
 
-      expect(response.status).toBe(200);
-      expect(data.message).toBe('Webhook processed successfully');
+      expectSuccessfulWebhookResponse(response, data);
       expect(User.updateFromClerkData).toHaveBeenCalledWith('clerk_user_123', {
         clerkId: 'clerk_user_123',
         email: 'test@example.com',
@@ -258,44 +208,28 @@ describe('/api/webhooks/clerk', () => {
     it('should handle user update errors', async () => {
       (User.updateFromClerkData as jest.Mock).mockRejectedValue(new Error('User update failed'));
 
-      const request = new NextRequest('http://localhost/api/webhooks/clerk', {
-        method: 'POST',
-        body: JSON.stringify({ type: 'user.updated', data: mockClerkUserData }),
-      });
-
+      const request = createWebhookRequest('user.updated', mockClerkUserData);
       const response = await POST(request);
       const data = await response.json();
 
-      expect(response.status).toBe(500);
-      expect(data.error).toBe('Failed to process webhook');
+      expectFailedWebhookResponse(response, data, 500, 'Failed to process webhook');
     });
   });
 
   describe('user.deleted Event', () => {
     beforeEach(() => {
-      const mockWebhook = {
-        verify: jest.fn().mockReturnValue({
-          type: 'user.deleted',
-          data: mockClerkUserData,
-        }),
-      };
-      (Webhook as jest.Mock).mockImplementation(() => mockWebhook);
+      createMockWebhook('user.deleted', mockClerkUserData);
     });
 
     it('should handle user deletion successfully', async () => {
       (User.findByClerkId as jest.Mock).mockResolvedValue(mockUser);
       mockUser.save.mockResolvedValue(mockUser);
 
-      const request = new NextRequest('http://localhost/api/webhooks/clerk', {
-        method: 'POST',
-        body: JSON.stringify({ type: 'user.deleted', data: mockClerkUserData }),
-      });
-
+      const request = createWebhookRequest('user.deleted', mockClerkUserData);
       const response = await POST(request);
       const data = await response.json();
 
-      expect(response.status).toBe(200);
-      expect(data.message).toBe('Webhook processed successfully');
+      expectSuccessfulWebhookResponse(response, data);
       expect(User.findByClerkId).toHaveBeenCalledWith('clerk_user_123');
       expect(mockUser.save).toHaveBeenCalled();
     });
@@ -303,35 +237,19 @@ describe('/api/webhooks/clerk', () => {
     it('should handle deletion of non-existent user', async () => {
       (User.findByClerkId as jest.Mock).mockResolvedValue(null);
 
-      const request = new NextRequest('http://localhost/api/webhooks/clerk', {
-        method: 'POST',
-        body: JSON.stringify({ type: 'user.deleted', data: mockClerkUserData }),
-      });
-
+      const request = createWebhookRequest('user.deleted', mockClerkUserData);
       const response = await POST(request);
       const data = await response.json();
 
-      expect(response.status).toBe(200);
-      expect(data.message).toBe('Webhook processed successfully');
+      expectSuccessfulWebhookResponse(response, data);
       expect(User.findByClerkId).toHaveBeenCalledWith('clerk_user_123');
     });
   });
 
   describe('Unhandled Events', () => {
     it('should handle unrecognized event types gracefully', async () => {
-      const mockWebhook = {
-        verify: jest.fn().mockReturnValue({
-          type: 'user.unknown_event',
-          data: mockClerkUserData,
-        }),
-      };
-      (Webhook as jest.Mock).mockImplementation(() => mockWebhook);
-
-      const request = new NextRequest('http://localhost/api/webhooks/clerk', {
-        method: 'POST',
-        body: JSON.stringify({ type: 'user.unknown_event', data: mockClerkUserData }),
-      });
-
+      createMockWebhook('user.unknown_event', mockClerkUserData);
+      const request = createWebhookRequest('user.unknown_event', mockClerkUserData);
       const response = await POST(request);
       const data = await response.json();
 
