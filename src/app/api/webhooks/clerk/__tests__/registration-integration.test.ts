@@ -10,6 +10,9 @@ import User from '@/lib/models/User';
 import { connectToDatabase } from '@/lib/db';
 import {
   createMockUser,
+  USER_MODEL_MOCK,
+  expectUserCreatedWithData,
+  expectSuccessfulWebhookResponse,
 } from '@/test-utils/user-registration-mocks';
 import {
   setupWebhookTestEnvironment,
@@ -21,16 +24,7 @@ import {
 } from './webhook-test-utils';
 
 // Mock dependencies
-jest.mock('@/lib/models/User', () => ({
-  __esModule: true,
-  default: {
-    createClerkUser: jest.fn(),
-    findByClerkId: jest.fn(),
-    updateFromClerkData: jest.fn(),
-    findByIdAndUpdate: jest.fn(),
-    deleteMany: jest.fn(),
-  }
-}));
+jest.mock('@/lib/models/User', () => USER_MODEL_MOCK);
 jest.mock('@/lib/db');
 
 // Setup test environment
@@ -60,17 +54,9 @@ describe('Enhanced Registration Flow Integration', () => {
       createMockWebhook('user.created', mockClerkUserData);
       const request = createWebhookRequest('user.created', mockClerkUserData);
       const response = await POST(request);
-      const data = await response.json();
 
-      // Debug output
-      if (response.status !== 200) {
-        console.log('Response status:', response.status);
-        console.log('Response data:', data);
-      }
-
-      expect(response.status).toBe(200);
-      expect(data.message).toBe('Webhook processed successfully');
-      expect(User.createClerkUser).toHaveBeenCalledWith({
+      await expectSuccessfulWebhookResponse(response);
+      expectUserCreatedWithData({
         clerkId: 'clerk_user_123',
         email: 'test@example.com',
         firstName: 'John',
@@ -106,10 +92,9 @@ describe('Enhanced Registration Flow Integration', () => {
 
       const request = createWebhookRequest('user.created', minimalClerkData);
       const response = await POST(request);
-      const _data = await response.json();
 
-      expect(response.status).toBe(200);
-      expect(User.createClerkUser).toHaveBeenCalledWith({
+      await expectSuccessfulWebhookResponse(response);
+      expectUserCreatedWithData({
         clerkId: 'clerk_user_minimal',
         email: 'minimal@example.com',
         firstName: undefined,
@@ -206,8 +191,8 @@ describe('Enhanced Registration Flow Integration', () => {
       const request = createWebhookRequest('user.created', clerkData);
       const response = await POST(request);
 
-      expect(response.status).toBe(200);
-      expect(User.createClerkUser).toHaveBeenCalledWith({
+      await expectSuccessfulWebhookResponse(response);
+      expectUserCreatedWithData({
         clerkId: 'clerk_123',
         email: 'mapping@test.com', // Should be lowercase
         firstName: 'Test',

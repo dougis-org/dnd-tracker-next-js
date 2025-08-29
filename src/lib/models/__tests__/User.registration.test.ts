@@ -3,11 +3,12 @@
  * Tests user creation with enhanced profile initialization
  */
 
-import mongoose from 'mongoose';
 import User from '../User';
 import {
   createMockClerkUserData,
   createMinimalClerkUserData,
+  setupTestCleanup,
+  setupMockUserForTest,
 } from '@/test-utils/user-registration-mocks';
 
 // Mock database connection
@@ -26,37 +27,12 @@ jest.mock('../User', () => ({
 }));
 
 describe('User Model - Registration Enhancement', () => {
-  beforeEach(async () => {
-    // Clear all mocks before each test
-    jest.clearAllMocks();
-  });
+  setupTestCleanup();
 
   describe('Enhanced User Profile Creation', () => {
     it('should create user with complete default profile structure', async () => {
       const clerkUserData = createMockClerkUserData();
-      const mockUser = {
-        clerkId: 'clerk_123',
-        email: 'test@example.com',
-        firstName: 'John',
-        lastName: 'Doe',
-        username: 'johndoe',
-        subscriptionTier: 'free',
-        authProvider: 'clerk',
-        syncStatus: 'active',
-        profileSetupCompleted: false,
-        isEmailVerified: true,
-        preferences: {
-          theme: 'system',
-          emailNotifications: true,
-          browserNotifications: false,
-          timezone: 'UTC',
-          language: 'en',
-          diceRollAnimations: true,
-          autoSaveEncounters: true,
-        },
-      };
-
-      (User.createClerkUser as jest.Mock).mockResolvedValue(mockUser);
+      setupMockUserForTest();
 
       const user = await User.createClerkUser(clerkUserData);
 
@@ -83,6 +59,13 @@ describe('User Model - Registration Enhancement', () => {
 
     it('should handle user creation with minimal data', async () => {
       const minimalClerkUserData = createMinimalClerkUserData();
+      setupMockUserForTest({
+        clerkId: 'clerk_minimal',
+        email: 'minimal@example.com',
+        firstName: '',
+        lastName: '',
+        isEmailVerified: false,
+      });
 
       const user = await User.createClerkUser(minimalClerkUserData);
 
@@ -124,16 +107,13 @@ describe('User Model - Registration Enhancement', () => {
   describe('Subscription Tier Management', () => {
     it('should assign default free tier to new users', async () => {
       const clerkUserData = createMinimalClerkUserData();
-
       const user = await User.createClerkUser(clerkUserData);
-
       expect(user.subscriptionTier).toBe('free');
       expect(user.isSubscriptionActive()).toBe(true);
     });
 
     it('should properly check feature access limits', async () => {
       const clerkUserData = createMinimalClerkUserData();
-
       const user = await User.createClerkUser(clerkUserData);
 
       // Free tier limits
@@ -149,9 +129,7 @@ describe('User Model - Registration Enhancement', () => {
   describe('Profile Setup Status Management', () => {
     it('should create users with profileSetupCompleted as false', async () => {
       const clerkUserData = createMinimalClerkUserData();
-
       const user = await User.createClerkUser(clerkUserData);
-
       expect(user.profileSetupCompleted).toBe(false);
     });
 
@@ -178,9 +156,7 @@ describe('User Model - Registration Enhancement', () => {
   describe('Sync Status Management', () => {
     it('should set active sync status for new users', async () => {
       const clerkUserData = createMinimalClerkUserData();
-
       const user = await User.createClerkUser(clerkUserData);
-
       expect(user.syncStatus).toBe('active');
       expect(user.lastClerkSync).toBeInstanceOf(Date);
       expect(user.authProvider).toBe('clerk');

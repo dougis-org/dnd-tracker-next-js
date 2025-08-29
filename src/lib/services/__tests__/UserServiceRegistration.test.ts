@@ -10,18 +10,12 @@ import {
   createMockUser,
   createMockClerkUserData,
   createMinimalClerkUserData,
+  USER_MODEL_MOCK,
+  testFeatureAccessOnUser,
 } from '@/test-utils/user-registration-mocks';
 
 // Mock dependencies
-jest.mock('@/lib/models/User', () => ({
-  __esModule: true,
-  default: {
-    createClerkUser: jest.fn(),
-    findByClerkId: jest.fn(),
-    updateFromClerkData: jest.fn(),
-    findByIdAndUpdate: jest.fn(),
-  }
-}));
+jest.mock('@/lib/models/User', () => USER_MODEL_MOCK);
 jest.mock('@/lib/db');
 
 describe('UserService - Registration Integration', () => {
@@ -103,10 +97,7 @@ describe('UserService - Registration Integration', () => {
       const user = await UserService.getUserByClerkId('clerk_123');
 
       if (user) {
-        expect(user.canAccessFeature('parties', 1)).toBe(true);
-        expect(user.canAccessFeature('parties', 2)).toBe(false);
-        expect(user.canAccessFeature('encounters', 3)).toBe(true);
-        expect(user.canAccessFeature('encounters', 4)).toBe(false);
+        testFeatureAccessOnUser(user);
       }
     });
 
