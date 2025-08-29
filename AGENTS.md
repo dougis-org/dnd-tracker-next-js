@@ -13,6 +13,7 @@ All AI agents working in this repository must follow the guidelines and directio
   - performing automated actions
 - **Updates:** If `CONTRIBUTING.md` is updated, agents must **immediately** begin following the new instructions.
 - **Organization and Repository:** Read the Github organization and repository from the remote information of the local branch
+  - The organization should be dougis-org (verify by checking the remote info if any errors occur)
 - **Code Structure:** Use the repomix-output.xml file in the root of the project
   - This file outlines the overall project structure and code patterns
   - **Always** maintain existing patterns and reuse code that already exists
