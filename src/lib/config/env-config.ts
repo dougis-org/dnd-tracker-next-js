@@ -2,55 +2,52 @@
  * Environment Configuration Utilities (Issue #482)
  *
  * Centralized and secure access to environment variables
- * following NextAuth patterns and security best practices
+ * Updated to use Clerk authentication
  */
 
 /**
- * Safely retrieves NEXTAUTH_SECRET environment variable
- * Following NextAuth's pattern from @auth/core
+ * Safely retrieves Clerk publishable key environment variable
  *
- * @returns The NextAuth secret or undefined if not available
+ * @returns The Clerk publishable key or undefined if not available
  */
-export function getNextAuthSecret(): string | undefined {
-  // Follow NextAuth's precedence: AUTH_SECRET first, then NEXTAUTH_SECRET
-  return process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET;
+export function getClerkPublishableKey(): string | undefined {
+  return process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 }
 
 /**
- * Safely retrieves NEXTAUTH_URL environment variable
- * Following NextAuth's pattern from @auth/core
+ * Safely retrieves Clerk secret key environment variable
  *
- * @returns The NextAuth URL or undefined if not available
+ * @returns The Clerk secret key or undefined if not available
  */
-export function getNextAuthUrl(): string | undefined {
-  return process.env.AUTH_URL ?? process.env.NEXTAUTH_URL;
+export function getClerkSecretKey(): string | undefined {
+  return process.env.CLERK_SECRET_KEY;
 }
 
 /**
  * Gets the session cookie name based on environment
- * Matches the pattern used in auth.ts configuration
+ * Updated to use Clerk's session management
  *
  * @returns The appropriate session cookie name
  */
 export function getSessionCookieName(): string {
   return process.env.NODE_ENV === 'production'
-    ? '__Secure-next-auth.session-token'
-    : 'next-auth.session-token';
+    ? '__Secure-clerk-session'
+    : 'clerk-session';
 }
 
 /**
- * Validates that required environment variables are available
+ * Validates that required Clerk environment variables are available
  * Useful for startup checks and debugging
  *
  * @returns Object with validation results
  */
 export function validateEnvironmentConfig() {
-  const secret = getNextAuthSecret();
-  const url = getNextAuthUrl();
+  const publishableKey = getClerkPublishableKey();
+  const secretKey = getClerkSecretKey();
 
   return {
-    hasSecret: !!secret,
-    hasUrl: !!url,
+    hasPublishableKey: !!publishableKey,
+    hasSecretKey: !!secretKey,
     cookieName: getSessionCookieName(),
     nodeEnv: process.env.NODE_ENV || 'development',
   };
