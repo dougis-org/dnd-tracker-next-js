@@ -220,10 +220,13 @@ const userSchema = new Schema<IUser, UserModel>(
     },
     passwordHash: {
       type: String,
-      required: function() {
-        // Password hash only required for local auth users
-        return this.authProvider === 'local';
-      },
+      required: [
+        function() {
+          // Password hash only required for local auth users
+          return this.authProvider === 'local';
+        },
+        'Password hash is required for local auth users'
+      ],
     },
     clerkId: {
       type: String,
@@ -655,7 +658,11 @@ userSchema.statics.findByClerkId = async function (
 
 // Helper function to generate unique username from email
 function generateUsernameFromEmail(email: string): string {
-  const baseUsername = email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
+  let baseUsername = email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
+  if (!baseUsername) {
+    // fallback: use 'user' + random 6 hex chars
+    baseUsername = 'user' + crypto.randomBytes(3).toString('hex');
+  }
   return baseUsername.substring(0, 20); // Limit length
 }
 
@@ -669,28 +676,17 @@ userSchema.statics.createClerkUser = async function (
     throw new Error('User with this Clerk ID already exists');
   }
 
-  // Generate username if not provided
-  let username = clerkUserData.username;
-  if (!username) {
-    const baseUsername = generateUsernameFromEmail(clerkUserData.email);
-    username = baseUsername;
+  // Generate username if not provided, and ensure it's unique
+  let username = clerkUserData.username || generateUsernameFromEmail(clerkUserData.email);
 
-    // Check for duplicates and add suffix if needed
+  if (await this.findByUsername(username)) {
+    const baseUsername = username;
     let counter = 1;
+    // This loop will continue until a unique username is found.
+    // In a high-traffic environment, consider adding a limit to prevent infinite loops.
     while (await this.findByUsername(username)) {
       username = `${baseUsername}${counter}`;
       counter++;
-    }
-  } else {
-    // Check if username already exists
-    const existingUsername = await this.findByUsername(username);
-    if (existingUsername) {
-      let counter = 1;
-      const baseUsername = username;
-      while (await this.findByUsername(username)) {
-        username = `${baseUsername}${counter}`;
-        counter++;
-      }
     }
   }
 
@@ -699,10 +695,10 @@ userSchema.statics.createClerkUser = async function (
     clerkId: clerkUserData.clerkId,
     email: clerkUserData.email.toLowerCase(),
     username: username.toLowerCase(),
-    firstName: clerkUserData.firstName || '',
-    lastName: clerkUserData.lastName || '',
+    firstName: clerkUserData.firstName ?? '',
+    lastName: clerkUserData.lastName ?? '',
     imageUrl: clerkUserData.imageUrl,
-    isEmailVerified: clerkUserData.emailVerified || false,
+    isEmailVerified: clerkUserData.emailVerified ?? false,
     authProvider: 'clerk',
     syncStatus: 'active',
     lastClerkSync: new Date(),
@@ -735,9 +731,9 @@ userSchema.statics.updateFromClerkData = async function (
 
   // Update fields that might have changed in Clerk
   user.email = clerkUserData.email.toLowerCase();
-  user.firstName = clerkUserData.firstName || user.firstName;
-  user.lastName = clerkUserData.lastName || user.lastName;
-  user.imageUrl = clerkUserData.imageUrl || user.imageUrl;
+  user.firstName = clerkUserData.firstName ?? user.firstName;
+  user.lastName = clerkUserData.lastName ?? user.lastName;
+  user.imageUrl = clerkUserData.imageUrl ?? user.imageUrl;
   user.isEmailVerified = clerkUserData.emailVerified ?? user.isEmailVerified;
   user.lastClerkSync = new Date();
   user.syncStatus = 'active';

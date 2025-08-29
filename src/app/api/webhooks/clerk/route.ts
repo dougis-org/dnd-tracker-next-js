@@ -1,9 +1,24 @@
 import { headers } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import { Webhook } from 'svix';
-import { WebhookEvent } from '@clerk/nextjs/server';
+import { WebhookEvent, UserJSON } from '@clerk/nextjs/server';
 import User from '@/lib/models/User';
 import { connectToDatabase } from '@/lib/db';
+
+/**
+ * Helper function to extract primary email from Clerk user data
+ */
+function getPrimaryEmail(userData: UserJSON): { email_address: string; verification: { status: string } } {
+  const primaryEmail = userData.email_addresses?.find(
+    (email) => email.id === userData.primary_email_address_id
+  );
+
+  if (!primaryEmail) {
+    throw new Error('No primary email address found for user');
+  }
+
+  return primaryEmail;
+}
 
 /**
  * Clerk Webhook Handler
@@ -17,7 +32,7 @@ import { connectToDatabase } from '@/lib/db';
 export async function POST(req: NextRequest) {
   try {
     // Get the headers
-    const headersList = await headers();
+    const headersList = headers();
     const svix_id = headersList.get('svix-id');
     const svix_timestamp = headersList.get('svix-timestamp');
     const svix_signature = headersList.get('svix-signature');
@@ -123,17 +138,11 @@ export async function POST(req: NextRequest) {
 /**
  * Handle user.created webhook event
  */
-async function handleUserCreated(userData: any) {
+async function handleUserCreated(userData: UserJSON) {
   console.log('Creating user from Clerk webhook:', userData.id);
 
   // Extract primary email address
-  const primaryEmail = userData.email_addresses?.find(
-    (email: any) => email.id === userData.primary_email_address_id
-  );
-
-  if (!primaryEmail) {
-    throw new Error('No primary email address found for user');
-  }
+  const primaryEmail = getPrimaryEmail(userData);
 
   // Map Clerk data to our user format
   const clerkUserData = {
@@ -156,17 +165,11 @@ async function handleUserCreated(userData: any) {
 /**
  * Handle user.updated webhook event
  */
-async function handleUserUpdated(userData: any) {
+async function handleUserUpdated(userData: UserJSON) {
   console.log('Updating user from Clerk webhook:', userData.id);
 
   // Extract primary email address
-  const primaryEmail = userData.email_addresses?.find(
-    (email: any) => email.id === userData.primary_email_address_id
-  );
-
-  if (!primaryEmail) {
-    throw new Error('No primary email address found for user');
-  }
+  const primaryEmail = getPrimaryEmail(userData);
 
   // Map Clerk data to our user format
   const clerkUserData = {
@@ -189,7 +192,7 @@ async function handleUserUpdated(userData: any) {
 /**
  * Handle user.deleted webhook event
  */
-async function handleUserDeleted(userData: any) {
+async function handleUserDeleted(userData: UserJSON) {
   console.log('Handling user deletion from Clerk webhook:', userData.id);
 
   const user = await User.findByClerkId(userData.id);
