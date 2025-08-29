@@ -6,8 +6,9 @@ jest.mock('next/navigation', () => ({
   redirect: jest.fn(),
 }));
 
-// Mock auth function
-jest.mock('@/lib/auth', () => ({
+// Mock Clerk's auth function
+jest.mock('@clerk/nextjs/server', () => ({
+  ...jest.requireActual('@clerk/nextjs/server'),
   auth: jest.fn(),
 }));
 
@@ -32,7 +33,7 @@ describe('PartiesPage', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockAuth = require('@/lib/auth').auth;
+    mockAuth = require('@clerk/nextjs/server').auth;
     mockRedirect = require('next/navigation').redirect;
 
     // Mock redirect to throw an error like Next.js does
@@ -49,14 +50,18 @@ describe('PartiesPage', () => {
       const PartiesPageResolved = await PartiesPage();
       render(PartiesPageResolved);
 
-      expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Parties');
+      expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
+        'Parties'
+      );
     });
 
     it('should render the page description', async () => {
       const PartiesPageResolved = await PartiesPage();
       render(PartiesPageResolved);
 
-      expect(screen.getByText('Manage and organize your D&D parties')).toBeInTheDocument();
+      expect(
+        screen.getByText('Manage and organize your D&D parties')
+      ).toBeInTheDocument();
     });
 
     it('should render the PartyListView component', async () => {
@@ -80,7 +85,9 @@ describe('PartiesPage', () => {
       const heading = screen.getByRole('heading', { level: 1 });
       expect(heading).toHaveClass('text-3xl', 'font-bold', 'tracking-tight');
 
-      const description = screen.getByText('Manage and organize your D&D parties');
+      const description = screen.getByText(
+        'Manage and organize your D&D parties'
+      );
       expect(description).toHaveClass('text-muted-foreground');
     });
   });
@@ -99,14 +106,18 @@ describe('PartiesPage', () => {
     it('should redirect when user is not authenticated', async () => {
       mockAuth.mockResolvedValue(null);
 
-      await expect(PartiesPage()).rejects.toThrow('REDIRECT: /signin?callbackUrl=/parties');
+      await expect(PartiesPage()).rejects.toThrow(
+        'REDIRECT: /signin?callbackUrl=/parties'
+      );
       expect(mockRedirect).toHaveBeenCalledWith('/signin?callbackUrl=/parties');
     });
 
     it('should redirect when session exists but no user id', async () => {
       mockAuth.mockResolvedValue({ user: {} });
 
-      await expect(PartiesPage()).rejects.toThrow('REDIRECT: /signin?callbackUrl=/parties');
+      await expect(PartiesPage()).rejects.toThrow(
+        'REDIRECT: /signin?callbackUrl=/parties'
+      );
       expect(mockRedirect).toHaveBeenCalledWith('/signin?callbackUrl=/parties');
     });
 
