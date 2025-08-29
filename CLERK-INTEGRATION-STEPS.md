@@ -66,10 +66,15 @@
 
 ### Current Priority: Next Steps in Epic
 
-#### 🎯 Issue #654 - User Login/Logout Flows (NEXT PRIORITY)
-- Replace login/logout functionality with Clerk
-- Update session management
-- Integrate with existing user dashboard components
+#### ✅ Issue #654 - User Login/Logout Flows (COMPLETED)
+- Replaced login/logout functionality with Clerk's `<SignIn />` and `<SignOut />` components.
+- Session management is now handled by Clerk's `auth()` middleware and `useUser` hook.
+- Dashboard components are decoupled from the authentication logic and work seamlessly with Clerk.
+
+#### 🎯 Issue #658 - Update UI Components for Clerk (NEXT PRIORITY)
+- Convert auth-related UI components
+- Update user profile components
+- Ensure consistent Clerk theming
 
 #### Future Epic Tasks
 
@@ -146,7 +151,7 @@ The fundamental Clerk integration is now operational:
 
 ### Immediate Next Steps
 
-1. **Issue #654** - Focus on user login/logout flows to complete the authentication cycle
+1. **Issue #658** - Focus on updating UI components for Clerk to ensure a consistent user experience.
 2. **Validate webhook system** - Ensure all Clerk events are properly handled
 3. **UI/UX polish** - Ensure consistent user experience across auth flows
 4. **Performance optimization** - Review and optimize authentication middleware performance
@@ -162,9 +167,9 @@ The fundamental Clerk integration is now operational:
 ## Notes for Resumption
 
 - Working directory: `/home/doug/ai-dev-1/dnd-tracker-next-js`
-- Current branch: `main` (registration work complete)
+- Current branch: `feature/issue-654-login-logout-flows`
 - Repository: `dougis-org/dnd-tracker-next-js`
-- Epic: NextAuth to Clerk Migration (#650) - ~60% complete
-- Next priority: Issue #654 - User Login/Logout Flows
+- Epic: NextAuth to Clerk Migration (#650) - ~70% complete
+- Next priority: Issue #658 - Update UI Components for Clerk
 - Quality checks required: ESLint, TypeScript, Codacy scan after each change
 - Continue TDD approach with comprehensive testing
