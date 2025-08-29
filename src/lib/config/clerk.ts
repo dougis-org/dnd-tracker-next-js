@@ -34,12 +34,10 @@ export function isValidPublishableKey(key: string | undefined): key is string {
 }
 
 /**
- * Clerk publishable key constant (always available at build time)
- * Replace the value below with your actual Clerk publishable key.
+ * Clerk publishable key constant (read from environment variable)
  * This value is safe to expose to the client.
  */
-export const CLERK_PUBLISHABLE_KEY =
-  'pk_test_bGVnYWwtd2FzcC0xNi5jbGVyay5hY2NvdW50cy5kZXYk';
+export const CLERK_PUBLISHABLE_KEY = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
 export function getClerkPublishableKey(): string {
   if (!isValidPublishableKey(CLERK_PUBLISHABLE_KEY)) {
@@ -71,7 +69,7 @@ export function getClerkSecretKey(): string {
       );
     } else {
       throw new Error(
-        'CLERK CONFIGURATION WARNING: CLERK_SECRET_KEY not found.'
+        'CLERK CONFIGURATION ERROR: CLERK_SECRET_KEY not found.'
       );
     }
   }
@@ -179,29 +177,33 @@ export function isPublicRoute(pathname: string): boolean {
   );
 }
 
-// Perform build-time validation in non-test environments
-// This ensures configuration errors are caught early
-if (process.env.NODE_ENV !== 'test' && typeof window === 'undefined') {
-  try {
-    validateClerkBuildConfig();
-    console.log('✅ Clerk configuration validated successfully');
-  } catch (error) {
-    // In development, log the error but don't crash
-    if (isDevelopmentMode()) {
-      if (error && typeof error === 'object' && 'message' in error) {
-        console.error(
-          '⚠️  Clerk configuration validation failed:',
-          (error as Error).message
+/**
+ * Explicitly initialize and validate Clerk configuration.
+ * Call this function at app startup or build time as needed.
+ */
+export function initializeClerkConfigValidation(): void {
+  if (process.env.NODE_ENV !== 'test' && typeof window === 'undefined') {
+    try {
+      validateClerkBuildConfig();
+      console.log('✅ Clerk configuration validated successfully');
+    } catch (error) {
+      // In development, log the error but don't crash
+      if (isDevelopmentMode()) {
+        if (error && typeof error === 'object' && 'message' in error) {
+          console.error(
+            '⚠️  Clerk configuration validation failed:',
+            (error as Error).message
+          );
+        } else {
+          console.error('⚠️  Clerk configuration validation failed:', error);
+        }
+        console.log(
+          '💡 This is not fatal in development, but should be fixed before production'
         );
       } else {
-        console.error('⚠️  Clerk configuration validation failed:', error);
+        // In production/build, this should be fatal
+        throw error;
       }
-      console.log(
-        '💡 This is not fatal in development, but should be fixed before production'
-      );
-    } else {
-      // In production/build, this should be fatal
-      throw error;
     }
   }
 }

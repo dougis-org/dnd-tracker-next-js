@@ -8,7 +8,10 @@
  * which provides build-time validation and better error handling.
  */
 
-import { getClerkPublishableKey as getCentralizedPublishableKey, getClerkSecretKey as getCentralizedSecretKey } from './clerk';
+import {
+  getClerkPublishableKey as getCentralizedPublishableKey,
+  getClerkSecretKey as getCentralizedSecretKey,
+} from './clerk';
 
 /**
  * Safely retrieves Clerk publishable key environment variable
@@ -16,7 +19,7 @@ import { getClerkPublishableKey as getCentralizedPublishableKey, getClerkSecretK
  * @deprecated Use getClerkPublishableKey from @/lib/config/clerk instead
  * @returns The Clerk publishable key or undefined if not available
  */
-export function getClerkPublishableKey(): string | undefined {
+export function getClerkPublishableKey(): string {
   return getCentralizedPublishableKey();
 }
 
@@ -26,7 +29,7 @@ export function getClerkPublishableKey(): string | undefined {
  * @deprecated Use getClerkSecretKey from @/lib/config/clerk instead
  * @returns The Clerk secret key or undefined if not available
  */
-export function getClerkSecretKey(): string | undefined {
+export function getClerkSecretKey(): string {
   return getCentralizedSecretKey();
 }
 
