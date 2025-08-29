@@ -191,10 +191,32 @@ The fundamental Clerk integration is now operational:
 - 🟡 **Minor**: Additional webhook event validation may be needed
 - 🟢 **Ready for next phase**: Login/logout flow implementation
 
+### 🚨 CURRENT HIGH PRIORITY: Issue #675 - Clerk Public Key Configuration for Build Process
+
+**Status**: BLOCKING - Must be completed before deployment
+
+**Problem**: Build process fails during static page prerendering because Clerk public key is not accessible to the build environment. This prevents successful deployment and static site generation.
+
+**Requirements**:
+- Move Clerk public key to centralized, easy-to-update location
+- Ensure key is accessible during Next.js static generation
+- Fix build/prerendering failures
+- Document public vs private key management
+
+**GitHub Issue**: [#675](https://github.com/dougis-org/dnd-tracker-next-js/issues/675)
+
+#### Future Epic Tasks
+
+#### Issue #656 - Clean Up Environment Variables
+- Remove NextAuth environment variables
+- Update documentation  
+- Clean up .env.example file
+
 ## Notes for Resumption
 
 - Working directory: `/home/doug/ai-dev-1/dnd-tracker-next-js`
 - Last completed: Issue #655 - NextAuth Code Removal (PR #674)
-- Next priority: Issue #656 - Clean Up Environment Variables
+- **URGENT NEXT**: Issue #675 - Clerk Public Key Configuration (BLOCKING)
+- Next after #675: Issue #656 - Clean Up Environment Variables
 - Quality checks required: ESLint, TypeScript, Codacy scan after each change
 - Continue TDD approach with comprehensive testing
