@@ -3,11 +3,11 @@ import { EncounterService } from '@/lib/services/EncounterService';
 import { encounterSettingsPartialSchema } from '@/lib/validations/encounter';
 import { objectIdSchema } from '@/lib/validations/base';
 import { ZodError } from 'zod';
-import { auth } from '@/lib/auth';
+import { auth } from '@clerk/nextjs/server';
 
 async function validateAuth() {
   const session = await auth();
-  if (!session?.user?.id) {
+  if (!session?.userId) {
     return {
       success: false as const,
       error: NextResponse.json(
@@ -16,7 +16,7 @@ async function validateAuth() {
       ),
     };
   }
-  return { success: true as const, userId: session.user.id };
+  return { success: true as const, userId: session.userId };
 }
 
 async function validateEncounterAccess(encounterId: string, userId: string) {

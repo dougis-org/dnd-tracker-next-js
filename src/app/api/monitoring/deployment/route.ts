@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { DeploymentMonitor, AlertConfig } from '@/lib/monitoring/deployment-monitor';
-import { auth } from '@/lib/auth';
+import { auth } from '@clerk/nextjs/server';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
@@ -16,7 +16,7 @@ import * as path from 'path';
 async function validateAdminAuth(): Promise<NextResponse | null> {
   const session = await auth();
 
-  if (!session?.user?.id) {
+  if (!session?.userId) {
     return NextResponse.json(
       { success: false, error: 'Authentication required' },
       { status: 401 }
@@ -25,7 +25,7 @@ async function validateAdminAuth(): Promise<NextResponse | null> {
 
   // Check if user has admin role - monitoring data should be admin-only
   // This assumes the session contains role information from the JWT token
-  const userRole = (session as any)?.user?.role || 'user';
+  const userRole = (session as any)?.publicMetadata?.role || 'user';
   if (userRole !== 'admin') {
     return NextResponse.json(
       { success: false, error: 'Admin access required for monitoring endpoints' },

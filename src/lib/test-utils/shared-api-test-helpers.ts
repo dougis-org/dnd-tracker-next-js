@@ -89,7 +89,7 @@ export const expectErrorResponse = async (response: Response, status: number, me
 // Essential functions that other tests depend on
 export const createMockParams = (id = SHARED_API_TEST_CONSTANTS.TEST_USER_ID) => Promise.resolve({ id });
 
-export const setupNextAuthMocks = (mockAuth: jest.MockedFunction<any>, mockGetToken?: jest.MockedFunction<any>, userId = SHARED_API_TEST_CONSTANTS.TEST_USER_ID) => {
+export const setupClerkMocks = (mockAuth: jest.MockedFunction<any>, mockGetToken?: jest.MockedFunction<any>, userId = SHARED_API_TEST_CONSTANTS.TEST_USER_ID) => {
   jest.clearAllMocks();
   mockAuth.mockResolvedValue(createMockSession(userId));
   if (mockGetToken) {

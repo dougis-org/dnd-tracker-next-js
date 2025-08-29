@@ -10,7 +10,7 @@ import {
   createErrorResponse,
   handleZodValidationError
 } from '@/lib/api/route-helpers';
-import { auth } from '@/lib/auth';
+import { auth } from '@clerk/nextjs/server';
 
 export async function GET(
   request: NextRequest,
@@ -18,7 +18,7 @@ export async function GET(
 ) {
   try {
     const session = await auth();
-    if (!session?.user?.id) {
+    if (!session?.userId) {
       return NextResponse.json(
         { error: 'Authentication required' },
         { status: 401 }
@@ -26,7 +26,7 @@ export async function GET(
     }
 
     const encounterId = await validateEncounterIdUtil(params);
-    const userId = session.user.id;
+    const userId = session.userId;
 
     try {
       const encounter = await validateEncounterAccessUtil(encounterId, userId, EncounterService);
@@ -59,7 +59,7 @@ export async function PUT(
 ) {
   try {
     const session = await auth();
-    if (!session?.user?.id) {
+    if (!session?.userId) {
       return NextResponse.json(
         { error: 'Authentication required' },
         { status: 401 }
@@ -67,7 +67,7 @@ export async function PUT(
     }
 
     const encounterId = await validateEncounterIdUtil(params);
-    const userId = session.user.id;
+    const userId = session.userId;
 
     try {
       await validateEncounterAccessUtil(encounterId, userId, EncounterService);
@@ -127,7 +127,7 @@ export async function DELETE(
 ) {
   try {
     const session = await auth();
-    if (!session?.user?.id) {
+    if (!session?.userId) {
       return NextResponse.json(
         { error: 'Authentication required' },
         { status: 401 }
@@ -135,7 +135,7 @@ export async function DELETE(
     }
 
     const encounterId = await validateEncounterIdUtil(params);
-    const userId = session.user.id;
+    const userId = session.userId;
 
     try {
       await validateEncounterAccessUtil(encounterId, userId, EncounterService);

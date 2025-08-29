@@ -1,6 +1,6 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { ZodError } from 'zod';
-import { auth } from '@/lib/auth';
+import { auth } from '@clerk/nextjs/server';
 
 /**
  * Shared API route helpers for authentication and access control
@@ -8,7 +8,7 @@ import { auth } from '@/lib/auth';
 
 export async function validateAuth() {
   const session = await auth();
-  if (!session?.user?.id) {
+  if (!session?.userId) {
     return {
       error: NextResponse.json(
         { success: false, error: 'Authentication required' },
@@ -30,7 +30,7 @@ export async function withAuth<T>(
   const { error: authError, session } = await validateAuth();
   if (authError) return authError;
 
-  return await callback(session!.user.id);
+  return await callback(session!.userId);
 }
 
 export async function validateUserAccess(requestedUserId: string, sessionUserId: string) {

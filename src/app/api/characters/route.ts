@@ -9,19 +9,19 @@ import {
   handlePaginatedResult,
   validateCharacterCreation
 } from './helpers/route-helpers';
-import { auth } from '@/lib/auth';
+import { auth } from '@clerk/nextjs/server';
 
 export async function GET(request: NextRequest) {
   try {
     const session = await auth();
-    if (!session?.user?.id) {
+    if (!session?.userId) {
       return NextResponse.json(
         { error: 'Authentication required' },
         { status: 401 }
       );
     }
 
-    const userId = session.user.id;
+    const userId = session.userId;
     const { type, search, limit, page } = parseQueryParams(request.url);
 
     if (search) {
@@ -47,14 +47,14 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const session = await auth();
-    if (!session?.user?.id) {
+    if (!session?.userId) {
       return NextResponse.json(
         { error: 'Authentication required' },
         { status: 401 }
       );
     }
 
-    const userId = session.user.id;
+    const userId = session.userId;
     const body = await request.json();
     const validation = validateCharacterCreation(body);
     if (!validation.isValid) return validation.error!;

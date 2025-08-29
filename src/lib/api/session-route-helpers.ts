@@ -2,7 +2,7 @@
  * Session-based API route helpers using Clerk authentication
  *
  * This module provides API route helpers that use Clerk for authentication
- * and session management, replacing the previous NextAuth implementation.
+ * and session management, replacing the previous authentication implementation.
  *
  * Issue #652: Implement Clerk Authentication Middleware
  */
@@ -109,7 +109,7 @@ export async function withEnhancedAuth<T>(
   if (error) return error;
 
   const tier = await getCurrentUserTier();
-  return await callback(session!.user.id, session, tier);
+  return await callback(session!.userId, session, tier);
 }
 
 // Re-export utility functions for backward compatibility

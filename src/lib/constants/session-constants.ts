@@ -1,15 +1,16 @@
 /**
  * Session constants for centralized session management (Issue #585)
  * Provides consistent cookie names and timeouts across the application
+ * Updated to use Clerk session management
  */
 
 /**
  * Session cookie name based on environment
- * Uses secure cookie naming in production
+ * Updated to use Clerk's session management
  */
 export const SESSION_COOKIE_NAME = process.env.NODE_ENV === 'production'
-  ? '__Secure-next-auth.session-token'
-  : 'next-auth.session-token';
+  ? '__Secure-clerk-session'
+  : 'clerk-session';
 
 /**
  * Session timeout configuration
@@ -30,16 +31,6 @@ export const TRUSTED_DOMAINS = [
   'localhost:3000',
 ] as const;
 
-/**
- * NextAuth collection names for MongoDB
- * Kept for backward compatibility during Clerk migration
- */
-export const NEXTAUTH_COLLECTION_NAMES = {
-  SESSIONS: 'sessions',
-  USERS: 'users',
-  ACCOUNTS: 'accounts',
-  VERIFICATION_TOKENS: 'verification_tokens',
-} as const;
 
 /**
  * Default database name

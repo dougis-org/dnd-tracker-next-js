@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
+import { auth } from '@clerk/nextjs/server';
 import {
   validateAndGetEncounter,
   validateCombatActive,
@@ -97,13 +97,13 @@ export function withCombatValidation(
  */
 async function validateAuthentication(context: ValidationContext): Promise<NextResponse | null> {
   const session = await auth();
-  if (!session?.user?.id) {
+  if (!session?.userId) {
     return NextResponse.json(
       { success: false, message: 'Authentication required' },
       { status: 401 }
     );
   }
-  context.userId = session.user.id;
+  context.userId = session.userId;
   return null;
 }
 

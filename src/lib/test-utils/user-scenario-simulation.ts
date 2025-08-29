@@ -477,7 +477,7 @@ export const EDGE_CASE_SCENARIOS = {
   COOKIE_MANIPULATION: {
     description: 'Malicious session cookie manipulation attempts',
     setup: () => ({
-      tamperedCookie: 'next-auth.session-token=malicious-content',
+      tamperedCookie: 'clerk-session=malicious-content',
       expectedBehavior: 'authentication_rejected',
     }),
   },
