@@ -83,8 +83,9 @@ export interface JWTToken {
 }
 
 /**
- * Application session structure for Clerk-based authentication,
- * representing the session data used throughout the application.
+ * Application session structure specifically for Clerk-based authentication,
+ * representing the standardized session data structure used throughout the application
+ * after migrating from NextAuth to Clerk.
  */
 export interface SessionStructure {
   user: {

@@ -13,14 +13,14 @@ export async function initializeRoute() {
   await connectToDatabase();
 
   const session = await auth();
-  if (!session?.user?.id) {
+  if (!session?.userId) {
     return {
       error: createErrorResponse('Authentication required', 401),
       userId: null
     };
   }
 
-  return { error: null, userId: session.user.id };
+  return { error: null, userId: session.userId };
 }
 
 /**

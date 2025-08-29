@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 export default async function PartiesPage() {
   const session = await auth();
 
-  if (!session?.user?.id) {
+  if (!session?.userId) {
     redirect('/signin?callbackUrl=/parties');
   }
 
@@ -25,7 +25,7 @@ export default async function PartiesPage() {
           Manage and organize your D&D parties
         </p>
       </div>
-      <PartyListView userId={session.user.id} />
+      <PartyListView userId={session.userId} />
     </div>
   );
 }
