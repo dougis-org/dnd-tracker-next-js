@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { useAuth, useClerk, useUser } from '@clerk/nextjs';
+import { useAuth, useClerk } from '@clerk/nextjs';
 import { AppLayout } from '../AppLayout';
 
 // Mock Clerk hooks

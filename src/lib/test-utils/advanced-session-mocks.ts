@@ -17,9 +17,10 @@ export type SubscriptionTier = typeof VALID_SUBSCRIPTION_TIERS[number];
 
 /**
  * Production environment configuration
+ * Updated to use Clerk session management
  */
 export const PRODUCTION_CONFIG = {
-  COOKIE_NAME: '__Secure-next-auth.session-token',
+  COOKIE_NAME: '__Secure-clerk-session',
   COOKIE_OPTIONS: {
     httpOnly: true,
     sameSite: 'lax' as const,
@@ -36,9 +37,10 @@ export const PRODUCTION_CONFIG = {
 
 /**
  * Development environment configuration
+ * Updated to use Clerk session management
  */
 export const DEVELOPMENT_CONFIG = {
-  COOKIE_NAME: 'next-auth.session-token',
+  COOKIE_NAME: 'clerk-session',
   COOKIE_OPTIONS: {
     httpOnly: true,
     sameSite: 'lax' as const,
@@ -65,7 +67,7 @@ export interface UserProfile {
 }
 
 /**
- * JWT token structure matching NextAuth JWT strategy
+ * JWT token structure for session testing
  */
 export interface JWTToken {
   sub: string;
@@ -80,9 +82,9 @@ export interface JWTToken {
 }
 
 /**
- * NextAuth session structure
+ * Application session structure
  */
-export interface NextAuthSession {
+export interface SessionStructure {
   user: {
     id: string;
     email: string;
@@ -108,7 +110,7 @@ export interface SessionOptions {
 }
 
 /**
- * Creates a realistic JWT token matching NextAuth structure
+ * Creates a realistic JWT token for testing
  */
 export function createRealisticJWTToken(options: SessionOptions = {}): JWTToken {
   const now = Math.floor(Date.now() / 1000);
@@ -129,9 +131,9 @@ export function createRealisticJWTToken(options: SessionOptions = {}): JWTToken 
 }
 
 /**
- * Creates a realistic NextAuth session matching production structure
+ * Creates a realistic session matching production structure
  */
-export function createRealisticSession(options: SessionOptions = {}): NextAuthSession {
+export function createRealisticSession(options: SessionOptions = {}): SessionStructure {
   const userId = options.userId || new ObjectId().toString();
   const subscriptionTier = options.subscriptionTier || 'free';
   const expiresSeconds = options.expiresInSeconds || SESSION_TIMEOUTS.MAX_AGE;
@@ -178,7 +180,7 @@ export function createRealisticUserProfile(overrides: Partial<UserProfile> = {})
  * Creates realistic session cookies for testing
  */
 export function createSessionCookies(
-  session: NextAuthSession,
+  session: SessionStructure,
   environment: 'production' | 'development' = 'development'
 ): Record<string, string> {
   const config = environment === 'production' ? PRODUCTION_CONFIG : DEVELOPMENT_CONFIG;
@@ -194,7 +196,7 @@ export function createSessionCookies(
 /**
  * Creates expired session scenarios
  */
-export function createExpiredSession(): NextAuthSession {
+export function createExpiredSession(): SessionStructure {
   return createRealisticSession({
     isExpired: true,
     expiresInSeconds: -3600, // 1 hour ago
@@ -204,7 +206,7 @@ export function createExpiredSession(): NextAuthSession {
 /**
  * Creates soon-to-expire session (within 1 hour)
  */
-export function createSoonToExpireSession(): NextAuthSession {
+export function createSoonToExpireSession(): SessionStructure {
   return createRealisticSession({
     expiresInSeconds: 1800, // 30 minutes from now
   });
@@ -213,8 +215,8 @@ export function createSoonToExpireSession(): NextAuthSession {
 /**
  * Creates sessions for each subscription tier
  */
-export function createSubscriptionTierSessions(): Record<SubscriptionTier, NextAuthSession> {
-  const sessions: Record<SubscriptionTier, NextAuthSession> = {} as any;
+export function createSubscriptionTierSessions(): Record<SubscriptionTier, SessionStructure> {
+  const sessions: Record<SubscriptionTier, SessionStructure> = {} as any;
 
   VALID_SUBSCRIPTION_TIERS.forEach(tier => {
     sessions[tier] = createRealisticSession({
@@ -248,7 +250,7 @@ export function createSubscriptionTierTokens(): Record<SubscriptionTier, JWTToke
  * Creates mock request headers with session cookies
  */
 export function createRequestWithSession(
-  session: NextAuthSession,
+  session: SessionStructure,
   environment: 'production' | 'development' = 'development'
 ): Headers {
   const cookies = createSessionCookies(session, environment);
@@ -308,7 +310,7 @@ export const AUTH_SCENARIOS = {
  */
 export function createMiddlewareRequest(
   pathname: string,
-  session?: NextAuthSession | null,
+  session?: SessionStructure | null,
   environment: 'production' | 'development' = 'development'
 ): NextRequest {
   const headers = session ? createRequestWithSession(session, environment) : new Headers();
@@ -353,7 +355,7 @@ export const SessionValidation = {
   /**
    * Validates that a session has the required structure
    */
-  isValidSession(session: any): session is NextAuthSession {
+  isValidSession(session: any): session is SessionStructure {
     return (
       session &&
       typeof session === 'object' &&
@@ -385,14 +387,14 @@ export const SessionValidation = {
   /**
    * Checks if a session is expired
    */
-  isExpired(session: NextAuthSession): boolean {
+  isExpired(session: SessionStructure): boolean {
     return new Date(session.expires) < new Date();
   },
 
   /**
    * Checks if a session expires within the specified minutes
    */
-  expiresWithin(session: NextAuthSession, minutes: number): boolean {
+  expiresWithin(session: SessionStructure, minutes: number): boolean {
     const expiresDate = new Date(session.expires);
     const now = new Date();
     const diffMinutes = (expiresDate.getTime() - now.getTime()) / (1000 * 60);
@@ -425,7 +427,7 @@ export const TestDataGenerators = {
   /**
    * Generates sessions with different expiration times
    */
-  generateSessionsByExpiration(): Record<string, NextAuthSession> {
+  generateSessionsByExpiration(): Record<string, SessionStructure> {
     return {
       valid: createRealisticSession({ expiresInSeconds: SESSION_TIMEOUTS.MAX_AGE }),
       expiresSoon: createSoonToExpireSession(),

@@ -1,7 +1,7 @@
 /**
  * Tests to verify complete removal of NextAuth code from the codebase
  * Issue #655 - Remove All NextAuth Code and Dependencies
- * 
+ *
  * These tests will fail until all NextAuth references are completely removed.
  */
 
@@ -15,16 +15,16 @@ describe('NextAuth Cleanup Verification - Issue #655', () => {
   describe('Package Dependencies', () => {
     it('should not have NextAuth dependencies in package.json', () => {
       const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
-      
+
       // Check dependencies
       const dependencies = packageJson.dependencies || {};
       const devDependencies = packageJson.devDependencies || {};
       const allDeps = { ...dependencies, ...devDependencies };
-      
-      const nextAuthDeps = Object.keys(allDeps).filter(dep => 
+
+      const nextAuthDeps = Object.keys(allDeps).filter(dep =>
         dep.includes('next-auth') || dep.includes('@auth')
       );
-      
+
       expect(nextAuthDeps).toEqual([]);
     });
   });
@@ -32,7 +32,7 @@ describe('NextAuth Cleanup Verification - Issue #655', () => {
   describe('File System Cleanup', () => {
     const filesToDelete = [
       'src/lib/auth.ts',
-      'src/lib/auth-database-session.ts', 
+      'src/lib/auth-database-session.ts',
       'src/lib/session-config.ts',
       'src/lib/session-client.ts',
       'src/lib/session-context.tsx',
@@ -51,9 +51,9 @@ describe('NextAuth Cleanup Verification - Issue #655', () => {
     it('should not have auth-callbacks.ts or its directory', () => {
       const authCallbacksPath = join(rootDir, 'lib', 'auth', 'auth-callbacks.ts');
       const authDirPath = join(rootDir, 'lib', 'auth');
-      
+
       expect(existsSync(authCallbacksPath)).toBe(false);
-      
+
       // If auth directory exists, it should be empty or not exist
       if (existsSync(authDirPath)) {
         const authDirContents = readdirSync(authDirPath);
@@ -92,14 +92,14 @@ describe('NextAuth Cleanup Verification - Issue #655', () => {
 
     function findFilesRecursively(dir: string, extensions: string[] = ['.ts', '.tsx', '.js', '.jsx']): string[] {
       const files: string[] = [];
-      
+
       try {
         const entries = readdirSync(dir);
-        
+
         for (const entry of entries) {
           const fullPath = join(dir, entry);
           const stat = statSync(fullPath);
-          
+
           if (stat.isDirectory()) {
             if (!shouldExcludeFile(fullPath)) {
               files.push(...findFilesRecursively(fullPath, extensions));
@@ -110,60 +110,87 @@ describe('NextAuth Cleanup Verification - Issue #655', () => {
             }
           }
         }
-      } catch (error) {
+      } catch {
         // Ignore permission errors or missing directories
       }
-      
+
       return files;
     }
 
     it('should not have NextAuth imports in TypeScript/JavaScript files', () => {
       const sourceFiles = findFilesRecursively(join(rootDir));
       const filesWithNextAuth: string[] = [];
-      
+
       sourceFiles.forEach(filePath => {
         try {
           const content = readFileSync(filePath, 'utf-8');
-          
+
           // Check for NextAuth patterns
           const hasNextAuthReference = searchPatterns.some(pattern => pattern.test(content));
-          
+
           if (hasNextAuthReference) {
             filesWithNextAuth.push(filePath.replace(rootDir, 'src'));
           }
-        } catch (error) {
+        } catch {
           // Ignore files that can't be read
         }
       });
-      
+
       if (filesWithNextAuth.length > 0) {
         console.log('Files still containing NextAuth references:');
         filesWithNextAuth.forEach(file => console.log(`  - ${file}`));
       }
-      
+
       expect(filesWithNextAuth).toEqual([]);
     });
 
     it('should not have NextAuth-related type definitions', () => {
       const typeFiles = findFilesRecursively(join(rootDir), ['.d.ts']);
       const typesWithNextAuth: string[] = [];
-      
+
       typeFiles.forEach(filePath => {
         if (shouldExcludeFile(filePath)) return;
-        
+
         try {
           const content = readFileSync(filePath, 'utf-8');
-          
+
           // Check for NextAuth type references
           if (/next-auth|NextAuth/i.test(content)) {
             typesWithNextAuth.push(filePath.replace(rootDir, 'src'));
           }
-        } catch (error) {
+        } catch {
           // Ignore files that can't be read
         }
       });
-      
+
       expect(typesWithNextAuth).toEqual([]);
+    });
+
+    it('should not use NextAuth session patterns', () => {
+      const commonPatterns = [
+        /getServerSession\(/g,
+        /useSession\(\)/g,
+        /SessionProvider/g,
+        /next-auth\/react/g,
+      ];
+
+      const sourceFiles = findFilesRecursively(join(rootDir), ['.ts', '.tsx', '.js', '.jsx']);
+      const filesWithPatterns: string[] = [];
+
+      sourceFiles.forEach(filePath => {
+        try {
+          const content = readFileSync(filePath, 'utf-8');
+          const hasPatterns = commonPatterns.some(pattern => pattern.test(content));
+
+          if (hasPatterns) {
+            filesWithPatterns.push(filePath.replace(rootDir, 'src'));
+          }
+        } catch {
+          // Ignore files that can't be read
+        }
+      });
+
+      expect(filesWithPatterns).toEqual([]);
     });
   });
 
@@ -179,7 +206,7 @@ describe('NextAuth Cleanup Verification - Issue #655', () => {
         'lib/session-client.ts',
         'lib/session-context.tsx'
       ];
-      
+
       sessionUtilPaths.forEach(path => {
         const fullPath = join(rootDir, path);
         expect(existsSync(fullPath)).toBe(false);
@@ -201,39 +228,12 @@ describe('NextAuth Cleanup Verification - Issue #655', () => {
     // These tests verify that removing NextAuth doesn't break the build
     it('should not import NextAuth in middleware', () => {
       const middlewarePath = join(rootDir, 'middleware.ts');
-      
+
       if (existsSync(middlewarePath)) {
         const content = readFileSync(middlewarePath, 'utf-8');
         expect(content).not.toMatch(/next-auth|NextAuth/i);
         expect(content).toMatch(/@clerk\/nextjs/); // Should use Clerk instead
       }
-    });
-
-    it('should not use NextAuth session patterns', () => {
-      const commonPatterns = [
-        /getServerSession\(/g,
-        /useSession\(\)/g,
-        /SessionProvider/g,
-        /next-auth\/react/g,
-      ];
-      
-      const sourceFiles = findFilesRecursively(join(rootDir));
-      const filesWithPatterns: string[] = [];
-      
-      sourceFiles.forEach(filePath => {
-        try {
-          const content = readFileSync(filePath, 'utf-8');
-          const hasPatterns = commonPatterns.some(pattern => pattern.test(content));
-          
-          if (hasPatterns) {
-            filesWithPatterns.push(filePath.replace(rootDir, 'src'));
-          }
-        } catch (error) {
-          // Ignore files that can't be read
-        }
-      });
-      
-      expect(filesWithPatterns).toEqual([]);
     });
   });
 
@@ -241,17 +241,17 @@ describe('NextAuth Cleanup Verification - Issue #655', () => {
     it('should not reference NextAuth in configuration files', () => {
       const configFiles = [
         'next.config.js',
-        'next.config.mjs', 
+        'next.config.mjs',
         '.env.local',
         '.env.example'
       ];
-      
+
       configFiles.forEach(configFile => {
         const configPath = join(rootDir, '..', configFile);
-        
+
         if (existsSync(configPath)) {
           const content = readFileSync(configPath, 'utf-8');
-          
+
           // Should not contain NextAuth environment variables or configs
           expect(content).not.toMatch(/NEXTAUTH_/i);
           expect(content).not.toMatch(/next-auth/i);

@@ -2,7 +2,7 @@
  * Clerk Configuration
  *
  * This file contains basic Clerk configuration and utilities for the D&D Tracker application.
- * It replaces the previous NextAuth configuration in auth.ts.
+ * It replaces the previous authentication configuration.
  */
 
 /**

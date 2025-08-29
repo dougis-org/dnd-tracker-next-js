@@ -2,7 +2,7 @@
  * Session-based API route helpers using Clerk authentication
  *
  * This module provides API route helpers that use Clerk for authentication
- * and session management, replacing the previous NextAuth implementation.
+ * and session management, replacing the previous authentication implementation.
  *
  * Issue #652: Implement Clerk Authentication Middleware
  */

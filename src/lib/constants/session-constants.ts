@@ -37,7 +37,7 @@ export const TRUSTED_DOMAINS = [
  */
 export const LEGACY_COLLECTION_NAMES = {
   SESSIONS: 'sessions',
-  USERS: 'users', 
+  USERS: 'users',
   ACCOUNTS: 'accounts',
   VERIFICATION_TOKENS: 'verification_tokens',
 } as const;
