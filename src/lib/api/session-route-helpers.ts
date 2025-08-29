@@ -109,7 +109,7 @@ export async function withEnhancedAuth<T>(
   if (error) return error;
 
   const tier = await getCurrentUserTier();
-  return await callback(session!.user.id, session, tier);
+  return await callback(session!.userId, session, tier);
 }
 
 // Re-export utility functions for backward compatibility
