@@ -31,16 +31,6 @@ export const TRUSTED_DOMAINS = [
   'localhost:3000',
 ] as const;
 
-/**
- * Legacy collection names for MongoDB
- * Historical reference - these are no longer used with Clerk
- */
-export const LEGACY_COLLECTION_NAMES = {
-  SESSIONS: 'sessions',
-  USERS: 'users',
-  ACCOUNTS: 'accounts',
-  VERIFICATION_TOKENS: 'verification_tokens',
-} as const;
 
 /**
  * Default database name

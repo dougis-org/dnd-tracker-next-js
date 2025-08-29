@@ -85,7 +85,8 @@
 
 #### ✅ Issue #655 - Remove NextAuth Code (COMPLETED - PR #674)
 
-**Summary**: Systematically removed all NextAuth code and dependencies from the codebase, completing the Clerk migration cleanup.
+**Summary**: Systematically removed all NextAuth code and dependencies from the codebase, 
+completing the Clerk migration cleanup.
 
 **Files Removed**:
 - `src/__mocks__/next-auth.js` - NextAuth mock file

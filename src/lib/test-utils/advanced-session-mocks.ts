@@ -67,7 +67,8 @@ export interface UserProfile {
 }
 
 /**
- * JWT token structure for session testing
+ * Structure representing a Clerk-issued JWT token, used for mocking authentication and session
+ * tokens in comprehensive Clerk session testing scenarios.
  */
 export interface JWTToken {
   sub: string;
@@ -82,7 +83,8 @@ export interface JWTToken {
 }
 
 /**
- * Application session structure
+ * Application session structure for Clerk-based authentication,
+ * representing the session data used throughout the application.
  */
 export interface SessionStructure {
   user: {

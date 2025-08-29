@@ -35,7 +35,7 @@ describe('Login/Logout Flows - Issue #654', () => {
       signOut: mockSignOut,
       signIn: jest.fn(),
       signUp: jest.fn(),
-    } as any);
+    } as unknown as ReturnType<typeof useClerk>);
   });
 
   afterEach(() => {

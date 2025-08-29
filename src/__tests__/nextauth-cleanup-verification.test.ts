@@ -6,11 +6,12 @@
  */
 
 import { readFileSync, existsSync, readdirSync, statSync } from 'fs';
-import { join, extname } from 'path';
+import { join, extname, resolve, normalize } from 'path';
 
 describe('NextAuth Cleanup Verification - Issue #655', () => {
-  const rootDir = join(__dirname, '..');
-  const packageJsonPath = join(rootDir, '..', 'package.json');
+  const rootDir = resolve(__dirname, '..');
+  const projectRoot = resolve(rootDir, '..');
+  const packageJsonPath = join(projectRoot, 'package.json');
 
   describe('Package Dependencies', () => {
     it('should not have NextAuth dependencies in package.json', () => {
@@ -43,7 +44,9 @@ describe('NextAuth Cleanup Verification - Issue #655', () => {
 
     filesToDelete.forEach(filePath => {
       it(`should not exist: ${filePath}`, () => {
-        const fullPath = join(rootDir, '..', filePath);
+        // Sanitize and validate path to prevent directory traversal
+        const sanitizedPath = normalize(filePath).replace(/^(\.\.\/)+/, '');
+        const fullPath = join(projectRoot, sanitizedPath);
         expect(existsSync(fullPath)).toBe(false);
       });
     });
@@ -97,7 +100,14 @@ describe('NextAuth Cleanup Verification - Issue #655', () => {
         const entries = readdirSync(dir);
 
         for (const entry of entries) {
-          const fullPath = join(dir, entry);
+          // Prevent directory traversal by normalizing entry
+          const sanitizedEntry = normalize(entry).replace(/^(\.\.\/)+/, '');
+          const fullPath = resolve(dir, sanitizedEntry);
+          
+          // Ensure path is still within the original directory
+          if (!fullPath.startsWith(resolve(dir))) {
+            continue;
+          }
           const stat = statSync(fullPath);
 
           if (stat.isDirectory()) {
@@ -135,11 +145,6 @@ describe('NextAuth Cleanup Verification - Issue #655', () => {
           // Ignore files that can't be read
         }
       });
-
-      if (filesWithNextAuth.length > 0) {
-        console.log('Files still containing NextAuth references:');
-        filesWithNextAuth.forEach(file => console.log(`  - ${file}`));
-      }
 
       expect(filesWithNextAuth).toEqual([]);
     });
@@ -208,7 +213,9 @@ describe('NextAuth Cleanup Verification - Issue #655', () => {
       ];
 
       sessionUtilPaths.forEach(path => {
-        const fullPath = join(rootDir, path);
+        // Sanitize path to prevent directory traversal
+        const sanitizedPath = normalize(path).replace(/^(\.\.\/)+/, '');
+        const fullPath = join(rootDir, sanitizedPath);
         expect(existsSync(fullPath)).toBe(false);
       });
     });
@@ -247,7 +254,9 @@ describe('NextAuth Cleanup Verification - Issue #655', () => {
       ];
 
       configFiles.forEach(configFile => {
-        const configPath = join(rootDir, '..', configFile);
+        // Sanitize config file name to prevent directory traversal
+        const sanitizedConfigFile = normalize(configFile).replace(/^(\.\.\/)+/, '');
+        const configPath = join(projectRoot, sanitizedConfigFile);
 
         if (existsSync(configPath)) {
           const content = readFileSync(configPath, 'utf-8');
