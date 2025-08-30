@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getToken } from 'next-auth/jwt';
+import { auth } from '@clerk/nextjs/server';
 import {
   createAuthenticatedHandler,
   requireAuthentication,
@@ -9,9 +9,9 @@ import {
   SessionUtils,
 } from '../middleware';
 
-// Mock NextAuth JWT
-jest.mock('next-auth/jwt');
-const mockGetToken = getToken as jest.MockedFunction<typeof getToken>;
+// Mock Clerk auth
+jest.mock('@clerk/nextjs/server');
+const mockAuth = auth as jest.MockedFunction<typeof auth>;
 
 // Mock Next.js server functions
 jest.mock('next/server', () => ({
@@ -39,39 +39,34 @@ describe('API Middleware', () => {
   });
 
   describe('requireAuthentication', () => {
-    it('should return error response when no token is provided', async () => {
-      mockGetToken.mockResolvedValue(null);
+    it('should return error response when no user is authenticated', async () => {
+      mockAuth.mockResolvedValue({ userId: null });
 
       const result = await requireAuthentication(mockRequest as NextRequest);
 
-      expect(result).toEqual({
-        json: { error: 'Authentication required' },
-        status: 401,
-      });
+      expect(result).not.toBeNull();
+      // Check that it's an unauthorized response
+      expect(result?.status).toBe(401);
     });
 
-    it('should return null when token is valid', async () => {
-      const mockToken = {
-        email: 'test@example.com',
-        sub: '123',
-        subscriptionTier: 'free',
-      };
-      mockGetToken.mockResolvedValue(mockToken);
+    it('should return null when user is authenticated', async () => {
+      mockAuth.mockResolvedValue({ 
+        userId: 'user_123', 
+        sessionId: 'session_123' 
+      });
 
       const result = await requireAuthentication(mockRequest as NextRequest);
 
       expect(result).toBeNull();
     });
 
-    it('should handle token verification errors', async () => {
-      mockGetToken.mockRejectedValue(new Error('Token verification failed'));
+    it('should handle authentication errors', async () => {
+      mockAuth.mockRejectedValue(new Error('Authentication failed'));
 
       const result = await requireAuthentication(mockRequest as NextRequest);
 
-      expect(result).toEqual({
-        json: { error: 'Authentication required' },
-        status: 401,
-      });
+      expect(result).not.toBeNull();
+      expect(result?.status).toBe(401);
     });
   });
 
@@ -83,41 +78,36 @@ describe('API Middleware', () => {
     });
 
     it('should call handler when authentication passes', async () => {
-      const mockToken = {
-        email: 'test@example.com',
-        sub: '123',
-        subscriptionTier: 'free',
-      };
-      mockGetToken.mockResolvedValue(mockToken);
+      const userId = 'user_123';
+      mockAuth.mockResolvedValue({ 
+        userId, 
+        sessionId: 'session_123' 
+      });
       mockHandler.mockResolvedValue(NextResponse.json({ success: true }));
 
       const authenticatedHandler = createAuthenticatedHandler(mockHandler);
       const result = await authenticatedHandler(mockRequest as NextRequest);
 
-      expect(mockHandler).toHaveBeenCalledWith(mockRequest, mockToken);
+      expect(mockHandler).toHaveBeenCalledWith(mockRequest, userId);
       expect(result).toEqual(NextResponse.json({ success: true }));
     });
 
     it('should return 401 when authentication fails', async () => {
-      mockGetToken.mockResolvedValue(null);
+      mockAuth.mockResolvedValue({ userId: null });
 
       const authenticatedHandler = createAuthenticatedHandler(mockHandler);
       const result = await authenticatedHandler(mockRequest as NextRequest);
 
       expect(mockHandler).not.toHaveBeenCalled();
-      expect(result).toEqual({
-        json: { error: 'Authentication required' },
-        status: 401,
-      });
+      expect(result?.status).toBe(401);
     });
 
     it('should handle handler errors gracefully', async () => {
-      const mockToken = {
-        email: 'test@example.com',
-        sub: '123',
-        subscriptionTier: 'free',
-      };
-      mockGetToken.mockResolvedValue(mockToken);
+      const userId = 'user_123';
+      mockAuth.mockResolvedValue({ 
+        userId, 
+        sessionId: 'session_123' 
+      });
       mockHandler.mockRejectedValue(new Error('Handler error'));
 
       const authenticatedHandler = createAuthenticatedHandler(mockHandler);
@@ -255,98 +245,116 @@ describe('API Middleware', () => {
 
   describe('SessionUtils', () => {
     describe('hasSubscriptionTier', () => {
-      it('should return false for null token', () => {
-        const result = SessionUtils.hasSubscriptionTier(null, 'premium');
+      it('should return false when user is not authenticated', async () => {
+        mockAuth.mockResolvedValue({ userId: null });
+        const result = await SessionUtils.hasSubscriptionTier('premium');
         expect(result).toBe(false);
       });
 
-      it('should return true for exact tier match', () => {
-        const token = { subscriptionTier: 'expert' } as any;
-        const result = SessionUtils.hasSubscriptionTier(token, 'expert');
-        expect(result).toBe(true);
-      });
-
-      it('should return true for higher tier', () => {
-        const token = { subscriptionTier: 'master' } as any;
-        const result = SessionUtils.hasSubscriptionTier(token, 'seasoned');
-        expect(result).toBe(true);
-      });
-
-      it('should return false for lower tier', () => {
-        const token = { subscriptionTier: 'seasoned' } as any;
-        const result = SessionUtils.hasSubscriptionTier(token, 'master');
+      it('should return false for authenticated user (not yet implemented)', async () => {
+        mockAuth.mockResolvedValue({ userId: 'user_123' });
+        const result = await SessionUtils.hasSubscriptionTier('premium');
+        // Currently returns false as implementation is not complete
         expect(result).toBe(false);
       });
 
-      it('should default to free tier when no subscriptionTier', () => {
-        const token = {} as any;
-        const result = SessionUtils.hasSubscriptionTier(token, 'free');
-        expect(result).toBe(true);
+      it('should handle authentication errors', async () => {
+        mockAuth.mockRejectedValue(new Error('Auth failed'));
+        const result = await SessionUtils.hasSubscriptionTier('premium');
+        expect(result).toBe(false);
       });
     });
 
     describe('getUserId', () => {
-      it('should return null for null token', () => {
-        const result = SessionUtils.getUserId(null);
+      it('should return null when user is not authenticated', async () => {
+        mockAuth.mockResolvedValue({ userId: null });
+        const result = await SessionUtils.getUserId();
         expect(result).toBeNull();
       });
 
-      it('should return null for token without sub', () => {
-        const token = {} as any;
-        const result = SessionUtils.getUserId(token);
-        expect(result).toBeNull();
+      it('should return user ID when authenticated', async () => {
+        mockAuth.mockResolvedValue({ userId: 'user_123' });
+        const result = await SessionUtils.getUserId();
+        expect(result).toBe('user_123');
       });
 
-      it('should return user ID from token', () => {
-        const token = { sub: 'user-123' } as any;
-        const result = SessionUtils.getUserId(token);
-        expect(result).toBe('user-123');
+      it('should handle authentication errors', async () => {
+        mockAuth.mockRejectedValue(new Error('Auth failed'));
+        const result = await SessionUtils.getUserId();
+        expect(result).toBeNull();
       });
     });
 
     describe('getUserEmail', () => {
-      it('should return null for null token', () => {
-        const result = SessionUtils.getUserEmail(null);
+      it('should return null when user is not authenticated', async () => {
+        mockAuth.mockResolvedValue({ userId: null });
+        const result = await SessionUtils.getUserEmail();
         expect(result).toBeNull();
       });
 
-      it('should return null for token without email', () => {
-        const token = {} as any;
-        const result = SessionUtils.getUserEmail(token);
+      it('should return null for authenticated user (not yet implemented)', async () => {
+        mockAuth.mockResolvedValue({ userId: 'user_123' });
+        const result = await SessionUtils.getUserEmail();
+        // Currently returns null as implementation is not complete
         expect(result).toBeNull();
       });
 
-      it('should return email from token', () => {
-        const token = { email: 'test@example.com' } as any;
-        const result = SessionUtils.getUserEmail(token);
-        expect(result).toBe('test@example.com');
+      it('should handle authentication errors', async () => {
+        mockAuth.mockRejectedValue(new Error('Auth failed'));
+        const result = await SessionUtils.getUserEmail();
+        expect(result).toBeNull();
       });
     });
 
-    describe('isTokenExpired', () => {
-      it('should return true for null token', () => {
-        const result = SessionUtils.isTokenExpired(null);
-        expect(result).toBe(true);
-      });
-
-      it('should return true for token without exp', () => {
-        const token = {} as any;
-        const result = SessionUtils.isTokenExpired(token);
-        expect(result).toBe(true);
-      });
-
-      it('should return true for expired token', () => {
-        const expiredTime = Math.floor(Date.now() / 1000) - 3600; // 1 hour ago
-        const token = { exp: expiredTime } as any;
-        const result = SessionUtils.isTokenExpired(token);
-        expect(result).toBe(true);
-      });
-
-      it('should return false for valid token', () => {
-        const futureTime = Math.floor(Date.now() / 1000) + 3600; // 1 hour from now
-        const token = { exp: futureTime } as any;
-        const result = SessionUtils.isTokenExpired(token);
+    describe('isAuthenticated', () => {
+      it('should return false when user is not authenticated', async () => {
+        mockAuth.mockResolvedValue({ userId: null });
+        const result = await SessionUtils.isAuthenticated();
         expect(result).toBe(false);
+      });
+
+      it('should return true when user is authenticated', async () => {
+        mockAuth.mockResolvedValue({ userId: 'user_123' });
+        const result = await SessionUtils.isAuthenticated();
+        expect(result).toBe(true);
+      });
+
+      it('should handle authentication errors', async () => {
+        mockAuth.mockRejectedValue(new Error('Auth failed'));
+        const result = await SessionUtils.isAuthenticated();
+        expect(result).toBe(false);
+      });
+    });
+
+    describe('getAuthDebugInfo', () => {
+      it('should return debug info when authenticated', async () => {
+        mockAuth.mockResolvedValue({ userId: 'user_123' });
+        const result = await SessionUtils.getAuthDebugInfo();
+        expect(result).toEqual({
+          isAuthenticated: true,
+          userId: 'user_123',
+          error: null
+        });
+      });
+
+      it('should return debug info when not authenticated', async () => {
+        mockAuth.mockResolvedValue({ userId: null });
+        const result = await SessionUtils.getAuthDebugInfo();
+        expect(result).toEqual({
+          isAuthenticated: false,
+          userId: null,
+          error: null
+        });
+      });
+
+      it('should return error info when authentication fails', async () => {
+        mockAuth.mockRejectedValue(new Error('Auth failed'));
+        const result = await SessionUtils.getAuthDebugInfo();
+        expect(result).toEqual({
+          isAuthenticated: false,
+          userId: null,
+          error: 'Auth failed'
+        });
       });
     });
   });

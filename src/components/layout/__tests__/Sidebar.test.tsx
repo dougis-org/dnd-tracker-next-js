@@ -1,9 +1,7 @@
 import React from 'react';
 import { screen } from '@testing-library/react';
-import { useSession } from 'next-auth/react';
 import { Sidebar } from '../Sidebar';
 import { setupLayoutTest, mockUsePathname } from './test-utils';
-import { setupMockSession } from './session-test-helpers';
 import {
   createVisibilityTests,
   createAuthenticationTests,
@@ -20,13 +18,9 @@ jest.mock('next/navigation', () => ({
   usePathname: jest.fn(),
 }));
 
-// Mock next-auth/react
-jest.mock('next-auth/react', () => ({
-  useSession: jest.fn(() => ({
-    data: null,
-    status: 'unauthenticated',
-    update: jest.fn(),
-  })),
+// Mock UserMenu component since it uses Clerk
+jest.mock('../UserMenu', () => ({
+  UserMenu: () => <div data-testid="user-menu">User Menu</div>,
 }));
 
 // Mock Next.js Link component
