@@ -4,7 +4,6 @@
 import { NextRequest } from 'next/server';
 import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
-import { Webhook } from 'svix';
 
 // Common test timeout
 export const TEST_TIMEOUT = 30000;
@@ -106,7 +105,7 @@ export function setupWebhookMocks() {
 export function setupMockHeaders(customHeaders?: Record<string, string | null>) {
   const mockHeadersFunction = require('next/headers').headers;
   const headersToUse = customHeaders || mockHeaders;
-  
+
   mockHeadersFunction.mockResolvedValue({
     get: jest.fn((key: string) => headersToUse[key as keyof typeof headersToUse]),
   });
@@ -149,7 +148,7 @@ export function createMockWebhook(eventType: string, userData: any = mockClerkUs
       data: userData,
     }),
   };
-  
+
   // Mock the Webhook constructor to return our mock
   const MockedWebhook = require('svix').Webhook;
   MockedWebhook.mockImplementation(() => mockWebhook);
