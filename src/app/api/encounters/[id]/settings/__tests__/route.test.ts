@@ -1,6 +1,6 @@
 import { PATCH } from '../route';
 import { EncounterService } from '@/lib/services/EncounterService';
-import { auth } from '@/lib/auth';
+import { auth } from '@clerk/nextjs/server';
 import {
   TEST_SETTINGS,
   TEST_INVALID_SETTINGS,
@@ -33,7 +33,7 @@ jest.mock('@/lib/services/EncounterService', () => {
 });
 
 // Mock the auth
-jest.mock('@/lib/auth');
+jest.mock('@clerk/nextjs/server');
 
 const mockAuth = auth as jest.MockedFunction<typeof auth>;
 

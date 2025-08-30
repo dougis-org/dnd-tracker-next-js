@@ -1,6 +1,6 @@
 import { Types } from 'mongoose';
 import { Character } from '@/lib/models/Character';
-import { auth } from '@/lib/auth';
+import { auth } from '@clerk/nextjs/server';
 import { POST as rollInitiativePost } from '../roll-initiative/route';
 import { POST as rerollInitiativePost } from '../reroll-initiative/route';
 import {
@@ -28,7 +28,7 @@ import {
 } from './api-test-helpers';
 
 // Mock the dependencies
-jest.mock('@/lib/auth');
+jest.mock('@clerk/nextjs/server');
 
 jest.mock('@/lib/models/Character', () => ({
   Character: {

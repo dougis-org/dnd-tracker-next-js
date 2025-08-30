@@ -11,7 +11,7 @@ import {
 
 // Mock dependencies
 jest.mock('@/lib/services/UserService');
-jest.mock('@/lib/auth');
+jest.mock('@clerk/nextjs/server');
 
 describe('DELETE /api/users/[id]/profile', () => {
   const { executeDelete } = createProfileRouteExecutors(null, null, DELETE);

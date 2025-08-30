@@ -13,7 +13,7 @@ import {
 
 // Mock dependencies
 jest.mock('@/lib/services/UserService');
-jest.mock('@/lib/auth');
+jest.mock('@clerk/nextjs/server');
 
 describe('/api/users/[id]/profile', () => {
   const { executePatch, executeGet } = createProfileRouteExecutors(PATCH, GET, null);

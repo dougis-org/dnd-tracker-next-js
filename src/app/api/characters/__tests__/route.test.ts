@@ -21,13 +21,13 @@ import {
 jest.mock('@/lib/services/CharacterService');
 jest.mock('@/lib/db');
 
-// Mock NextAuth for future compatibility
-jest.mock('@/lib/auth', () => ({
+// Mock Clerk for authentication
+jest.mock('@clerk/nextjs/server', () => ({
   auth: jest.fn(),
 }));
 
 // Get the mocked auth function
-const { auth } = require('@/lib/auth');
+const { auth } = require('@clerk/nextjs/server');
 const mockAuth = auth as jest.MockedFunction<typeof auth>;
 
 describe('/api/characters API Route', () => {

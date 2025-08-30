@@ -13,9 +13,8 @@ export default async function AuthenticatedServerPage({
 }: AuthenticatedServerPageProps) {
   const session = await auth();
 
-  if (!session) {
-    redirect(fallbackUrl);
-    return null;
+  if (!session?.userId) {
+    redirect(fallbackUrl as any);
   }
 
   return <>{children}</>;
