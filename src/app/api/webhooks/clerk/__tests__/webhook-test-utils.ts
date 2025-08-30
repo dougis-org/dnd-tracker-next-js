@@ -149,8 +149,9 @@ export function createMockWebhook(eventType: string, userData: any = mockClerkUs
     }),
   };
 
-  // Mock the Webhook constructor to return our mock
+  // Reset the global mock and set it to our specific mock
   const MockedWebhook = require('svix').Webhook;
+  MockedWebhook.mockClear();
   MockedWebhook.mockImplementation(() => mockWebhook);
   return mockWebhook;
 }
@@ -188,20 +189,4 @@ export function expectFailedWebhookResponse(response: Response, data: any, expec
  */
 export function setupWebhookTestEnvironment() {
   jest.setTimeout(TEST_TIMEOUT);
-
-  // Mock dependencies that don't need real implementations
-  jest.mock('svix', () => ({
-    Webhook: jest.fn().mockImplementation(() => ({
-      verify: jest.fn().mockReturnValue({
-        type: 'user.created',
-        data: mockClerkUserData,
-      }),
-    })),
-  }));
-  jest.mock('next/headers', () => ({
-    headers: jest.fn(),
-  }));
-  jest.mock('@/lib/db', () => ({
-    connectToDatabase: jest.fn().mockResolvedValue(undefined),
-  }));
 }
