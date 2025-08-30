@@ -1,4 +1,6 @@
 import { POST } from '../route';
+import { NextRequest } from 'next/server';
+import { Webhook } from 'svix';
 import User from '@/lib/models/User';
 import { connectToDatabase } from '@/lib/db';
 import {
@@ -9,6 +11,8 @@ import {
   createWebhookRequest,
   expectSuccessfulWebhookResponse,
   expectFailedWebhookResponse,
+  setupMockHeadersWithNullValues,
+  setupMockHeadersWithError,
   mockClerkUserData,
 } from './webhook-test-utils';
 
@@ -43,10 +47,7 @@ describe('/api/webhooks/clerk', () => {
 
   describe('Webhook Signature Verification', () => {
     it('should reject requests with missing headers', async () => {
-      const mockHeadersFunction = require('next/headers').headers;
-      mockHeadersFunction.mockReturnValue({
-        get: jest.fn(() => null),
-      });
+      setupMockHeadersWithNullValues();
 
       const request = new NextRequest('http://localhost/api/webhooks/clerk', {
         method: 'POST',
@@ -261,10 +262,7 @@ describe('/api/webhooks/clerk', () => {
   describe('Error Handling', () => {
     it('should handle unexpected errors gracefully', async () => {
       // Mock headers to throw an unexpected error
-      const mockHeadersFunction = require('next/headers').headers;
-      mockHeadersFunction.mockImplementation(() => {
-        throw new Error('Unexpected error');
-      });
+      setupMockHeadersWithError(new Error('Unexpected error'));
 
       const request = new NextRequest('http://localhost/api/webhooks/clerk', {
         method: 'POST',

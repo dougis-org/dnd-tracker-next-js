@@ -5,7 +5,23 @@
 
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { useAuth, useClerk } from '@clerk/nextjs';
+import { useAuth, useClerk, useUser } from '@clerk/nextjs';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 import { AppLayout } from '../AppLayout';
 
 // Mock Clerk hooks
@@ -15,14 +31,25 @@ jest.mock('@clerk/nextjs', () => ({
   useUser: jest.fn(),
 }));
 
+
+
+
+
+
+
 // Mock Next.js navigation
 jest.mock('next/navigation', () => ({
-  useRouter: () => ({
-    push: jest.fn(),
-    back: jest.fn(),
-  }),
-  usePathname: () => '/',
+  useRouter: jest.fn(),
+  usePathname: jest.fn(),
 }));
+
+// Mock Next.js navigation
+
+
+
+
+
+
 
 const mockUseAuth = useAuth as jest.MockedFunction<typeof useAuth>;
 const mockUseClerk = useClerk as jest.MockedFunction<typeof useClerk>;
@@ -36,6 +63,14 @@ describe('Login/Logout Flows - Issue #654', () => {
       signIn: jest.fn(),
       signUp: jest.fn(),
     } as unknown as ReturnType<typeof useClerk>);
+    (useUser as jest.Mock).mockReturnValue({
+      isLoaded: true,
+      user: {
+        id: 'test-user-id',
+        fullName: 'Test User',
+        emailAddresses: [{ emailAddress: 'test@example.com' }],
+      },
+    });
   });
 
   afterEach(() => {
@@ -95,15 +130,6 @@ describe('Login/Logout Flows - Issue #654', () => {
 
   describe('Login Flow', () => {
     it('should navigate to correct sign-in route when clicking sign in button', () => {
-      const mockLocationAssign = jest.fn();
-      Object.defineProperty(window, 'location', {
-        writable: true,
-        value: {
-          href: '',
-          assign: mockLocationAssign,
-        },
-      });
-
       mockUseAuth.mockReturnValue({
         isLoaded: true,
         isSignedIn: false,
@@ -119,9 +145,8 @@ describe('Login/Logout Flows - Issue #654', () => {
       const signInButton = screen.getByRole('button', { name: /sign in/i });
       fireEvent.click(signInButton);
 
-      // This test will fail initially because the code tries to navigate to /sign-in
-      // but our actual route is /signin
-      expect(window.location.href).toBe('/signin');
+      // Use useRouter().push instead
+      expect((useRouter as jest.Mock)().push).toHaveBeenCalledWith('/signin');
     });
 
     it('should persist session after browser refresh', async () => {
@@ -189,15 +214,6 @@ describe('Login/Logout Flows - Issue #654', () => {
     });
 
     it('should redirect to home page after logout', async () => {
-      const mockLocationAssign = jest.fn();
-      Object.defineProperty(window, 'location', {
-        writable: true,
-        value: {
-          href: '/',
-          assign: mockLocationAssign,
-        },
-      });
-
       render(
         <AppLayout>
           <div>Test content</div>

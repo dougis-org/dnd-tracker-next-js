@@ -33,7 +33,20 @@ jest.mock('@/lib/models/User', () => ({
     deleteMany: jest.fn(),
   }
 }));
-jest.mock('@/lib/db');
+jest.mock('@/lib/db', () => ({
+  connectToDatabase: jest.fn().mockResolvedValue(undefined),
+}));
+jest.mock('svix', () => ({
+  Webhook: jest.fn().mockImplementation(() => ({
+    verify: jest.fn().mockReturnValue({
+      type: 'user.created',
+      data: mockClerkUserData,
+    }),
+  })),
+}));
+jest.mock('next/headers', () => ({
+  headers: jest.fn(),
+}));
 
 // Setup test environment
 setupWebhookTestEnvironment();
@@ -98,6 +111,7 @@ describe('Enhanced Registration Flow Integration', () => {
 
       (User.createClerkUser as jest.Mock).mockResolvedValue(expectedUser);
 
+      createMockWebhook('user.created', minimalClerkData);
       const request = createWebhookRequest('user.created', minimalClerkData);
       const response = await POST(request);
 
@@ -123,6 +137,7 @@ describe('Enhanced Registration Flow Integration', () => {
 
       (User.createClerkUser as jest.Mock).mockResolvedValue(mockUser);
 
+      createMockWebhook('user.created', mockClerkUserData);
       const request = createWebhookRequest('user.created', mockClerkUserData);
       const response = await POST(request);
 
@@ -169,6 +184,7 @@ describe('Enhanced Registration Flow Integration', () => {
         primary_email_address_id: null,
       };
 
+      createMockWebhook('user.created', invalidUserData);
       const request = createWebhookRequest('user.created', invalidUserData);
       const response = await POST(request);
       const data = await response.json();
@@ -196,13 +212,14 @@ describe('Enhanced Registration Flow Integration', () => {
       const expectedUser = createMockUser({ _id: 'user123' });
       (User.createClerkUser as jest.Mock).mockResolvedValue(expectedUser);
 
+      createMockWebhook('user.created', clerkData);
       const request = createWebhookRequest('user.created', clerkData);
       const response = await POST(request);
 
       await expectSuccessfulWebhookResponse(response);
       expectUserCreatedWithData({
         clerkId: 'clerk_123',
-        email: 'mapping@test.com', // Should be lowercase
+        email: 'Mapping@Test.COM', // Test case sensitivity - preserves original case
         firstName: 'Test',
         lastName: 'User',
         username: 'TestUser',

@@ -1,17 +1,23 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+
 import { PartyListView } from '../PartyListView';
+
+// Mock Clerk hooks
+jest.mock('@clerk/nextjs', () => ({
+  useAuth: jest.fn(),
+  useUser: jest.fn(),
+  useClerk: jest.fn(() => ({
+    signOut: jest.fn(),
+  })),
+}));
 
 // Mock Next.js router
 jest.mock('next/navigation', () => ({
   useRouter: jest.fn(),
 }));
 
-// Mock NextAuth
-jest.mock('next-auth/react', () => ({
-  useSession: jest.fn(),
-}));
+
 
 // Mock custom hooks
 jest.mock('../hooks/usePartyData', () => ({
@@ -186,9 +192,17 @@ describe('PartyListView', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (useRouter as jest.Mock).mockReturnValue(mockRouter);
-    (useSession as jest.Mock).mockReturnValue({
-      data: mockSession,
-      status: 'authenticated',
+    (require('@clerk/nextjs').useAuth as jest.Mock).mockReturnValue({
+      isSignedIn: true,
+      userId: mockSession.user.id,
+    });
+    (require('@clerk/nextjs').useUser as jest.Mock).mockReturnValue({
+      isLoaded: true,
+      user: {
+        id: mockSession.user.id,
+        fullName: mockSession.user.name,
+        emailAddresses: [{ emailAddress: mockSession.user.email }],
+      },
     });
     setupMocks();
   });

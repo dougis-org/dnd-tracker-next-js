@@ -58,7 +58,7 @@ const customJestConfig = {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
   transformIgnorePatterns: [
-    'node_modules/(?!(@clerk/.*|jose|svix|@panva/hkdf|@panva/asn1|@web3-storage/.*)/)',
+    'node_modules/(?!(@clerk/.*|jose|svix|@panva/hkdf|@panva/asn1|@web3-storage/.*|zod-validation-error)/)',
   ],
 };
 

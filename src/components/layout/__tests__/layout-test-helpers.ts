@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { render, screen, fireEvent, act } from '@testing-library/react';
-import { useSession } from 'next-auth/react';
+
 import {
   assertUserProfile,
   assertActiveNavigation,
@@ -13,7 +13,8 @@ import {
   assertSvgIcon,
 } from './shared-assertions';
 import { testNavigationLinks, NAVIGATION_ITEMS } from './navigation-test-helpers';
-import { setupMockSession } from './session-test-helpers';
+import { useAuth, useUser, useClerk } from '@clerk/nextjs';
+
 
 // Common test configurations
 export const COMMON_CLASSES = {
@@ -56,16 +57,39 @@ export const renderWithProps = <T extends React.ComponentType<any>>(
     ...props,
   };
 
-  // Set up session mock based on isAuthenticated prop
-  try {
-    const mockUseSession = useSession as jest.MockedFunction<typeof useSession>;
-    if (defaultProps.isAuthenticated) {
-      setupMockSession(mockUseSession, 'authenticatedWithName');
-    } else {
-      setupMockSession(mockUseSession, 'unauthenticated');
-    }
-  } catch {
-    // Ignore if useSession is not mocked - this allows backward compatibility
+  // Set up Clerk mocks based on isAuthenticated prop
+  const mockUseAuth = useAuth as jest.Mock;
+  const mockUseUser = useUser as jest.Mock;
+  const mockUseClerk = useClerk as jest.Mock;
+
+  if (defaultProps.isAuthenticated) {
+    mockUseAuth.mockReturnValue({
+      isSignedIn: true,
+      userId: 'user_test_123',
+    });
+    mockUseUser.mockReturnValue({
+      isLoaded: true,
+      user: {
+        id: 'user_test_123',
+        fullName: 'Test User',
+        emailAddresses: [{ emailAddress: 'test@example.com' }],
+      },
+    });
+    mockUseClerk.mockReturnValue({
+      signOut: jest.fn(),
+    });
+  } else {
+    mockUseAuth.mockReturnValue({
+      isSignedIn: false,
+      userId: null,
+    });
+    mockUseUser.mockReturnValue({
+      isLoaded: true,
+      user: null,
+    });
+    mockUseClerk.mockReturnValue({
+      signOut: jest.fn(),
+    });
   }
 
   return render(React.createElement(Component, defaultProps));
@@ -326,51 +350,7 @@ export const createAppLayoutTests = (
 });
 
 // Authentication-specific test helpers
-export const createAuthenticationButtonTests = (
-  Component: React.ComponentType<any>,
-  useSession: jest.MockedFunction<any>,
-  additionalProps: Record<string, any> = {}
-) => ({
-  'renders sign in button when user is not authenticated': () => {
-    useSession.mockReturnValue({
-      data: null,
-      status: 'unauthenticated',
-      update: jest.fn(),
-    });
 
-    renderWithProps(Component, additionalProps);
-    expect(screen.getByRole('button', { name: 'Sign In' })).toBeInTheDocument();
-  },
-
-  'renders user menu when user is authenticated': () => {
-    useSession.mockReturnValue({
-      data: {
-        user: {
-          id: '1',
-          email: 'test@example.com',
-          name: 'Test User',
-        },
-        expires: '2024-01-01',
-      },
-      status: 'authenticated',
-      update: jest.fn(),
-    });
-
-    renderWithProps(Component, additionalProps);
-    expect(screen.getByRole('button', { name: 'User menu' })).toBeInTheDocument();
-  },
-
-  'shows loading state during authentication check': () => {
-    useSession.mockReturnValue({
-      data: null,
-      status: 'loading',
-      update: jest.fn(),
-    });
-
-    renderWithProps(Component, additionalProps);
-    expect(screen.getByTestId('auth-loading')).toBeInTheDocument();
-  },
-});
 
 // Responsive behavior test helpers
 export const testResponsiveBehavior = (
