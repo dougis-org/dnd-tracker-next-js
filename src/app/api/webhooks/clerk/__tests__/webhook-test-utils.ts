@@ -4,7 +4,6 @@
 import { NextRequest } from 'next/server';
 import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
-import { Webhook } from 'svix';
 
 // Common test timeout
 export const TEST_TIMEOUT = 30000;
@@ -96,10 +95,39 @@ export function setupWebhookMocks() {
   // Mock environment variable
   process.env.CLERK_WEBHOOK_SECRET = 'test-webhook-secret';
 
-  // Mock headers function - use mockReturnValue for sync behavior
+  // Setup default headers mock with valid webhook headers
+  setupMockHeaders();
+}
+
+/**
+ * Setup headers mock with valid webhook headers (Next.js 15.5.2 async behavior)
+ */
+export function setupMockHeaders(customHeaders?: Record<string, string | null>) {
   const mockHeadersFunction = require('next/headers').headers;
-  mockHeadersFunction.mockReturnValue({
-    get: jest.fn((key: string) => mockHeaders[key as keyof typeof mockHeaders]),
+  const headersToUse = customHeaders || mockHeaders;
+
+  mockHeadersFunction.mockResolvedValue({
+    get: jest.fn((key: string) => headersToUse[key as keyof typeof headersToUse]),
+  });
+}
+
+/**
+ * Setup headers mock that returns null for all headers (for missing headers tests)
+ */
+export function setupMockHeadersWithNullValues() {
+  const mockHeadersFunction = require('next/headers').headers;
+  mockHeadersFunction.mockResolvedValue({
+    get: jest.fn(() => null),
+  });
+}
+
+/**
+ * Setup headers mock that throws an error (for error handling tests)
+ */
+export function setupMockHeadersWithError(error: Error = new Error('Unexpected error')) {
+  const mockHeadersFunction = require('next/headers').headers;
+  mockHeadersFunction.mockImplementation(() => {
+    throw error;
   });
 }
 
@@ -120,7 +148,11 @@ export function createMockWebhook(eventType: string, userData: any = mockClerkUs
       data: userData,
     }),
   };
-  (Webhook as jest.Mock).mockImplementation(() => mockWebhook);
+
+  // Reset the global mock and set it to our specific mock
+  const MockedWebhook = require('svix').Webhook;
+  MockedWebhook.mockClear();
+  MockedWebhook.mockImplementation(() => mockWebhook);
   return mockWebhook;
 }
 
@@ -157,13 +189,4 @@ export function expectFailedWebhookResponse(response: Response, data: any, expec
  */
 export function setupWebhookTestEnvironment() {
   jest.setTimeout(TEST_TIMEOUT);
-
-  // Mock dependencies that don't need real implementations
-  jest.mock('svix');
-  jest.mock('next/headers', () => ({
-    headers: jest.fn(),
-  }));
-  jest.mock('@/lib/db', () => ({
-    connectToDatabase: jest.fn().mockResolvedValue(undefined),
-  }));
 }

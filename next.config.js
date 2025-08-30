@@ -1,8 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    typedRoutes: true,
-  },
+  typedRoutes: true,
 
   // Performance optimizations
   poweredByHeader: false,

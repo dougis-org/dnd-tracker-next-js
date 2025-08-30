@@ -32,7 +32,7 @@ function getPrimaryEmail(userData: UserJSON) {
 export async function POST(req: NextRequest) {
   try {
     // Get the headers
-    const headersList = headers();
+    const headersList = await headers();
     const svix_id = headersList.get('svix-id');
     const svix_timestamp = headersList.get('svix-timestamp');
     const svix_signature = headersList.get('svix-signature');
