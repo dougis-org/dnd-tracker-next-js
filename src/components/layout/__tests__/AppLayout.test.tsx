@@ -1,5 +1,11 @@
 import React from 'react';
-import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
+import {
+  render,
+  screen,
+  fireEvent,
+  act,
+  waitFor,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useUser, useClerk, useAuth } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
@@ -11,7 +17,13 @@ jest.mock('@clerk/nextjs', () => ({
   useUser: jest.fn(),
   useClerk: jest.fn(),
   useAuth: jest.fn(),
-  UserButton: ({ afterSignOutUrl, userProfileUrl }: { afterSignOutUrl: string, userProfileUrl: string }) => (
+  UserButton: ({
+    afterSignOutUrl,
+    userProfileUrl,
+  }: {
+    afterSignOutUrl: string;
+    userProfileUrl: string;
+  }) => (
     <div data-testid="user-button">
       <a href={userProfileUrl}>My Account</a>
       <button
@@ -33,14 +45,28 @@ jest.mock('next/navigation', () => ({
 }));
 
 jest.mock('next/link', () => {
-  return ({ children, href }: { children: React.ReactNode; href: string }) => {
+  const MockLink = ({
+    children,
+    href,
+  }: {
+    children: React.ReactNode;
+    href: string;
+  }) => {
     return <a href={href}>{children}</a>;
   };
+  MockLink.displayName = 'MockLink';
+  return MockLink;
 });
 
 // Mock the child components
 jest.mock('../Sidebar', () => ({
-  Sidebar: ({ isOpen, isAuthenticated }: { isOpen: boolean; isAuthenticated?: boolean }) => (
+  Sidebar: ({
+    isOpen,
+    isAuthenticated,
+  }: {
+    isOpen: boolean;
+    isAuthenticated?: boolean;
+  }) => (
     <div data-testid="sidebar" data-open={isOpen} data-auth={isAuthenticated} />
   ),
 }));
@@ -55,7 +81,11 @@ jest.mock('../MobileMenu', () => ({
     onClose: () => void;
     isAuthenticated?: boolean;
   }) => (
-    <div data-testid="mobile-menu" data-open={isOpen} data-auth={isAuthenticated}>
+    <div
+      data-testid="mobile-menu"
+      data-open={isOpen}
+      data-auth={isAuthenticated}
+    >
       {isOpen && (
         <button data-testid="mobile-menu-close" onClick={onClose}>
           Close
@@ -448,10 +478,16 @@ describe('AppLayout', () => {
 
     test('renders sign in button when user is not authenticated', () => {
       mockUseAuth.mockReturnValue({ isLoaded: true, isSignedIn: false });
-      mockUseUser.mockReturnValue({ isLoaded: true, isSignedIn: false, user: null });
+      mockUseUser.mockReturnValue({
+        isLoaded: true,
+        isSignedIn: false,
+        user: null,
+      });
 
       render(<AppLayout>{mockChildren}</AppLayout>);
-      expect(screen.getByRole('button', { name: 'Sign In' })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: 'Sign In' })
+      ).toBeInTheDocument();
     });
 
     test('renders user menu when user is authenticated', () => {
@@ -467,12 +503,18 @@ describe('AppLayout', () => {
       });
 
       render(<AppLayout>{mockChildren}</AppLayout>);
-      expect(screen.getByRole('button', { name: 'User menu' })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: 'User menu' })
+      ).toBeInTheDocument();
     });
 
     test('shows loading state during authentication check', () => {
       mockUseAuth.mockReturnValue({ isLoaded: false, isSignedIn: false });
-      mockUseUser.mockReturnValue({ isLoaded: false, isSignedIn: false, user: null });
+      mockUseUser.mockReturnValue({
+        isLoaded: false,
+        isSignedIn: false,
+        user: null,
+      });
 
       render(<AppLayout>{mockChildren}</AppLayout>);
       expect(screen.getByTestId('auth-loading')).toBeInTheDocument();
@@ -491,7 +533,10 @@ describe('AppLayout', () => {
       });
 
       render(<AppLayout>{mockChildren}</AppLayout>);
-      expect(screen.getByTestId('sidebar')).toHaveAttribute('data-open', 'true');
+      expect(screen.getByTestId('sidebar')).toHaveAttribute(
+        'data-open',
+        'true'
+      );
     });
 
     test('displays real user name when authenticated', () => {
@@ -510,7 +555,9 @@ describe('AppLayout', () => {
       // The user name is in the UserMenu component, which is not rendered in this test
       // So we can't test for the user name here.
       // We will test for the user menu button instead.
-      expect(screen.getByRole('button', { name: 'User menu' })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: 'User menu' })
+      ).toBeInTheDocument();
     });
 
     test('displays user email when name is not available', () => {
@@ -529,7 +576,9 @@ describe('AppLayout', () => {
       // The user email is in the UserMenu component, which is not rendered in this test
       // So we can't test for the user email here.
       // We will test for the user menu button instead.
-      expect(screen.getByRole('button', { name: 'User menu' })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: 'User menu' })
+      ).toBeInTheDocument();
     });
   });
 
@@ -570,7 +619,9 @@ describe('AppLayout', () => {
 
     test('renders the UserMenu component when authenticated', () => {
       setupUserDropdownTest();
-      expect(screen.getByRole('button', { name: 'User menu' })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: 'User menu' })
+      ).toBeInTheDocument();
     });
 
     test('user menu button does not immediately sign out when clicked', async () => {
@@ -610,7 +661,9 @@ describe('AppLayout', () => {
       await openDropdownMenu(userMenuButton);
 
       // Verify the logout button is clickable (has onClick handler)
-      const logoutButton = screen.getByText('Sign Out').closest('[role="menuitem"]');
+      const logoutButton = screen
+        .getByText('Sign Out')
+        .closest('[role="menuitem"]');
       expect(logoutButton).toBeInTheDocument();
       expect(logoutButton).toHaveAttribute('role', 'menuitem');
     });

@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useAuth } from '@clerk/nextjs';
+import { useAuth, useClerk } from '@clerk/nextjs';
+import { useRouter } from 'next/navigation';
 import { Sidebar } from './Sidebar';
 import { MobileMenu } from './MobileMenu';
 import { Breadcrumbs } from './Breadcrumbs';
@@ -20,7 +21,7 @@ interface AppLayoutProps {
   children: React.ReactNode;
 }
 
-const AuthSection = ({ isLoaded, isSignedIn }: { isLoaded: boolean; isSignedIn: boolean }) => {
+const AuthSection = ({ isLoaded, isSignedIn, router, signOut }: { isLoaded: boolean; isSignedIn: boolean; router: any; signOut: any }) => {
 
   if (!isLoaded) {
     return (
@@ -33,7 +34,7 @@ const AuthSection = ({ isLoaded, isSignedIn }: { isLoaded: boolean; isSignedIn: 
   if (!isSignedIn) {
     return (
       <button
-        onClick={() => window.location.href = '/sign-in'}
+        onClick={() => router.push('/sign-in')}
         className="px-4 py-2 text-sm font-medium text-primary-foreground bg-primary rounded-md hover:bg-primary/90 transition-colors"
         aria-label="Sign In"
       >
@@ -67,11 +68,11 @@ const AuthSection = ({ isLoaded, isSignedIn }: { isLoaded: boolean; isSignedIn: 
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel>My Account</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => window.location.href = '/user-profile'}>
+        <DropdownMenuItem onClick={() => router.push('/user-profile')}>
           Settings
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => window.location.href = '/sign-out'}>
+        <DropdownMenuItem onClick={() => signOut({ redirectUrl: '/' })}>
           Sign Out
         </DropdownMenuItem>
       </DropdownMenuContent>
@@ -83,12 +84,16 @@ const HeaderSection = ({
   isMobile,
   setSidebarOpen,
   isLoaded,
-  isSignedIn
+  isSignedIn,
+  router,
+  signOut
 }: {
   isMobile: boolean;
   setSidebarOpen: (_open: boolean) => void;
   isLoaded: boolean;
   isSignedIn: boolean;
+  router: any;
+  signOut: any;
 }) => (
   <header className="sticky top-0 z-40 border-b border-border bg-card/80 backdrop-blur-sm">
     <div className="flex h-16 items-center justify-between px-4">
@@ -123,7 +128,7 @@ const HeaderSection = ({
       {/* Theme toggle and auth section */}
       <div className="flex items-center space-x-4">
         <ThemeToggle />
-        <AuthSection isLoaded={isLoaded} isSignedIn={isSignedIn} />
+        <AuthSection isLoaded={isLoaded} isSignedIn={isSignedIn} router={router} signOut={signOut} />
       </div>
     </div>
   </header>
@@ -131,6 +136,8 @@ const HeaderSection = ({
 
 export function AppLayout({ children }: AppLayoutProps) {
   const { isLoaded, isSignedIn } = useAuth();
+  const router = useRouter();
+  const { signOut } = useClerk();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 

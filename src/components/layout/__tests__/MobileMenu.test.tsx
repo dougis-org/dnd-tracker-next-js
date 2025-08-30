@@ -21,14 +21,16 @@ jest.mock('next/navigation', () => ({
   usePathname: jest.fn(),
 }));
 
-// Mock next-auth/react
-jest.mock('next-auth/react', () => ({
-  useSession: jest.fn(() => ({
-    data: null,
-    status: 'unauthenticated',
-    update: jest.fn(),
+// Mock Clerk hooks
+jest.mock('@clerk/nextjs', () => ({
+  useAuth: jest.fn(),
+  useUser: jest.fn(),
+  useClerk: jest.fn(() => ({
+    signOut: jest.fn(),
   })),
 }));
+
+
 
 // Mock Next.js Link component
 jest.mock('next/link', () => {
@@ -60,6 +62,19 @@ describe('MobileMenu', () => {
     mockUsePathname.mockReturnValue('/');
     clearAllMocks(mocks);
     jest.clearAllMocks();
+    // Mock Clerk authentication state
+    (require('@clerk/nextjs').useAuth as jest.Mock).mockReturnValue({
+      isSignedIn: true,
+      userId: 'user_test_123', // Example user ID
+    });
+    (require('@clerk/nextjs').useUser as jest.Mock).mockReturnValue({
+      isLoaded: true,
+      user: {
+        id: 'user_test_123',
+        fullName: 'Test User',
+        emailAddresses: [{ emailAddress: 'test@example.com' }],
+      },
+    });
   });
 
   afterEach(() => {

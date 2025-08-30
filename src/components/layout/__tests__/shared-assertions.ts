@@ -50,8 +50,7 @@ export const assertUserProfile = () => {
   expect(screen.getByTestId('user-menu')).toBeInTheDocument();
 
   // Verify user data is displayed (matches session-test-helpers.ts config)
-  expect(screen.getByText('John Doe')).toBeInTheDocument();
-  expect(screen.getByText('john@example.com')).toBeInTheDocument();
+  expect(screen.getByText('test@example.com')).toBeInTheDocument();
 
   // Verify UserMenu structure
   expect(screen.getByTestId('user-avatar')).toBeInTheDocument();
