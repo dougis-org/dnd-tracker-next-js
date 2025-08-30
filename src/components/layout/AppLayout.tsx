@@ -136,8 +136,8 @@ const HeaderSection = ({
 
 export function AppLayout({ children }: AppLayoutProps) {
   const { isLoaded, isSignedIn } = useAuth();
-  const router = useRouter();
-  const { signOut } = useClerk();
+  const _router = useRouter();
+  const { signOut: _signOut } = useClerk();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 

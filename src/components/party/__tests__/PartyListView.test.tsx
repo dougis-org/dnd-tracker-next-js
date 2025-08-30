@@ -18,7 +18,6 @@ jest.mock('next/navigation', () => ({
 }));
 
 
-
 // Mock custom hooks
 jest.mock('../hooks/usePartyData', () => ({
   usePartyData: jest.fn(),

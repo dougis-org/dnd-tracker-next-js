@@ -31,7 +31,6 @@ jest.mock('@clerk/nextjs', () => ({
 }));
 
 
-
 // Mock Next.js Link component
 jest.mock('next/link', () => {
   return function MockLink({

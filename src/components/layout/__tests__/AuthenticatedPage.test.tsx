@@ -1,11 +1,11 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@clerk/nextjs';
 import { AuthenticatedPage } from '../AuthenticatedPage';
 
-// Mock next-auth/react
-jest.mock('next-auth/react');
-const mockUseSession = useSession as jest.MockedFunction<typeof useSession>;
+// Mock Clerk
+jest.mock('@clerk/nextjs');
+const mockUseAuth = useAuth as jest.MockedFunction<typeof useAuth>;
 
 // Mock AppLayout
 jest.mock('../AppLayout', () => ({
@@ -23,10 +23,17 @@ describe('AuthenticatedPage', () => {
 
   describe('Loading State', () => {
     it('displays default loading message', () => {
-      mockUseSession.mockReturnValue({
-        data: null,
-        status: 'loading',
-        update: jest.fn(),
+      mockUseAuth.mockReturnValue({
+        isLoaded: false,
+        isSignedIn: false,
+        userId: null,
+        sessionId: null,
+        orgId: null,
+        orgRole: null,
+        orgSlug: null,
+        has: jest.fn(),
+        signOut: jest.fn(),
+        getToken: jest.fn(),
       });
 
       render(
@@ -40,10 +47,17 @@ describe('AuthenticatedPage', () => {
     });
 
     it('displays custom loading message', () => {
-      mockUseSession.mockReturnValue({
-        data: null,
-        status: 'loading',
-        update: jest.fn(),
+      mockUseAuth.mockReturnValue({
+        isLoaded: false,
+        isSignedIn: false,
+        userId: null,
+        sessionId: null,
+        orgId: null,
+        orgRole: null,
+        orgSlug: null,
+        has: jest.fn(),
+        signOut: jest.fn(),
+        getToken: jest.fn(),
       });
 
       render(
@@ -59,10 +73,17 @@ describe('AuthenticatedPage', () => {
 
   describe('Unauthenticated State', () => {
     it('displays default unauthenticated message', () => {
-      mockUseSession.mockReturnValue({
-        data: null,
-        status: 'unauthenticated',
-        update: jest.fn(),
+      mockUseAuth.mockReturnValue({
+        isLoaded: true,
+        isSignedIn: false,
+        userId: null,
+        sessionId: null,
+        orgId: null,
+        orgRole: null,
+        orgSlug: null,
+        has: jest.fn(),
+        signOut: jest.fn(),
+        getToken: jest.fn(),
       });
 
       render(
@@ -76,10 +97,17 @@ describe('AuthenticatedPage', () => {
     });
 
     it('displays custom unauthenticated message', () => {
-      mockUseSession.mockReturnValue({
-        data: null,
-        status: 'unauthenticated',
-        update: jest.fn(),
+      mockUseAuth.mockReturnValue({
+        isLoaded: true,
+        isSignedIn: false,
+        userId: null,
+        sessionId: null,
+        orgId: null,
+        orgRole: null,
+        orgSlug: null,
+        has: jest.fn(),
+        signOut: jest.fn(),
+        getToken: jest.fn(),
       });
 
       render(
@@ -95,10 +123,17 @@ describe('AuthenticatedPage', () => {
 
   describe('Authenticated State', () => {
     it('renders children when authenticated', () => {
-      mockUseSession.mockReturnValue({
-        data: { user: { id: 'user1', name: 'Test User' }, expires: '2024-01-01' },
-        status: 'authenticated',
-        update: jest.fn(),
+      mockUseAuth.mockReturnValue({
+        isLoaded: true,
+        isSignedIn: true,
+        userId: 'user_123',
+        sessionId: 'session_123',
+        orgId: null,
+        orgRole: null,
+        orgSlug: null,
+        has: jest.fn(),
+        signOut: jest.fn(),
+        getToken: jest.fn(),
       });
 
       render(
@@ -113,10 +148,17 @@ describe('AuthenticatedPage', () => {
     });
 
     it('renders within AppLayout', () => {
-      mockUseSession.mockReturnValue({
-        data: { user: { id: 'user1', name: 'Test User' }, expires: '2024-01-01' },
-        status: 'authenticated',
-        update: jest.fn(),
+      mockUseAuth.mockReturnValue({
+        isLoaded: true,
+        isSignedIn: true,
+        userId: 'user_123',
+        sessionId: 'session_123',
+        orgId: null,
+        orgRole: null,
+        orgSlug: null,
+        has: jest.fn(),
+        signOut: jest.fn(),
+        getToken: jest.fn(),
       });
 
       render(
@@ -132,10 +174,17 @@ describe('AuthenticatedPage', () => {
 
   describe('Layout Structure', () => {
     it('has proper loading state styling', () => {
-      mockUseSession.mockReturnValue({
-        data: null,
-        status: 'loading',
-        update: jest.fn(),
+      mockUseAuth.mockReturnValue({
+        isLoaded: false,
+        isSignedIn: false,
+        userId: null,
+        sessionId: null,
+        orgId: null,
+        orgRole: null,
+        orgSlug: null,
+        has: jest.fn(),
+        signOut: jest.fn(),
+        getToken: jest.fn(),
       });
 
       const { container } = render(
@@ -150,10 +199,17 @@ describe('AuthenticatedPage', () => {
     });
 
     it('has proper unauthenticated state styling', () => {
-      mockUseSession.mockReturnValue({
-        data: null,
-        status: 'unauthenticated',
-        update: jest.fn(),
+      mockUseAuth.mockReturnValue({
+        isLoaded: true,
+        isSignedIn: false,
+        userId: null,
+        sessionId: null,
+        orgId: null,
+        orgRole: null,
+        orgSlug: null,
+        has: jest.fn(),
+        signOut: jest.fn(),
+        getToken: jest.fn(),
       });
 
       const { container } = render(
@@ -170,10 +226,17 @@ describe('AuthenticatedPage', () => {
 
   describe('Accessibility', () => {
     it('has proper text styling for loading message', () => {
-      mockUseSession.mockReturnValue({
-        data: null,
-        status: 'loading',
-        update: jest.fn(),
+      mockUseAuth.mockReturnValue({
+        isLoaded: false,
+        isSignedIn: false,
+        userId: null,
+        sessionId: null,
+        orgId: null,
+        orgRole: null,
+        orgSlug: null,
+        has: jest.fn(),
+        signOut: jest.fn(),
+        getToken: jest.fn(),
       });
 
       const { container } = render(
@@ -188,10 +251,17 @@ describe('AuthenticatedPage', () => {
     });
 
     it('has proper text styling for unauthenticated message', () => {
-      mockUseSession.mockReturnValue({
-        data: null,
-        status: 'unauthenticated',
-        update: jest.fn(),
+      mockUseAuth.mockReturnValue({
+        isLoaded: true,
+        isSignedIn: false,
+        userId: null,
+        sessionId: null,
+        orgId: null,
+        orgRole: null,
+        orgSlug: null,
+        has: jest.fn(),
+        signOut: jest.fn(),
+        getToken: jest.fn(),
       });
 
       const { container } = render(
