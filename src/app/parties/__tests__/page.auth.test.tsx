@@ -3,17 +3,17 @@
  */
 
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
-import { auth } from '@/lib/auth';
+import { auth } from '@clerk/nextjs/server';
 import PartiesPage from '../page';
 import {
-  createMockSession,
-  setupNextAuthMocks,
-  setupUnauthenticatedState,
-  SHARED_API_TEST_CONSTANTS
-} from '@/lib/test-utils/shared-api-test-helpers';
+  SHARED_API_TEST_CONSTANTS,
+  createMockClerkSession,
+  setupClerkMocks,
+  setupClerkUnauthenticatedState,
+} from '@/lib/test-utils/shared-clerk-test-helpers';
 
-// Mock the auth function from Next Auth
-jest.mock('@/lib/auth', () => ({
+// Mock Clerk's auth function
+jest.mock('@clerk/nextjs/server', () => ({
   auth: jest.fn(),
 }));
 
@@ -41,34 +41,25 @@ describe('PartiesPage Authentication', () => {
   });
 
   it('should redirect unauthenticated users to signin', async () => {
-    setupUnauthenticatedState(mockAuth);
-
-    // Test that the component throws when redirect is called
+    setupClerkUnauthenticatedState(mockAuth);
     await expect(PartiesPage()).rejects.toThrow('NEXT_REDIRECT');
   });
 
   it('should render party list for authenticated users', async () => {
     const userId = SHARED_API_TEST_CONSTANTS.TEST_USER_ID;
-    const mockSession = createMockSession(userId);
-
-    setupNextAuthMocks(mockAuth);
+    const mockSession = createMockClerkSession(userId);
+    setupClerkMocks(mockAuth);
     mockAuth.mockResolvedValue(mockSession);
-
     const result = await PartiesPage();
-
-    // The component should render without throwing
     expect(result).toBeDefined();
   });
 
   it('should handle session with user ID', async () => {
     const userId = 'test-parties-user';
-    const mockSession = createMockSession(userId);
-
-    setupNextAuthMocks(mockAuth);
+    const mockSession = createMockClerkSession(userId);
+    setupClerkMocks(mockAuth);
     mockAuth.mockResolvedValue(mockSession);
-
     const result = await PartiesPage();
-
     expect(result).toBeDefined();
     expect(mockAuth).toHaveBeenCalled();
   });

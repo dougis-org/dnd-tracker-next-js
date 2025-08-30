@@ -7,7 +7,7 @@
 
 import { NextRequest } from 'next/server';
 import { Types } from 'mongoose';
-import { auth } from '@/lib/auth';
+import { auth } from '@clerk/nextjs/server';
 import { EncounterServiceImportExport } from '@/lib/services/EncounterServiceImportExport';
 import { createMockSession } from '@/lib/test-utils/shared-api-test-helpers';
 
@@ -27,15 +27,13 @@ export const TEST_USER = {
  * Mock auth to return successful authentication
  * Uses shared factory function to eliminate code duplication
  */
-export const mockAuthSuccess = (mockAuth: jest.MockedFunction<typeof auth>) => {
-  mockAuth.mockResolvedValue(createMockSession(TEST_USER.id));
+  mockAuth.mockResolvedValue({ userId: TEST_USER.id, publicMetadata: { role: 'user' } } as any);
 };
 
 /**
  * Mock auth to return null (unauthenticated)
  */
-export const mockAuthFailure = (mockAuth: jest.MockedFunction<typeof auth>) => {
-  mockAuth.mockResolvedValue(null);
+  mockAuth.mockResolvedValue({ userId: undefined } as any);
 };
 
 /**
