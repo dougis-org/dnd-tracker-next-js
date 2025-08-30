@@ -41,6 +41,8 @@ export function setupClerkMocks(mockAuth: jest.MockedFunction<any>) {
   mockAuth.mockReset();
 }
 
-export function setupClerkUnauthenticatedState(mockAuth: jest.MockedFunction<any>) {
+export function setupClerkUnauthenticatedState(
+  mockAuth: jest.MockedFunction<any>
+) {
   mockAuth.mockResolvedValue({ userId: undefined });
 }
