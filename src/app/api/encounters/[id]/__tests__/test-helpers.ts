@@ -276,5 +276,12 @@ export const testUnauthorizedAccess = async (
 
 export const setupTestMocks = (mockAuth: any, session: any) => {
   jest.clearAllMocks();
-  mockAuth.mockResolvedValue(session);
+  // Convert NextAuth session format to Clerk auth format
+  const clerkAuthResult = {
+    userId: session?.user?.id || null,
+    sessionClaims: session ? {
+      sub: session.user.id,
+    } : null,
+  };
+  mockAuth.mockResolvedValue(clerkAuthResult);
 };

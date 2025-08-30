@@ -1,6 +1,6 @@
 import { GET, PUT, DELETE } from '../route';
 import { EncounterService } from '@/lib/services/EncounterService';
-import { auth } from '@/lib/auth';
+import { auth } from '@clerk/nextjs/server';
 import {
   createTestEncounter,
   createTestParticipant,
@@ -28,7 +28,7 @@ import {
 
 // Mock dependencies
 jest.mock('@/lib/services/EncounterService');
-jest.mock('@/lib/auth', () => ({
+jest.mock('@clerk/nextjs/server', () => ({
   auth: jest.fn(),
 }));
 

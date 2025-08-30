@@ -1,5 +1,5 @@
 import { UserService } from '@/lib/services/UserService';
-import { auth } from '@/lib/auth';
+import { auth } from '@clerk/nextjs/server';
 import {
   SHARED_API_TEST_CONSTANTS,
   createMockUser,

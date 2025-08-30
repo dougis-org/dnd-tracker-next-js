@@ -10,7 +10,6 @@ import User from '@/lib/models/User';
 import { connectToDatabase } from '@/lib/db';
 import {
   createMockUser,
-  USER_MODEL_MOCK,
   expectUserCreatedWithData,
   expectSuccessfulWebhookResponse,
 } from '@/test-utils/user-registration-mocks';
@@ -24,7 +23,16 @@ import {
 } from './webhook-test-utils';
 
 // Mock dependencies
-jest.mock('@/lib/models/User', () => USER_MODEL_MOCK);
+jest.mock('@/lib/models/User', () => ({
+  __esModule: true,
+  default: {
+    createClerkUser: jest.fn(),
+    findByClerkId: jest.fn(),
+    updateFromClerkData: jest.fn(),
+    findByIdAndUpdate: jest.fn(),
+    deleteMany: jest.fn(),
+  }
+}));
 jest.mock('@/lib/db');
 
 // Setup test environment

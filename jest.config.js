@@ -57,14 +57,8 @@ const customJestConfig = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
-  transform: {
-    '^.+\.(ts|tsx|js|jsx)$' : ['ts-jest', {
-      tsconfig: 'tsconfig.jest.json',
-    }],
-    '^.+\.mjs$': 'jest-esm-transformer',
-  },
   transformIgnorePatterns: [
-    'node_modules/(?!(?:@clerk/backend|@clerk/nextjs)/)',
+    'node_modules/(?!(@clerk/.*|jose|svix|@panva/hkdf|@panva/asn1|@web3-storage/.*)/)',
   ],
 };
 

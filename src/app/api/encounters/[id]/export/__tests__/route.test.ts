@@ -15,7 +15,7 @@ import {
 
 // Mock the service and auth
 jest.mock('@/lib/services/EncounterServiceImportExport');
-jest.mock('@/lib/auth');
+jest.mock('@clerk/nextjs/server');
 
 const mockService = EncounterServiceImportExport as jest.Mocked<typeof EncounterServiceImportExport>;
 // Auth mocking handled by shared utilities

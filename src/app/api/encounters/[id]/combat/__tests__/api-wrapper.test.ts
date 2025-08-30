@@ -1,10 +1,10 @@
 import { NextRequest } from 'next/server';
 import { withCombatValidation } from '../api-wrapper';
-import { auth } from '@/lib/auth';
+import { auth } from '@clerk/nextjs/server';
 import { validateAndGetEncounter, validateCombatActive, validateRequiredFields, createSuccessResponse } from '../utils';
 
 // Mock dependencies
-jest.mock('@/lib/auth');
+jest.mock('@clerk/nextjs/server');
 jest.mock('../utils');
 
 const mockAuth = auth as jest.MockedFunction<typeof auth>;
