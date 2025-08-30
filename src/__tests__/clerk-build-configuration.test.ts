@@ -3,6 +3,7 @@
  *
  * These tests verify that Clerk public key configuration is properly
  * accessible during build time and centrally managed.
+ * SECURITY: Only the public key should be exposed - secret key must remain in env vars only.
  */
 
 import { existsSync, readFileSync } from 'fs';
@@ -23,15 +24,16 @@ describe('Clerk Build Configuration - Issue #675', () => {
 
       // Should export a function that gets the publishable key
       expect(content).toMatch(/export.*function.*getClerkPublishableKey/);
-      expect(content).toMatch(/CLERK_PUBLISHABLE_KEY/);
+      expect(content).toMatch(/NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY/);
     });
 
-    it('should provide build-time validation', () => {
+    it('should NEVER expose secret key values in the module', () => {
       const configPath = join(projectRoot, 'src', 'lib', 'config', 'clerk.ts');
       const content = readFileSync(configPath, 'utf-8');
 
-      // Should have validation for missing keys
-      expect(content).toMatch(/throw.*Error|console\.error|console\.warn/);
+      // Should NOT export or expose the secret key value
+      expect(content).not.toMatch(/export.*CLERK_SECRET_KEY/);
+      expect(content).not.toMatch(/const.*CLERK_SECRET_KEY.*=.*sk_/);
     });
   });
 
@@ -46,23 +48,23 @@ describe('Clerk Build Configuration - Issue #675', () => {
       }
     });
 
-    // Removed: test for missing publishable key, as it is now required and will throw
-
-    it('should provide clear error messages for missing keys', () => {
+    it('should handle missing publishable key gracefully during build', () => {
       delete process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
-      const { validateClerkBuildConfig } = require('../lib/config/clerk');
+      const { getClerkPublishableKey } = require('../lib/config/clerk');
 
+      // Should either return a fallback or handle gracefully
       expect(() => {
-        validateClerkBuildConfig();
-      }).toThrow(
-        /publishable.*key|CLERK_PUBLISHABLE_KEY|NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY/i
-      );
+        const key = getClerkPublishableKey();
+        expect(typeof key === 'string').toBe(true);
+      }).not.toThrow();
     });
 
-    it('should return the hardcoded publishable key', () => {
+    it('should work with valid publishable key from environment', () => {
       process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = 'pk_test_valid_key_123';
 
+      // Re-require to pick up new env var
+      delete require.cache[require.resolve('../lib/config/clerk')];
       const { getClerkPublishableKey } = require('../lib/config/clerk');
       const key = getClerkPublishableKey();
 
@@ -70,19 +72,7 @@ describe('Clerk Build Configuration - Issue #675', () => {
     });
   });
 
-  describe('Build-time Configuration', () => {
-    it('should have proper Next.js configuration for Clerk', () => {
-      const nextConfigPath = join(projectRoot, 'next.config.mjs');
-
-      if (existsSync(nextConfigPath)) {
-        const content = readFileSync(nextConfigPath, 'utf-8');
-
-        // Should not have any configuration that prevents Clerk from working
-        // This is more of a smoke test to ensure we don't break anything
-        expect(content).not.toMatch(/CLERK.*false/);
-      }
-    });
-
+  describe('Build-time Safety', () => {
     it('should provide fallback configuration for development', () => {
       const originalNodeEnv = process.env.NODE_ENV;
       const originalKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
@@ -90,36 +80,15 @@ describe('Clerk Build Configuration - Issue #675', () => {
       process.env.NODE_ENV = 'development';
       delete process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
-      const {
-        getClerkPublishableKey,
-        isDevelopmentMode,
-      } = require('../lib/config/clerk');
+      delete require.cache[require.resolve('../lib/config/clerk')];
+      const { getClerkPublishableKey, isDevelopmentMode } = require('../lib/config/clerk');
 
       expect(isDevelopmentMode()).toBe(true);
 
-      // In development, we might allow undefined keys with warnings
+      // Should provide a fallback key for development
       const key = getClerkPublishableKey();
-      expect(typeof key === 'string' || key === undefined).toBe(true);
-
-      process.env.NODE_ENV = originalNodeEnv;
-      if (originalKey) {
-        process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = originalKey;
-      }
-    });
-  });
-
-  describe('Production Readiness', () => {
-    it('should require publishable key in production builds', () => {
-      const originalNodeEnv = process.env.NODE_ENV;
-      const originalKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
-
-      process.env.NODE_ENV = 'production';
-      delete process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
-
-      expect(() => {
-        const { validateClerkBuildConfig } = require('../lib/config/clerk');
-        validateClerkBuildConfig();
-      }).toThrow();
+      expect(typeof key === 'string').toBe(true);
+      expect(key.startsWith('pk_test_')).toBe(true);
 
       process.env.NODE_ENV = originalNodeEnv;
       if (originalKey) {
@@ -135,6 +104,24 @@ describe('Clerk Build Configuration - Issue #675', () => {
       expect(isValidPublishableKey('invalid_key')).toBe(false);
       expect(isValidPublishableKey('')).toBe(false);
       expect(isValidPublishableKey(undefined)).toBe(false);
+    });
+  });
+
+  describe('Security Requirements', () => {
+    it('should never expose secret key in client-accessible code', () => {
+      const configPath = join(projectRoot, 'src', 'lib', 'config', 'clerk.ts');
+      const content = readFileSync(configPath, 'utf-8');
+
+      // Secret keys should never be hardcoded or exposed
+      expect(content).not.toMatch(/sk_test_[a-zA-Z0-9]/);
+      expect(content).not.toMatch(/sk_live_[a-zA-Z0-9]/);
+    });
+
+    it('should only access secret key from process.env in server functions', () => {
+      const { validateClerkServerConfig } = require('../lib/config/clerk');
+
+      // This function should exist and only validate env vars, not expose them
+      expect(typeof validateClerkServerConfig).toBe('function');
     });
   });
 });

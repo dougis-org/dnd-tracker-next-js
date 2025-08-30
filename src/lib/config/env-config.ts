@@ -10,7 +10,7 @@
 
 import {
   getClerkPublishableKey as getCentralizedPublishableKey,
-  getClerkSecretKey as getCentralizedSecretKey,
+  validateClerkServerConfig,
 } from './clerk';
 
 /**
@@ -24,13 +24,18 @@ export function getClerkPublishableKey(): string {
 }
 
 /**
- * Safely retrieves Clerk secret key environment variable
+ * DEPRECATED: Secret keys are no longer exposed through this module for security.
+ * Server-side code should access secret keys directly from process.env.CLERK_SECRET_KEY
+ * or use validateClerkServerConfig from @/lib/config/clerk for validation only.
  *
- * @deprecated Use getClerkSecretKey from @/lib/config/clerk instead
- * @returns The Clerk secret key or undefined if not available
+ * @deprecated Secret keys are not exposed for security reasons
+ * @throws Error explaining security policy
  */
-export function getClerkSecretKey(): string {
-  return getCentralizedSecretKey();
+export function getClerkSecretKey(): never {
+  throw new Error(
+    'SECURITY: Secret keys are no longer exposed through configuration modules. ' +
+    'Server-side code should access process.env.CLERK_SECRET_KEY directly or use validateClerkServerConfig().'
+  );
 }
 
 /**
@@ -53,11 +58,11 @@ export function getSessionCookieName(): string {
  */
 export function validateEnvironmentConfig() {
   const publishableKey = getClerkPublishableKey();
-  const secretKey = getClerkSecretKey();
+  const serverValidation = validateClerkServerConfig();
 
   return {
     hasPublishableKey: !!publishableKey,
-    hasSecretKey: !!secretKey,
+    hasSecretKey: serverValidation.valid,
     cookieName: getSessionCookieName(),
     nodeEnv: process.env.NODE_ENV || 'development',
   };

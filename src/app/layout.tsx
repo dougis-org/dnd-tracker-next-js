@@ -4,7 +4,7 @@ import './globals.css';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { ThemeProvider } from '@/components/theme-provider';
 import { ClerkProvider } from '@clerk/nextjs';
-import { CLERK_PUBLISHABLE_KEY } from '@/lib/config/clerk';
+import { getClerkPublishableKey } from '@/lib/config/clerk';
 import { Toaster } from 'sonner';
 import React from 'react';
 
@@ -21,7 +21,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY}>
+    <ClerkProvider publishableKey={getClerkPublishableKey()}>
       <html lang="en">
         <body className={inter.className}>
           <ThemeProvider defaultTheme="system" storageKey="dnd-tracker-theme">
