@@ -24,6 +24,14 @@ jest.mock('next/navigation', () => ({
   }),
 }));
 
+// Mock centralized auth utilities  
+jest.mock('@/lib/auth', () => ({
+  getAuthenticatedUserId: jest.fn(),
+  requireAuth: jest.fn(),
+  isAuthenticated: jest.fn(),
+  buildSignInUrl: jest.fn(),
+}));
+
 // Mock PartyListView component
 jest.mock('@/components/party/PartyListView', () => ({
   PartyListView: ({ userId }: { userId: string }) => (
@@ -36,31 +44,38 @@ jest.mock('@/components/party/PartyListView', () => ({
 const mockAuth = auth as jest.MockedFunction<typeof auth>;
 
 describe('PartiesPage Authentication', () => {
+  let mockGetAuthenticatedUserId: jest.Mock;
+
   beforeEach(() => {
     jest.clearAllMocks();
+    mockGetAuthenticatedUserId = require('@/lib/auth').getAuthenticatedUserId;
   });
 
   it('should redirect unauthenticated users to signin', async () => {
-    setupClerkUnauthenticatedState(mockAuth);
+    // Mock centralized auth to throw redirect
+    mockGetAuthenticatedUserId.mockImplementation(() => {
+      throw new Error('NEXT_REDIRECT');
+    });
+    
     await expect(PartiesPage()).rejects.toThrow('NEXT_REDIRECT');
+    expect(mockGetAuthenticatedUserId).toHaveBeenCalledWith('/parties');
   });
 
   it('should render party list for authenticated users', async () => {
     const userId = SHARED_API_TEST_CONSTANTS.TEST_USER_ID;
-    const mockSession = createMockClerkSession(userId);
-    setupClerkMocks(mockAuth);
-    mockAuth.mockResolvedValue(mockSession);
+    mockGetAuthenticatedUserId.mockResolvedValue(userId);
+    
     const result = await PartiesPage();
     expect(result).toBeDefined();
+    expect(mockGetAuthenticatedUserId).toHaveBeenCalledWith('/parties');
   });
 
   it('should handle session with user ID', async () => {
     const userId = 'test-parties-user';
-    const mockSession = createMockClerkSession(userId);
-    setupClerkMocks(mockAuth);
-    mockAuth.mockResolvedValue(mockSession);
+    mockGetAuthenticatedUserId.mockResolvedValue(userId);
+    
     const result = await PartiesPage();
     expect(result).toBeDefined();
-    expect(mockAuth).toHaveBeenCalled();
+    expect(mockGetAuthenticatedUserId).toHaveBeenCalledWith('/parties');
   });
 });

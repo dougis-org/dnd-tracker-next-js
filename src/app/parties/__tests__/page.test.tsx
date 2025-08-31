@@ -19,6 +19,11 @@ jest.mock('@clerk/nextjs/server', () => ({
   auth: jest.fn(),
 }));
 
+// Mock centralized auth utilities
+jest.mock('@/lib/auth', () => ({
+  getAuthenticatedUserId: jest.fn(),
+}));
+
 // Mock PartyListView component
 jest.mock('@/components/party/PartyListView', () => ({
   PartyListView: function MockPartyListView() {
@@ -29,19 +34,21 @@ jest.mock('@/components/party/PartyListView', () => ({
 describe('PartiesPage', () => {
   let mockAuth: jest.Mock;
   let mockRedirect: jest.Mock;
+  let mockGetAuthenticatedUserId: jest.Mock;
 
   beforeEach(() => {
     jest.clearAllMocks();
     mockAuth = require('@clerk/nextjs/server').auth;
     mockRedirect = require('next/navigation').redirect;
+    mockGetAuthenticatedUserId = require('@/lib/auth').getAuthenticatedUserId;
 
     // Mock redirect to throw an error like Next.js does
     mockRedirect.mockImplementation((url: string) => {
       throw new Error(`REDIRECT: ${url}`);
     });
 
-    // Default to authenticated user using centralized helper
-    setupAuthenticatedState(mockAuth);
+    // Default to authenticated user - return user ID directly
+    mockGetAuthenticatedUserId.mockResolvedValue(SHARED_API_TEST_CONSTANTS.TEST_USER_ID);
   });
 
   describe('Page Structure', () => {
@@ -93,36 +100,44 @@ describe('PartiesPage', () => {
 
   describe('Authentication', () => {
     it('should render when user is authenticated', async () => {
-      setupAuthenticatedState(mockAuth);
+      mockGetAuthenticatedUserId.mockResolvedValue(SHARED_API_TEST_CONSTANTS.TEST_USER_ID);
 
       const PartiesPageResolved = await PartiesPage();
       render(PartiesPageResolved);
 
       expect(screen.getByTestId('party-list-view')).toBeInTheDocument();
-      expect(mockRedirect).not.toHaveBeenCalled();
+      expect(mockGetAuthenticatedUserId).toHaveBeenCalledWith('/parties');
     });
 
     it('should redirect when user is not authenticated', async () => {
-      setupUnauthenticatedState(mockAuth);
+      // Mock the centralized auth function to throw redirect
+      mockGetAuthenticatedUserId.mockImplementation(() => {
+        throw new Error('REDIRECT: /sign-in?redirect_url=%2Fparties');
+      });
 
-      await expectSigninRedirect(PartiesPage, '/parties');
-      expect(mockRedirect).toHaveBeenCalledWith('/signin?callbackUrl=/parties');
+      await expect(PartiesPage()).rejects.toThrow('REDIRECT: /sign-in?redirect_url=%2Fparties');
+      expect(mockGetAuthenticatedUserId).toHaveBeenCalledWith('/parties');
     });
 
     it('should redirect when session exists but no user id', async () => {
-      setupIncompleteAuthState(mockAuth);
+      // Mock the centralized auth function to throw redirect for incomplete auth
+      mockGetAuthenticatedUserId.mockImplementation(() => {
+        throw new Error('REDIRECT: /sign-in?redirect_url=%2Fparties');
+      });
 
-      await expectSigninRedirect(PartiesPage, '/parties');
-      expect(mockRedirect).toHaveBeenCalledWith('/signin?callbackUrl=/parties');
+      await expect(PartiesPage()).rejects.toThrow('REDIRECT: /sign-in?redirect_url=%2Fparties');
+      expect(mockGetAuthenticatedUserId).toHaveBeenCalledWith('/parties');
     });
 
     it('should pass user id to PartyListView when authenticated', async () => {
-      setupAuthenticatedState(mockAuth);
+      const testUserId = 'test-user-456';
+      mockGetAuthenticatedUserId.mockResolvedValue(testUserId);
 
       const PartiesPageResolved = await PartiesPage();
       render(PartiesPageResolved);
 
       expect(screen.getByTestId('party-list-view')).toBeInTheDocument();
+      expect(mockGetAuthenticatedUserId).toHaveBeenCalledWith('/parties');
     });
   });
 

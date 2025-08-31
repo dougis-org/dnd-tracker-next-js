@@ -126,8 +126,17 @@ export function setupClientSideUnauthenticatedState() {
 /**
  * Test helper for pages that should redirect unauthenticated users
  * All page tests expecting signin redirect should use this pattern
+ * Updated to match centralized auth pattern using /sign-in and redirect_url
  */
 export async function expectSigninRedirect(pageComponent: Function, expectedCallbackUrl: string) {
+  await expect(pageComponent()).rejects.toThrow(`REDIRECT: /sign-in?redirect_url=${encodeURIComponent(expectedCallbackUrl)}`);
+}
+
+/**
+ * Legacy helper for tests still using old signin URL pattern
+ * @deprecated Use expectSigninRedirect instead
+ */
+export async function expectLegacySigninRedirect(pageComponent: Function, expectedCallbackUrl: string) {
   await expect(pageComponent()).rejects.toThrow(`REDIRECT: /signin?callbackUrl=${expectedCallbackUrl}`);
 }
 
