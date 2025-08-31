@@ -1,6 +1,5 @@
 import { act, renderHook } from '@testing-library/react';
 import { useSettingsForm } from '../useSettingsForm';
-import { createMockSession as createMockSessionBase } from '@/lib/test-utils/shared-api-test-helpers';
 
 export const createMockEvent = (): React.FormEvent => ({
   preventDefault: jest.fn(),

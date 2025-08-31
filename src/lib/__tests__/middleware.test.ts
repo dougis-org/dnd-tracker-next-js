@@ -50,9 +50,9 @@ describe('API Middleware', () => {
     });
 
     it('should return null when user is authenticated', async () => {
-      mockAuth.mockResolvedValue({ 
-        userId: 'user_123', 
-        sessionId: 'session_123' 
+      mockAuth.mockResolvedValue({
+        userId: 'user_123',
+        sessionId: 'session_123'
       });
 
       const result = await requireAuthentication(mockRequest as NextRequest);
@@ -79,9 +79,9 @@ describe('API Middleware', () => {
 
     it('should call handler when authentication passes', async () => {
       const userId = 'user_123';
-      mockAuth.mockResolvedValue({ 
-        userId, 
-        sessionId: 'session_123' 
+      mockAuth.mockResolvedValue({
+        userId,
+        sessionId: 'session_123'
       });
       mockHandler.mockResolvedValue(NextResponse.json({ success: true }));
 
@@ -104,9 +104,9 @@ describe('API Middleware', () => {
 
     it('should handle handler errors gracefully', async () => {
       const userId = 'user_123';
-      mockAuth.mockResolvedValue({ 
-        userId, 
-        sessionId: 'session_123' 
+      mockAuth.mockResolvedValue({
+        userId,
+        sessionId: 'session_123'
       });
       mockHandler.mockRejectedValue(new Error('Handler error'));
 

@@ -14,6 +14,37 @@ describe('UserMenu', () => {
   const mockUseClerk = useClerk as jest.MockedFunction<typeof useClerk>;
   const mockSignOut = jest.fn();
 
+  const createMockUser = (overrides = {}) => ({
+    id: 'user_123',
+    firstName: 'John',
+    emailAddresses: [{ emailAddress: 'john@example.com' }],
+    ...overrides,
+  });
+
+  const setupAuthenticatedUser = (userOverrides = {}) => {
+    mockUseUser.mockReturnValue({
+      user: createMockUser(userOverrides),
+      isLoaded: true,
+      isSignedIn: true,
+    } as any);
+  };
+
+  const setupUnauthenticatedUser = () => {
+    mockUseUser.mockReturnValue({
+      user: null,
+      isLoaded: true,
+      isSignedIn: false,
+    } as any);
+  };
+
+  const setupLoadingUser = () => {
+    mockUseUser.mockReturnValue({
+      user: null,
+      isLoaded: false,
+      isSignedIn: false,
+    } as any);
+  };
+
   beforeEach(() => {
     jest.clearAllMocks();
     mockUseClerk.mockReturnValue({
@@ -23,68 +54,31 @@ describe('UserMenu', () => {
 
   describe('User Information Display', () => {
     test('displays user name when available', () => {
-      mockUseUser.mockReturnValue({
-        user: {
-          id: 'user_123',
-          firstName: 'John',
-          emailAddresses: [{ emailAddress: 'john@example.com' }],
-        },
-        isLoaded: true,
-        isSignedIn: true,
-      } as any);
-
+      setupAuthenticatedUser();
       render(<UserMenu />);
       expect(screen.getByText('John')).toBeInTheDocument();
     });
 
     test('displays user email when name is not available', () => {
-      mockUseUser.mockReturnValue({
-        user: {
-          id: 'user_123',
-          firstName: null,
-          emailAddresses: [{ emailAddress: 'john@example.com' }],
-        },
-        isLoaded: true,
-        isSignedIn: true,
-      } as any);
-
+      setupAuthenticatedUser({ firstName: null });
       render(<UserMenu />);
       expect(screen.getByText('john@example.com')).toBeInTheDocument();
     });
 
     test('displays placeholder when user has no name or email', () => {
-      mockUseUser.mockReturnValue({
-        user: {
-          id: 'user_123',
-          firstName: null,
-          emailAddresses: [],
-        },
-        isLoaded: true,
-        isSignedIn: true,
-      } as any);
-
+      setupAuthenticatedUser({ firstName: null, emailAddresses: [] });
       render(<UserMenu />);
       expect(screen.getByText('User')).toBeInTheDocument();
     });
 
     test('displays loading state when session status is loading', () => {
-      mockUseUser.mockReturnValue({
-        user: null,
-        isLoaded: false,
-        isSignedIn: false,
-      } as any);
-
+      setupLoadingUser();
       render(<UserMenu />);
       expect(screen.getByText('Loading...')).toBeInTheDocument();
     });
 
     test('displays nothing when not authenticated', () => {
-      mockUseUser.mockReturnValue({
-        user: null,
-        isLoaded: true,
-        isSignedIn: false,
-      } as any);
-
+      setupUnauthenticatedUser();
       render(<UserMenu />);
       expect(screen.queryByTestId('user-menu')).not.toBeInTheDocument();
     });
@@ -92,15 +86,7 @@ describe('UserMenu', () => {
 
   describe('User Avatar', () => {
     test('renders user avatar placeholder', () => {
-      mockUseUser.mockReturnValue({
-        user: {
-          id: 'user_123',
-          firstName: 'John',
-          emailAddresses: [{ emailAddress: 'john@example.com' }],
-        },
-        isLoaded: true,
-        isSignedIn: true,
-      } as any);
+      setupAuthenticatedUser();
 
       render(<UserMenu />);
       const avatar = screen.getByTestId('user-avatar');
@@ -111,15 +97,7 @@ describe('UserMenu', () => {
 
   describe('Sign Out Functionality', () => {
     test('calls signOut when sign out button is clicked', () => {
-      mockUseUser.mockReturnValue({
-        user: {
-          id: 'user_123',
-          firstName: 'John',
-          emailAddresses: [{ emailAddress: 'john@example.com' }],
-        },
-        isLoaded: true,
-        isSignedIn: true,
-      } as any);
+      setupAuthenticatedUser();
 
       render(<UserMenu />);
       const signOutButton = screen.getByRole('button', { name: 'Sign Out' });
@@ -130,15 +108,7 @@ describe('UserMenu', () => {
     });
 
     test('sign out button has correct styling', () => {
-      mockUseUser.mockReturnValue({
-        user: {
-          id: 'user_123',
-          firstName: 'John',
-          emailAddresses: [{ emailAddress: 'john@example.com' }],
-        },
-        isLoaded: true,
-        isSignedIn: true,
-      } as any);
+      setupAuthenticatedUser();
 
       render(<UserMenu />);
       const signOutButton = screen.getByRole('button', { name: 'Sign Out' });
@@ -150,15 +120,7 @@ describe('UserMenu', () => {
 
   describe('Layout and Styling', () => {
     test('has correct container styling', () => {
-      mockUseUser.mockReturnValue({
-        user: {
-          id: 'user_123',
-          firstName: 'John',
-          emailAddresses: [{ emailAddress: 'john@example.com' }],
-        },
-        isLoaded: true,
-        isSignedIn: true,
-      } as any);
+      setupAuthenticatedUser();
 
       render(<UserMenu />);
       const container = screen.getByTestId('user-menu');
@@ -166,15 +128,7 @@ describe('UserMenu', () => {
     });
 
     test('user info has proper layout classes', () => {
-      mockUseUser.mockReturnValue({
-        user: {
-          id: 'user_123',
-          firstName: 'John',
-          emailAddresses: [{ emailAddress: 'john@example.com' }],
-        },
-        isLoaded: true,
-        isSignedIn: true,
-      } as any);
+      setupAuthenticatedUser();
 
       render(<UserMenu />);
       const userInfo = screen.getByTestId('user-info');
@@ -182,15 +136,7 @@ describe('UserMenu', () => {
     });
 
     test('user name has correct text styling', () => {
-      mockUseUser.mockReturnValue({
-        user: {
-          id: 'user_123',
-          firstName: 'John',
-          emailAddresses: [{ emailAddress: 'john@example.com' }],
-        },
-        isLoaded: true,
-        isSignedIn: true,
-      } as any);
+      setupAuthenticatedUser();
 
       render(<UserMenu />);
       const userName = screen.getByText('John');
@@ -198,15 +144,7 @@ describe('UserMenu', () => {
     });
 
     test('user email has correct text styling', () => {
-      mockUseUser.mockReturnValue({
-        user: {
-          id: 'user_123',
-          firstName: 'John',
-          emailAddresses: [{ emailAddress: 'john@example.com' }],
-        },
-        isLoaded: true,
-        isSignedIn: true,
-      } as any);
+      setupAuthenticatedUser();
 
       render(<UserMenu />);
       const userEmail = screen.getByText('john@example.com');
@@ -216,11 +154,7 @@ describe('UserMenu', () => {
 
   describe('Edge Cases', () => {
     test('handles session data with null user', () => {
-      mockUseUser.mockReturnValue({
-        user: null,
-        isLoaded: true,
-        isSignedIn: false,
-      } as any);
+      setupUnauthenticatedUser();
 
       render(<UserMenu />);
       expect(screen.queryByTestId('user-menu')).not.toBeInTheDocument();
@@ -228,15 +162,7 @@ describe('UserMenu', () => {
 
     test('handles very long user names with truncation', () => {
       const longName = 'A'.repeat(100);
-      mockUseUser.mockReturnValue({
-        user: {
-          id: 'user_123',
-          firstName: longName,
-          emailAddresses: [{ emailAddress: 'john@example.com' }],
-        },
-        isLoaded: true,
-        isSignedIn: true,
-      } as any);
+      setupAuthenticatedUser({ firstName: longName });
 
       render(<UserMenu />);
       const userName = screen.getByText(longName);
@@ -245,15 +171,7 @@ describe('UserMenu', () => {
 
     test('handles very long email addresses with truncation', () => {
       const longEmail = 'a'.repeat(50) + '@' + 'b'.repeat(50) + '.com';
-      mockUseUser.mockReturnValue({
-        user: {
-          id: 'user_123',
-          firstName: 'John',
-          emailAddresses: [{ emailAddress: longEmail }],
-        },
-        isLoaded: true,
-        isSignedIn: true,
-      } as any);
+      setupAuthenticatedUser({ emailAddresses: [{ emailAddress: longEmail }] });
 
       render(<UserMenu />);
       const userEmail = screen.getByText(longEmail);

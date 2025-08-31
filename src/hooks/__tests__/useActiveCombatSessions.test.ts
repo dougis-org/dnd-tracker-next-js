@@ -35,11 +35,11 @@ const createMockEncounter = (overrides = {}) => ({
 
 const setupMockUser = (userData = null, isLoaded = true, isSignedIn = true) => {
   mockUseUser.mockReturnValue({
-    user: userData || (isSignedIn ? { 
-      id: 'user123', 
+    user: userData || (isSignedIn ? {
+      id: 'user123',
       emailAddresses: [{ emailAddress: 'test@example.com' }],
       firstName: 'Test',
-      lastName: 'User' 
+      lastName: 'User'
     } : null),
     isLoaded,
     isSignedIn,
