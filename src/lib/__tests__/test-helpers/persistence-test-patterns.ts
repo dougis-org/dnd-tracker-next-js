@@ -3,8 +3,7 @@
  */
 
 import {
-  createTestAdapter,
-  validateAdapter,
+  createTestClient,
   createTestSessionData,
   validateSessionData,
 } from './shared-test-utilities';
@@ -12,5 +11,9 @@ import {
 /**
  * Test utilities for persistence operations
  */
-export const testAdapterCreation = () => validateAdapter(createTestAdapter());
+export const testAdapterCreation = () => {
+  const client = createTestClient();
+  expect(client).toBeDefined();
+};
+
 export const testSessionStructure = () => validateSessionData(createTestSessionData());

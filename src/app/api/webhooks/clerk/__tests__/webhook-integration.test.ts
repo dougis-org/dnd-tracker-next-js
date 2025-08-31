@@ -17,6 +17,11 @@ import {
   mockClerkUserDataWithoutEmail,
 } from './webhook-test-utils';
 
+// Mock next/headers for webhook signature verification
+jest.mock('next/headers', () => ({
+  headers: jest.fn(),
+}));
+
 // Setup test environment
 setupWebhookTestEnvironment();
 

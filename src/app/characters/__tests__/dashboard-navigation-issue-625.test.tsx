@@ -1,13 +1,15 @@
 import { render, screen } from '@testing-library/react';
 import CharactersPage from '../page';
 
-// Mock useSession
-jest.mock('next-auth/react', () => ({
-  useSession: jest.fn(),
-  SessionProvider: ({ children }: { children: React.ReactNode }) => children,
+// Mock useAuth and useUser from Clerk
+jest.mock('@clerk/nextjs', () => ({
+  useAuth: jest.fn(),
+  useUser: jest.fn(),
+  ClerkProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 
-const mockUseSession = require('next-auth/react').useSession as jest.Mock;
+const mockUseAuth = require('@clerk/nextjs').useAuth as jest.Mock;
+const mockUseUser = require('@clerk/nextjs').useUser as jest.Mock;
 
 // Mock the dependencies
 jest.mock('../hooks/useCharacterPageActions', () => ({
@@ -31,17 +33,30 @@ jest.mock('@/components/forms/character/CharacterCreationForm', () => ({
   CharacterCreationForm: () => <div data-testid="creation-form">Creation Form</div>,
 }));
 
-const mockSession = {
-  user: { id: 'user123', email: 'test@example.com' },
-  expires: new Date().toISOString(),
+const mockAuthState = {
+  userId: 'user123',
+  isSignedIn: true,
+  isLoaded: true,
+};
+
+const mockUserState = {
+  user: {
+    id: 'user123',
+    firstName: 'John',
+    lastName: 'Doe',
+    emailAddresses: [{ emailAddress: 'test@example.com' }],
+  },
+  isLoaded: true,
+  isSignedIn: true,
 };
 
 describe('Issue #625: Dashboard Navigation - Characters Page', () => {
   beforeEach(() => {
     // Reset all mocks
     jest.clearAllMocks();
-    // Default to authenticated session
-    mockUseSession.mockReturnValue({ data: mockSession, status: 'authenticated' });
+    // Default to authenticated state
+    mockUseAuth.mockReturnValue(mockAuthState);
+    mockUseUser.mockReturnValue(mockUserState);
   });
 
   test('should render Characters page without client-side errors', () => {
@@ -57,8 +72,17 @@ describe('Issue #625: Dashboard Navigation - Characters Page', () => {
   });
 
   test('should handle loading state properly', () => {
-    // Mock loading session
-    mockUseSession.mockReturnValue({ data: null, status: 'loading' });
+    // Mock loading state
+    mockUseAuth.mockReturnValue({
+      userId: null,
+      isSignedIn: false,
+      isLoaded: false
+    });
+    mockUseUser.mockReturnValue({
+      user: null,
+      isLoaded: false,
+      isSignedIn: false,
+    });
 
     render(<CharactersPage />);
     expect(screen.getByText('Loading...')).toBeInTheDocument();

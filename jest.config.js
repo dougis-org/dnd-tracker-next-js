@@ -58,6 +58,8 @@ const customJestConfig = {
     '^@/(.*)$': '<rootDir>/src/$1',
     '@clerk/nextjs': '<rootDir>/src/lib/test-utils/shared-clerk-test-helpers.tsx',
     '@clerk/nextjs/server': '<rootDir>/src/lib/test-utils/shared-clerk-test-helpers.tsx',
+    'next-auth/react': '<rootDir>/src/lib/test-utils/shared-clerk-test-helpers.tsx',
+    '@auth/mongodb-adapter': '<rootDir>/src/lib/test-utils/shared-clerk-test-helpers.tsx',
   },
   transformIgnorePatterns: [
     'node_modules/(?!(next/|@next/|@swc/helpers|@babel/runtime|@clerk/.*|jose|svix|@panva/.*|@web3-storage/.*|@stablelib/.*|zod-validation-error)/)',
