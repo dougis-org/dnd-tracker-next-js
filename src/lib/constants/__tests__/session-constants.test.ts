@@ -26,7 +26,7 @@ describe('Session Constants', () => {
       // Re-import to get updated value
       const { SESSION_COOKIE_NAME: prodCookieName } = require('../session-constants');
 
-      expect(prodCookieName).toBe('__Secure-next-auth.session-token');
+      expect(prodCookieName).toBe('__Secure-clerk-session');
     });
 
     it('should return regular cookie name in development', () => {
@@ -35,7 +35,7 @@ describe('Session Constants', () => {
       // Re-import to get updated value
       const { SESSION_COOKIE_NAME: devCookieName } = require('../session-constants');
 
-      expect(devCookieName).toBe('next-auth.session-token');
+      expect(devCookieName).toBe('clerk-session');
     });
 
     it('should return regular cookie name when NODE_ENV is not set', () => {
@@ -44,7 +44,7 @@ describe('Session Constants', () => {
       // Re-import to get updated value
       const { SESSION_COOKIE_NAME: defaultCookieName } = require('../session-constants');
 
-      expect(defaultCookieName).toBe('next-auth.session-token');
+      expect(defaultCookieName).toBe('clerk-session');
     });
 
     it('should return regular cookie name in test environment', () => {
@@ -53,7 +53,7 @@ describe('Session Constants', () => {
       // Re-import to get updated value
       const { SESSION_COOKIE_NAME: testCookieName } = require('../session-constants');
 
-      expect(testCookieName).toBe('next-auth.session-token');
+      expect(testCookieName).toBe('clerk-session');
     });
   });
 
@@ -109,14 +109,14 @@ describe('Session Constants', () => {
   describe('Integration with auth.ts and middleware.ts (Issue #585)', () => {
     it('should provide consistent cookie names for both auth and middleware', () => {
       // Test that the SESSION_COOKIE_NAME constant follows the expected pattern
-      const prodCookieName = '__Secure-next-auth.session-token';
-      const devCookieName = 'next-auth.session-token';
+      const prodCookieName = '__Secure-clerk-session';
+      const devCookieName = 'clerk-session';
 
       // Verify the logic matches what we expect
       expect(prodCookieName).toMatch(/^__Secure-/);
       expect(devCookieName).not.toMatch(/^__Secure-/);
-      expect(prodCookieName).toContain('next-auth.session-token');
-      expect(devCookieName).toContain('next-auth.session-token');
+      expect(prodCookieName).toContain('clerk-session');
+      expect(devCookieName).toContain('clerk-session');
 
       // Ensure they're different as expected
       expect(prodCookieName).not.toBe(devCookieName);
@@ -125,7 +125,7 @@ describe('Session Constants', () => {
     it('should match NextAuth.js cookie naming conventions', () => {
       // Verify our constants follow NextAuth.js patterns
       const securePrefix = '__Secure-';
-      const baseName = 'next-auth.session-token';
+      const baseName = 'clerk-session';
 
       expect(SESSION_COOKIE_NAME).toMatch(new RegExp(`^(${securePrefix})?${baseName}$`));
     });

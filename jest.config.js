@@ -56,9 +56,11 @@ const customJestConfig = {
   },
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
+    '@clerk/nextjs': '<rootDir>/src/lib/test-utils/shared-clerk-test-helpers.tsx',
+    '@clerk/nextjs/server': '<rootDir>/src/lib/test-utils/shared-clerk-test-helpers.tsx',
   },
   transformIgnorePatterns: [
-    'node_modules/(?!(@clerk/.*|jose|svix|@panva/hkdf|@panva/asn1|@web3-storage/.*|zod-validation-error)/)',
+    'node_modules/(?!(next/|@next/|@swc/helpers|@babel/runtime|@clerk/.*|jose|svix|@panva/.*|@web3-storage/.*|@stablelib/.*|zod-validation-error)/)',
   ],
 };
 

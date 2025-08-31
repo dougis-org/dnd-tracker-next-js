@@ -6,20 +6,7 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { useAuth, useClerk, useUser } from '@clerk/nextjs';
-import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-
-
-
-
-
-
-
-
-
-
-
-
-
+import { useRouter } from 'next/navigation';
 
 
 import { AppLayout } from '../AppLayout';
@@ -32,11 +19,6 @@ jest.mock('@clerk/nextjs', () => ({
 }));
 
 
-
-
-
-
-
 // Mock Next.js navigation
 jest.mock('next/navigation', () => ({
   useRouter: jest.fn(),
@@ -44,11 +26,6 @@ jest.mock('next/navigation', () => ({
 }));
 
 // Mock Next.js navigation
-
-
-
-
-
 
 
 const mockUseAuth = useAuth as jest.MockedFunction<typeof useAuth>;

@@ -1,5 +1,4 @@
 import React from 'react';
-import { NextRouter } from 'next/router';
 
 // Mock the useRouter hook
 export const mockRouter = {

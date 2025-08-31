@@ -8,22 +8,19 @@ import { render, screen } from '@testing-library/react';
 // Dashboard page test helpers
 export const createDashboardPageTests = (
   Component: React.ComponentType<any>,
-  useSession: jest.MockedFunction<any>
+  useUser: jest.MockedFunction<any>
 ) => ({
   authenticated: {
     'renders dashboard page with layout': () => {
-      useSession.mockReturnValue({
-        data: {
-          user: {
-            id: '1',
-            email: 'test@example.com',
-            name: 'Test User',
-            subscriptionTier: 'free',
-          },
-          expires: '2024-01-01',
+      useUser.mockReturnValue({
+        user: {
+          id: '1',
+          emailAddresses: [{ emailAddress: 'test@example.com' }],
+          firstName: 'Test',
+          lastName: 'User',
         },
-        status: 'authenticated',
-        update: jest.fn(),
+        isLoaded: true,
+        isSignedIn: true,
       });
 
       render(React.createElement(Component));
@@ -32,18 +29,15 @@ export const createDashboardPageTests = (
     },
 
     'renders dashboard title': () => {
-      useSession.mockReturnValue({
-        data: {
-          user: {
-            id: '1',
-            email: 'test@example.com',
-            name: 'Test User',
-            subscriptionTier: 'free',
-          },
-          expires: '2024-01-01',
+      useUser.mockReturnValue({
+        user: {
+          id: '1',
+          emailAddresses: [{ emailAddress: 'test@example.com' }],
+          firstName: 'Test',
+          lastName: 'User',
         },
-        status: 'authenticated',
-        update: jest.fn(),
+        isLoaded: true,
+        isSignedIn: true,
       });
 
       render(React.createElement(Component));
@@ -51,37 +45,31 @@ export const createDashboardPageTests = (
     },
 
     'renders welcome message with user name': () => {
-      useSession.mockReturnValue({
-        data: {
-          user: {
-            id: '1',
-            email: 'test@example.com',
-            name: 'Test User',
-            subscriptionTier: 'free',
-          },
-          expires: '2024-01-01',
+      useUser.mockReturnValue({
+        user: {
+          id: '1',
+          emailAddresses: [{ emailAddress: 'test@example.com' }],
+          firstName: 'Test',
+          lastName: 'User',
         },
-        status: 'authenticated',
-        update: jest.fn(),
+        isLoaded: true,
+        isSignedIn: true,
       });
 
       render(React.createElement(Component));
-      expect(screen.getByText(/Welcome back, Test User/i)).toBeInTheDocument();
+      expect(screen.getByText(/Welcome back, Test/i)).toBeInTheDocument();
     },
 
     'has proper heading structure': () => {
-      useSession.mockReturnValue({
-        data: {
-          user: {
-            id: '1',
-            email: 'test@example.com',
-            name: 'Test User',
-            subscriptionTier: 'free',
-          },
-          expires: '2024-01-01',
+      useUser.mockReturnValue({
+        user: {
+          id: '1',
+          emailAddresses: [{ emailAddress: 'test@example.com' }],
+          firstName: 'Test',
+          lastName: 'User',
         },
-        status: 'authenticated',
-        update: jest.fn(),
+        isLoaded: true,
+        isSignedIn: true,
       });
 
       render(React.createElement(Component));
@@ -91,18 +79,15 @@ export const createDashboardPageTests = (
     },
 
     'contains main content area': () => {
-      useSession.mockReturnValue({
-        data: {
-          user: {
-            id: '1',
-            email: 'test@example.com',
-            name: 'Test User',
-            subscriptionTier: 'free',
-          },
-          expires: '2024-01-01',
+      useUser.mockReturnValue({
+        user: {
+          id: '1',
+          emailAddresses: [{ emailAddress: 'test@example.com' }],
+          firstName: 'Test',
+          lastName: 'User',
         },
-        status: 'authenticated',
-        update: jest.fn(),
+        isLoaded: true,
+        isSignedIn: true,
       });
 
       render(React.createElement(Component));
@@ -113,10 +98,10 @@ export const createDashboardPageTests = (
 
   loading: {
     'renders loading state': () => {
-      useSession.mockReturnValue({
-        data: null,
-        status: 'loading',
-        update: jest.fn(),
+      useUser.mockReturnValue({
+        user: null,
+        isLoaded: false,
+        isSignedIn: false,
       });
 
       render(React.createElement(Component));
@@ -127,10 +112,10 @@ export const createDashboardPageTests = (
 
   unauthenticated: {
     'renders unauthenticated message': () => {
-      useSession.mockReturnValue({
-        data: null,
-        status: 'unauthenticated',
-        update: jest.fn(),
+      useUser.mockReturnValue({
+        user: null,
+        isLoaded: true,
+        isSignedIn: false,
       });
 
       render(React.createElement(Component));

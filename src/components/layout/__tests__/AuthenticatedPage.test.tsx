@@ -1,11 +1,11 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@clerk/nextjs';
 import { AuthenticatedPage } from '../AuthenticatedPage';
 
-// Mock next-auth/react
-jest.mock('next-auth/react');
-const mockUseSession = useSession as jest.MockedFunction<typeof useSession>;
+// Mock Clerk
+jest.mock('@clerk/nextjs');
+const mockUseAuth = useAuth as jest.MockedFunction<typeof useAuth>;
 
 // Mock AppLayout
 jest.mock('../AppLayout', () => ({
@@ -17,17 +17,50 @@ jest.mock('../AppLayout', () => ({
 describe('AuthenticatedPage', () => {
   const TestContent = () => <div data-testid="test-content">Test Content</div>;
 
+  const createMockAuthBase = () => ({
+    userId: null,
+    sessionId: null,
+    orgId: null,
+    orgRole: null,
+    orgSlug: null,
+    has: jest.fn(),
+    signOut: jest.fn(),
+    getToken: jest.fn(),
+  });
+
+  const setupLoadingAuth = () => {
+    mockUseAuth.mockReturnValue({
+      isLoaded: false,
+      isSignedIn: false,
+      ...createMockAuthBase(),
+    });
+  };
+
+  const setupUnauthenticatedAuth = () => {
+    mockUseAuth.mockReturnValue({
+      isLoaded: true,
+      isSignedIn: false,
+      ...createMockAuthBase(),
+    });
+  };
+
+  const setupAuthenticatedAuth = () => {
+    mockUseAuth.mockReturnValue({
+      isLoaded: true,
+      isSignedIn: true,
+      userId: 'user_123',
+      sessionId: 'session_123',
+      ...createMockAuthBase(),
+    });
+  };
+
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
   describe('Loading State', () => {
     it('displays default loading message', () => {
-      mockUseSession.mockReturnValue({
-        data: null,
-        status: 'loading',
-        update: jest.fn(),
-      });
+      setupLoadingAuth();
 
       render(
         <AuthenticatedPage>
@@ -40,11 +73,7 @@ describe('AuthenticatedPage', () => {
     });
 
     it('displays custom loading message', () => {
-      mockUseSession.mockReturnValue({
-        data: null,
-        status: 'loading',
-        update: jest.fn(),
-      });
+      setupLoadingAuth();
 
       render(
         <AuthenticatedPage loadingMessage="Please wait...">
@@ -59,11 +88,7 @@ describe('AuthenticatedPage', () => {
 
   describe('Unauthenticated State', () => {
     it('displays default unauthenticated message', () => {
-      mockUseSession.mockReturnValue({
-        data: null,
-        status: 'unauthenticated',
-        update: jest.fn(),
-      });
+      setupUnauthenticatedAuth();
 
       render(
         <AuthenticatedPage>
@@ -76,11 +101,7 @@ describe('AuthenticatedPage', () => {
     });
 
     it('displays custom unauthenticated message', () => {
-      mockUseSession.mockReturnValue({
-        data: null,
-        status: 'unauthenticated',
-        update: jest.fn(),
-      });
+      setupUnauthenticatedAuth();
 
       render(
         <AuthenticatedPage unauthenticatedMessage="Login required for this feature">
@@ -95,11 +116,7 @@ describe('AuthenticatedPage', () => {
 
   describe('Authenticated State', () => {
     it('renders children when authenticated', () => {
-      mockUseSession.mockReturnValue({
-        data: { user: { id: 'user1', name: 'Test User' }, expires: '2024-01-01' },
-        status: 'authenticated',
-        update: jest.fn(),
-      });
+      setupAuthenticatedAuth();
 
       render(
         <AuthenticatedPage>
@@ -113,11 +130,7 @@ describe('AuthenticatedPage', () => {
     });
 
     it('renders within AppLayout', () => {
-      mockUseSession.mockReturnValue({
-        data: { user: { id: 'user1', name: 'Test User' }, expires: '2024-01-01' },
-        status: 'authenticated',
-        update: jest.fn(),
-      });
+      setupAuthenticatedAuth();
 
       render(
         <AuthenticatedPage>
@@ -132,11 +145,7 @@ describe('AuthenticatedPage', () => {
 
   describe('Layout Structure', () => {
     it('has proper loading state styling', () => {
-      mockUseSession.mockReturnValue({
-        data: null,
-        status: 'loading',
-        update: jest.fn(),
-      });
+      setupLoadingAuth();
 
       const { container } = render(
         <AuthenticatedPage>
@@ -150,11 +159,7 @@ describe('AuthenticatedPage', () => {
     });
 
     it('has proper unauthenticated state styling', () => {
-      mockUseSession.mockReturnValue({
-        data: null,
-        status: 'unauthenticated',
-        update: jest.fn(),
-      });
+      setupUnauthenticatedAuth();
 
       const { container } = render(
         <AuthenticatedPage>
@@ -170,11 +175,7 @@ describe('AuthenticatedPage', () => {
 
   describe('Accessibility', () => {
     it('has proper text styling for loading message', () => {
-      mockUseSession.mockReturnValue({
-        data: null,
-        status: 'loading',
-        update: jest.fn(),
-      });
+      setupLoadingAuth();
 
       const { container } = render(
         <AuthenticatedPage>
@@ -188,11 +189,7 @@ describe('AuthenticatedPage', () => {
     });
 
     it('has proper text styling for unauthenticated message', () => {
-      mockUseSession.mockReturnValue({
-        data: null,
-        status: 'unauthenticated',
-        update: jest.fn(),
-      });
+      setupUnauthenticatedAuth();
 
       const { container } = render(
         <AuthenticatedPage>

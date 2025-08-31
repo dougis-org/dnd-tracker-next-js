@@ -1,11 +1,11 @@
 import React from 'react';
-import { useSession } from 'next-auth/react';
+import { useUser } from '@clerk/nextjs';
 import DashboardPage from '../page';
 import { createDashboardPageTests, applyTestSuite } from '@/components/layout/__tests__/dashboard-test-helpers';
 
-// Mock next-auth/react
-jest.mock('next-auth/react');
-const mockUseSession = useSession as jest.MockedFunction<typeof useSession>;
+// Mock Clerk
+jest.mock('@clerk/nextjs');
+const mockUseUser = useUser as jest.MockedFunction<typeof useUser>;
 
 // Mock child components
 jest.mock('@/components/dashboard', () => ({
@@ -19,7 +19,7 @@ jest.mock('@/components/layout/AppLayout', () => ({
 }));
 
 describe('Dashboard Page', () => {
-  const testSuites = createDashboardPageTests(DashboardPage, mockUseSession);
+  const testSuites = createDashboardPageTests(DashboardPage, mockUseUser);
 
   beforeEach(() => {
     jest.clearAllMocks();
