@@ -19,8 +19,7 @@ export function isValidProductionHostname(hostname: string): boolean {
   const validHostnames = [
     'localhost',
     '127.0.0.1',
-    'dnd-tracker.vercel.app',
-    'your-production-domain.com'
+    'dnd-tracker.vercel.app'
   ];
 
   return validHostnames.some(valid =>
@@ -48,12 +47,9 @@ export function validateNextAuthUrl(url: string): boolean {
 }
 
 /**
- * Gets user session from Clerk
+ * Gets user session from Clerk (alias for compatibility)
  */
-export async function getSession() {
-  const session = await auth();
-  return session;
-}
+export const getSession = auth;
 
 /**
  * Gets current user ID from session

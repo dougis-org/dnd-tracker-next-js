@@ -7,14 +7,18 @@ mockClerk();
 mockNavigation();
 
 describe('Clerk SignUp Page', () => {
-  it('should render without crashing', () => {
+  it('should render the sign-up form and be configured correctly when not signed in', () => {
+    const { SignUp } = require('@clerk/nextjs');
     mockUseAuth(authStates.notSignedIn);
-    render(<ClerkSignUpPage />);
-  });
 
-  it('should render the sign-up form when not signed in', () => {
-    mockUseAuth(authStates.notSignedIn);
     render(<ClerkSignUpPage />);
+
     expect(screen.getByText('Create your account')).toBeInTheDocument();
+    expect(SignUp).toHaveBeenCalledWith(
+      expect.objectContaining({
+        redirectUrl: '/profile-setup',
+      }),
+      expect.any(Object)
+    );
   });
 });
