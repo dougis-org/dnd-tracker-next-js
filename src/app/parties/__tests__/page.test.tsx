@@ -1,5 +1,12 @@
 import { render, screen } from '@testing-library/react';
 import PartiesPage from '../page';
+import { 
+  setupAuthenticatedState, 
+  setupUnauthenticatedState, 
+  setupIncompleteAuthState,
+  expectSigninRedirect,
+  SHARED_API_TEST_CONSTANTS 
+} from '@/lib/test-utils/shared-clerk-test-helpers';
 
 // Mock Next.js navigation
 jest.mock('next/navigation', () => ({
@@ -19,14 +26,6 @@ jest.mock('@/components/party/PartyListView', () => ({
   },
 }));
 
-const mockSession = {
-  user: {
-    id: 'user-123',
-    email: 'test@example.com',
-    name: 'Test User',
-  },
-};
-
 describe('PartiesPage', () => {
   let mockAuth: jest.Mock;
   let mockRedirect: jest.Mock;
@@ -41,8 +40,8 @@ describe('PartiesPage', () => {
       throw new Error(`REDIRECT: ${url}`);
     });
 
-    // Default to authenticated user
-    mockAuth.mockResolvedValue(mockSession);
+    // Default to authenticated user using centralized helper
+    setupAuthenticatedState(mockAuth);
   });
 
   describe('Page Structure', () => {
@@ -94,7 +93,7 @@ describe('PartiesPage', () => {
 
   describe('Authentication', () => {
     it('should render when user is authenticated', async () => {
-      mockAuth.mockResolvedValue(mockSession);
+      setupAuthenticatedState(mockAuth);
 
       const PartiesPageResolved = await PartiesPage();
       render(PartiesPageResolved);
@@ -104,25 +103,21 @@ describe('PartiesPage', () => {
     });
 
     it('should redirect when user is not authenticated', async () => {
-      mockAuth.mockResolvedValue(null);
+      setupUnauthenticatedState(mockAuth);
 
-      await expect(PartiesPage()).rejects.toThrow(
-        'REDIRECT: /signin?callbackUrl=/parties'
-      );
+      await expectSigninRedirect(PartiesPage, '/parties');
       expect(mockRedirect).toHaveBeenCalledWith('/signin?callbackUrl=/parties');
     });
 
     it('should redirect when session exists but no user id', async () => {
-      mockAuth.mockResolvedValue({ user: {} });
+      setupIncompleteAuthState(mockAuth);
 
-      await expect(PartiesPage()).rejects.toThrow(
-        'REDIRECT: /signin?callbackUrl=/parties'
-      );
+      await expectSigninRedirect(PartiesPage, '/parties');
       expect(mockRedirect).toHaveBeenCalledWith('/signin?callbackUrl=/parties');
     });
 
     it('should pass user id to PartyListView when authenticated', async () => {
-      mockAuth.mockResolvedValue(mockSession);
+      setupAuthenticatedState(mockAuth);
 
       const PartiesPageResolved = await PartiesPage();
       render(PartiesPageResolved);

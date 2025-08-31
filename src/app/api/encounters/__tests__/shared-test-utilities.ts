@@ -9,6 +9,7 @@ import { NextRequest } from 'next/server';
 import { Types } from 'mongoose';
 import { auth } from '@clerk/nextjs/server';
 import { EncounterServiceImportExport } from '@/lib/services/EncounterServiceImportExport';
+import { setupAuthenticatedState, setupUnauthenticatedState, setupIncompleteAuthState } from '@/lib/test-utils/shared-clerk-test-helpers';
 
 // ============================================================================
 // AUTHENTICATION UTILITIES
@@ -24,29 +25,24 @@ export const TEST_USER = {
 
 /**
  * Mock auth to return successful authentication
- * Uses shared factory function to eliminate code duplication
+ * Uses centralized helper function to eliminate code duplication
  */
 export const mockAuthSuccess = (mockAuth: jest.MockedFunction<typeof auth>) => {
-  mockAuth.mockResolvedValue({ userId: TEST_USER.id, publicMetadata: { role: 'user' } } as any);
+  setupAuthenticatedState(mockAuth, TEST_USER.id);
 };
 
 /**
  * Mock auth to return null (unauthenticated)
  */
 export const mockAuthFailure = (mockAuth: jest.MockedFunction<typeof auth>) => {
-  mockAuth.mockResolvedValue({ userId: undefined } as any);
+  setupUnauthenticatedState(mockAuth);
 };
 
 /**
  * Mock auth to return session without user ID
  */
 export const mockAuthIncomplete = (mockAuth: jest.MockedFunction<typeof auth>) => {
-  mockAuth.mockResolvedValue({
-    user: {
-      email: TEST_USER.email,
-      // Missing ID
-    },
-  } as any);
+  setupIncompleteAuthState(mockAuth);
 };
 
 // ============================================================================

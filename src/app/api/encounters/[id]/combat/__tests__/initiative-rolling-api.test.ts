@@ -1,6 +1,7 @@
 import { Types } from 'mongoose';
 import { Character } from '@/lib/models/Character';
 import { auth } from '@clerk/nextjs/server';
+import { setupAuthenticatedState } from '@/lib/test-utils/shared-clerk-test-helpers';
 import { POST as rollInitiativePost } from '../roll-initiative/route';
 import { POST as rerollInitiativePost } from '../reroll-initiative/route';
 import {
@@ -57,10 +58,8 @@ describe('Initiative Rolling API Endpoints', () => {
 
   beforeEach(() => {
     cleanupApiTest();
-    // Set up authentication mock
-    mockAuth.mockResolvedValue({
-      user: { id: 'user123' }
-    } as any);
+    // Set up authentication mock using centralized helper
+    setupAuthenticatedState(mockAuth, 'user123');
 
     const mocks = setupBasicMocks();
     mockEncounter = mocks.mockEncounter;
