@@ -174,6 +174,8 @@ export function AppLayout({ children }: AppLayoutProps) {
           setSidebarOpen={setSidebarOpen}
           isLoaded={isLoaded}
           isSignedIn={!!isSignedIn}
+          router={_router}
+          signOut={_signOut}
         />
 
         {/* Page content */}
