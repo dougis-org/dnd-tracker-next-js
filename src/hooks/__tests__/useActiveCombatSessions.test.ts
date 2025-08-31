@@ -1,17 +1,17 @@
 import { renderHook, waitFor } from '@testing-library/react';
-import { useSession } from 'next-auth/react';
+import { useUser } from '@clerk/nextjs';
 import { useActiveCombatSessions } from '../useActiveCombatSessions';
 
 // Mock fetch globally
 global.fetch = jest.fn();
 
-// Mock useSession
-jest.mock('next-auth/react', () => ({
-  useSession: jest.fn(),
+// Mock useUser
+jest.mock('@clerk/nextjs', () => ({
+  useUser: jest.fn(),
 }));
 
 const mockFetch = fetch as jest.MockedFunction<typeof fetch>;
-const mockUseSession = useSession as jest.MockedFunction<typeof useSession>;
+const mockUseUser = useUser as jest.MockedFunction<typeof useUser>;
 
 // Test helpers
 const createMockEncounter = (overrides = {}) => ({
@@ -33,10 +33,16 @@ const createMockEncounter = (overrides = {}) => ({
   ...overrides,
 });
 
-const setupMockSession = (sessionData = null, status = 'authenticated') => {
-  mockUseSession.mockReturnValue({
-    data: sessionData || (status === 'authenticated' ? { user: { id: 'user123', email: 'test@example.com' } } : null),
-    status,
+const setupMockUser = (userData = null, isLoaded = true, isSignedIn = true) => {
+  mockUseUser.mockReturnValue({
+    user: userData || (isSignedIn ? { 
+      id: 'user123', 
+      emailAddresses: [{ emailAddress: 'test@example.com' }],
+      firstName: 'Test',
+      lastName: 'User' 
+    } : null),
+    isLoaded,
+    isSignedIn,
   });
 };
 
@@ -52,7 +58,7 @@ const setupMockResponse = (data, ok = true) => {
 describe('useActiveCombatSessions', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    setupMockSession();
+    setupMockUser();
   });
 
   afterEach(() => {
@@ -183,13 +189,13 @@ describe('useActiveCombatSessions', () => {
 
   describe('Authentication states', () => {
     test('should not fetch data when session is loading', () => {
-      setupMockSession(null, 'loading');
+      setupMockUser(null, false, false);
       renderHook(() => useActiveCombatSessions());
       expect(mockFetch).not.toHaveBeenCalled();
     });
 
     test('should set loading to false when unauthenticated', async () => {
-      setupMockSession(null, 'unauthenticated');
+      setupMockUser(null, true, false);
 
       const { result } = renderHook(() => useActiveCombatSessions());
 
@@ -201,7 +207,7 @@ describe('useActiveCombatSessions', () => {
     });
 
     test('should not fetch data when user ID is missing', async () => {
-      setupMockSession({ user: { email: 'test@example.com' } }, 'authenticated'); // Missing id
+      setupMockUser({ emailAddresses: [{ emailAddress: 'test@example.com' }] }); // Missing id
 
       const { result } = renderHook(() => useActiveCombatSessions());
 
@@ -273,13 +279,13 @@ describe('useActiveCombatSessions', () => {
   describe('Session changes', () => {
     test('should refetch when session changes from unauthenticated to authenticated', async () => {
       // Start with unauthenticated
-      setupMockSession(null, 'unauthenticated');
+      setupMockUser(null, true, false);
       const { rerender } = renderHook(() => useActiveCombatSessions());
       expect(mockFetch).not.toHaveBeenCalled();
 
       // Mock successful fetch and change to authenticated
       setupMockResponse({ encounters: [] });
-      setupMockSession();
+      setupMockUser();
 
       rerender();
 
