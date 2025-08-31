@@ -43,12 +43,12 @@ The remaining work is organized into focused sub-issues:
 
 #### High-Priority Sub-Issues (Complete these first)
 
-1. **1. **[#692 - Fix ClerkSignUpPage.test.tsx](https://github.com/dougis-org/dnd-tracker-next-js/issues/692)**
+1. **[#692 - Fix ClerkSignUpPage.test.tsx](https://github.com/dougis-org/dnd-tracker-next-js/issues/692)**
    - **Status**: ✅ FIXED
    - **Category**: ESM Import Resolution
    - **Problem**: Resolved ESM token errors and test logic.
    - **Impact**: Unblocked other auth page tests.
-   - **Command**: `npm test -- --testPathPatterns="ClerkSignUpPage.test.tsx"`**
+   - **Command**: `npm test -- --testPathPatterns="ClerkSignUpPage.test.tsx"`
    - **Status**: ✅ FIXED
    - **Category**: ESM Import Resolution
    - **Problem**: Resolved ESM token errors and test logic.

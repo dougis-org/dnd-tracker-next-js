@@ -11,7 +11,7 @@ import { auth } from '@/lib/auth';
  */
 export async function getAuthConfig() {
   return {
-    auth: auth,
+    auth,
     session: await auth(),
   };
 }
