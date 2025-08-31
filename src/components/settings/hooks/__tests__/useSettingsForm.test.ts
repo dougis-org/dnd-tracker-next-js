@@ -1,5 +1,5 @@
 import { renderHook, act } from '@testing-library/react';
-import { useSession } from 'next-auth/react';
+import { useUser } from '@clerk/nextjs';
 import { useSettingsForm } from '../useSettingsForm';
 import { updateUser } from '@/lib/api/users';
 import '@testing-library/jest-dom';
@@ -17,9 +17,9 @@ import {
   testValidationError,
 } from './test-helpers';
 
-// Mock next-auth
-jest.mock('next-auth/react');
-const mockUseSession = useSession as jest.MockedFunction<typeof useSession>;
+// Mock Clerk
+jest.mock('@clerk/nextjs');
+const mockUseUser = useUser as jest.MockedFunction<typeof useUser>;
 
 // Mock user API
 jest.mock('@/lib/api/users');

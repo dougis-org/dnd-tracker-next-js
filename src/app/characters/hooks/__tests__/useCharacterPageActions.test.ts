@@ -1,13 +1,13 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import { useUser } from '@clerk/nextjs';
 import { useCharacterPageActions } from '../useCharacterPageActions';
 import { CharacterService } from '@/lib/services/CharacterService';
 import type { Character } from '@/lib/validations/character';
 
 // Mock dependencies
 jest.mock('next/navigation');
-jest.mock('next-auth/react');
+jest.mock('@clerk/nextjs');
 jest.mock('@/lib/services/CharacterService');
 jest.mock('@/components/modals/ConfirmationDialog', () => ({
   useConfirmationDialog: () => ({
@@ -19,8 +19,11 @@ jest.mock('@/components/modals/ConfirmationDialog', () => ({
 const mockPush = jest.fn();
 const mockRouter = { push: mockPush };
 
-const mockSession = {
-  user: { id: 'user123' },
+const mockUser = {
+  id: 'user123',
+  emailAddresses: [{ emailAddress: 'test@example.com' }],
+  firstName: 'Test',
+  lastName: 'User'
 };
 
 const mockCharacter: Character = {
@@ -46,16 +49,18 @@ const mockCharacter: Character = {
 
 // Test helpers
 const setupAuthenticatedUser = () => {
-  (useSession as jest.Mock).mockReturnValue({
-    data: mockSession,
-    status: 'authenticated',
+  (useUser as jest.Mock).mockReturnValue({
+    user: mockUser,
+    isLoaded: true,
+    isSignedIn: true,
   });
 };
 
 const setupUnauthenticatedUser = () => {
-  (useSession as jest.Mock).mockReturnValue({
-    data: null,
-    status: 'unauthenticated',
+  (useUser as jest.Mock).mockReturnValue({
+    user: null,
+    isLoaded: true,
+    isSignedIn: false,
   });
 };
 
