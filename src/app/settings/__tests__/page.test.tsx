@@ -20,8 +20,8 @@ import {
   expectAccessibilityStructure,
 } from './page-test-helpers';
 
-// Mock next-auth
-jest.mock('next-auth/react');
+// Mock Clerk
+jest.mock('@clerk/nextjs');
 
 // Mock AppLayout
 jest.mock('@/components/layout/AppLayout', () => ({

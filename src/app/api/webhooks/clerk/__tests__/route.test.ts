@@ -19,6 +19,9 @@ import {
 // Mock dependencies
 jest.mock('@/lib/models/User');
 jest.mock('@/lib/db');
+jest.mock('next/headers', () => ({
+  headers: jest.fn(),
+}));
 
 // Setup test environment
 setupWebhookTestEnvironment();

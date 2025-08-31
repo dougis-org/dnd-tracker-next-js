@@ -1,8 +1,6 @@
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
 import userEvent from '@testing-library/user-event';
 import { screen } from '@testing-library/react';
-import { createMockSession as createMockSessionBase } from '@/lib/test-utils/shared-api-test-helpers';
 import { jest } from '@jest/globals';
 
 /**
@@ -52,23 +50,6 @@ export const TEST_EMAIL = 'test@example.com';
 export const createMockRouter = () => ({
   push: jest.fn(),
 });
-
-export const createMockSession = (overrides: any = {}) => ({
-  ...createMockSessionBase(overrides.user?.id || TEST_USER_ID),
-  user: {
-    ...createMockSessionBase(overrides.user?.id || TEST_USER_ID).user,
-    name: 'John Doe',
-    ...overrides.user,
-  },
-  ...overrides,
-});
-
-export const mockSessionHook = (session: any = null, status: string = 'authenticated') => {
-  (useSession as jest.Mock).mockReturnValue({
-    data: session,
-    status,
-  });
-};
 
 export const mockRouterHook = (router: any = createMockRouter()) => {
   (useRouter as jest.Mock).mockReturnValue(router);
@@ -134,26 +115,17 @@ export const expectProfileApiCall = (userId: string = '123') => {
 
 export const setupMocksForTest = () => {
   const mockRouter = createMockRouter();
-  const mockSession = createMockSession();
 
   mockRouterHook(mockRouter);
-  mockSessionHook(mockSession);
   createSuccessfulFetchMock();
 
-  return { mockRouter, mockSession };
+  return { mockRouter };
 };
 
 export const setupCommonMocks = () => {
   const mockRouter = createMockRouter();
   mockRouterHook(mockRouter);
   return { mockRouter };
-};
-
-export const mockUseSession = (status: 'authenticated' | 'loading' | 'unauthenticated', sessionData: any = null) => {
-  (useSession as jest.Mock).mockReturnValue({
-    data: sessionData,
-    status,
-  });
 };
 
 export const mockUseRouter = () => {
@@ -178,21 +150,8 @@ export const fillAndSubmitForm = async (fields: { label: string | RegExp; value:
 
 export const mockAll = () => {
   const mockRouter = mockUseRouter();
-  mockUseSession('authenticated', createMockSession());
   mockFetch(true);
   return { mockRouter };
-};
-
-export const mockAuthenticatedSession = () => {
-  mockUseSession('authenticated', createMockSession());
-};
-
-export const mockUnauthenticatedSession = () => {
-  mockUseSession('unauthenticated');
-};
-
-export const mockLoadingSession = () => {
-  mockUseSession('loading');
 };
 
 export const mockSuccessfulProfileUpdate = () => {
@@ -329,18 +288,6 @@ export const mockApiError = (message: string, path: string = 'general') => {
     message,
     errors: [{ path, message }],
   });
-};
-
-export const mockSuccessfulAuth = (user: any = {}) => {
-  mockUseSession('authenticated', createMockSession({ user }));
-};
-
-export const mockAuthLoading = () => {
-  mockUseSession('loading');
-};
-
-export const mockNoAuth = () => {
-  mockUseSession('unauthenticated');
 };
 
 export const mockRouterPush = () => {
@@ -527,10 +474,6 @@ export const mockRouterWithAsPath = () => {
 };
 
 export const mockRouterWithQuery = () => {
-  (useRouter as jest.Mock).mockReturnValue({ query: {} });
-};
-
-export const mockRouterWithParams = () => {
   (useRouter as jest.Mock).mockReturnValue({ query: {} });
 };
 

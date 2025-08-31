@@ -2,22 +2,24 @@
  * Shared test utilities to eliminate duplication
  */
 
-import { MongoDBAdapter } from '@auth/mongodb-adapter';
 import { MongoClient } from 'mongodb';
 
 /**
- * Create test adapter instance
+ * Create test MongoDB client
  */
-export function createTestAdapter() {
-  return MongoDBAdapter(Promise.resolve({} as MongoClient));
+export function createTestClient() {
+  return {} as MongoClient;
 }
 
 /**
- * Basic adapter validation
+ * Mock session data for testing
  */
-export function validateAdapter(adapter: any) {
-  expect(adapter).toBeDefined();
-  expect(adapter.createSession).toBeDefined();
+export function createMockSession() {
+  return {
+    userId: 'test-user-id',
+    sessionToken: 'test-session-token',
+    expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+  };
 }
 
 /**

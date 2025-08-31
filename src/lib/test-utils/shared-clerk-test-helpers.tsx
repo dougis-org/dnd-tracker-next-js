@@ -95,7 +95,32 @@ export const auth = jest.fn(() => Promise.resolve({ userId: null }));
 
 export const currentUser = jest.fn(() => Promise.resolve(null));
 
-export default {
+// NextAuth compatibility exports for tests that haven't been migrated yet
+export const useSession = jest.fn(() => ({
+  data: null,
+  status: 'unauthenticated',
+  update: jest.fn(),
+}));
+
+export const SessionProvider = jest.fn(({ children }) => children);
+
+export const signIn = jest.fn();
+export const signOut = jest.fn();
+
+// MongoDB Adapter mock for compatibility
+export const MongoDBAdapter = jest.fn(() => ({
+  createUser: jest.fn(),
+  getUser: jest.fn(),
+  getUserByEmail: jest.fn(),
+  updateUser: jest.fn(),
+  deleteUser: jest.fn(),
+  createSession: jest.fn(),
+  getSession: jest.fn(),
+  updateSession: jest.fn(),
+  deleteSession: jest.fn(),
+}));
+
+const clerkTestHelpers = {
   useAuth,
   useUser,
   useClerk,
@@ -107,4 +132,12 @@ export default {
   UserButton,
   auth,
   currentUser,
+  // NextAuth compatibility
+  useSession,
+  SessionProvider,
+  signIn,
+  signOut,
+  MongoDBAdapter,
 };
+
+export default clerkTestHelpers;

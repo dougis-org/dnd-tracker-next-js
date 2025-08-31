@@ -7,10 +7,7 @@ import {
 } from './auth-test-utils';
 import {SESSION_TIMEOUTS} from "../constants/session-constants";
 
-// Mock all external dependencies
-jest.mock('@auth/mongodb-adapter', () => ({
-  MongoDBAdapter: jest.fn(),
-}));
+// Mock all external dependencies - MongoDB adapter no longer needed for Clerk
 
 jest.mock('mongodb', () => ({
   MongoClient: jest.fn(),

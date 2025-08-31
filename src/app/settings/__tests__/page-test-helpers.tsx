@@ -1,66 +1,71 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@clerk/nextjs';
 import SettingsPage from '../page';
 
-export const mockUseSession = useSession as jest.MockedFunction<typeof useSession>;
+export const mockUseSession = useAuth as jest.MockedFunction<typeof useAuth>;
 
 export const createSessionMock = (overrides: any = {}) => ({
-  data: {
-    user: {
-      id: '1',
-      name: 'Test User',
-      email: 'test@example.com',
-      ...overrides.user,
-    },
-    expires: '2024-12-31',
-    ...overrides.data,
-  },
-  status: 'authenticated' as const,
-  update: jest.fn(),
+  userId: '1',
+  isSignedIn: true,
+  isLoaded: true,
+  orgId: null,
+  orgRole: null,
+  orgSlug: null,
+  sessionId: 'session_123',
   ...overrides,
 });
 
 export const loadingSessionMock = {
-  data: null,
-  status: 'loading' as const,
-  update: jest.fn(),
+  userId: null,
+  isSignedIn: false,
+  isLoaded: false,
+  orgId: null,
+  orgRole: null,
+  orgSlug: null,
+  sessionId: null,
 };
 
 export const unauthenticatedSessionMock = {
-  data: null,
-  status: 'unauthenticated' as const,
-  update: jest.fn(),
+  userId: null,
+  isSignedIn: false,
+  isLoaded: true,
+  orgId: null,
+  orgRole: null,
+  orgSlug: null,
+  sessionId: null,
 };
 
 export const sessionWithoutUserMock = {
-  data: {
-    expires: '2024-12-31',
-  } as any,
-  status: 'authenticated' as const,
-  update: jest.fn(),
+  userId: null,
+  isSignedIn: false,
+  isLoaded: true,
+  orgId: null,
+  orgRole: null,
+  orgSlug: null,
+  sessionId: null,
 };
 
 export const nullSessionMock = {
-  data: null,
-  status: 'authenticated' as const,
-  update: jest.fn(),
+  userId: null,
+  isSignedIn: false,
+  isLoaded: true,
+  orgId: null,
+  orgRole: null,
+  orgSlug: null,
+  sessionId: null,
 };
 
 export const userWithEmailOnlyMock = createSessionMock({
-  user: {
-    id: '1',
-    email: 'test@example.com',
-    name: undefined,
-  },
+  userId: '1',
+  isSignedIn: true,
+  isLoaded: true,
 });
 
 export const userWithNameAndEmailMock = createSessionMock({
-  user: {
-    id: '1',
-    name: 'John Doe',
-    email: 'john@example.com',
-  },
+  userId: '1',
+  isSignedIn: true,
+  isLoaded: true,
 });
 
 // Render helpers

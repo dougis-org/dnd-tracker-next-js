@@ -1,14 +1,12 @@
 import { render, screen } from '@testing-library/react';
 import AuthenticatedClientWrapper from '@/components/layout/AuthenticatedClientWrapper';
 import AuthenticatedServerPage from '@/components/layout/AuthenticatedServerPage';
-import { useSession } from 'next-auth/react';
+import { mockUseAuth } from '@/app/(auth)/__tests__/auth-test-utils';
+
 import { auth } from '@/lib/auth';
 
-jest.mock('next-auth/react', () => ({
-  useSession: jest.fn(),
-}));
 
-jest.mock('@/lib/auth', () => ({
+jest.mock('../lib/auth', () => ({
   auth: jest.fn(),
 }));
 
@@ -25,9 +23,10 @@ describe('Authentication Architecture', () => {
 
   describe('AuthenticatedClientWrapper', () => {
     it('renders children when authenticated', () => {
-      (useSession as jest.Mock).mockReturnValue({
-        status: 'authenticated',
-        data: { user: { id: '123' } },
+      mockUseAuth({
+        isSignedIn: true,
+        isLoaded: true,
+        userId: '123',
       });
 
       render(
@@ -40,9 +39,9 @@ describe('Authentication Architecture', () => {
     });
 
     it('shows loading state', () => {
-      (useSession as jest.Mock).mockReturnValue({
-        status: 'loading',
-        data: null,
+      mockUseAuth({
+        isSignedIn: false,
+        isLoaded: false,
       });
 
       render(
@@ -55,9 +54,9 @@ describe('Authentication Architecture', () => {
     });
 
     it('shows sign in message when unauthenticated', () => {
-      (useSession as jest.Mock).mockReturnValue({
-        status: 'unauthenticated',
-        data: null,
+      mockUseAuth({
+        isSignedIn: false,
+        isLoaded: true,
       });
 
       render(
@@ -72,7 +71,7 @@ describe('Authentication Architecture', () => {
 
   describe('AuthenticatedServerPage', () => {
     it('renders children when session exists', async () => {
-      (auth as jest.Mock).mockResolvedValue({ user: { id: '123' } });
+      (auth as jest.Mock).mockResolvedValue({ userId: '123' });
 
       const Component = await AuthenticatedServerPage({
         children: <div>Server Content</div>,
