@@ -6,28 +6,19 @@ export const createMockEvent = (): React.FormEvent => ({
   preventDefault: jest.fn(),
 } as unknown as React.FormEvent);
 
-export const createMockSession = () => ({
-  ...createMockSessionBase('1'),
-  user: {
-    ...createMockSessionBase('1').user,
-    name: 'Test User',
-    subscriptionTier: 'free',
-    notifications: {
-      email: true,
-      combat: false,
-      encounters: true,
-      weeklyDigest: false,
-      productUpdates: true,
-      securityAlerts: true,
-    },
-  },
-  expires: '2024-12-31',
+export const createMockUser = () => ({
+  id: '1',
+  emailAddresses: [{ emailAddress: 'test@example.com' }],
+  primaryEmailAddress: { emailAddress: 'test@example.com' },
+  firstName: 'Test',
+  lastName: 'User',
+  fullName: 'Test User',
 });
 
-export const createMockSessionReturn = (session: any = createMockSession()) => ({
-  data: session,
-  status: 'authenticated' as const,
-  update: jest.fn(),
+export const createMockUserReturn = (user: any = createMockUser()) => ({
+  user,
+  isLoaded: true,
+  isSignedIn: true,
 });
 
 export const createAsyncPromise = () => {
@@ -65,8 +56,8 @@ export const actAsync = async (callback: () => Promise<void>) => {
 // Test setup helpers
 export const setupUseSettingsFormTest = () => {
   const mockEvent = createMockEvent();
-  const mockSession = createMockSessionReturn();
-  return { mockEvent, mockSession };
+  const mockUser = createMockUserReturn();
+  return { mockEvent, mockUser };
 };
 
 // Common test data patterns

@@ -4,7 +4,7 @@ import { useSettingsForm } from '../useSettingsForm';
 import { updateUser } from '@/lib/api/users';
 import '@testing-library/jest-dom';
 import {
-  createMockSessionReturn,
+  createMockUserReturn,
   expectValidationErrors,
   actAsync,
   setupUseSettingsFormTest,
@@ -28,7 +28,7 @@ const mockUpdateUser = updateUser as jest.MockedFunction<typeof updateUser>;
 describe('useSettingsForm', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockUseSession.mockReturnValue(createMockSessionReturn());
+    mockUseUser.mockReturnValue(createMockUserReturn());
   });
 
   describe('Initial State', () => {
