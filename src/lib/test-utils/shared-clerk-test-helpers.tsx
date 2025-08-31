@@ -1,0 +1,110 @@
+/**
+ * Shared Clerk Test Helpers
+ *
+ * Utilities for Clerk authentication mocking in tests.
+ * This file also serves as a mock for @clerk/nextjs imports.
+ */
+import React from 'react';
+
+export const SHARED_API_TEST_CONSTANTS = {
+  TEST_USER_ID: 'test-user-123',
+};
+
+export function createMockClerkSession(userId: string) {
+  return {
+    userId,
+    publicMetadata: { role: 'user' },
+    sessionClaims: {
+      sub: userId,
+      __raw: '',
+      iss: 'https://clerk.example.com',
+      sid: 'sid-123',
+      nbf: 0,
+      exp: Date.now() / 1000 + 3600,
+      iat: Date.now() / 1000,
+    },
+    sessionId: 'sess-123',
+    sessionStatus: 'active' as any,
+    actor: undefined,
+    tokenType: 'session_token' as const,
+    getToken: async () => null,
+    has: () => true,
+    debug: () => ({}),
+    isAuthenticated: true,
+    orgId: undefined,
+    orgRole: undefined,
+    orgSlug: undefined,
+    orgPermissions: [],
+    factorVerificationAge: null,
+  };
+}
+
+export function setupClerkMocks(mockAuth: jest.MockedFunction<any>) {
+  mockAuth.mockReset();
+}
+
+export function setupClerkUnauthenticatedState(
+  mockAuth: jest.MockedFunction<any>
+) {
+  mockAuth.mockResolvedValue({ userId: undefined });
+}
+
+// Mock Clerk hooks and components for Jest
+export const useAuth = jest.fn(() => ({
+  isLoaded: true,
+  isSignedIn: false,
+  userId: null,
+}));
+
+export const useUser = jest.fn(() => ({
+  isLoaded: true,
+  isSignedIn: false,
+  user: null,
+}));
+
+export const useClerk = jest.fn(() => ({
+  signOut: jest.fn(),
+  openSignIn: jest.fn(),
+  openSignUp: jest.fn(),
+}));
+
+export const SignIn = jest.fn(({ children, ...props }) => (
+  <div data-testid="clerk-signin-component" {...props}>
+    {children}
+  </div>
+));
+
+export const SignUp = jest.fn(({ children, ...props }) => (
+  <div data-testid="clerk-signup-component" {...props}>
+    {children}
+  </div>
+));
+
+export const ClerkProvider = jest.fn(({ children }) => children);
+
+export const SignedIn = jest.fn(({ children }) => children);
+
+export const SignedOut = jest.fn(({ children }) => children);
+
+export const UserButton = jest.fn(() => (
+  <div data-testid="clerk-user-button">User Menu</div>
+));
+
+// Server-side exports
+export const auth = jest.fn(() => Promise.resolve({ userId: null }));
+
+export const currentUser = jest.fn(() => Promise.resolve(null));
+
+export default {
+  useAuth,
+  useUser,
+  useClerk,
+  SignIn,
+  SignUp,
+  ClerkProvider,
+  SignedIn,
+  SignedOut,
+  UserButton,
+  auth,
+  currentUser,
+};
