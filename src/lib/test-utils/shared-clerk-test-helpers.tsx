@@ -6,9 +6,10 @@
  */
 import React from 'react';
 
+// Test constants - direct export to avoid any circular reference issues  
 export const SHARED_API_TEST_CONSTANTS = {
   TEST_USER_ID: 'test-user-123',
-};
+} as const;
 
 // ============================================================================
 // CENTRALIZED AUTHENTICATION MOCK HELPERS
@@ -18,7 +19,7 @@ export const SHARED_API_TEST_CONSTANTS = {
  * Standard authenticated user session for all tests
  * Use this consistently across all test files
  */
-export function createStandardAuthenticatedSession(userId: string = SHARED_API_TEST_CONSTANTS.TEST_USER_ID) {
+export function createStandardAuthenticatedSession(userId: string = 'test-user-123') {
   return {
     userId,
     user: {
@@ -48,7 +49,7 @@ export function createStandardAuthenticatedSession(userId: string = SHARED_API_T
  * Setup authenticated state for server-side auth mocking
  * All tests expecting authenticated users should use this
  */
-export function setupAuthenticatedState(mockAuth: jest.MockedFunction<any>, userId: string = SHARED_API_TEST_CONSTANTS.TEST_USER_ID) {
+export function setupAuthenticatedState(mockAuth: jest.MockedFunction<any>, userId: string = 'test-user-123') {
   mockAuth.mockResolvedValue(createStandardAuthenticatedSession(userId));
 }
 
@@ -63,16 +64,22 @@ export function setupUnauthenticatedState(mockAuth: jest.MockedFunction<any>) {
 /**
  * Setup session without userId (incomplete auth)
  * All tests expecting authentication failure should use this
+ * Based on standard authenticated session but with null userId for defensive testing
  */
 export function setupIncompleteAuthState(mockAuth: jest.MockedFunction<any>) {
-  mockAuth.mockResolvedValue({ userId: null, user: {} });
+  mockAuth.mockResolvedValue({
+    ...createStandardAuthenticatedSession(''),
+    userId: null,
+    user: null,
+    isAuthenticated: false,
+  });
 }
 
 /**
  * Setup client-side authentication hooks for authenticated state
  * All component tests expecting authenticated users should use this
  */
-export function setupClientSideAuthenticatedState(userId: string = SHARED_API_TEST_CONSTANTS.TEST_USER_ID) {
+export function setupClientSideAuthenticatedState(userId: string = 'test-user-123') {
   const user = {
     id: userId,
     email: 'test@example.com',
