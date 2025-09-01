@@ -1,11 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import PartiesPage from '../page';
-import { 
-  setupAuthenticatedState, 
-  setupUnauthenticatedState, 
-  setupIncompleteAuthState,
-  expectSigninRedirect,
-  SHARED_API_TEST_CONSTANTS 
+import {
+  SHARED_API_TEST_CONSTANTS
 } from '@/lib/test-utils/shared-clerk-test-helpers';
 
 // Mock Next.js navigation
@@ -32,13 +28,11 @@ jest.mock('@/components/party/PartyListView', () => ({
 }));
 
 describe('PartiesPage', () => {
-  let mockAuth: jest.Mock;
   let mockRedirect: jest.Mock;
   let mockGetAuthenticatedUserId: jest.Mock;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockAuth = require('@clerk/nextjs/server').auth;
     mockRedirect = require('next/navigation').redirect;
     mockGetAuthenticatedUserId = require('@/lib/auth').getAuthenticatedUserId;
 
