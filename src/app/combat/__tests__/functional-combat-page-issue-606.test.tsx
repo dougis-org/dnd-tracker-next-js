@@ -1,15 +1,19 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
 import CombatPage from '../page';
+import { useAuth } from '@clerk/nextjs';
+
+// Test constants
+const TEST_USER_ID = 'test-user-123';
 
 // Mock dependencies
 jest.mock('next/navigation', () => ({
   useRouter: jest.fn(),
 }));
 
-jest.mock('next-auth/react', () => ({
-  useSession: jest.fn(),
+// Mock Clerk authentication
+jest.mock('@clerk/nextjs', () => ({
+  useAuth: jest.fn(),
 }));
 
 // Mock the custom hook
@@ -20,6 +24,8 @@ jest.mock('@/hooks/useActiveCombatSessions', () => ({
 // Import the mocked hook
 import { useActiveCombatSessions } from '@/hooks/useActiveCombatSessions';
 
+const mockUseAuth = useAuth as jest.MockedFunction<typeof useAuth>;
+
 const mockRouter = {
   push: jest.fn(),
   replace: jest.fn(),
@@ -28,20 +34,16 @@ const mockRouter = {
   refresh: jest.fn(),
 };
 
-const mockSession = {
-  user: { id: 'user123', email: 'test@example.com' },
-  expires: new Date().toISOString(),
-};
-
 const mockUseActiveCombatSessions = useActiveCombatSessions as jest.MockedFunction<typeof useActiveCombatSessions>;
 
 describe('Issue #606: Functional Combat Page', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (useRouter as jest.Mock).mockReturnValue(mockRouter);
-    (useSession as jest.Mock).mockReturnValue({
-      data: mockSession,
-      status: 'authenticated'
+    mockUseAuth.mockReturnValue({
+      isLoaded: true,
+      isSignedIn: true,
+      userId: TEST_USER_ID,
     });
     // Default mock for the custom hook
     mockUseActiveCombatSessions.mockReturnValue({
@@ -261,9 +263,10 @@ describe('Issue #606: Functional Combat Page', () => {
 
   describe('Authentication States', () => {
     test('should show login message when not authenticated', () => {
-      (useSession as jest.Mock).mockReturnValue({
-        data: null,
-        status: 'unauthenticated'
+      mockUseAuth.mockReturnValue({
+        isLoaded: true,
+        isSignedIn: false,
+        userId: null,
       });
 
       render(<CombatPage />);
@@ -271,10 +274,11 @@ describe('Issue #606: Functional Combat Page', () => {
       expect(screen.getByText('Please log in to access combat tracking')).toBeInTheDocument();
     });
 
-    test('should show loading when session is loading', () => {
-      (useSession as jest.Mock).mockReturnValue({
-        data: null,
-        status: 'loading'
+    test('should show loading when auth is loading', () => {
+      mockUseAuth.mockReturnValue({
+        isLoaded: false,
+        isSignedIn: false,
+        userId: null,
       });
 
       render(<CombatPage />);
