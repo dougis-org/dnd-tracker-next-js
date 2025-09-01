@@ -3,13 +3,16 @@
  */
 import { screen, fireEvent, waitFor } from '@testing-library/react';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
 import { render } from '@testing-library/react';
 import CharacterEditPage from './page';
 import {
   createMockCharacter,
   multiclassCharacterData,
 } from '@/lib/services/__tests__/CharacterService.test-helpers';
+import { useUser } from '@clerk/nextjs';
+
+// Test constants
+const TEST_USER_ID = 'test-user-123';
 
 // Mock dependencies
 jest.mock('next/navigation', () => ({
@@ -17,12 +20,15 @@ jest.mock('next/navigation', () => ({
   useParams: jest.fn(),
 }));
 
-jest.mock('next-auth/react', () => ({
-  useSession: jest.fn(),
+// Mock Clerk authentication
+jest.mock('@clerk/nextjs', () => ({
+  useUser: jest.fn(),
+  useAuth: jest.fn(),
+  useClerk: jest.fn(),
 }));
 
 const mockUseRouter = useRouter as jest.MockedFunction<typeof useRouter>;
-const mockUseSession = useSession as jest.MockedFunction<typeof useSession>;
+const mockUseUser = useUser as jest.MockedFunction<typeof useUser>;
 
 // Mock useParams
 const mockUseParams = require('next/navigation').useParams as jest.MockedFunction<any>;
@@ -44,10 +50,17 @@ describe('CharacterEditPage', () => {
 
     mockUseParams.mockReturnValue({ id: testCharacterId });
 
-    mockUseSession.mockReturnValue({
-      data: { user: { id: 'test-user-id' } },
-      status: 'authenticated',
-    } as any);
+    // Setup authenticated user with Clerk
+    mockUseUser.mockReturnValue({
+      isLoaded: true,
+      isSignedIn: true,
+      user: {
+        id: TEST_USER_ID,
+        email: 'test@example.com',
+        firstName: 'Test',
+        lastName: 'User',
+      },
+    });
   });
 
   const mockSuccessfulCharacterFetch = (character: any) => {

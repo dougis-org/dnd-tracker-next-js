@@ -6,9 +6,146 @@
  */
 import React from 'react';
 
+// Test constants - direct export to avoid any circular reference issues
 export const SHARED_API_TEST_CONSTANTS = {
   TEST_USER_ID: 'test-user-123',
-};
+} as const;
+
+// ============================================================================
+// CENTRALIZED AUTHENTICATION MOCK HELPERS
+// ============================================================================
+
+/**
+ * Standard authenticated user session for all tests
+ * Use this consistently across all test files
+ */
+export function createStandardAuthenticatedSession(userId: string = 'test-user-123') {
+  return {
+    userId,
+    user: {
+      id: userId,
+      email: 'test@example.com',
+      name: 'Test User',
+    },
+    publicMetadata: { role: 'user' },
+    sessionClaims: {
+      sub: userId,
+      __raw: '',
+      iss: 'https://clerk.example.com',
+      sid: 'sid-123',
+      nbf: 0,
+      exp: Date.now() / 1000 + 3600,
+      iat: Date.now() / 1000,
+    },
+    sessionId: 'sess-123',
+    getToken: async () => null,
+    has: () => true,
+    debug: () => ({}),
+    isAuthenticated: true,
+  };
+}
+
+/**
+ * Setup authenticated state for server-side auth mocking
+ * All tests expecting authenticated users should use this
+ */
+export function setupAuthenticatedState(mockAuth: jest.MockedFunction<any>, userId: string = 'test-user-123') {
+  mockAuth.mockResolvedValue(createStandardAuthenticatedSession(userId));
+}
+
+/**
+ * Setup unauthenticated state (null session)
+ * All tests expecting redirect to signin should use this
+ */
+export function setupUnauthenticatedState(mockAuth: jest.MockedFunction<any>) {
+  mockAuth.mockResolvedValue(null);
+}
+
+/**
+ * Setup session without userId (incomplete auth)
+ * All tests expecting authentication failure should use this
+ * Based on standard authenticated session but with null userId for defensive testing
+ */
+export function setupIncompleteAuthState(mockAuth: jest.MockedFunction<any>) {
+  mockAuth.mockResolvedValue({
+    ...createStandardAuthenticatedSession(''),
+    userId: null,
+    user: null,
+    isAuthenticated: false,
+  });
+}
+
+/**
+ * Setup client-side authentication hooks for authenticated state
+ * All component tests expecting authenticated users should use this
+ */
+export function setupClientSideAuthenticatedState(userId: string = 'test-user-123') {
+  const user = {
+    id: userId,
+    email: 'test@example.com',
+    firstName: 'Test',
+    lastName: 'User',
+  };
+
+  useAuth.mockReturnValue({
+    isLoaded: true,
+    isSignedIn: true,
+    userId,
+  });
+
+  useUser.mockReturnValue({
+    isLoaded: true,
+    isSignedIn: true,
+    user,
+  });
+
+  useSession.mockReturnValue({
+    data: { user },
+    status: 'authenticated',
+    update: jest.fn(),
+  });
+}
+
+/**
+ * Setup client-side authentication hooks for unauthenticated state
+ * All component tests expecting signin redirect should use this
+ */
+export function setupClientSideUnauthenticatedState() {
+  useAuth.mockReturnValue({
+    isLoaded: true,
+    isSignedIn: false,
+    userId: null,
+  });
+
+  useUser.mockReturnValue({
+    isLoaded: true,
+    isSignedIn: false,
+    user: null,
+  });
+
+  useSession.mockReturnValue({
+    data: null,
+    status: 'unauthenticated',
+    update: jest.fn(),
+  });
+}
+
+/**
+ * Test helper for pages that should redirect unauthenticated users
+ * All page tests expecting signin redirect should use this pattern
+ * Updated to match centralized auth pattern using /sign-in and redirect_url
+ */
+export async function expectSigninRedirect(pageComponent: Function, expectedCallbackUrl: string) {
+  await expect(pageComponent()).rejects.toThrow(`REDIRECT: /sign-in?redirect_url=${encodeURIComponent(expectedCallbackUrl)}`);
+}
+
+/**
+ * Legacy helper for tests still using old signin URL pattern
+ * @deprecated Use expectSigninRedirect instead
+ */
+export async function expectLegacySigninRedirect(pageComponent: Function, expectedCallbackUrl: string) {
+  await expect(pageComponent()).rejects.toThrow(`REDIRECT: /signin?callbackUrl=${expectedCallbackUrl}`);
+}
 
 export function createMockClerkSession(userId: string) {
   return {

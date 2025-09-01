@@ -1,6 +1,5 @@
 import { Metadata } from 'next';
-import { redirect } from 'next/navigation';
-import { auth } from '@clerk/nextjs/server';
+import { getAuthenticatedUserId } from '@/lib/auth';
 import { PartyListView } from '@/components/party/PartyListView';
 
 export const dynamic = 'force-dynamic';
@@ -11,11 +10,8 @@ export const metadata: Metadata = {
 };
 
 export default async function PartiesPage() {
-  const session = await auth();
-
-  if (!session?.userId) {
-    redirect('/signin?callbackUrl=/parties');
-  }
+  // Use centralized authentication - automatically handles redirect if not authenticated
+  const userId = await getAuthenticatedUserId('/parties');
 
   return (
     <div className="space-y-6">
@@ -25,7 +21,7 @@ export default async function PartiesPage() {
           Manage and organize your D&D parties
         </p>
       </div>
-      <PartyListView userId={session.userId} />
+      <PartyListView userId={userId} />
     </div>
   );
 }

@@ -3,7 +3,6 @@
  */
 import { screen, fireEvent } from '@testing-library/react';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
 import { createCharacterWithSpells, createCharacterWithEquipment } from './__tests__/test-helpers';
 import {
   setupCharacterTest,
@@ -22,18 +21,24 @@ import {
   mockPendingCharacterFetch,
 } from './__tests__/page-test-utils';
 import { shareTestHelpers, backButtonTestHelpers } from './__tests__/share-test-helpers';
+// Test constants
+const TEST_USER_ID = 'test-user-123';
+import { useUser } from '@clerk/nextjs';
 
 // Mock dependencies
 jest.mock('next/navigation', () => ({
   useRouter: jest.fn(),
 }));
 
-jest.mock('next-auth/react', () => ({
-  useSession: jest.fn(),
+// Mock Clerk authentication
+jest.mock('@clerk/nextjs', () => ({
+  useUser: jest.fn(),
+  useAuth: jest.fn(),
+  useClerk: jest.fn(),
 }));
 
 const mockUseRouter = useRouter as jest.MockedFunction<typeof useRouter>;
-const mockUseSession = useSession as jest.MockedFunction<typeof useSession>;
+const mockUseUser = useUser as jest.MockedFunction<typeof useUser>;
 
 describe('CharacterDetailClient', () => {
   const mockRouterPush = jest.fn();
@@ -50,11 +55,17 @@ describe('CharacterDetailClient', () => {
       back: mockRouterBack,
     } as any);
 
-    // Mock session with user
-    mockUseSession.mockReturnValue({
-      data: { user: { id: 'test-user-id' } },
-      status: 'authenticated',
-    } as any);
+    // Setup authenticated user using centralized helpers
+    mockUseUser.mockReturnValue({
+      isLoaded: true,
+      isSignedIn: true,
+      user: {
+        id: TEST_USER_ID,
+        email: 'test@example.com',
+        firstName: 'Test',
+        lastName: 'User',
+      },
+    });
   });
 
   it('should render character detail page with basic information', async () => {

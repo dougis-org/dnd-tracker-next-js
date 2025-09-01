@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { withCombatValidation } from '../api-wrapper';
 import { auth } from '@clerk/nextjs/server';
 import { validateAndGetEncounter, validateCombatActive, validateRequiredFields, createSuccessResponse } from '../utils';
+import { setupAuthenticatedState, setupUnauthenticatedState, setupIncompleteAuthState } from '@/lib/test-utils/shared-clerk-test-helpers';
 
 // Mock dependencies
 jest.mock('@clerk/nextjs/server');
@@ -16,17 +17,17 @@ const mockCreateSuccessResponse = createSuccessResponse as jest.MockedFunction<t
 // Test data configurations - data-driven approach
 const testConfigurations = {
   unauthenticated: {
-    setupAuth: () => mockAuth.mockResolvedValue(null),
+    setupAuth: () => setupUnauthenticatedState(mockAuth),
     expectedStatus: 401,
     expectedMessage: 'Authentication required'
   },
   missingUserId: {
-    setupAuth: () => mockAuth.mockResolvedValue({ user: {} } as any),
+    setupAuth: () => setupIncompleteAuthState(mockAuth),
     expectedStatus: 401,
     expectedMessage: 'Authentication required'
   },
   wrongOwner: {
-    setupAuth: () => mockAuth.mockResolvedValue({ user: { id: 'user123' } } as any),
+    setupAuth: () => setupAuthenticatedState(mockAuth, 'user123'),
     encounterOwner: 'different-user',
     expectedStatus: 403,
     expectedMessage: 'Access denied: You do not own this encounter'
@@ -85,9 +86,7 @@ describe('withCombatValidation', () => {
 
   describe('Encounter Ownership', () => {
     beforeEach(() => {
-      mockAuth.mockResolvedValue({
-        user: { id: 'user123' }
-      } as any);
+      setupAuthenticatedState(mockAuth, 'user123');
     });
 
     it('should return 403 when user does not own the encounter', async () => {
@@ -156,9 +155,7 @@ describe('withCombatValidation', () => {
 
   describe('Integration with existing validations', () => {
     beforeEach(() => {
-      mockAuth.mockResolvedValue({
-        user: { id: 'user123' }
-      } as any);
+      setupAuthenticatedState(mockAuth, 'user123');
     });
 
     it('should return encounter not found error when encounter does not exist', async () => {
@@ -223,9 +220,7 @@ describe('withCombatValidation', () => {
 
   describe('Body parsing and validation', () => {
     beforeEach(() => {
-      mockAuth.mockResolvedValue({
-        user: { id: 'user123' }
-      } as any);
+      setupAuthenticatedState(mockAuth, 'user123');
     });
 
     it('should validate required fields when provided', async () => {
