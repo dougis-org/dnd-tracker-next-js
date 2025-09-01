@@ -16,34 +16,77 @@ export const auth = clerkAuth;
  * Validates hostname for production redirects
  */
 export function isValidProductionHostname(hostname: string): boolean {
-  // Add your production hostnames here
-  const validHostnames = [
-    'localhost',
-    '127.0.0.1',
-    'dnd-tracker.vercel.app'
-  ];
+  // In production, localhost addresses are invalid for security
+  if (process.env.NODE_ENV === 'production') {
+    // Reject local/private hostnames in production
+    if (isLocalHostname(hostname)) {
+      return false;
+    }
+    // Allow all other hostnames (public domains) in production
+    return true;
+  }
 
-  return validHostnames.some(valid =>
-    hostname === valid || hostname.endsWith(`.${valid}`)
-  );
+  // In development, allow all hostnames including localhost
+  return true;
 }
 
 /**
- * Validates if hostname is localhost
+ * Validates if hostname is localhost or private network address
  */
 export function isLocalHostname(hostname: string): boolean {
-  return hostname === 'localhost' || hostname === '127.0.0.1' || hostname.startsWith('localhost:');
+  // Direct localhost matches
+  if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '0.0.0.0' || hostname.startsWith('localhost:')) {
+    return true;
+  }
+
+  // Check private IP ranges
+  const ipv4Regex = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
+  const match = hostname.match(ipv4Regex);
+
+  if (match) {
+    const [, a, b] = match.map(Number);
+
+    // 192.168.x.x (private)
+    if (a === 192 && b === 168) return true;
+
+    // 10.x.x.x (private)
+    if (a === 10) return true;
+
+    // 172.16.x.x - 172.31.x.x (private)
+    if (a === 172 && b >= 16 && b <= 31) return true;
+
+    // 127.x.x.x (loopback)
+    if (a === 127) return true;
+  }
+
+  return false;
 }
 
 /**
  * Validates NextAuth URL (kept for compatibility)
  */
-export function validateNextAuthUrl(url: string): boolean {
+export function validateNextAuthUrl(url?: string): string | undefined {
+  const urlToValidate = url || process.env.NEXTAUTH_URL;
+
+  if (!urlToValidate) {
+    return undefined;
+  }
+
   try {
-    const parsedUrl = new URL(url);
-    return isValidProductionHostname(parsedUrl.hostname);
+    const parsedUrl = new URL(urlToValidate);
+    const isValid = isValidProductionHostname(parsedUrl.hostname);
+
+    if (!isValid && process.env.NODE_ENV === 'production') {
+      console.warn(`Invalid NEXTAUTH_URL for production: ${urlToValidate}`);
+      return undefined;
+    }
+
+    return isValid ? urlToValidate : undefined;
   } catch {
-    return false;
+    if (process.env.NODE_ENV === 'production') {
+      console.warn(`Invalid NEXTAUTH_URL format: ${urlToValidate}`);
+    }
+    return undefined;
   }
 }
 
