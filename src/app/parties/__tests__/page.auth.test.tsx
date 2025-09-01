@@ -29,11 +29,9 @@ jest.mock('@/components/party/PartyListView', () => ({
   ),
 }));
 
-// Mock centralized auth utilities BEFORE importing the page
-const mockGetAuthenticatedUserId = jest.fn();
-
+// Mock centralized auth utilities
 jest.mock('@/lib/auth', () => ({
-  getAuthenticatedUserId: mockGetAuthenticatedUserId,
+  getAuthenticatedUserId: jest.fn(),
   requireAuth: jest.fn(),
   isAuthenticated: jest.fn(),
   buildSignInUrl: jest.fn(),
@@ -45,17 +43,29 @@ import PartiesPage from '../page';
 const mockAuth = auth as jest.MockedFunction<typeof auth>;
 
 describe('PartiesPage Authentication', () => {
+  let mockGetAuthenticatedUserId: jest.Mock;
+  let mockRedirect: jest.Mock;
+
   beforeEach(() => {
     jest.clearAllMocks();
+    
+    // Get mocked functions using require after they're mocked
+    mockGetAuthenticatedUserId = require('@/lib/auth').getAuthenticatedUserId;
+    mockRedirect = require('next/navigation').redirect;
+    
+    // Setup redirect to throw error like Next.js does
+    mockRedirect.mockImplementation((url: string) => {
+      throw new Error(`REDIRECT: ${url}`);
+    });
   });
 
   it('should redirect unauthenticated users to signin', async () => {
     // Mock centralized auth to throw redirect
     mockGetAuthenticatedUserId.mockImplementation(() => {
-      throw new Error('NEXT_REDIRECT');
+      throw new Error('REDIRECT: /sign-in?redirect_url=%2Fparties');
     });
     
-    await expect(PartiesPage()).rejects.toThrow('NEXT_REDIRECT');
+    await expect(PartiesPage()).rejects.toThrow('REDIRECT: /sign-in?redirect_url=%2Fparties');
     expect(mockGetAuthenticatedUserId).toHaveBeenCalledWith('/parties');
   });
 
