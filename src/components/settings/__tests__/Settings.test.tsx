@@ -2,13 +2,21 @@
 
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import { useSession } from 'next-auth/react';
 import { Settings } from '../Settings';
 import '@testing-library/jest-dom';
+import { useUser, useClerk } from '@clerk/nextjs';
 
-// Mock next-auth
-jest.mock('next-auth/react');
-const mockUseSession = useSession as jest.MockedFunction<typeof useSession>;
+// Test constants
+const TEST_USER_ID = 'test-user-123';
+
+// Mock Clerk authentication
+jest.mock('@clerk/nextjs', () => ({
+  useUser: jest.fn(),
+  useClerk: jest.fn(),
+}));
+
+const mockUseUser = useUser as jest.MockedFunction<typeof useUser>;
+const mockUseClerk = useClerk as jest.MockedFunction<typeof useClerk>;
 
 // Mock theme components
 jest.mock('@/components/theme-toggle', () => ({
@@ -36,23 +44,26 @@ jest.mock('../hooks/useSettingsForm', () => ({
   }),
 }));
 
-const mockSession = {
-  user: {
-    id: '1',
-    name: 'Test User',
-    email: 'test@example.com',
-    subscriptionTier: 'free',
-  },
-  expires: '2024-12-31',
+const mockUser = {
+  id: TEST_USER_ID,
+  firstName: 'Test',
+  lastName: 'User',
+  email: 'test@example.com',
+  subscriptionTier: 'free',
 };
 
 describe('Settings Component', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockUseSession.mockReturnValue({
-      data: mockSession,
-      status: 'authenticated',
-      update: jest.fn(),
+    mockUseUser.mockReturnValue({
+      isLoaded: true,
+      isSignedIn: true,
+      user: mockUser,
+    });
+    mockUseClerk.mockReturnValue({
+      signOut: jest.fn(),
+      openSignIn: jest.fn(),
+      openSignUp: jest.fn(),
     });
   });
 
@@ -76,21 +87,21 @@ describe('Settings Component', () => {
 
   describe('Authentication States', () => {
     it('should not render when user is not authenticated', () => {
-      mockUseSession.mockReturnValue({
-        data: null,
-        status: 'unauthenticated',
-        update: jest.fn(),
+      mockUseUser.mockReturnValue({
+        isLoaded: true,
+        isSignedIn: false,
+        user: null,
       });
 
       const { container } = render(<Settings />);
       expect(container.firstChild).toBeNull();
     });
 
-    it('should not render when session has no user', () => {
-      mockUseSession.mockReturnValue({
-        data: { expires: '2024-12-31' } as any,
-        status: 'authenticated',
-        update: jest.fn(),
+    it('should not render when user data is not loaded', () => {
+      mockUseUser.mockReturnValue({
+        isLoaded: false,
+        isSignedIn: false,
+        user: null,
       });
 
       const { container } = render(<Settings />);
