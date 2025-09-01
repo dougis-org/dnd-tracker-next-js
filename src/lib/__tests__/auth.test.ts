@@ -76,13 +76,14 @@ describe('Authentication System', () => {
   });
 
   describe('Module Import and Structure', () => {
-    it('should export required NextAuth components', async () => {
+    it('should export required Clerk auth utilities', async () => {
       const authModule = await import('../auth');
 
-      expect(authModule.handlers).toBeDefined();
       expect(authModule.auth).toBeDefined();
-      expect(authModule.signIn).toBeDefined();
-      expect(authModule.signOut).toBeDefined();
+      expect(authModule.requireAuth).toBeDefined();
+      expect(authModule.isAuthenticated).toBeDefined();
+      expect(authModule.getAuthenticatedUserId).toBeDefined();
+      expect(authModule.buildSignInUrl).toBeDefined();
     });
   });
 
@@ -103,7 +104,7 @@ describe('Authentication System', () => {
       // Import the auth module to verify it can be loaded
       await import('../auth');
 
-      // Since we can't directly access the authorize function from the mocked NextAuth,
+      // Since we're testing the centralized auth utilities,
       // we'll test the logic by checking UserService calls
       mockUserService.getUserByEmail.mockResolvedValue({
         success: false,
@@ -417,33 +418,32 @@ describe('Authentication System', () => {
       expect(expectedPages.error).toBe('/error');
     });
 
-    it('should load NextAuth configuration without errors', async () => {
+    it('should load Clerk auth configuration without errors', async () => {
       // Test that the auth configuration can be loaded and covers actual file execution
-      // This ensures the specific change for issue #363 doesn't break the module
+      // This ensures the auth utilities work properly
       const authModule = await import('../auth');
 
       // Verify all required exports are available after import
-      expect(authModule.handlers).toBeDefined();
       expect(authModule.auth).toBeDefined();
-      expect(authModule.signIn).toBeDefined();
-      expect(authModule.signOut).toBeDefined();
+      expect(authModule.requireAuth).toBeDefined();
+      expect(authModule.isAuthenticated).toBeDefined();
+      expect(authModule.getAuthenticatedUserId).toBeDefined();
     });
 
     it('should handle different NODE_ENV configurations during import', async () => {
-      // Test that NextAuth configuration works across different environments
-      // This covers the debug configuration line in auth.ts
+      // Test that auth configuration works across different environments
       const originalNodeEnv = process.env.NODE_ENV;
 
       try {
-        // Test development environment debug configuration
+        // Test development environment configuration
         process.env.NODE_ENV = 'development';
         const devModule = await import('../auth');
-        expect(devModule.handlers).toBeDefined();
+        expect(devModule.auth).toBeDefined();
 
-        // Test production environment debug configuration
+        // Test production environment configuration
         process.env.NODE_ENV = 'production';
         const prodModule = await import('../auth');
-        expect(prodModule.handlers).toBeDefined();
+        expect(prodModule.auth).toBeDefined();
 
       } finally {
         // Always restore original environment
