@@ -54,6 +54,10 @@ This document tracks the systematic migration from NextAuth to Clerk authenticat
   - ✅ **ClerkSignUpPage Tests** (5/5 passing): Fixed mock structure and DOM warnings
   - ✅ **auth-production-redirect-issue-494** (7/7 passing): Production hostname validation
   - ✅ **auth-function-duplication-issue-499** (9/9 passing): Private IP range detection  
+  - ✅ **navigation-auth-issue-479** (5/5 passing): Migrated to Clerk useUser/useAuth hooks
+  - ✅ **navigation-rsc-hydration-issue-586** (5/5 passing): Migrated to Clerk authentication mocking
+  - ✅ **session-constants test** (13/13 passing): Added missing NEXTAUTH_COLLECTION_NAMES
+  - ✅ **auth-issue-620-resolved** (11/11 passing): Migrated to Clerk auth utilities
   - ✅ Updated centralized auth utilities in `src/lib/auth.ts`
   - ✅ Enhanced `isValidProductionHostname()` with environment-aware validation
   - ✅ Improved `isLocalHostname()` for comprehensive private network detection
@@ -69,19 +73,19 @@ The following test files may still contain NextAuth patterns and need assessment
 
 **Core Auth Tests:**
 - `src/__tests__/nextauth-cleanup-verification.test.ts`
-- `src/__tests__/auth-jwt-improvements-issue-620.test.ts`
-- `src/__tests__/verify-production-user.test.ts`
+- ✅ ~~`src/__tests__/auth-jwt-improvements-issue-620.test.ts`~~ - **PASSING**
+- ✅ ~~`src/__tests__/verify-production-user.test.ts`~~ - **PASSING**
 - ✅ ~~`src/__tests__/auth-function-duplication-issue-499.test.ts`~~ - **FIXED**
-- `src/__tests__/auth-issue-620-resolved.test.ts`
+- ✅ ~~`src/__tests__/auth-issue-620-resolved.test.ts`~~ - **FIXED**
 - ✅ ~~`src/__tests__/auth-production-redirect-issue-494.test.ts`~~ - **FIXED**
 
 **Navigation & Component Tests:**
-- `src/__tests__/navigation-auth-issue-479.test.tsx`
-- `src/__tests__/navigation-rsc-hydration-issue-586.test.tsx`
+- ✅ ~~`src/__tests__/navigation-auth-issue-479.test.tsx`~~ - **FIXED**
+- ✅ ~~`src/__tests__/navigation-rsc-hydration-issue-586.test.tsx`~~ - **FIXED**
 
 **Session & Context Tests:**
-- `src/lib/constants/__tests__/session-constants.test.ts`
-- `src/lib/__tests__/session-context.test.tsx`
+- ✅ ~~`src/lib/constants/__tests__/session-constants.test.ts`~~ - **FIXED**
+- `src/lib/__tests__/session-context.test.tsx` - **Missing module, needs investigation**
 
 ## Migration Patterns
 
@@ -180,4 +184,4 @@ setupAuthenticatedState(mockAuth, 'test-user-123')
 ---
 
 *Last Updated: 2025-09-01*
-*Status: Phase 1 In Progress - Major authentication tests fixed (21/21 tests passing), continuing systematic resolution*
+*Status: Phase 1 In Progress - Authentication tests migration largely complete (49/49 tests passing across multiple files), ready for PR creation*
