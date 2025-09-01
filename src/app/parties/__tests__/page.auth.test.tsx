@@ -4,13 +4,9 @@
 
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 import { auth } from '@clerk/nextjs/server';
-import PartiesPage from '../page';
-import {
-  SHARED_API_TEST_CONSTANTS,
-  createMockClerkSession,
-  setupClerkMocks,
-  setupClerkUnauthenticatedState,
-} from '@/lib/test-utils/shared-clerk-test-helpers';
+
+// Test constants
+const TEST_USER_ID = 'test-user-123';
 
 // Mock Clerk's auth function
 jest.mock('@clerk/nextjs/server', () => ({
@@ -24,14 +20,6 @@ jest.mock('next/navigation', () => ({
   }),
 }));
 
-// Mock centralized auth utilities  
-jest.mock('@/lib/auth', () => ({
-  getAuthenticatedUserId: jest.fn(),
-  requireAuth: jest.fn(),
-  isAuthenticated: jest.fn(),
-  buildSignInUrl: jest.fn(),
-}));
-
 // Mock PartyListView component
 jest.mock('@/components/party/PartyListView', () => ({
   PartyListView: ({ userId }: { userId: string }) => (
@@ -41,14 +29,24 @@ jest.mock('@/components/party/PartyListView', () => ({
   ),
 }));
 
+// Mock centralized auth utilities BEFORE importing the page
+const mockGetAuthenticatedUserId = jest.fn();
+
+jest.mock('@/lib/auth', () => ({
+  getAuthenticatedUserId: mockGetAuthenticatedUserId,
+  requireAuth: jest.fn(),
+  isAuthenticated: jest.fn(),
+  buildSignInUrl: jest.fn(),
+}));
+
+// Import after mocking
+import PartiesPage from '../page';
+
 const mockAuth = auth as jest.MockedFunction<typeof auth>;
 
 describe('PartiesPage Authentication', () => {
-  let mockGetAuthenticatedUserId: jest.Mock;
-
   beforeEach(() => {
     jest.clearAllMocks();
-    mockGetAuthenticatedUserId = require('@/lib/auth').getAuthenticatedUserId;
   });
 
   it('should redirect unauthenticated users to signin', async () => {
@@ -62,8 +60,7 @@ describe('PartiesPage Authentication', () => {
   });
 
   it('should render party list for authenticated users', async () => {
-    const userId = SHARED_API_TEST_CONSTANTS.TEST_USER_ID;
-    mockGetAuthenticatedUserId.mockResolvedValue(userId);
+    mockGetAuthenticatedUserId.mockResolvedValue(TEST_USER_ID);
     
     const result = await PartiesPage();
     expect(result).toBeDefined();
