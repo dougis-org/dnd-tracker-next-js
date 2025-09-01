@@ -1,9 +1,13 @@
 import React from 'react';
 import { waitFor, screen } from '@testing-library/react';
-import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { useUser } from '@clerk/nextjs';
+
+// Test constants
+const TEST_USER_ID = 'test-user-123';
+
+// Import test helpers (non-auth related)
 import {
-  mockSessionSetup,
   formHelpers,
   testActions,
   expectations,
@@ -11,9 +15,37 @@ import {
   renderHelpers,
 } from './test-helpers';
 
+// Clerk auth state setups
+const clerkAuthSetup = {
+  authenticated: {
+    isLoaded: true,
+    isSignedIn: true,
+    user: {
+      id: TEST_USER_ID,
+      email: 'test@example.com',
+    },
+  },
+  loading: {
+    isLoaded: false,
+    isSignedIn: false,
+    user: null,
+  },
+  unauthenticated: {
+    isLoaded: true,
+    isSignedIn: false,
+    user: null,
+  },
+};
+
 // Mock dependencies
-jest.mock('next-auth/react');
 jest.mock('next/navigation');
+
+// Mock Clerk authentication
+jest.mock('@clerk/nextjs', () => ({
+  useUser: jest.fn(),
+  useAuth: jest.fn(),
+  useClerk: jest.fn(),
+}));
 jest.mock('@/components/character/CharacterListView');
 jest.mock('@/components/forms/character/CharacterCreationForm');
 jest.mock('@/components/layout/AppLayout');
@@ -30,7 +62,7 @@ jest.mock('@/lib/services/CharacterService', () => ({
   },
 }));
 
-const mockUseSession = useSession as jest.MockedFunction<typeof useSession>;
+const mockUseUser = useUser as jest.MockedFunction<typeof useUser>;
 const mockUseRouter = useRouter as jest.MockedFunction<typeof useRouter>;
 const mockPush = jest.fn();
 
@@ -93,8 +125,8 @@ describe('CharactersPage', () => {
   });
 
   describe('Authentication States', () => {
-    it('shows loading state while session is loading', () => {
-      mockUseSession.mockReturnValue(mockSessionSetup.loading as any);
+    it('shows loading state while user data is loading', () => {
+      mockUseUser.mockReturnValue(clerkAuthSetup.loading as any);
       renderHelpers.renderPage();
 
       expectations.loadingState();
@@ -104,7 +136,7 @@ describe('CharactersPage', () => {
     it('renders content for unauthenticated users (middleware handles redirect)', () => {
       // Since middleware handles auth protection, the page just renders its content
       // In real usage, unauthenticated users would be redirected by middleware before reaching the page
-      mockUseSession.mockReturnValue(mockSessionSetup.unauthenticated as any);
+      mockUseUser.mockReturnValue(clerkAuthSetup.unauthenticated as any);
       renderHelpers.renderPage();
 
       // Page still renders - middleware would prevent this in real usage
@@ -112,7 +144,7 @@ describe('CharactersPage', () => {
     });
 
     it('renders page content when authenticated', () => {
-      mockUseSession.mockReturnValue(mockSessionSetup.authenticated as any);
+      mockUseUser.mockReturnValue(clerkAuthSetup.authenticated as any);
       renderHelpers.renderPage();
 
       expectations.pageContent();
@@ -122,7 +154,7 @@ describe('CharactersPage', () => {
 
   describe('Page Header', () => {
     beforeEach(() => {
-      mockUseSession.mockReturnValue(mockSessionSetup.authenticated as any);
+      mockUseUser.mockReturnValue(clerkAuthSetup.authenticated as any);
     });
 
     it('displays correct page title and description', () => {
@@ -140,7 +172,7 @@ describe('CharactersPage', () => {
 
   describe('Character Actions', () => {
     beforeEach(() => {
-      mockUseSession.mockReturnValue(mockSessionSetup.authenticated as any);
+      mockUseUser.mockReturnValue(clerkAuthSetup.authenticated as any);
     });
 
     it('navigates to character detail when character is selected', () => {
@@ -180,7 +212,7 @@ describe('CharactersPage', () => {
 
   describe('Character Creation Flow', () => {
     beforeEach(() => {
-      mockUseSession.mockReturnValue(mockSessionSetup.authenticated as any);
+      mockUseUser.mockReturnValue(clerkAuthSetup.authenticated as any);
     });
 
     it('opens character creation form when create button is clicked', () => {
@@ -235,7 +267,7 @@ describe('CharactersPage', () => {
 
   describe('Component Integration', () => {
     beforeEach(() => {
-      mockUseSession.mockReturnValue(mockSessionSetup.authenticated as any);
+      mockUseUser.mockReturnValue(clerkAuthSetup.authenticated as any);
     });
 
     it('passes correct props to CharacterListView', () => {
@@ -255,7 +287,7 @@ describe('CharactersPage', () => {
 
   describe('Accessibility', () => {
     beforeEach(() => {
-      mockUseSession.mockReturnValue(mockSessionSetup.authenticated as any);
+      mockUseUser.mockReturnValue(clerkAuthSetup.authenticated as any);
     });
 
     it('has proper heading structure', () => {
