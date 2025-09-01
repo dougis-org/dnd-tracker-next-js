@@ -12,12 +12,15 @@
 
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
-import { useSession } from 'next-auth/react';
+import { useUser, useAuth } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import '@testing-library/jest-dom';
 
-// Mock next-auth/react
-jest.mock('next-auth/react');
+// Mock Clerk
+jest.mock('@clerk/nextjs', () => ({
+  useUser: jest.fn(),
+  useAuth: jest.fn(),
+}));
 
 // Mock next/navigation
 jest.mock('next/navigation', () => ({
@@ -48,21 +51,41 @@ jest.mock('@/components/forms/character/CharacterCreationForm', () => ({
 }));
 
 describe('Issue #586: Navigation RSC Hydration Failures', () => {
-  const mockUseSession = useSession as jest.MockedFunction<typeof useSession>;
+  const mockUseUser = useUser as jest.MockedFunction<typeof useUser>;
+  const mockUseAuth = useAuth as jest.MockedFunction<typeof useAuth>;
   const mockUseRouter = useRouter as jest.MockedFunction<typeof useRouter>;
   const mockPush = jest.fn();
 
-  // Mock authenticated session
-  const authenticatedSession = {
-    data: {
-      user: {
-        id: 'test-user-123',
-        name: 'Test User',
-        email: 'test@example.com',
-        subscriptionTier: 'free'
-      }
-    },
-    status: 'authenticated' as const,
+  // Mock authenticated user
+  const authenticatedUser = {
+    id: 'test-user-123',
+    firstName: 'Test',
+    lastName: 'User',
+    emailAddresses: [{ emailAddress: 'test@example.com' }]
+  };
+
+  const authenticatedUserState = {
+    user: authenticatedUser,
+    isLoaded: true,
+    isSignedIn: true,
+  };
+
+  const authenticatedAuthState = {
+    isLoaded: true,
+    isSignedIn: true,
+    userId: 'test-user-123',
+  };
+
+  const loadingUserState = {
+    user: null,
+    isLoaded: false,
+    isSignedIn: false,
+  };
+
+  const loadingAuthState = {
+    isLoaded: false,
+    isSignedIn: false,
+    userId: null,
   };
 
   beforeEach(() => {
@@ -81,16 +104,14 @@ describe('Issue #586: Navigation RSC Hydration Failures', () => {
 
   describe('Server-Client Session State Consistency', () => {
     it('should have consistent session state between server and client components', async () => {
-      mockUseSession.mockReturnValue(authenticatedSession);
+      mockUseUser.mockReturnValue(authenticatedUserState);
+      mockUseAuth.mockReturnValue(authenticatedAuthState);
       const CharactersPage = (await import('../app/characters/page')).default;
 
-      const _serverSession = {
-        user: {
-          id: 'test-user-123',
-          name: 'Test User',
-          email: 'test@example.com',
-          subscriptionTier: 'free'
-        }
+      const _serverAuth = {
+        userId: 'test-user-123',
+        isSignedIn: true,
+        isLoaded: true,
       };
 
       render(<CharactersPage />);
@@ -99,7 +120,8 @@ describe('Issue #586: Navigation RSC Hydration Failures', () => {
     });
 
     it('should not fail when navigating between protected pages', async () => {
-      mockUseSession.mockReturnValue(authenticatedSession);
+      mockUseUser.mockReturnValue(authenticatedUserState);
+      mockUseAuth.mockReturnValue(authenticatedAuthState);
 
       const CharactersPage = (await import('../app/characters/page')).default;
       const DashboardPage = (await import('../app/dashboard/page')).default;
@@ -124,7 +146,8 @@ describe('Issue #586: Navigation RSC Hydration Failures', () => {
       });
       global.fetch = mockFetch;
 
-      mockUseSession.mockReturnValue(authenticatedSession);
+      mockUseUser.mockReturnValue(authenticatedUserState);
+      mockUseAuth.mockReturnValue(authenticatedAuthState);
       const CharactersPage = (await import('../app/characters/page')).default;
 
       render(<CharactersPage />);
@@ -139,7 +162,8 @@ describe('Issue #586: Navigation RSC Hydration Failures', () => {
     it('should not trigger client-side exceptions during navigation', async () => {
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
-      mockUseSession.mockReturnValue(authenticatedSession);
+      mockUseUser.mockReturnValue(authenticatedUserState);
+      mockUseAuth.mockReturnValue(authenticatedAuthState);
       const CharactersPage = (await import('../app/characters/page')).default;
 
       expect(() => render(<CharactersPage />)).not.toThrow();
@@ -151,16 +175,15 @@ describe('Issue #586: Navigation RSC Hydration Failures', () => {
 
   describe('Session Provider State Management', () => {
     it('should properly initialize session state from server', async () => {
-      mockUseSession.mockReturnValue({
-        ...authenticatedSession,
-        status: 'loading' as const
-      });
+      mockUseUser.mockReturnValue(loadingUserState);
+      mockUseAuth.mockReturnValue(loadingAuthState);
 
       const CharactersPage = (await import('../app/characters/page')).default;
       render(<CharactersPage />);
       expect(screen.getByText('Loading...')).toBeInTheDocument();
 
-      mockUseSession.mockReturnValue(authenticatedSession);
+      mockUseUser.mockReturnValue(authenticatedUserState);
+      mockUseAuth.mockReturnValue(authenticatedAuthState);
       const { rerender: _rerender } = render(<CharactersPage />);
 
       await waitFor(() => {

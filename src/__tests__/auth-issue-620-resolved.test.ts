@@ -15,13 +15,13 @@ import { describe, it, expect } from '@jest/globals';
 
 describe('Issue #620 Authentication Improvements - Code Validation', () => {
   describe('Authentication System Configuration', () => {
-    it('should have NextAuth configuration available', async () => {
-      // Test that the auth handlers can be imported without errors
-      const { handlers, auth, signIn, signOut } = await import('@/lib/auth');
-      expect(handlers).toBeDefined();
+    it('should have Clerk auth configuration available', async () => {
+      // Test that the Clerk auth utilities can be imported without errors
+      const { auth, requireAuth, isAuthenticated, getAuthenticatedUserId } = await import('@/lib/auth');
       expect(auth).toBeDefined();
-      expect(signIn).toBeDefined();
-      expect(signOut).toBeDefined();
+      expect(requireAuth).toBeDefined();
+      expect(isAuthenticated).toBeDefined();
+      expect(getAuthenticatedUserId).toBeDefined();
     });
 
     it('should have UserService authentication methods available', async () => {
@@ -115,10 +115,15 @@ describe('Issue #620 Authentication Improvements - Code Validation', () => {
       }).not.toThrow();
     });
 
-    it('should have API route handlers configured', async () => {
-      // Test that auth API routes are available
+    it('should have Clerk auth components configured', async () => {
+      // Test that Clerk auth components are available
       expect(() => {
-        require('@/app/api/auth/[...nextauth]/route');
+        require('@clerk/nextjs');
+      }).not.toThrow();
+
+      // Test that sign-in page exists
+      expect(() => {
+        require('@/app/(auth)/signin/page');
       }).not.toThrow();
     });
   });

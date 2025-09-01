@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import { useSession } from 'next-auth/react';
+import { useUser, useAuth } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 
 // Mock the useRouter hook
@@ -9,20 +9,36 @@ jest.mock('next/navigation', () => ({
   usePathname: () => '/dashboard',
 }));
 
-// Mock next-auth/react
-jest.mock('next-auth/react');
+// Mock Clerk
+jest.mock('@clerk/nextjs', () => ({
+  useUser: jest.fn(),
+  useAuth: jest.fn(),
+}));
 
 describe('Issue #479 - Left Navigation Authentication', () => {
-  const mockUseSession = useSession as jest.MockedFunction<typeof useSession>;
+  const mockUseUser = useUser as jest.MockedFunction<typeof useUser>;
+  const mockUseAuth = useAuth as jest.MockedFunction<typeof useAuth>;
   const mockUseRouter = useRouter as jest.MockedFunction<typeof useRouter>;
   const mockPush = jest.fn();
 
-  // Common authenticated session mock data
-  const authenticatedSession = {
-    data: {
-      user: { id: '1', name: 'Test User', email: 'test@example.com' }
-    },
-    status: 'authenticated' as const,
+  // Common authenticated user mock data
+  const authenticatedUser = {
+    id: 'test-user-123',
+    firstName: 'Test',
+    lastName: 'User',
+    emailAddresses: [{ emailAddress: 'test@example.com' }]
+  };
+
+  const authenticatedUserState = {
+    user: authenticatedUser,
+    isLoaded: true,
+    isSignedIn: true,
+  };
+
+  const authenticatedAuthState = {
+    isLoaded: true,
+    isSignedIn: true,
+    userId: 'test-user-123',
   };
 
   const setupMocks = () => {
@@ -67,7 +83,8 @@ describe('Issue #479 - Left Navigation Authentication', () => {
   };
 
   const testAuthenticatedUserAccess = () => {
-    mockUseSession.mockReturnValue(authenticatedSession);
+    mockUseUser.mockReturnValue(authenticatedUserState);
+    mockUseAuth.mockReturnValue(authenticatedAuthState);
   };
 
   beforeEach(setupMocks);
