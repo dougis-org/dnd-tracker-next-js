@@ -31,7 +31,7 @@ const User = {
     return userData ? createMockUser(userData) : null;
   }),
 
-  // Real implementation: findByUsername  
+  // Real implementation: findByUsername
   findByUsername: jest.fn().mockImplementation(async (username: string) => {
     const userData = Array.from(mockUsers.values()).find((user: any) => user.username === username.toLowerCase());
     return userData ? createMockUser(userData) : null;
@@ -96,7 +96,7 @@ const User = {
 
     const userId = `user_${mockUserIdCounter++}`;
     mockUsers.set(userId, userData);
-    
+
     return createMockUser(userData);
   }),
 
@@ -104,7 +104,7 @@ const User = {
   updateFromClerkData: jest.fn().mockImplementation(async (clerkId: string, clerkUserData: ClerkUserData) => {
     const existingEntries = Array.from(mockUsers.entries());
     const userEntry = existingEntries.find(([_, user]: [string, any]) => user.clerkId === clerkId);
-    
+
     if (!userEntry) {
       throw new Error('User not found');
     }
@@ -351,7 +351,7 @@ describe('User Model - Clerk Integration', () => {
       await User.createClerkUser(sampleClerkUserData);
 
       const beforeUpdate = new Date();
-      
+
       // Update user
       const updatedUser = await User.updateFromClerkData(sampleClerkUserData.clerkId, sampleClerkUserData);
 
@@ -369,7 +369,7 @@ describe('User Model - Clerk Integration', () => {
 
     it('should enforce unique Clerk IDs', async () => {
       await User.createClerkUser(sampleClerkUserData);
-      
+
       const duplicateData = { ...sampleClerkUserData, email: 'different@example.com' };
       await expect(User.createClerkUser(duplicateData)).rejects.toThrow(
         'User with this Clerk ID already exists'
@@ -380,7 +380,7 @@ describe('User Model - Clerk Integration', () => {
   describe('Integration with Existing User Methods', () => {
     it('should work with existing findByEmail method', async () => {
       await User.createClerkUser(sampleClerkUserData);
-      
+
       const foundUser = await User.findByEmail('test@example.com');
       expect(foundUser).toBeTruthy();
       expect(foundUser?.clerkId).toBe(sampleClerkUserData.clerkId);
@@ -388,7 +388,7 @@ describe('User Model - Clerk Integration', () => {
 
     it('should work with existing findByUsername method', async () => {
       await User.createClerkUser(sampleClerkUserData);
-      
+
       const foundUser = await User.findByUsername('johndoe');
       expect(foundUser).toBeTruthy();
       expect(foundUser?.clerkId).toBe(sampleClerkUserData.clerkId);
@@ -397,7 +397,7 @@ describe('User Model - Clerk Integration', () => {
     it('should have proper sync status tracking', async () => {
       const user = await User.createClerkUser(sampleClerkUserData);
       expect(user.syncStatus).toBe('active');
-      
+
       const updatedUser = await User.updateFromClerkData(sampleClerkUserData.clerkId, sampleClerkUserData);
       expect(updatedUser.syncStatus).toBe('active');
     });

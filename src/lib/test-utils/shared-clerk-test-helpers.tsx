@@ -6,7 +6,7 @@
  */
 import React from 'react';
 
-// Test constants - direct export to avoid any circular reference issues  
+// Test constants - direct export to avoid any circular reference issues
 export const SHARED_API_TEST_CONSTANTS = {
   TEST_USER_ID: 'test-user-123',
 } as const;

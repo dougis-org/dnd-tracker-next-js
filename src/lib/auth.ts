@@ -75,21 +75,21 @@ const AUTH_CONFIG = {
 /**
  * Centralized authentication check and redirect function
  * Use this in all server components that require authentication
- * 
+ *
  * @param callbackUrl - URL to redirect to after successful sign-in
  * @returns User session if authenticated, throws redirect if not
  */
 export async function requireAuth(callbackUrl?: string) {
   const session = await auth();
-  
+
   if (!session?.userId) {
-    const redirectUrl = callbackUrl 
+    const redirectUrl = callbackUrl
       ? `${AUTH_CONFIG.SIGN_IN_URL}?redirect_url=${encodeURIComponent(callbackUrl)}`
       : AUTH_CONFIG.SIGN_IN_URL;
-    
+
     redirect(redirectUrl);
   }
-  
+
   return session;
 }
 
@@ -119,6 +119,6 @@ export function buildSignInUrl(callbackUrl?: string): string {
   if (!callbackUrl) {
     return AUTH_CONFIG.SIGN_IN_URL;
   }
-  
+
   return `${AUTH_CONFIG.SIGN_IN_URL}?redirect_url=${encodeURIComponent(callbackUrl)}`;
 }
