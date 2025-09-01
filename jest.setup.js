@@ -1,4 +1,5 @@
 const debug_logs = false;
+
 // This adds custom jest matchers from jest-dom
 require('@testing-library/jest-dom');
 
