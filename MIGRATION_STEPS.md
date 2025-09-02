@@ -88,6 +88,18 @@ This document tracks the systematic migration from NextAuth to Clerk authenticat
   - ✅ **Typed routes support**: Fixed redirect function calls to work with Next.js 15's `typedRoutes: true` configuration
   - ✅ **Build success**: All TypeScript compilation errors resolved
 
+### ✅ PR #704 - Test Failure Resolution
+
+After addressing review comments on PR #704 (migrating from NextAuth to Clerk), several tests started failing. The root cause was a combination of issues related to Jest's module transformation and incomplete mocks. The following fixes were implemented:
+
+-   **Jest Configuration for `svix`:** The `svix` library, used for Clerk webhook verification, was not being transformed by Jest. This was resolved by removing `svix` from the `transformIgnorePatterns` in `jest.config.js`.
+
+-   **`svix` Mocking:** Even with the transform, Jest had issues with the `svix` library in its JSDOM environment. A manual mock was created at `src/__mocks__/svix.js` to provide a stable interface for the tests.
+
+-   **Webhook Test Utility:** The mock request created in `src/app/api/webhooks/clerk/__tests__/webhook-test-utils.ts` was missing a `.text()` method, which the webhook handler expects. This method was added to the mock request object.
+
+-   **API Test Utilities:** The `setupNextAuthMocks` function was still being used in `src/app/api/characters/__tests__/shared-test-utils.ts`. This was replaced with the correct `setupClerkMocks` function.
+
 ### ✅ Migration Complete - Ready for Production
 
 #### Latest Branch: `feature/fix-signin-page-jest-test` (CURRENT)  
@@ -173,7 +185,7 @@ The following test files may still contain NextAuth patterns and need assessment
 ## Migration Patterns
 
 ### Server-Side Authentication
-```typescript
+'''typescript
 // OLD: NextAuth
 import { getServerSession } from 'next-auth'
 const session = await getServerSession(authOptions)
@@ -181,10 +193,10 @@ const session = await getServerSession(authOptions)
 // NEW: Clerk Centralized
 import { getAuthenticatedUserId } from '@/lib/auth'
 const userId = await getAuthenticatedUserId('/current-page')
-```
+'''
 
 ### Client-Side Authentication
-```typescript
+'''typescript
 // OLD: NextAuth
 import { useSession } from 'next-auth/react'
 const { data: session } = useSession()
@@ -192,10 +204,10 @@ const { data: session } = useSession()
 // NEW: Clerk
 import { useUser } from '@clerk/nextjs'
 const { user } = useUser()
-```
+'''
 
 ### Test Authentication Mocking
-```typescript
+'''typescript
 // OLD: NextAuth
 jest.mock('next-auth/react', () => ({
   useSession: jest.fn()
@@ -204,7 +216,7 @@ jest.mock('next-auth/react', () => ({
 // NEW: Clerk with Centralized Helpers
 import { setupAuthenticatedState } from '@/lib/test-utils/shared-clerk-test-helpers'
 setupAuthenticatedState(mockAuth, 'test-user-123')
-```
+'''
 
 ## Next Steps
 
