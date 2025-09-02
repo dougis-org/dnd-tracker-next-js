@@ -1,5 +1,6 @@
 import { auth } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
+import type { Route } from 'next';
 import { ReactNode } from 'react';
 
 interface AuthenticatedServerPageProps {
@@ -14,7 +15,7 @@ export default async function AuthenticatedServerPage({
   const session = await auth();
 
   if (!session?.userId) {
-    redirect(fallbackUrl as any);
+    redirect(fallbackUrl as Route);
   }
 
   return <>{children}</>;

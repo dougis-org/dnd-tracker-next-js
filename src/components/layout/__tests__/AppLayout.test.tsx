@@ -718,7 +718,7 @@ describe('AppLayout', () => {
       expect(mockSignOut).toHaveBeenCalledTimes(1);
     });
 
-    test('clicking settings option navigates to settings page', async () => {
+    test('clicking settings option navigates to user profile page', async () => {
       const mockPush = jest.fn();
       (useRouter as jest.Mock).mockReturnValue({ push: mockPush });
 
@@ -731,9 +731,9 @@ describe('AppLayout', () => {
         await user.click(settingsOption);
       });
 
-      // Should navigate to settings page
+      // Should navigate to user profile page (Clerk's user management)
       expect(mockPush).toHaveBeenCalledTimes(1);
-      expect(mockPush).toHaveBeenCalledWith('/settings');
+      expect(mockPush).toHaveBeenCalledWith('/user-profile');
     });
   });
 });
