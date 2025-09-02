@@ -48,10 +48,29 @@ This document tracks the systematic migration from NextAuth to Clerk authenticat
   - Email-based username handling
   - User data synchronization from Clerk
 
-### 🔄 In Progress
+### ✅ Recent Completions (Current Sprint)
+
+#### Authentication Test Infrastructure Fixes
+- **Layout Component Tests** (`src/components/layout/__tests__/login-logout-flows.test.tsx`)
+  - ✅ **Breadcrumbs pathname fix** (10/10 passing): Resolved `usePathname()` returning `undefined` causing breadcrumbs to crash
+  - ✅ Fixed Next.js navigation hook mocking with proper `usePathname` return values
+  - ✅ Updated URL expectations from `/signin` to `/sign-in` for consistency
+
+- **API Route Authentication Standardization**
+  - ✅ **Encounters API route** (`src/app/api/encounters/[id]/route.ts`) (21/21 passing): Fixed authentication response format
+  - ✅ Replaced manual error responses with consistent `createErrorResponse()` helper
+  - ✅ Standardized all authentication checks to return proper error structure
+
+- **Jest Module Mapping Resolution**
+  - ✅ **Created dedicated auth-test-utils** (`src/lib/test-utils/auth-test-utils.ts`): Resolved circular dependencies
+  - ✅ **Combat API wrapper test** (7/7 passing): Fixed import issues causing `setupUnauthenticatedState is not a function`
+  - ✅ **User Clerk integration test** (38/38 passing): Updated to use `AUTH_TEST_CONSTANTS`
+  - ✅ Separated authentication utilities from shared Clerk helpers to avoid Jest moduleNameMapping conflicts
+
+### 🔄 Next Focus Areas
 
 #### Current Branch: `feature/fix-clerk-signup-tests`
-- **Authentication Test Migration**: Systematic NextAuth-to-Clerk test resolution
+- **Systematic Test Resolution Complete**: All major authentication test patterns have been migrated and fixed
   - ✅ **ClerkSignUpPage Tests** (5/5 passing): Fixed mock structure and DOM warnings
   - ✅ **auth-production-redirect-issue-494** (7/7 passing): Production hostname validation
   - ✅ **auth-function-duplication-issue-499** (9/9 passing): Private IP range detection  
@@ -62,6 +81,9 @@ This document tracks the systematic migration from NextAuth to Clerk authenticat
   - ✅ **parties-page-auth-test** (3/3 passing): Fixed redirect function mocking pattern
   - ✅ **login-logout-flows test** (10/10 passing): Fixed breadcrumbs undefined pathname issue
   - ✅ **API authentication response format** (21/21 passing): Fixed encounters API route to use consistent error response format
+  - ✅ **Jest module mapping resolution** (7/7 passing): Fixed circular dependencies by creating separate auth-test-utils
+  
+#### Infrastructure Improvements Completed
   - ✅ Updated centralized auth utilities in `src/lib/auth.ts`
   - ✅ Enhanced `isValidProductionHostname()` with environment-aware validation
   - ✅ Improved `isLocalHostname()` for comprehensive private network detection
@@ -70,7 +92,12 @@ This document tracks the systematic migration from NextAuth to Clerk authenticat
   - ✅ Applied proper git workflow with feature branch
   - ✅ Established standard redirect mocking pattern for page authentication tests
   - ✅ Fixed Next.js navigation hook mocking in layout component tests
-  - ✅ **Jest module mapping resolution** (7/7 passing): Fixed circular dependencies by creating separate auth-test-utils for authentication test utilities
+
+#### 🎯 Ready for Assessment: Remaining Test Categories
+  - 🔍 **Webhook Integration Tests**: May have Svix mocking or signature validation issues
+  - 🔍 **API Route Tests**: Additional routes that may need authentication format standardization  
+  - 🔍 **Component Integration Tests**: Complex component interactions with authentication
+  - 🔍 **End-to-End Authentication Flows**: Full user journey testing
 
 ### ❓ Assessment Needed
 
@@ -134,8 +161,9 @@ setupAuthenticatedState(mockAuth, 'test-user-123')
 ### Phase 1: Complete Current Feature Branch
 1. ✅ Fix ClerkSignUpPage test failures and DOM warnings
 2. ✅ Address code quality issues (ESLint, markdownlint) 
-3. 🔄 Continue resolving remaining authentication test failures
-4. 🔄 Create PR and await merge approval
+3. ✅ Resolve major authentication test infrastructure issues (breadcrumbs, API routes, Jest module mapping)
+4. 🔄 **Ready for final assessment**: Identify any remaining test categories that need attention
+5. 🔄 Create PR and await merge approval
 
 ### Phase 2: Legacy Test Assessment
 1. **Audit remaining test files** for NextAuth patterns
@@ -190,4 +218,4 @@ setupAuthenticatedState(mockAuth, 'test-user-123')
 ---
 
 *Last Updated: 2025-09-02*
-*Status: Phase 1 In Progress - Major authentication test fixes completed, working on remaining Jest module mapping issues*
+*Status: Phase 1 Near Completion - All major authentication test infrastructure issues resolved (breadcrumbs, API routes, Jest module mapping), ready for final test assessment and PR creation*
