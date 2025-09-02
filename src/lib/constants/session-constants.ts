@@ -33,16 +33,6 @@ export const TRUSTED_DOMAINS = [
 
 
 /**
- * NextAuth collection names (maintained for backward compatibility during migration)
- */
-export const NEXTAUTH_COLLECTION_NAMES = {
-  SESSIONS: 'sessions',
-  USERS: 'users',
-  ACCOUNTS: 'accounts',
-  VERIFICATION_TOKENS: 'verification_tokens',
-} as const;
-
-/**
  * Default database name
  */
 export const DEFAULT_DATABASE_NAME = 'dnd-tracker';
