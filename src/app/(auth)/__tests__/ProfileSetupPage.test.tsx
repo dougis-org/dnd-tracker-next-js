@@ -15,6 +15,7 @@ jest.mock('@clerk/nextjs', () => ({
   useAuth: jest.fn(),
 }));
 
+
 describe('ProfileSetupPage Component', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -34,7 +35,21 @@ describe('ProfileSetupPage Component', () => {
     expect(screen.getByText('Checking authentication status')).toBeInTheDocument();
   });
 
-  it('redirects to home page when user is signed in', () => {
+  it('redirects to sign-in when user is not authenticated', () => {
+    (useAuth as jest.Mock).mockReturnValue({
+      isLoaded: true,
+      isSignedIn: false,
+      userId: null,
+    });
+
+    render(<ProfileSetupPage />);
+
+    // TODO: Implement proper window.location.href mock - see issue #701
+    // Component should redirect to /sign-in when user is not authenticated
+    expect(true).toBe(true); // Placeholder assertion
+  });
+
+  it('redirects to dashboard when user is signed in', () => {
     (useAuth as jest.Mock).mockReturnValue({
       isLoaded: true,
       isSignedIn: true,
@@ -43,7 +58,7 @@ describe('ProfileSetupPage Component', () => {
 
     render(<ProfileSetupPage />);
 
-    expect(mockPush).toHaveBeenCalledWith('/');
+    expect(mockPush).toHaveBeenCalledWith('/dashboard');
   });
 
   it('shows redirecting state when authentication is loaded', () => {

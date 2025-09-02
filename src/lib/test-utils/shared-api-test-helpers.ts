@@ -6,6 +6,74 @@ import { NextRequest } from 'next/server';
  * Simplified utilities for API route testing.
  */
 
+// Type definitions for better type safety
+interface ClerkSessionClaims {
+  sub: string;
+  __raw: string;
+  iss: string;
+  sid: string;
+  nbf: number;
+  exp: number;
+  iat: number;
+}
+
+interface MockSessionOverrides {
+  userId?: string;
+  publicMetadata?: Record<string, any>;
+  sessionClaims?: Partial<ClerkSessionClaims>;
+  sessionId?: string;
+  sessionStatus?: any;
+  actor?: any;
+  tokenType?: string;
+  getToken?: () => Promise<any>;
+  has?: () => boolean;
+  debug?: () => any;
+  isAuthenticated?: boolean;
+  orgId?: string;
+  orgRole?: string;
+  orgSlug?: string;
+  orgPermissions?: any[];
+  factorVerificationAge?: number | null;
+}
+
+interface MockJwtTokenOverrides {
+  sub?: string;
+  email?: string;
+  subscriptionTier?: string;
+  firstName?: string;
+  lastName?: string;
+  iat?: number;
+  exp?: number;
+  jti?: string;
+}
+
+interface MockUserOverrides {
+  id?: string;
+  email?: string;
+  firstName?: string;
+  lastName?: string;
+  displayName?: string;
+  timezone?: string;
+  dndEdition?: string;
+  experienceLevel?: 'beginner' | 'intermediate' | 'experienced' | 'expert';
+  primaryRole?: 'player' | 'dm' | 'both';
+  subscriptionTier?: string;
+}
+
+interface MockCredentialsOverrides {
+  email?: string;
+  password?: string;
+  rememberMe?: boolean;
+}
+
+interface RequestBodyOverrides {
+  displayName?: string;
+  timezone?: string;
+  dndEdition?: string;
+  experienceLevel?: string;
+  primaryRole?: string;
+}
+
 export const SHARED_API_TEST_CONSTANTS = {
   TEST_USER_ID: '507f1f77bcf86cd799439011',
   TEST_EMAIL: 'test@example.com',
@@ -14,7 +82,7 @@ export const SHARED_API_TEST_CONSTANTS = {
   TEST_USER_NAME: 'John Doe',
 } as const;
 
-export const createMockSession = (userId = SHARED_API_TEST_CONSTANTS.TEST_USER_ID, overrides: Partial<any> = {}) => {
+export const createMockSession = (userId = SHARED_API_TEST_CONSTANTS.TEST_USER_ID, overrides: MockSessionOverrides = {}) => {
   const baseSession = {
     userId,
     publicMetadata: { role: 'user' },
@@ -24,8 +92,8 @@ export const createMockSession = (userId = SHARED_API_TEST_CONSTANTS.TEST_USER_I
       iss: 'https://clerk.example.com',
       sid: 'sid-123',
       nbf: 0,
-      exp: Date.now() / 1000 + 3600,
-      iat: Date.now() / 1000,
+      exp: Math.floor(Date.now() / 1000) + 3600,
+      iat: Math.floor(Date.now() / 1000),
     },
     sessionId: 'sess-123',
     sessionStatus: 'active' as any,
@@ -47,7 +115,7 @@ export const createMockSession = (userId = SHARED_API_TEST_CONSTANTS.TEST_USER_I
   };
 };
 
-export const createMockJwtToken = (userId = SHARED_API_TEST_CONSTANTS.TEST_USER_ID, overrides: Partial<any> = {}) => ({
+export const createMockJwtToken = (userId = SHARED_API_TEST_CONSTANTS.TEST_USER_ID, overrides: MockJwtTokenOverrides = {}) => ({
   sub: userId,
   email: SHARED_API_TEST_CONSTANTS.TEST_EMAIL,
   subscriptionTier: SHARED_API_TEST_CONSTANTS.TEST_SUBSCRIPTION_TIER,
@@ -65,7 +133,7 @@ export const createMockRequest = (data: any, method = 'PATCH') => ({
   headers: new Headers({ 'content-type': 'application/json' }),
 }) as unknown as NextRequest;
 
-export const createMockUser = (overrides: Partial<any> = {}) => ({
+export const createMockUser = (overrides: MockUserOverrides = {}) => ({
   id: SHARED_API_TEST_CONSTANTS.TEST_USER_ID,
   email: SHARED_API_TEST_CONSTANTS.TEST_EMAIL,
   firstName: 'John',
@@ -79,7 +147,7 @@ export const createMockUser = (overrides: Partial<any> = {}) => ({
   ...overrides,
 });
 
-export const createMockCredentials = (overrides: Partial<any> = {}) => ({
+export const createMockCredentials = (overrides: MockCredentialsOverrides = {}) => ({
   email: SHARED_API_TEST_CONSTANTS.TEST_EMAIL,
   password: 'test-password-123',
   rememberMe: false,
@@ -149,7 +217,7 @@ export const expectAuthorizationError = async (response: Response, message = 'Yo
   await expectErrorResponse(response, 403, message);
 };
 
-export const createRequestBody = (overrides: Partial<any> = {}) => ({
+export const createRequestBody = (overrides: RequestBodyOverrides = {}) => ({
   displayName: 'John Doe',
   timezone: 'America/New_York',
   dndEdition: 'Pathfinder 2e',

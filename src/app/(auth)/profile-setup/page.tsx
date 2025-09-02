@@ -16,7 +16,7 @@ export default function ProfileSetupPage() {
     if (isLoaded) {
       if (isSignedIn) {
         // Redirect to dashboard since profile setup is handled by Clerk
-        router.push('/');
+        router.push('/dashboard');
       } else {
         // Not signed in, redirect to Clerk's sign-in
         window.location.href = '/sign-in';
