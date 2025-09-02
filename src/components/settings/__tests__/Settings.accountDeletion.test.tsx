@@ -61,9 +61,9 @@ describe('Settings Component - Account Deletion', () => {
       signOut: mockSignOut,
     });
 
-    // Apply mocks
-    require('@clerk/nextjs').useUser.mockImplementation(mockUseUser);
-    require('@clerk/nextjs').useClerk.mockImplementation(mockUseClerk);
+    // Apply mocks to the actual imported modules
+    require('@clerk/nextjs').useUser.mockImplementation(() => mockUseUser());
+    require('@clerk/nextjs').useClerk.mockImplementation(() => mockUseClerk());
   });
 
   describe('Delete Account Button', () => {
