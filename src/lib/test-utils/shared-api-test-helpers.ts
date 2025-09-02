@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import { SHARED_API_TEST_CONSTANTS } from '@/lib/test-utils/shared-test-constants';
 
 /**
  * Shared API Test Helpers
@@ -74,13 +75,6 @@ interface RequestBodyOverrides {
   primaryRole?: string;
 }
 
-export const SHARED_API_TEST_CONSTANTS = {
-  TEST_USER_ID: '507f1f77bcf86cd799439011',
-  TEST_EMAIL: 'test@example.com',
-  DEFAULT_USER_ID: '507f1f77bcf86cd799439011',
-  TEST_SUBSCRIPTION_TIER: 'free' as const,
-  TEST_USER_NAME: 'John Doe',
-} as const;
 
 export const createMockSession = (userId = SHARED_API_TEST_CONSTANTS.TEST_USER_ID, overrides: MockSessionOverrides = {}) => {
   const baseSession = {

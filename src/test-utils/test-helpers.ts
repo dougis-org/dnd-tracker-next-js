@@ -8,8 +8,9 @@ export {
   createRequestBody,
   expectSuccessResponse,
   expectErrorResponse,
-  SHARED_API_TEST_CONSTANTS,
 } from '@/lib/test-utils/shared-api-test-helpers';
+
+export { SHARED_API_TEST_CONSTANTS } from '@/lib/test-utils/shared-test-constants';
 
 export const TEST_USER_ID = '507f1f77bcf86cd799439011';
 

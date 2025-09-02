@@ -5,11 +5,7 @@
  * This file also serves as a mock for @clerk/nextjs imports.
  */
 import React from 'react';
-
-// Test constants - direct export to avoid any circular reference issues
-export const SHARED_API_TEST_CONSTANTS = {
-  TEST_USER_ID: 'test-user-123',
-} as const;
+import { SHARED_API_TEST_CONSTANTS } from '@/lib/test-utils/shared-test-constants';
 
 // ============================================================================
 // CENTRALIZED AUTHENTICATION MOCK HELPERS
