@@ -2,8 +2,7 @@ import { NextRequest } from 'next/server';
 import { withCombatValidation } from '../api-wrapper';
 import { auth } from '@clerk/nextjs/server';
 import { validateAndGetEncounter, validateCombatActive, validateRequiredFields, createSuccessResponse } from '../utils';
-import clerkTestHelpers from '@/lib/test-utils/shared-clerk-test-helpers';
-const { setupAuthenticatedState, setupUnauthenticatedState, setupIncompleteAuthState } = clerkTestHelpers;
+import { setupAuthenticatedState, setupUnauthenticatedState, setupIncompleteAuthState } from '@/lib/test-utils/auth-test-utils';
 
 // Mock dependencies
 jest.mock('@clerk/nextjs/server');

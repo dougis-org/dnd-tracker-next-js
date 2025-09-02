@@ -1,7 +1,7 @@
 import { Types } from 'mongoose';
 import { Character } from '@/lib/models/Character';
 import { auth } from '@clerk/nextjs/server';
-import { setupAuthenticatedState } from '@/lib/test-utils/shared-clerk-test-helpers';
+import { setupAuthenticatedState } from '@/lib/test-utils/auth-test-utils';
 import { POST as rollInitiativePost } from '../roll-initiative/route';
 import { POST as rerollInitiativePost } from '../reroll-initiative/route';
 import {
