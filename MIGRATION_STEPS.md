@@ -61,60 +61,83 @@ This document tracks the systematic migration from NextAuth to Clerk authenticat
 
 #### Authentication Test Infrastructure Fixes
 - **Layout Component Tests** (`src/components/layout/__tests__/login-logout-flows.test.tsx`)
-  - ✅ **Breadcrumbs pathname fix** (10/10 passing): Resolved `usePathname()` returning
-    `undefined` causing breadcrumbs to crash
+  - ✅ **Breadcrumbs pathname fix** (10/10 passing): Resolved `usePathname()` returning `undefined`
+    causing breadcrumbs to crash
   - ✅ Fixed Next.js navigation hook mocking with proper `usePathname` return values
   - ✅ Updated URL expectations from `/signin` to `/sign-in` for consistency
 
 - **API Route Authentication Standardization**
-  - ✅ **Encounters API route** (`src/app/api/encounters/[id]/route.ts`) (21/21 passing): Fixed authentication response format
+  - ✅ **Encounters API route** (`src/app/api/encounters/[id]/route.ts`) (21/21 passing): Fixed
+    authentication response format
   - ✅ Replaced manual error responses with consistent `createErrorResponse()` helper
   - ✅ Standardized all authentication checks to return proper error structure
 
 - **Jest Module Mapping Resolution**
-  - ✅ **Created dedicated auth-test-utils** (`src/lib/test-utils/auth-test-utils.ts`): Resolved circular dependencies
-  - ✅ **Combat API wrapper test** (7/7 passing): Fixed import issues causing `setupUnauthenticatedState is not a function`
+  - ✅ **Created dedicated auth-test-utils** (`src/lib/test-utils/auth-test-utils.ts`): Resolved
+    circular dependencies
+  - ✅ **Combat API wrapper test** (7/7 passing): Fixed import issues causing
+    `setupUnauthenticatedState is not a function`
   - ✅ **User Clerk integration test** (38/38 passing): Updated to use `AUTH_TEST_CONSTANTS`
-  - ✅ Separated authentication utilities from shared Clerk helpers to avoid Jest moduleNameMapping conflicts
+  - ✅ Separated authentication utilities from shared Clerk helpers to avoid Jest
+    moduleNameMapping conflicts
 
 #### Final Test Failures Resolution (Latest Sprint)
 - **ProfileSetupPage Test Migration** (`src/app/(auth)/__tests__/ProfileSetupPage.test.tsx`)
-  - ✅ **Complete Clerk migration**: Removed all NextAuth patterns (`useSession`) and replaced with Clerk `useAuth`
-  - ✅ **Simplified test approach**: Removed complex form mocking, focused on actual redirect behavior testing
+  - ✅ **Complete Clerk migration**: Removed all NextAuth patterns (`useSession`) and replaced
+    with Clerk `useAuth`
+  - ✅ **Simplified test approach**: Removed complex form mocking, focused on actual redirect
+    behavior testing
   - ✅ **Real component testing**: Tests actual component logic instead of mocked interactions
 
 - **AppLayout Navigation Test Update** (`src/components/layout/__tests__/AppLayout.test.tsx`)
-  - ✅ **URL expectation fix**: Updated test to expect `/user-profile` instead of `/settings` to match actual component behavior
+  - ✅ **URL expectation fix**: Updated test to expect `/user-profile` instead of `/settings` to
+    match actual component behavior
   - ✅ **Clerk integration**: Component now uses Clerk's user profile management system
 
 - **API Route Authentication Test Infrastructure** (`src/lib/test-utils/shared-api-test-helpers.ts`)
-  - ✅ **Clerk session structure**: Updated `createMockSession()` to use Clerk's session format with `userId` property
-  - ✅ **Authentication flow fix**: Resolved all API route tests returning 401 instead of expected status codes
+  - ✅ **Clerk session structure**: Updated `createMockSession()` to use Clerk's session format
+    with `userId` property
+  - ✅ **Authentication flow fix**: Resolved all API route tests returning 401 instead of expected
+    status codes
   - ✅ **Mock consolidation**: Centralized Clerk authentication mocking patterns
 
 - **Next.js 15 TypeScript Compatibility** (`src/lib/auth.ts`, `src/components/layout/AuthenticatedServerPage.tsx`)
-  - ✅ **Route type fix**: Resolved `RouteImpl<string>` type errors by importing and using `Route` type from Next.js
-  - ✅ **Typed routes support**: Fixed redirect function calls to work with Next.js 15's `typedRoutes: true` configuration
+  - ✅ **Route type fix**: Resolved `RouteImpl<string>` type errors by importing and using `Route`
+    type from Next.js
+  - ✅ **Typed routes support**: Fixed redirect function calls to work with Next.js 15's
+    `typedRoutes: true` configuration
   - ✅ **Build success**: All TypeScript compilation errors resolved
 
 ### ✅ PR #704 - Test Failure Resolution
 
-After addressing review comments on PR #704 (migrating from NextAuth to Clerk), several tests started failing. The root cause was a combination of issues related to Jest's module transformation and incomplete mocks. The following fixes were implemented:
+After addressing review comments on PR #704 (migrating from NextAuth to Clerk), several tests started
+failing. The root cause was a combination of issues related to Jest's module transformation and
+incomplete mocks. The following fixes were implemented:
 
--   **Jest Configuration for `svix`:** The `svix` library, used for Clerk webhook verification, was not being transformed by Jest. This was resolved by removing `svix` from the `transformIgnorePatterns` in `jest.config.js`.
+- **Jest Configuration for `svix`:** The `svix` library, used for Clerk webhook verification, was not
+    being transformed by Jest. This was resolved by removing `svix` from the `transformIgnorePatterns`
+    in `jest.config.js`.
 
--   **`svix` Mocking:** Even with the transform, Jest had issues with the `svix` library in its JSDOM environment. A manual mock was created at `src/__mocks__/svix.js` to provide a stable interface for the tests.
+- **`svix` Mocking:** Even with the transform, Jest had issues with the `svix` library in its JSDOM
+    environment. A manual mock was created at `src/__mocks__/svix.js` to provide a stable interface
+    for the tests.
 
--   **Webhook Test Utility:** The mock request created in `src/app/api/webhooks/clerk/__tests__/webhook-test-utils.ts` was missing a `.text()` method, which the webhook handler expects. This method was added to the mock request object.
+- **Webhook Test Utility:** The mock request created in `src/app/api/webhooks/clerk/__tests__/webhook-test-utils.ts`
+    was missing a `.text()` method, which the webhook handler expects. This method was added to the
+    mock request object.
 
--   **API Test Utilities:** The `setupNextAuthMocks` function was still being used in `src/app/api/characters/__tests__/shared-test-utils.ts`. This was replaced with the correct `setupClerkMocks` function.
+- **API Test Utilities:** The `setupNextAuthMocks` function was still being used in
+    `src/app/api/characters/__tests__/shared-test-utils.ts`. This was replaced with the correct
+    `setupClerkMocks` function.
 
 ### ✅ Migration Complete - Ready for Production
 
 #### Latest Branch: `feature/fix-signin-page-jest-test` (CURRENT)  
 - **SignInPage Test Migration Complete**: Fixed final failing test from NextAuth to Clerk patterns
-  - ✅ **SignInPage.test.tsx** (4/4 passing): Complete migration from NextAuth patterns to Clerk test utilities
-  - ✅ **Established Pattern Reuse**: Applied existing `auth-test-utils.tsx` and `testAuthPageBehavior` helper functions
+  - ✅ **SignInPage.test.tsx** (4/4 passing): Complete migration from NextAuth patterns to Clerk
+    test utilities
+  - ✅ **Established Pattern Reuse**: Applied existing `auth-test-utils.tsx` and `testAuthPageBehavior`
+    helper functions
   - ✅ **Code Reduction**: Simplified test from 293 lines to 13 lines while maintaining full coverage
   - ✅ **Authentication State Coverage**: Tests loading, authenticated, and unauthenticated states
   - ✅ **Architectural Consistency**: Follows same pattern as working `ClerkSignInPage.test.tsx`
@@ -122,7 +145,8 @@ After addressing review comments on PR #704 (migrating from NextAuth to Clerk), 
 
 #### Previous Branch: `feature/fix-remaining-test-failures` (MERGED - PR #702)  
 - **Test Constants Infrastructure Fixed**: Resolved remaining test import issues and centralized constants
-  - ✅ **Shared Test Constants** (`src/lib/test-utils/shared-test-constants.ts`): Created centralized constants file
+  - ✅ **Shared Test Constants** (`src/lib/test-utils/shared-test-constants.ts`): Created centralized
+    constants file
   - ✅ **Parties Page Test** (13/13 passing): Fixed `SHARED_API_TEST_CONSTANTS` undefined error
   - ✅ **Import Standardization**: Updated all imports to use `@` notation for robustness
   - ✅ **Duplicate Removal**: Eliminated duplicate constants from clerk and API test helpers
@@ -130,7 +154,8 @@ After addressing review comments on PR #704 (migrating from NextAuth to Clerk), 
   - ✅ **Follow-up Issues Created**: Issue #703 tracks remaining test format updates
 
 #### Previous Branch: `feature/resolve-remaining-test-failures` (MERGED)
-- **All Critical Test Failures Resolved**: Complete systematic resolution of remaining authentication and TypeScript issues
+- **All Critical Test Failures Resolved**: Complete systematic resolution of remaining authentication
+  and TypeScript issues
   - ✅ **ProfileSetupPage Test** (3/3 passing): Complete migration from NextAuth to Clerk patterns
   - ✅ **AppLayout Navigation Test** (passing): Fixed URL expectations to match actual behavior
   - ✅ **API Route Authentication Tests** (passing): Fixed Clerk session mocking structure
@@ -138,7 +163,8 @@ After addressing review comments on PR #704 (migrating from NextAuth to Clerk), 
   - ✅ **All Previous Fixes Maintained**: All previously passing tests continue to work
 
 #### Previous Sprint Completions
-- **Systematic Test Resolution Complete**: All major authentication test patterns have been migrated and fixed
+- **Systematic Test Resolution Complete**: All major authentication test patterns have been migrated
+  and fixed
   - ✅ **ClerkSignUpPage Tests** (5/5 passing): Fixed mock structure and DOM warnings
   - ✅ **auth-production-redirect-issue-494** (7/7 passing): Production hostname validation
   - ✅ **auth-function-duplication-issue-499** (9/9 passing): Private IP range detection  
@@ -148,10 +174,10 @@ After addressing review comments on PR #704 (migrating from NextAuth to Clerk), 
   - ✅ **auth-issue-620-resolved** (11/11 passing): Migrated to Clerk auth utilities
   - ✅ **parties-page-auth-test** (3/3 passing): Fixed redirect function mocking pattern
   - ✅ **login-logout-flows test** (10/10 passing): Fixed breadcrumbs undefined pathname issue
-  - ✅ **API authentication response format** (21/21 passing): Fixed encounters API route to
-    use consistent error response format
-  - ✅ **Jest module mapping resolution** (7/7 passing): Fixed circular dependencies by
-    creating separate auth-test-utils
+  - ✅ **API authentication response format** (21/21 passing): Fixed encounters API route to use
+    consistent error response format
+  - ✅ **Jest module mapping resolution** (7/7 passing): Fixed circular dependencies by creating
+    separate auth-test-utils
   
 #### Infrastructure Improvements Completed
 - ✅ Updated centralized auth utilities in `src/lib/auth.ts`
@@ -194,7 +220,7 @@ The following test files may still contain NextAuth patterns and need assessment
 ## Migration Patterns
 
 ### Server-Side Authentication
-'''typescript
+```typescript
 // OLD: NextAuth
 import { getServerSession } from 'next-auth'
 const session = await getServerSession(authOptions)
@@ -202,10 +228,10 @@ const session = await getServerSession(authOptions)
 // NEW: Clerk Centralized
 import { getAuthenticatedUserId } from '@/lib/auth'
 const userId = await getAuthenticatedUserId('/current-page')
-'''
+```
 
 ### Client-Side Authentication
-'''typescript
+```typescript
 // OLD: NextAuth
 import { useSession } from 'next-auth/react'
 const { data: session } = useSession()
@@ -213,10 +239,10 @@ const { data: session } = useSession()
 // NEW: Clerk
 import { useUser } from '@clerk/nextjs'
 const { user } = useUser()
-'''
+```
 
 ### Test Authentication Mocking
-'''typescript
+```typescript
 // OLD: NextAuth
 jest.mock('next-auth/react', () => ({
   useSession: jest.fn()
@@ -225,7 +251,7 @@ jest.mock('next-auth/react', () => ({
 // NEW: Clerk with Centralized Helpers
 import { setupAuthenticatedState } from '@/lib/test-utils/shared-clerk-test-helpers'
 setupAuthenticatedState(mockAuth, 'test-user-123')
-'''
+```
 
 ## Next Steps
 
