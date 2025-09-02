@@ -9,7 +9,7 @@ import {
 } from './test-helpers';
 import {
   expectSuccessResponse,
-  setupNextAuthMocks,
+  setupClerkMocks,
   setupUnauthenticatedState,
 } from '@/lib/test-utils/shared-api-test-helpers';
 
@@ -72,7 +72,7 @@ export const createAuthenticatedRequest = (
 ) => {
   // Setup NextAuth mock - required for character API routes
   if (mockAuth) {
-    setupNextAuthMocks(mockAuth, undefined, TEST_USER_ID);
+    setupClerkMocks(mockAuth, undefined, TEST_USER_ID);
   }
 
   // Character API routes now use NextAuth session validation

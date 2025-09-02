@@ -62,7 +62,7 @@ const customJestConfig = {
     '@auth/mongodb-adapter': '<rootDir>/src/lib/test-utils/shared-clerk-test-helpers.tsx',
   },
   transformIgnorePatterns: [
-    'node_modules/(?!(next/|@next/|@swc/helpers|@babel/runtime|@clerk/.*|jose|svix|@panva/.*|@web3-storage/.*|@stablelib/.*|zod-validation-error)/)',
+    'node_modules/(?!(next/|@next/|@swc/helpers|@babel/runtime|@clerk/.*|jose|@panva/.*|@web3-storage/.*|@stablelib/.*|zod-validation-error)/)',
   ],
 };
 

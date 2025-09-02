@@ -6,6 +6,16 @@ This document tracks the systematic migration from NextAuth to Clerk authenticat
 
 ## Migration Progress
 
+### 🚀 Current Development
+
+#### Branch: `feature/clerk-svix-integration`
+- **Svix Mocking and Configuration**:
+  - ✅ Added mock for `svix` to support webhook testing in a Clerk environment.
+  - ✅ Updated Jest `transformIgnorePatterns` to process the `svix` module correctly.
+- **Test Infrastructure Update**:
+  - ✅ Migrated character API test helpers from `setupNextAuthMocks` to `setupClerkMocks`.
+
+
 ### ✅ Completed
 
 #### Core Infrastructure
