@@ -85,7 +85,6 @@ describe('Session Constants', () => {
     });
   });
 
-  
 
   describe('DEFAULT_DATABASE_NAME', () => {
     it('should have correct default database name', () => {
