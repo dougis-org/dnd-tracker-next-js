@@ -95,11 +95,6 @@ export function setupClientSideAuthenticatedState(userId: string = 'test-user-12
     user,
   });
 
-  useSession.mockReturnValue({
-    data: { user },
-    status: 'authenticated',
-    update: jest.fn(),
-  });
 }
 
 /**
@@ -119,11 +114,6 @@ export function setupClientSideUnauthenticatedState() {
     user: null,
   });
 
-  useSession.mockReturnValue({
-    data: null,
-    status: 'unauthenticated',
-    update: jest.fn(),
-  });
 }
 
 /**
@@ -228,30 +218,6 @@ export const auth = jest.fn(() => Promise.resolve({ userId: null }));
 
 export const currentUser = jest.fn(() => Promise.resolve(null));
 
-// NextAuth compatibility exports for tests that haven't been migrated yet
-export const useSession = jest.fn(() => ({
-  data: null,
-  status: 'unauthenticated',
-  update: jest.fn(),
-}));
-
-export const SessionProvider = jest.fn(({ children }) => children);
-
-export const signIn = jest.fn();
-export const signOut = jest.fn();
-
-// MongoDB Adapter mock for compatibility
-export const MongoDBAdapter = jest.fn(() => ({
-  createUser: jest.fn(),
-  getUser: jest.fn(),
-  getUserByEmail: jest.fn(),
-  updateUser: jest.fn(),
-  deleteUser: jest.fn(),
-  createSession: jest.fn(),
-  getSession: jest.fn(),
-  updateSession: jest.fn(),
-  deleteSession: jest.fn(),
-}));
 
 const clerkTestHelpers = {
   useAuth,
@@ -265,12 +231,6 @@ const clerkTestHelpers = {
   UserButton,
   auth,
   currentUser,
-  // NextAuth compatibility
-  useSession,
-  SessionProvider,
-  signIn,
-  signOut,
-  MongoDBAdapter,
   // Test utility functions
   SHARED_API_TEST_CONSTANTS,
   createStandardAuthenticatedSession,

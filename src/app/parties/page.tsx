@@ -1,5 +1,6 @@
 import { Metadata } from 'next';
-import { getAuthenticatedUserId } from '@/lib/auth';
+import { auth } from '@clerk/nextjs/server';
+import { redirect } from 'next/navigation';
 import { PartyListView } from '@/components/party/PartyListView';
 
 export const dynamic = 'force-dynamic';
@@ -10,8 +11,14 @@ export const metadata: Metadata = {
 };
 
 export default async function PartiesPage() {
-  // Use centralized authentication - automatically handles redirect if not authenticated
-  const userId = await getAuthenticatedUserId('/parties');
+  // Check authentication using Clerk directly
+  const session = await auth();
+
+  if (!session?.userId) {
+    redirect('/sign-in?redirect_url=/parties');
+  }
+
+  const userId = session.userId;
 
   return (
     <div className="space-y-6">
