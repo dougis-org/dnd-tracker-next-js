@@ -114,19 +114,19 @@ After addressing review comments on PR #704 (migrating from NextAuth to Clerk), 
 failing. The root cause was a combination of issues related to Jest's module transformation and
 incomplete mocks. The following fixes were implemented:
 
--   **Jest Configuration for `svix`:** The `svix` library, used for Clerk webhook verification, was not
+- **Jest Configuration for `svix`:** The `svix` library, used for Clerk webhook verification, was not
     being transformed by Jest. This was resolved by removing `svix` from the `transformIgnorePatterns`
     in `jest.config.js`.
 
--   **`svix` Mocking:** Even with the transform, Jest had issues with the `svix` library in its JSDOM
+- **`svix` Mocking:** Even with the transform, Jest had issues with the `svix` library in its JSDOM
     environment. A manual mock was created at `src/__mocks__/svix.js` to provide a stable interface
     for the tests.
 
--   **Webhook Test Utility:** The mock request created in `src/app/api/webhooks/clerk/__tests__/webhook-test-utils.ts`
+- **Webhook Test Utility:** The mock request created in `src/app/api/webhooks/clerk/__tests__/webhook-test-utils.ts`
     was missing a `.text()` method, which the webhook handler expects. This method was added to the
     mock request object.
 
--   **API Test Utilities:** The `setupNextAuthMocks` function was still being used in
+- **API Test Utilities:** The `setupNextAuthMocks` function was still being used in
     `src/app/api/characters/__tests__/shared-test-utils.ts`. This was replaced with the correct
     `setupClerkMocks` function.
 
