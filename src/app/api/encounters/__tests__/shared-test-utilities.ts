@@ -9,7 +9,7 @@ import { NextRequest } from 'next/server';
 import { Types } from 'mongoose';
 import { auth } from '@clerk/nextjs/server';
 import { EncounterServiceImportExport } from '@/lib/services/EncounterServiceImportExport';
-import { setupAuthenticatedState, setupUnauthenticatedState, setupIncompleteAuthState } from '@/lib/test-utils/shared-clerk-test-helpers';
+import { setupAuthenticatedState, setupUnauthenticatedState, setupIncompleteAuthState } from '@/lib/test-utils/auth-test-utils';
 
 // ============================================================================
 // AUTHENTICATION UTILITIES

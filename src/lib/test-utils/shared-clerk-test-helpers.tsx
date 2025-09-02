@@ -275,6 +275,19 @@ const clerkTestHelpers = {
   signIn,
   signOut,
   MongoDBAdapter,
+  // Test utility functions
+  SHARED_API_TEST_CONSTANTS,
+  createStandardAuthenticatedSession,
+  setupAuthenticatedState,
+  setupUnauthenticatedState,
+  setupIncompleteAuthState,
+  setupClientSideAuthenticatedState,
+  setupClientSideUnauthenticatedState,
+  expectSigninRedirect,
+  expectLegacySigninRedirect,
+  createMockClerkSession,
+  setupClerkMocks,
+  setupClerkUnauthenticatedState,
 };
 
 export default clerkTestHelpers;

@@ -6,8 +6,8 @@
 
 import { ClerkUserData } from '../User';
 import {
-  SHARED_API_TEST_CONSTANTS,
-} from '@/lib/test-utils/shared-clerk-test-helpers';
+  AUTH_TEST_CONSTANTS,
+} from '@/lib/test-utils/auth-test-utils';
 
 // Mock the User model with real method implementations but mocked database operations
 const mockUsers = new Map();
@@ -128,7 +128,7 @@ const User = {
 
 // Centralized test data using shared constants
 const sampleClerkUserData: ClerkUserData = {
-  clerkId: SHARED_API_TEST_CONSTANTS.TEST_USER_ID.replace('test-user-', 'clerk_'),
+  clerkId: AUTH_TEST_CONSTANTS.TEST_USER_ID.replace('test-user-', 'clerk_'),
   email: 'test@example.com',
   firstName: 'John',
   lastName: 'Doe',

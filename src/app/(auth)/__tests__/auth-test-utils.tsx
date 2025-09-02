@@ -5,7 +5,7 @@ export const mockClerk = () => {
   jest.mock('@clerk/nextjs', () => ({
     useAuth: jest.fn(),
     SignIn: jest.fn(() => <div data-testid="clerk-signin-component">Clerk SignIn Component</div>),
-    SignUp: jest.fn((props) => <div data-testid="clerk-signup-component" {...props} />),
+    SignUp: jest.fn(() => <div data-testid="clerk-signup-component">Clerk SignUp Component</div>),
   }));
 };
 

@@ -24,7 +24,8 @@ This document tracks the systematic migration from NextAuth to Clerk authenticat
 #### Page Tests Migrated
 - **Parties Page Tests** (`src/app/parties/__tests__/`)
   - ✅ `page.test.tsx` - Main functionality tests using centralized auth
-  - ✅ `page.auth.test.tsx` - Authentication-specific tests
+  - ✅ `page.auth.test.tsx` - Authentication-specific tests (3/3 passing)
+  - ✅ Fixed redirect function mocking pattern issue
   - Uses `getAuthenticatedUserId()` from centralized auth utilities
 
 #### Component Tests Migrated
@@ -47,14 +48,59 @@ This document tracks the systematic migration from NextAuth to Clerk authenticat
   - Email-based username handling
   - User data synchronization from Clerk
 
-### 🔄 In Progress
+### ✅ Recent Completions (Current Sprint)
 
-#### PR Review Resolution
-- **PR #698**: Systematic authentication test migration
-  - ✅ Addressed Gemini review comments on incomplete auth state mock
-  - ✅ Fixed ESLint violations (removed unused variables/imports)
-  - ✅ All code quality checks passing
-  - Ready for merge approval
+#### Authentication Test Infrastructure Fixes
+- **Layout Component Tests** (`src/components/layout/__tests__/login-logout-flows.test.tsx`)
+  - ✅ **Breadcrumbs pathname fix** (10/10 passing): Resolved `usePathname()` returning
+    `undefined` causing breadcrumbs to crash
+  - ✅ Fixed Next.js navigation hook mocking with proper `usePathname` return values
+  - ✅ Updated URL expectations from `/signin` to `/sign-in` for consistency
+
+- **API Route Authentication Standardization**
+  - ✅ **Encounters API route** (`src/app/api/encounters/[id]/route.ts`) (21/21 passing): Fixed authentication response format
+  - ✅ Replaced manual error responses with consistent `createErrorResponse()` helper
+  - ✅ Standardized all authentication checks to return proper error structure
+
+- **Jest Module Mapping Resolution**
+  - ✅ **Created dedicated auth-test-utils** (`src/lib/test-utils/auth-test-utils.ts`): Resolved circular dependencies
+  - ✅ **Combat API wrapper test** (7/7 passing): Fixed import issues causing `setupUnauthenticatedState is not a function`
+  - ✅ **User Clerk integration test** (38/38 passing): Updated to use `AUTH_TEST_CONSTANTS`
+  - ✅ Separated authentication utilities from shared Clerk helpers to avoid Jest moduleNameMapping conflicts
+
+### 🔄 Next Focus Areas
+
+#### Current Branch: `feature/fix-clerk-signup-tests`
+- **Systematic Test Resolution Complete**: All major authentication test patterns have been migrated and fixed
+  - ✅ **ClerkSignUpPage Tests** (5/5 passing): Fixed mock structure and DOM warnings
+  - ✅ **auth-production-redirect-issue-494** (7/7 passing): Production hostname validation
+  - ✅ **auth-function-duplication-issue-499** (9/9 passing): Private IP range detection  
+  - ✅ **navigation-auth-issue-479** (5/5 passing): Migrated to Clerk useUser/useAuth hooks
+  - ✅ **navigation-rsc-hydration-issue-586** (5/5 passing): Migrated to Clerk authentication mocking
+  - ✅ **session-constants test** (13/13 passing): Added missing NEXTAUTH_COLLECTION_NAMES
+  - ✅ **auth-issue-620-resolved** (11/11 passing): Migrated to Clerk auth utilities
+  - ✅ **parties-page-auth-test** (3/3 passing): Fixed redirect function mocking pattern
+  - ✅ **login-logout-flows test** (10/10 passing): Fixed breadcrumbs undefined pathname issue
+  - ✅ **API authentication response format** (21/21 passing): Fixed encounters API route to
+    use consistent error response format
+  - ✅ **Jest module mapping resolution** (7/7 passing): Fixed circular dependencies by
+    creating separate auth-test-utils
+  
+#### Infrastructure Improvements Completed
+- ✅ Updated centralized auth utilities in `src/lib/auth.ts`
+- ✅ Enhanced `isValidProductionHostname()` with environment-aware validation
+- ✅ Improved `isLocalHostname()` for comprehensive private network detection
+- ✅ Modified `validateNextAuthUrl()` with proper typing and error logging
+- ✅ Resolved all ESLint violations (unused variables/parameters)
+- ✅ Applied proper git workflow with feature branch
+- ✅ Established standard redirect mocking pattern for page authentication tests
+- ✅ Fixed Next.js navigation hook mocking in layout component tests
+
+#### 🎯 Ready for Assessment: Remaining Test Categories
+- 🔍 **Webhook Integration Tests**: May have Svix mocking or signature validation issues
+- 🔍 **API Route Tests**: Additional routes that may need authentication format standardization  
+- 🔍 **Component Integration Tests**: Complex component interactions with authentication
+- 🔍 **End-to-End Authentication Flows**: Full user journey testing
 
 ### ❓ Assessment Needed
 
@@ -63,19 +109,19 @@ The following test files may still contain NextAuth patterns and need assessment
 
 **Core Auth Tests:**
 - `src/__tests__/nextauth-cleanup-verification.test.ts`
-- `src/__tests__/auth-jwt-improvements-issue-620.test.ts`
-- `src/__tests__/verify-production-user.test.ts`
-- `src/__tests__/auth-function-duplication-issue-499.test.ts`
-- `src/__tests__/auth-issue-620-resolved.test.ts`
-- `src/__tests__/auth-production-redirect-issue-494.test.ts`
+- ✅ ~~`src/__tests__/auth-jwt-improvements-issue-620.test.ts`~~ - **PASSING**
+- ✅ ~~`src/__tests__/verify-production-user.test.ts`~~ - **PASSING**
+- ✅ ~~`src/__tests__/auth-function-duplication-issue-499.test.ts`~~ - **FIXED**
+- ✅ ~~`src/__tests__/auth-issue-620-resolved.test.ts`~~ - **FIXED**
+- ✅ ~~`src/__tests__/auth-production-redirect-issue-494.test.ts`~~ - **FIXED**
 
 **Navigation & Component Tests:**
-- `src/__tests__/navigation-auth-issue-479.test.tsx`
-- `src/__tests__/navigation-rsc-hydration-issue-586.test.tsx`
+- ✅ ~~`src/__tests__/navigation-auth-issue-479.test.tsx`~~ - **FIXED**
+- ✅ ~~`src/__tests__/navigation-rsc-hydration-issue-586.test.tsx`~~ - **FIXED**
 
 **Session & Context Tests:**
-- `src/lib/constants/__tests__/session-constants.test.ts`
-- `src/lib/__tests__/session-context.test.tsx`
+- ✅ ~~`src/lib/constants/__tests__/session-constants.test.ts`~~ - **FIXED**
+- `src/lib/__tests__/session-context.test.tsx` - **Missing module, needs investigation**
 
 ## Migration Patterns
 
@@ -115,10 +161,12 @@ setupAuthenticatedState(mockAuth, 'test-user-123')
 
 ## Next Steps
 
-### Phase 1: Complete Current PR
-1. ✅ Address all PR #698 review comments
-2. ✅ Fix code quality issues (ESLint, markdownlint)
-3. 🔄 Await merge approval and auto-merge
+### Phase 1: Complete Current Feature Branch
+1. ✅ Fix ClerkSignUpPage test failures and DOM warnings
+2. ✅ Address code quality issues (ESLint, markdownlint)
+3. ✅ Resolve major authentication test infrastructure issues (breadcrumbs, API routes, Jest module mapping)
+4. 🔄 **Ready for final assessment**: Identify any remaining test categories that need attention
+5. 🔄 Create PR and await merge approval
 
 ### Phase 2: Legacy Test Assessment
 1. **Audit remaining test files** for NextAuth patterns
@@ -172,5 +220,6 @@ setupAuthenticatedState(mockAuth, 'test-user-123')
 
 ---
 
-*Last Updated: 2025-09-01*
-*Status: Phase 1 Complete - Awaiting PR #698 merge*
+*Last Updated: 2025-09-02*
+*Status: Phase 1 Near Completion - All major authentication test infrastructure issues resolved
+(breadcrumbs, API routes, Jest module mapping), ready for final test assessment and PR creation*

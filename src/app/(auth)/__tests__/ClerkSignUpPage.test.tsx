@@ -1,19 +1,32 @@
 import ClerkSignUpPage from '../signup/page';
-import { mockClerk, mockNavigation, mockUseAuth } from './auth-test-utils';
-import { render, screen } from '@testing-library/react';
+import { mockNavigation, testAuthPageBehavior, mockUseAuth } from './auth-test-utils';
+import { render } from '@testing-library/react';
 import { authStates } from './test-helpers';
 
-mockClerk();
+jest.mock('@clerk/nextjs', () => ({
+  useAuth: jest.fn(),
+  SignUp: jest.fn(() => <div data-testid="clerk-signup-component">Clerk SignUp Component</div>),
+}));
+
 mockNavigation();
 
 describe('Clerk SignUp Page', () => {
-  it('should render the sign-up form and be configured correctly when not signed in', () => {
-    const { SignUp } = require('@clerk/nextjs');
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  testAuthPageBehavior({
+    component: ClerkSignUpPage,
+    expectedTestId: 'clerk-signup-component',
+    signUpText: 'Create your account',
+  });
+
+  it('should configure SignUp component with correct redirectUrl', () => {
     mockUseAuth(authStates.notSignedIn);
+    const { SignUp } = require('@clerk/nextjs');
 
     render(<ClerkSignUpPage />);
 
-    expect(screen.getByText('Create your account')).toBeInTheDocument();
     expect(SignUp).toHaveBeenCalledWith(
       expect.objectContaining({
         redirectUrl: '/profile-setup',
