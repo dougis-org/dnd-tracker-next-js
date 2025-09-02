@@ -84,8 +84,7 @@ export interface JWTToken {
 
 /**
  * Application session structure specifically for Clerk-based authentication,
- * representing the standardized session data structure used throughout the application
- * after migrating from NextAuth to Clerk.
+ * representing the standardized session data structure used throughout the application.
  */
 export interface SessionStructure {
   user: {
@@ -332,8 +331,6 @@ export function createMiddlewareRequest(
 export function setupProductionEnvironment(): void {
   Object.assign(process.env, {
     NODE_ENV: 'production',
-    NEXTAUTH_URL: 'https://dnd-tracker-next-js.fly.dev',
-    NEXTAUTH_SECRET: 'test-production-secret',
     AUTH_TRUST_HOST: 'true',
   });
 }
@@ -344,8 +341,6 @@ export function setupProductionEnvironment(): void {
 export function setupDevelopmentEnvironment(): void {
   Object.assign(process.env, {
     NODE_ENV: 'development',
-    NEXTAUTH_URL: 'http://localhost:3000',
-    NEXTAUTH_SECRET: 'test-development-secret',
     AUTH_TRUST_HOST: 'false',
   });
 }

@@ -32,8 +32,6 @@ export const TRUSTED_DOMAINS = [
 ] as const;
 
 
-
-
 /**
  * Default database name
  */
