@@ -1,8 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import PartiesPage from '../page';
-import {
-  SHARED_API_TEST_CONSTANTS
-} from '@/lib/test-utils/shared-clerk-test-helpers';
+import { SHARED_API_TEST_CONSTANTS } from '@/lib/test-utils/shared-test-constants';
 
 // Mock Next.js navigation
 jest.mock('next/navigation', () => ({

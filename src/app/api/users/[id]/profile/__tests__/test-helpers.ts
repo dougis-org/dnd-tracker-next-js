@@ -1,6 +1,6 @@
 // Re-export shared API test helpers to maintain backward compatibility
+export { SHARED_API_TEST_CONSTANTS } from '@/lib/test-utils/shared-test-constants';
 export {
-  SHARED_API_TEST_CONSTANTS,
   expectAuthenticationError,
   expectAuthorizationError,
   expectValidationError,

@@ -1,5 +1,5 @@
+import { SHARED_API_TEST_CONSTANTS } from '@/lib/test-utils/shared-test-constants';
 import {
-  SHARED_API_TEST_CONSTANTS,
   createMockSession,
   createMockJwtToken,
   createAuthenticatedRequest,
