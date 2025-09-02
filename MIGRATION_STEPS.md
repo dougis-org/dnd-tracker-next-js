@@ -60,6 +60,8 @@ This document tracks the systematic migration from NextAuth to Clerk authenticat
   - ✅ **session-constants test** (13/13 passing): Added missing NEXTAUTH_COLLECTION_NAMES
   - ✅ **auth-issue-620-resolved** (11/11 passing): Migrated to Clerk auth utilities
   - ✅ **parties-page-auth-test** (3/3 passing): Fixed redirect function mocking pattern
+  - ✅ **login-logout-flows test** (10/10 passing): Fixed breadcrumbs undefined pathname issue
+  - ✅ **API authentication response format** (21/21 passing): Fixed encounters API route to use consistent error response format
   - ✅ Updated centralized auth utilities in `src/lib/auth.ts`
   - ✅ Enhanced `isValidProductionHostname()` with environment-aware validation
   - ✅ Improved `isLocalHostname()` for comprehensive private network detection
@@ -67,7 +69,8 @@ This document tracks the systematic migration from NextAuth to Clerk authenticat
   - ✅ Resolved all ESLint violations (unused variables/parameters)
   - ✅ Applied proper git workflow with feature branch
   - ✅ Established standard redirect mocking pattern for page authentication tests
-  - 🔄 Continuing systematic test failure resolution
+  - ✅ Fixed Next.js navigation hook mocking in layout component tests
+  - 🔄 Working on complex module mapping issues for shared Clerk test helpers
 
 ### ❓ Assessment Needed
 

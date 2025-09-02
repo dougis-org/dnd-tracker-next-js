@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { ZodError } from 'zod';
 import { EncounterService } from '@/lib/services/EncounterService';
 import { updateEncounterSchema } from '@/lib/validations/encounter';
@@ -19,10 +19,7 @@ export async function GET(
   try {
     const session = await auth();
     if (!session?.userId) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      );
+      return createErrorResponse('Authentication required', 401);
     }
 
     const encounterId = await validateEncounterIdUtil(params);
@@ -60,10 +57,7 @@ export async function PUT(
   try {
     const session = await auth();
     if (!session?.userId) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      );
+      return createErrorResponse('Authentication required', 401);
     }
 
     const encounterId = await validateEncounterIdUtil(params);
@@ -128,10 +122,7 @@ export async function DELETE(
   try {
     const session = await auth();
     if (!session?.userId) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      );
+      return createErrorResponse('Authentication required', 401);
     }
 
     const encounterId = await validateEncounterIdUtil(params);

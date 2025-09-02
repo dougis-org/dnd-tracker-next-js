@@ -6,7 +6,7 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { useAuth, useClerk, useUser } from '@clerk/nextjs';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 
 
 import { AppLayout } from '../AppLayout';
@@ -25,16 +25,22 @@ jest.mock('next/navigation', () => ({
   usePathname: jest.fn(),
 }));
 
-// Mock Next.js navigation
-
 
 const mockUseAuth = useAuth as jest.MockedFunction<typeof useAuth>;
 const mockUseClerk = useClerk as jest.MockedFunction<typeof useClerk>;
 
 describe('Login/Logout Flows - Issue #654', () => {
   const mockSignOut = jest.fn();
+  const mockPush = jest.fn();
 
   beforeEach(() => {
+    // Mock Next.js hooks
+    (useRouter as jest.Mock).mockReturnValue({
+      push: mockPush,
+    });
+    (usePathname as jest.Mock).mockReturnValue('/dashboard');
+
+    // Mock Clerk hooks
     mockUseClerk.mockReturnValue({
       signOut: mockSignOut,
       signIn: jest.fn(),
@@ -123,7 +129,7 @@ describe('Login/Logout Flows - Issue #654', () => {
       fireEvent.click(signInButton);
 
       // Use useRouter().push instead
-      expect((useRouter as jest.Mock)().push).toHaveBeenCalledWith('/signin');
+      expect(mockPush).toHaveBeenCalledWith('/sign-in');
     });
 
     it('should persist session after browser refresh', async () => {

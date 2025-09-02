@@ -3,7 +3,6 @@
  */
 
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
-import { render, screen } from '@testing-library/react';
 
 // Mock Next.js redirect
 jest.mock('next/navigation', () => ({
@@ -25,7 +24,6 @@ jest.mock('@/components/party/PartyListView', () => ({
 }));
 
 import PartiesPage from '../page';
-import { redirect } from 'next/navigation';
 import { auth } from '@clerk/nextjs/server';
 
 // Test constants
@@ -33,12 +31,10 @@ const TEST_USER_ID = 'test-user-123';
 
 describe('PartiesPage Authentication', () => {
   let mockAuth: jest.Mock;
-  let mockRedirect: jest.Mock;
 
   beforeEach(() => {
     jest.clearAllMocks();
     mockAuth = auth as jest.Mock;
-    mockRedirect = require('next/navigation').redirect;
   });
 
   it('should redirect unauthenticated users to signin', async () => {
