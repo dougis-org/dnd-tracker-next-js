@@ -5,6 +5,7 @@
 
 import { auth as clerkAuth } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
+import type { Route } from 'next';
 
 /**
  * Server-side authentication function that returns user session
@@ -130,7 +131,7 @@ export async function requireAuth(callbackUrl?: string) {
       ? `${AUTH_CONFIG.SIGN_IN_URL}?redirect_url=${encodeURIComponent(callbackUrl)}`
       : AUTH_CONFIG.SIGN_IN_URL;
 
-    redirect(redirectUrl);
+    redirect(redirectUrl as Route);
   }
 
   return session;

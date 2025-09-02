@@ -16,21 +16,34 @@ export const SHARED_API_TEST_CONSTANTS = {
 
 export const createMockSession = (userId = SHARED_API_TEST_CONSTANTS.TEST_USER_ID, overrides: Partial<any> = {}) => {
   const baseSession = {
-    user: {
-      id: userId,
-      email: SHARED_API_TEST_CONSTANTS.TEST_EMAIL,
-      name: SHARED_API_TEST_CONSTANTS.TEST_USER_NAME,
-      subscriptionTier: SHARED_API_TEST_CONSTANTS.TEST_SUBSCRIPTION_TIER,
+    userId,
+    publicMetadata: { role: 'user' },
+    sessionClaims: {
+      sub: userId,
+      __raw: '',
+      iss: 'https://clerk.example.com',
+      sid: 'sid-123',
+      nbf: 0,
+      exp: Date.now() / 1000 + 3600,
+      iat: Date.now() / 1000,
     },
-    expires: '2024-12-31T23:59:59.999Z',
+    sessionId: 'sess-123',
+    sessionStatus: 'active' as any,
+    actor: undefined,
+    tokenType: 'session_token' as const,
+    getToken: async () => null,
+    has: () => true,
+    debug: () => ({}),
+    isAuthenticated: true,
+    orgId: undefined,
+    orgRole: undefined,
+    orgSlug: undefined,
+    orgPermissions: [],
+    factorVerificationAge: null,
   };
   return {
     ...baseSession,
     ...overrides,
-    user: {
-      ...baseSession.user,
-      ...(overrides.user || {}),
-    },
   };
 };
 
