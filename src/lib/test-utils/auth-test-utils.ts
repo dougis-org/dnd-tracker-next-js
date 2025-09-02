@@ -1,6 +1,6 @@
 /**
  * Authentication Test Utilities
- * 
+ *
  * Separate utility file to avoid Jest module mapping conflicts with shared-clerk-test-helpers.
  * Use this file for authentication state setup in tests.
  */
