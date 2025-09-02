@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import { auth } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
+import type { Route } from 'next';
 import { PartyListView } from '@/components/party/PartyListView';
 
 export const dynamic = 'force-dynamic';
@@ -15,7 +16,7 @@ export default async function PartiesPage() {
   const { userId } = await auth();
 
   if (!userId) {
-    redirect('/sign-in?redirect_url=/parties');
+    redirect('/sign-in?redirect_url=/parties' as Route);
   }
 
   return (
