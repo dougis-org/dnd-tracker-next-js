@@ -3,7 +3,7 @@
  * Ensures centralized session cookie name logic works correctly
  */
 
-import { SESSION_COOKIE_NAME, SESSION_TIMEOUTS, TRUSTED_DOMAINS, NEXTAUTH_COLLECTION_NAMES, DEFAULT_DATABASE_NAME } from '../session-constants';
+import { SESSION_COOKIE_NAME, SESSION_TIMEOUTS, TRUSTED_DOMAINS, DEFAULT_DATABASE_NAME } from '../session-constants';
 
 describe('Session Constants', () => {
   const originalEnv = process.env;
@@ -85,20 +85,7 @@ describe('Session Constants', () => {
     });
   });
 
-  describe('NEXTAUTH_COLLECTION_NAMES', () => {
-    it('should have correct collection names', () => {
-      expect(NEXTAUTH_COLLECTION_NAMES.SESSIONS).toBe('sessions');
-      expect(NEXTAUTH_COLLECTION_NAMES.USERS).toBe('users');
-      expect(NEXTAUTH_COLLECTION_NAMES.ACCOUNTS).toBe('accounts');
-      expect(NEXTAUTH_COLLECTION_NAMES.VERIFICATION_TOKENS).toBe('verification_tokens');
-    });
-
-    it('should be immutable at compile time with as const assertion', () => {
-      // Verify the structure is correct - TypeScript ensures immutability
-      expect(typeof NEXTAUTH_COLLECTION_NAMES).toBe('object');
-      expect(typeof NEXTAUTH_COLLECTION_NAMES.SESSIONS).toBe('string');
-    });
-  });
+  
 
   describe('DEFAULT_DATABASE_NAME', () => {
     it('should have correct default database name', () => {
