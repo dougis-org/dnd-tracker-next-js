@@ -75,7 +75,7 @@ export const createAuthenticatedRequest = (
     setupClerkMocks(mockAuth, undefined, TEST_USER_ID);
   }
 
-  // Character API routes now use NextAuth session validation
+  // Character API routes now use Clerk session validation
   return createMockRequest(url, options);
 };
 
