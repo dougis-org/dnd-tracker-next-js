@@ -15,7 +15,6 @@ This document tracks the systematic migration from NextAuth to Clerk authenticat
 - **Test Infrastructure Update**:
   - ✅ Migrated character API test helpers from `setupNextAuthMocks` to `setupClerkMocks`.
 
-
 ### ✅ Completed
 
 #### Core Infrastructure
