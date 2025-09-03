@@ -9,6 +9,7 @@ import {
   createMinimalClerkUserData,
   setupTestCleanup,
 } from '@/test-utils/user-registration-mocks';
+import crypto from 'crypto';
 
 // Mock database connection
 jest.mock('@/lib/db');
@@ -60,7 +61,7 @@ const User = {
     let username = clerkUserData.username;
     if (!username) {
       const baseUsername = clerkUserData.email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
-      username = baseUsername || `user${Math.random().toString(36).substr(2, 6)}`;
+      username = baseUsername || `user${crypto.randomBytes(3).toString('hex')}`;
     }
 
     // Handle username conflicts
@@ -99,17 +100,17 @@ const User = {
       updatedAt: new Date(),
     };
 
-    // Store in mock database
-    const userId = `user_${mockUserIdCounter++}`;
-    mockUsers.set(userId, userData);
-
-    // Create mock user with methods
+    // Create mock user and store in mock database
     const user = createMockUser(userData);
+    mockUsers.set(user._id, userData);
 
     // Add subscription and feature methods
     user.isSubscriptionActive = jest.fn().mockReturnValue(true);
     user.canAccessFeature = jest.fn().mockImplementation((feature: string, quantity: number) => {
       const limits = { parties: 1, encounters: 3, characters: 10 };
+      if (!(feature in limits)) {
+        return false;
+      }
       return quantity <= limits[feature as keyof typeof limits];
     });
 
@@ -117,10 +118,12 @@ const User = {
   }),
 
   updateFromClerkData: jest.fn().mockImplementation(async (clerkId: string, clerkUserData: ClerkUserData) => {
-    const userData = Array.from(mockUsers.values()).find((user: any) => user.clerkId === clerkId);
-    if (!userData) {
+    const userEntry = Array.from(mockUsers.entries()).find(([, u]: [string, any]) => u.clerkId === clerkId);
+    if (!userEntry) {
       throw new Error('User not found');
     }
+
+    const [userId, userData] = userEntry;
 
     // Update fields
     const updatedUserData = {
@@ -135,10 +138,7 @@ const User = {
     };
 
     // Update in mock database
-    const userId = Array.from(mockUsers.keys()).find(key => mockUsers.get(key).clerkId === clerkId);
-    if (userId) {
-      mockUsers.set(userId, updatedUserData);
-    }
+    mockUsers.set(userId, updatedUserData);
 
     return createMockUser(updatedUserData);
   }),
@@ -263,9 +263,16 @@ describe('User Model - Registration Enhancement', () => {
       user.dndEdition = '5th Edition';
 
       // Update the mock database
-      const userId = Array.from(mockUsers.keys()).find(key => mockUsers.get(key).clerkId === clerkUserData.clerkId);
-      if (userId) {
-        const updatedData = { ...mockUsers.get(userId), ...user };
+      const userEntry = Array.from(mockUsers.entries()).find(([, u]) => u.clerkId === clerkUserData.clerkId);
+      if (userEntry) {
+        const [userId, userData] = userEntry;
+        const updatedData = {
+          ...userData,
+          profileSetupCompleted: user.profileSetupCompleted,
+          experienceLevel: user.experienceLevel,
+          primaryRole: user.primaryRole,
+          dndEdition: user.dndEdition,
+        };
         mockUsers.set(userId, updatedData);
       }
 
