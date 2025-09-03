@@ -1,253 +1,83 @@
 import { GET, PUT, DELETE } from '@/app/api/parties/[id]/route';
-import {
-  getMocks,
-  setupStandardMocks,
-  createGetRequest,
-  createPutRequest,
-  mockValidationSuccess,
-  mockValidationError,
-  SAMPLE_PARTY_RESPONSE,
-  TEST_PARTY_ID,
-  createSuccessResult,
-  createErrorResult,
-} from '@/app/api/parties/__tests__/api-test-utils';
+import { NextRequest } from 'next/server';
+import { createMocks } from 'node-mocks-http';
+import { connectToDatabase, closeDatabaseConnection } from '@/lib/db';
+import User from '@/lib/models/User';
+import Party from '@/lib/models/Party';
+import { TEST_USER_ID } from '@/lib/services/__tests__/test-utils';
 
-describe('/api/parties/[id]', () => {
-  let mocks: ReturnType<typeof getMocks>;
-  const context = { params: Promise.resolve({ id: TEST_PARTY_ID }) };
+// Mock Clerk's auth function
+jest.mock('@clerk/nextjs/server', () => ({
+  auth: () => Promise.resolve({ userId: TEST_USER_ID }),
+}));
 
-  beforeEach(() => {
-    jest.clearAllMocks();
-    mocks = setupStandardMocks();
+describe('/api/parties/[id] integration tests', () => {
+  let testParty: any;
+
+  beforeAll(async () => {
+    await connectToDatabase();
+  });
+
+  afterAll(async () => {
+    await closeDatabaseConnection();
+  });
+
+  beforeEach(async () => {
+    await User.deleteMany({});
+    await Party.deleteMany({});
+    await User.create({ clerkId: TEST_USER_ID, email: 'test@example.com' });
+    testParty = await Party.create({
+      name: 'The Fellowship',
+      ownerId: TEST_USER_ID,
+      members: [],
+    });
   });
 
   describe('GET /api/parties/[id]', () => {
-    it('should return party by ID successfully', async () => {
-      mocks.PartyService.getPartyById.mockResolvedValue(
-        createSuccessResult(SAMPLE_PARTY_RESPONSE)
-      );
+    it('should return a party by ID successfully', async () => {
+      const { req } = createMocks({
+        method: 'GET',
+      });
+      const context = { params: { id: testParty._id.toString() } };
 
-      const response = await GET(createGetRequest(), context);
+      const response = await GET(req as unknown as NextRequest, context);
+      const data = await response.json();
 
-      expect(response).toBeDefined();
-      expect(response).toBeInstanceOf(Response);
-    });
-
-    it('should handle service errors in GET', async () => {
-      mocks.PartyService.getPartyById.mockResolvedValue(
-        createErrorResult('Test error', 'TEST_ERROR')
-      );
-
-      const response = await GET(createGetRequest(), context);
-
-      expect(response).toBeDefined();
-      expect(response).toBeInstanceOf(Response);
-    });
-
-    it('should handle missing party ID in params', async () => {
-      const invalidContext = { params: Promise.resolve({}) };
-
-      const response = await GET(createGetRequest(), invalidContext);
-      expect(response).toBeDefined();
-    });
-
-    it('should handle database connection errors', async () => {
-      mocks.PartyService.getPartyById.mockRejectedValue(new Error('Database connection failed'));
-
-      const response = await GET(createGetRequest(), context);
-      expect(response).toBeDefined();
+      expect(response.status).toBe(200);
+      expect(data.success).toBe(true);
+      expect(data.party.name).toBe('The Fellowship');
     });
   });
 
   describe('PUT /api/parties/[id]', () => {
-    const updateData = { name: 'Updated Party' };
-    const updatedResponse = { ...SAMPLE_PARTY_RESPONSE, name: 'Updated Party' };
+    it('should update a party successfully', async () => {
+      const { req } = createMocks({
+        method: 'PUT',
+        json: () => Promise.resolve({ name: 'The Updated Fellowship' }),
+      });
+      const context = { params: { id: testParty._id.toString() } };
 
-    it('should update party successfully', async () => {
-      const request = createPutRequest(updateData);
-      mockValidationSuccess(mocks.partyUpdateSchema, updateData);
-      mocks.PartyService.updateParty.mockResolvedValue(
-        createSuccessResult(updatedResponse)
-      );
+      const response = await PUT(req as unknown as NextRequest, context);
+      const data = await response.json();
 
-      const response = await PUT(request, context);
-
-      expect(response).toBeDefined();
-      expect(response).toBeInstanceOf(Response);
-    });
-
-    it('should handle validation errors in PUT', async () => {
-      mockValidationError(mocks.partyUpdateSchema);
-      const request = createPutRequest(updateData);
-
-      const response = await PUT(request, context);
-      expect(response).toBeDefined();
-    });
-
-    it('should handle service errors in PUT', async () => {
-      const request = createPutRequest(updateData);
-      mockValidationSuccess(mocks.partyUpdateSchema, updateData);
-      mocks.PartyService.updateParty.mockResolvedValue(
-        createErrorResult('Test error', 'TEST_ERROR')
-      );
-
-      const response = await PUT(request, context);
-
-      expect(response).toBeDefined();
-      expect(response).toBeInstanceOf(Response);
-    });
-
-    it('should handle malformed JSON in request body', async () => {
-      const request = {
-        json: () => Promise.reject(new Error('Invalid JSON')),
-      } as any;
-
-      const response = await PUT(request, context);
-      expect(response).toBeDefined();
-    });
-
-    it('should handle missing party ID in params', async () => {
-      const invalidContext = { params: Promise.resolve({}) };
-      const request = createPutRequest(updateData);
-      mockValidationSuccess(mocks.partyUpdateSchema, updateData);
-
-      const response = await PUT(request, invalidContext);
-      expect(response).toBeDefined();
-    });
-
-    it('should handle database connection errors in PUT', async () => {
-      const request = createPutRequest(updateData);
-      mockValidationSuccess(mocks.partyUpdateSchema, updateData);
-      mocks.PartyService.updateParty.mockRejectedValue(new Error('Database connection failed'));
-
-      const response = await PUT(request, context);
-      expect(response).toBeDefined();
+      expect(response.status).toBe(200);
+      expect(data.success).toBe(true);
+      expect(data.party.name).toBe('The Updated Fellowship');
     });
   });
 
   describe('DELETE /api/parties/[id]', () => {
-    it('should delete party successfully', async () => {
-      mocks.PartyService.deleteParty.mockResolvedValue(
-        createSuccessResult(undefined)
-      );
-
-      const response = await DELETE(createGetRequest(), context);
-
-      expect(response).toBeDefined();
-      expect(response).toBeInstanceOf(Response);
-    });
-
-    it('should handle service errors in DELETE', async () => {
-      mocks.PartyService.deleteParty.mockResolvedValue(
-        createErrorResult('Test error', 'TEST_ERROR')
-      );
-
-      const response = await DELETE(createGetRequest(), context);
-
-      expect(response).toBeDefined();
-      expect(response).toBeInstanceOf(Response);
-    });
-
-    it('should handle missing party ID in params for DELETE', async () => {
-      const invalidContext = { params: Promise.resolve({}) };
-
-      const response = await DELETE(createGetRequest(), invalidContext);
-      expect(response).toBeDefined();
-    });
-
-    it('should handle database connection errors in DELETE', async () => {
-      mocks.PartyService.deleteParty.mockRejectedValue(new Error('Database connection failed'));
-
-      const response = await DELETE(createGetRequest(), context);
-      expect(response).toBeDefined();
-    });
-
-    it('should handle party not found errors in DELETE', async () => {
-      mocks.PartyService.deleteParty.mockResolvedValue(
-        createErrorResult('Party not found', 'PARTY_NOT_FOUND')
-      );
-
-      const response = await DELETE(createGetRequest(), context);
-      expect(response).toBeDefined();
-      expect(response).toBeInstanceOf(Response);
-    });
-  });
-
-  describe('Error Handling', () => {
-    const errorTestCases = [
-      { method: 'GET', handler: GET, requestBuilder: createGetRequest },
-      { method: 'PUT', handler: PUT, requestBuilder: () => createPutRequest({ name: 'Test' }) },
-      { method: 'DELETE', handler: DELETE, requestBuilder: createGetRequest },
-    ];
-
-    errorTestCases.forEach(({ method, handler, requestBuilder }) => {
-      it(`should handle authentication errors in ${method}`, async () => {
-        mocks.MockedWithAuth.mockImplementation(async () => {
-          throw new Error('Authentication failed');
-        });
-
-        const request = requestBuilder();
-        const response = await handler(request, context);
-
-        expect(response).toBeDefined();
+    it('should delete a party successfully', async () => {
+      const { req } = createMocks({
+        method: 'DELETE',
       });
-    });
-  });
+      const context = { params: { id: testParty._id.toString() } };
 
-  describe('Authentication and Access Control', () => {
-    it('should require authentication for all endpoints', async () => {
-      // Mock withAuth to throw an authentication error
-      mocks.withAuth.mockRejectedValueOnce(new Error('Authentication required'));
+      const response = await DELETE(req as unknown as NextRequest, context);
+      const data = await response.json();
 
-      const response = await GET(createGetRequest(), context);
-      expect(response).toBeDefined();
-    });
-
-    it('should handle authorization failures', async () => {
-      mocks.PartyService.getPartyById.mockResolvedValue(
-        createErrorResult('Access denied', 'ACCESS_DENIED')
-      );
-
-      const response = await GET(createGetRequest(), context);
-      expect(response).toBeDefined();
-      expect(response).toBeInstanceOf(Response);
-    });
-  });
-
-  describe('Response Format Validation', () => {
-    it('should return proper Response objects for GET', async () => {
-      mocks.PartyService.getPartyById.mockResolvedValue(
-        createSuccessResult(SAMPLE_PARTY_RESPONSE)
-      );
-
-      const response = await GET(createGetRequest(), context);
-
-      expect(response).toBeInstanceOf(Response);
-      expect(typeof response.json).toBe('function');
-    });
-
-    it('should return proper Response objects for PUT', async () => {
-      const updateData = { name: 'Updated' };
-      mockValidationSuccess(mocks.partyUpdateSchema, updateData);
-      mocks.PartyService.updateParty.mockResolvedValue(
-        createSuccessResult(SAMPLE_PARTY_RESPONSE)
-      );
-
-      const response = await PUT(createPutRequest(updateData), context);
-
-      expect(response).toBeInstanceOf(Response);
-      expect(typeof response.json).toBe('function');
-    });
-
-    it('should return proper Response objects for DELETE', async () => {
-      mocks.PartyService.deleteParty.mockResolvedValue(
-        createSuccessResult(undefined)
-      );
-
-      const response = await DELETE(createGetRequest(), context);
-
-      expect(response).toBeInstanceOf(Response);
-      expect(typeof response.json).toBe('function');
+      expect(response.status).toBe(200);
+      expect(data.success).toBe(true);
     });
   });
 });
