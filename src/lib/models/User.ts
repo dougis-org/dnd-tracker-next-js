@@ -1,7 +1,8 @@
 import mongoose, { Document, Model, Schema, Types } from 'mongoose';
-import bcrypt from 'bcryptjs';
-import crypto from 'crypto';
-import { subscriptionTierSchema, userRoleSchema } from '@/lib/validations/user';
+import mongoose, { Document, Model, Schema, Types } from 'mongoose';
+import * as bcrypt from 'bcryptjs';
+import * as crypto from 'crypto';
+import { subscriptionTierSchema, userRoleSchema } from '../validations/user';
 import { z } from 'zod';
 
 /**
@@ -743,8 +744,13 @@ userSchema.statics.updateFromClerkData = async function (
 };
 
 // Create and export model
-const User =
-  (mongoose.models.User as UserModel) ||
-  mongoose.model<IUser, UserModel>('User', userSchema);
+// Check if model already exists to avoid re-compilation
+let User: UserModel;
+
+if (mongoose.models.User) {
+  User = mongoose.models.User as UserModel;
+} else {
+  User = mongoose.model<IUser, UserModel>('User', userSchema) as UserModel;
+}
 
 export default User;
