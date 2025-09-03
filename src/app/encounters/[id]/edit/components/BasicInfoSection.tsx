@@ -149,11 +149,12 @@ export function BasicInfoSection({ form }: BasicInfoSectionProps) {
               <Input
                 id="target-level"
                 type="number"
-                min="1"
-                max="20"
                 placeholder="1-20"
                 {...field}
-                onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 1)}
+                onChange={(e) => {
+                  const value = e.target.value === '' ? undefined : parseInt(e.target.value, 10);
+                  field.onChange(value);
+                }}
                 aria-describedby="target-level-error"
               />
             </FormControl>
@@ -173,10 +174,12 @@ export function BasicInfoSection({ form }: BasicInfoSectionProps) {
               <Input
                 id="estimated-duration"
                 type="number"
-                min="1"
                 placeholder="60"
                 {...field}
-                onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 1)}
+                onChange={(e) => {
+                  const value = e.target.value === '' ? undefined : parseInt(e.target.value, 10);
+                  field.onChange(value);
+                }}
                 aria-describedby="estimated-duration-error"
               />
             </FormControl>

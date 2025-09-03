@@ -49,6 +49,8 @@ export function EncounterEditForm({
 
   const form = useForm<UpdateEncounter>({
     resolver: zodResolver(formEncounterSchema) as any,
+    mode: 'all',
+    reValidateMode: 'onChange',
     defaultValues: {
       name: encounter.name,
       description: encounter.description,
@@ -63,7 +65,7 @@ export function EncounterEditForm({
 
   const {
     handleSubmit,
-    formState: { errors, isValid },
+    formState: { errors },
     watch,
     reset,
   } = form;
@@ -146,7 +148,7 @@ export function EncounterEditForm({
 
             <Button
               type="submit"
-              disabled={isSubmitting || !isValid}
+              disabled={isSubmitting}
               className="flex items-center space-x-2"
             >
               {isSubmitting ? (
