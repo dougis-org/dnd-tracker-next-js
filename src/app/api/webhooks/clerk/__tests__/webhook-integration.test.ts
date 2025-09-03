@@ -1,3 +1,16 @@
+/**
+ * @jest-environment node
+ */
+
+// Unmock mongoose and MongoDB dependencies for this test to use real models and DB
+jest.unmock('mongoose');
+jest.unmock('mongodb');
+jest.unmock('bson');
+jest.unmock('@/lib/db');
+jest.unmock('@/lib/models/User');
+jest.unmock('@/lib/models/index');
+
+import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { POST } from '../route';
 import User from '@/lib/models/User';
@@ -30,6 +43,9 @@ describe('/api/webhooks/clerk - Integration Tests', () => {
 
   beforeAll(async () => {
     mongoServer = await setupMongoMemoryServer();
+
+    // Force model registration
+    await import('@/lib/models/index');
   });
 
   afterAll(async () => {
@@ -88,6 +104,8 @@ describe('/api/webhooks/clerk - Integration Tests', () => {
       await User.createClerkUser({
         clerkId: 'existing_user',
         email: 'existing@example.com',
+        firstName: 'Existing',
+        lastName: 'User',
         username: 'johndoe',
         emailVerified: true,
       });
@@ -143,6 +161,8 @@ describe('/api/webhooks/clerk - Integration Tests', () => {
       _existingUser = await User.createClerkUser({
         clerkId: 'clerk_user_123',
         email: 'todelete@example.com',
+        firstName: 'ToDelete',
+        lastName: 'User',
         emailVerified: true,
       });
 
@@ -196,6 +216,8 @@ describe('/api/webhooks/clerk - Integration Tests', () => {
       await User.createClerkUser({
         clerkId: 'clerk_user_123',
         email: 'first@example.com',
+        firstName: 'First',
+        lastName: 'User',
         emailVerified: true,
       });
 
