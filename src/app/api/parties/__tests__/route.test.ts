@@ -1,248 +1,79 @@
 import { GET, POST } from '@/app/api/parties/route';
-import {
-  getMocks,
-  setupStandardMocks,
-  createGetRequest,
-  createPostRequest,
-  mockValidationSuccess,
-  mockValidationError,
-  SAMPLE_PARTY_DATA,
-  SAMPLE_PARTY_RESPONSE,
-  SAMPLE_PAGINATION,
-  createSuccessResult,
-  createErrorResult,
-} from '@/app/api/parties/__tests__/api-test-utils';
+import { NextRequest } from 'next/server';
+import { createMocks } from 'node-mocks-http';
+import { connectToDatabase, closeDatabaseConnection } from '@/lib/db';
+import User from '@/lib/models/User';
+import Party from '@/lib/models/Party';
+import { TEST_USER_ID } from '@/lib/services/__tests__/test-utils';
 
-describe('/api/parties', () => {
-  let mocks: ReturnType<typeof getMocks>;
+// Mock Clerk's auth function
+jest.mock('@clerk/nextjs/server', () => ({
+  auth: () => Promise.resolve({ userId: TEST_USER_ID }),
+}));
 
-  beforeEach(() => {
-    jest.clearAllMocks();
-    mocks = setupStandardMocks();
+describe('/api/parties integration tests', () => {
+  beforeAll(async () => {
+    await connectToDatabase();
   });
 
-  describe('GET /api/parties', () => {
-    it('should return parties with default parameters', async () => {
-      const request = createGetRequest();
-      const mockResponse = { parties: [SAMPLE_PARTY_RESPONSE], pagination: SAMPLE_PAGINATION };
+  afterAll(async () => {
+    await closeDatabaseConnection();
+  });
 
-      mockValidationSuccess(mocks.partyQuerySchema, {
-        filters: { tags: [], memberCount: [] },
-        sortBy: 'name',
-        sortOrder: 'asc',
-        pagination: { page: 1, limit: 20 },
-      });
-
-      mocks.PartyService.getPartiesForUser.mockResolvedValue(
-        createSuccessResult(mockResponse)
-      );
-
-      const response = await GET(request);
-
-      expect(response).toBeDefined();
-      expect(response).toBeInstanceOf(Response);
-      // Verify the function completes without error
-    });
-
-    it('should handle custom query parameters', async () => {
-      const request = createGetRequest({ page: '2', limit: '10', sortBy: 'createdAt', sortOrder: 'desc' });
-      const mockResponse = { parties: [], pagination: { ...SAMPLE_PAGINATION, currentPage: 2, itemsPerPage: 10 } };
-
-      mockValidationSuccess(mocks.partyQuerySchema, {
-        filters: { tags: [], memberCount: [] },
-        sortBy: 'createdAt',
-        sortOrder: 'desc',
-        pagination: { page: 2, limit: 10 },
-      });
-
-      mocks.PartyService.getPartiesForUser.mockResolvedValue(
-        createSuccessResult(mockResponse)
-      );
-
-      const response = await GET(request);
-
-      expect(response).toBeDefined();
-      expect(response).toBeInstanceOf(Response);
-    });
-
-    it('should handle validation errors', async () => {
-      mockValidationError(mocks.partyQuerySchema);
-      const request = createGetRequest();
-
-      const response = await GET(request);
-      expect(response).toBeDefined();
-    });
-
-    it('should handle service errors', async () => {
-      mockValidationSuccess(mocks.partyQuerySchema, {
-        filters: { tags: [], memberCount: [] },
-        sortBy: 'name',
-        sortOrder: 'asc',
-        pagination: { page: 1, limit: 20 },
-      });
-
-      mocks.PartyService.getPartiesForUser.mockResolvedValue(
-        createErrorResult('Test error', 'TEST_ERROR')
-      );
-
-      const response = await GET(createGetRequest());
-
-      expect(response).toBeDefined();
-      expect(response).toBeInstanceOf(Response);
-    });
-
-    it('should handle complex query parameters with filters', async () => {
-      const request = createGetRequest({
-        search: 'test',
-        tags: 'adventure,dungeon',
-        memberCount: '4,6',
-        isPublic: 'true'
-      });
-
-      mockValidationSuccess(mocks.partyQuerySchema, {
-        filters: {
-          search: 'test',
-          tags: ['adventure', 'dungeon'],
-          memberCount: [4, 6],
-          isPublic: true
-        },
-        sortBy: 'name',
-        sortOrder: 'asc',
-        pagination: { page: 1, limit: 20 },
-      });
-
-      mocks.PartyService.getPartiesForUser.mockResolvedValue(
-        createSuccessResult({ parties: [], pagination: SAMPLE_PAGINATION })
-      );
-
-      const response = await GET(request);
-      expect(response).toBeDefined();
-    });
+  beforeEach(async () => {
+    await User.deleteMany({});
+    await Party.deleteMany({});
+    await User.create({ clerkId: TEST_USER_ID, email: 'test@example.com' });
   });
 
   describe('POST /api/parties', () => {
     it('should create a new party successfully', async () => {
-      const request = createPostRequest(SAMPLE_PARTY_DATA);
-      mockValidationSuccess(mocks.partyCreateSchema, SAMPLE_PARTY_DATA);
-      mocks.PartyService.createParty.mockResolvedValue(
-        createSuccessResult(SAMPLE_PARTY_RESPONSE)
-      );
+      const { req } = createMocks({
+        method: 'POST',
+        json: () => Promise.resolve({ name: 'The Fellowship' }),
+      });
 
-      const response = await POST(request);
+      const response = await POST(req as unknown as NextRequest);
+      const data = await response.json();
 
-      expect(response).toBeDefined();
-      expect(response).toBeInstanceOf(Response);
-    });
-
-    it('should handle validation errors in POST', async () => {
-      mockValidationError(mocks.partyCreateSchema);
-      const request = createPostRequest(SAMPLE_PARTY_DATA);
-
-      const response = await POST(request);
-      expect(response).toBeDefined();
-    });
-
-    it('should handle service errors in POST', async () => {
-      const request = createPostRequest(SAMPLE_PARTY_DATA);
-      mockValidationSuccess(mocks.partyCreateSchema, SAMPLE_PARTY_DATA);
-      mocks.PartyService.createParty.mockResolvedValue(
-        createErrorResult('Test error', 'TEST_ERROR')
-      );
-
-      const response = await POST(request);
-
-      expect(response).toBeDefined();
-      expect(response).toBeInstanceOf(Response);
-    });
-
-    it('should handle malformed JSON in POST request', async () => {
-      const request = {
-        json: () => Promise.reject(new Error('Invalid JSON')),
-      } as any;
-
-      const response = await POST(request);
-      expect(response).toBeDefined();
-    });
-
-    it('should handle database connection errors in POST', async () => {
-      const request = createPostRequest(SAMPLE_PARTY_DATA);
-      mockValidationSuccess(mocks.partyCreateSchema, SAMPLE_PARTY_DATA);
-      mocks.PartyService.createParty.mockRejectedValue(new Error('Database connection failed'));
-
-      const response = await POST(request);
-      expect(response).toBeDefined();
+      expect(response.status).toBe(200);
+      expect(data.success).toBe(true);
+      expect(data.party.name).toBe('The Fellowship');
     });
   });
 
-  describe('Authentication and Access Control', () => {
-    it('should handle authentication errors in GET', async () => {
-      // Mock withAuth to throw an error
-      mocks.withAuth.mockRejectedValueOnce(new Error('Authentication failed'));
-
-      const request = createGetRequest();
-      const response = await GET(request);
-
-      expect(response).toBeDefined();
-    });
-
-    it('should handle authentication errors in POST', async () => {
-      // Mock withAuth to throw an error
-      mocks.withAuth.mockRejectedValueOnce(new Error('Authentication failed'));
-
-      const request = createPostRequest(SAMPLE_PARTY_DATA);
-      const response = await POST(request);
-
-      expect(response).toBeDefined();
-    });
-
-    it('should handle authorization failures', async () => {
-      mocks.PartyService.getPartiesForUser.mockResolvedValue(
-        createErrorResult('Access denied', 'ACCESS_DENIED')
-      );
-      mockValidationSuccess(mocks.partyQuerySchema, {
-        filters: { tags: [], memberCount: [] },
-        sortBy: 'name',
-        sortOrder: 'asc',
-        pagination: { page: 1, limit: 20 },
+  describe('GET /api/parties', () => {
+    it('should return an empty array when no parties exist', async () => {
+      const { req } = createMocks({
+        method: 'GET',
       });
 
-      const response = await GET(createGetRequest());
-      expect(response).toBeDefined();
-      expect(response).toBeInstanceOf(Response);
-    });
-  });
+      const response = await GET(req as unknown as NextRequest);
+      const data = await response.json();
 
-  describe('Response Format Validation', () => {
-    it('should return proper Response objects for GET', async () => {
-      const request = createGetRequest({});
-      mockValidationSuccess(mocks.partyQuerySchema, {
-        filters: { tags: [], memberCount: [] },
-        sortBy: 'name',
-        sortOrder: 'asc',
-        pagination: { page: 1, limit: 20 },
+      expect(response.status).toBe(200);
+      expect(data.success).toBe(true);
+      expect(data.parties).toEqual([]);
+    });
+
+    it('should return parties for the current user', async () => {
+      await Party.create({
+        name: 'The Fellowship',
+        ownerId: TEST_USER_ID,
+        members: [],
       });
 
-      mocks.PartyService.getPartiesForUser.mockResolvedValue(
-        createSuccessResult({ parties: [], pagination: SAMPLE_PAGINATION })
-      );
+      const { req } = createMocks({
+        method: 'GET',
+      });
 
-      const response = await GET(request);
+      const response = await GET(req as unknown as NextRequest);
+      const data = await response.json();
 
-      expect(response).toBeInstanceOf(Response);
-      expect(typeof response.json).toBe('function');
-    });
-
-    it('should return proper Response objects for POST', async () => {
-      const request = createPostRequest(SAMPLE_PARTY_DATA);
-      mockValidationSuccess(mocks.partyCreateSchema, SAMPLE_PARTY_DATA);
-      mocks.PartyService.createParty.mockResolvedValue(
-        createSuccessResult(SAMPLE_PARTY_RESPONSE)
-      );
-
-      const response = await POST(request);
-
-      expect(response).toBeInstanceOf(Response);
-      expect(typeof response.json).toBe('function');
+      expect(response.status).toBe(200);
+      expect(data.success).toBe(true);
+      expect(data.parties.length).toBe(1);
+      expect(data.parties[0].name).toBe('The Fellowship');
     });
   });
 });

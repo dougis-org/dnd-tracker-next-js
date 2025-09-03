@@ -100,6 +100,7 @@
     "markdownlint-cli": "^0.42.0",
     "mongodb-memory-server": "^10.1.4",
     "next-router-mock": "^1.0.2",
+    "node-mocks-http": "^1.17.2",
     "postcss": "^8.4.0",
     "prettier": "^3.5.3",
     "puppeteer": "^24.15.0",

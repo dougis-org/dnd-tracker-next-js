@@ -17,7 +17,12 @@ import {
 } from './webhook-test-utils';
 
 // Mock dependencies
-jest.mock('@/lib/models/User');
+jest.mock('@/lib/models/User', () => ({
+  createClerkUser: jest.fn(),
+  updateFromClerkData: jest.fn(),
+  findByClerkId: jest.fn(),
+  save: jest.fn(),
+}));
 jest.mock('@/lib/db');
 jest.mock('next/headers', () => ({
   headers: jest.fn(),
