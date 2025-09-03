@@ -70,6 +70,54 @@ export function convertToXml(data: EncounterExportData): string {
 
 
 /**
+ * Convert XML parsed values to proper types
+ */
+function convertTypes(obj: any): any {
+  if (obj === null || obj === undefined) {
+    return obj;
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map(convertTypes);
+  }
+
+  if (typeof obj === 'object') {
+    const converted: any = {};
+    for (const [key, value] of Object.entries(obj)) {
+      // Handle array structures from XML parser
+      if (key === 'tags' && value && typeof value === 'object' && value.tag) {
+        converted[key] = Array.isArray(value.tag) ? value.tag : [value.tag];
+      } else if (key === 'participants' && value && typeof value === 'object' && value.participant) {
+        const participants = Array.isArray(value.participant) ? value.participant : [value.participant];
+        converted[key] = participants.map(convertTypes);
+      } else if (key === 'conditions' && (value === '' || value === null || value === undefined)) {
+        // Handle empty conditions array
+        converted[key] = [];
+      } else {
+        converted[key] = convertTypes(value);
+      }
+    }
+    return converted;
+  }
+
+  if (typeof obj === 'string') {
+    // Convert string booleans
+    if (obj === 'true') return true;
+    if (obj === 'false') return false;
+
+    // Convert string numbers
+    if (/^\d+$/.test(obj)) {
+      return parseInt(obj, 10);
+    }
+    if (/^\d+\.\d+$/.test(obj)) {
+      return parseFloat(obj);
+    }
+  }
+
+  return obj;
+}
+
+/**
  * Parse XML data to JavaScript object using fast-xml-parser
  */
 export function parseXmlToData(xmlString: string): any {
@@ -82,7 +130,14 @@ export function parseXmlToData(xmlString: string): any {
 
   try {
     const jsonObj = parser.parse(xmlString);
-    return jsonObj;
+
+    // The parser returns { encounterExport: { metadata: {...}, encounter: {...} } }
+    // But we need to return the contents of encounterExport directly
+    if (jsonObj && jsonObj.encounterExport) {
+      return convertTypes(jsonObj.encounterExport);
+    }
+
+    return convertTypes(jsonObj);
   } catch (error) {
     console.error('XML parsing error:', error);
     throw new Error('Failed to parse XML data');

@@ -185,7 +185,7 @@ describe('EncounterService Integration Tests', () => {
       expect(Encounter.findById).toHaveBeenCalledWith(mockEncounterId);
     });
 
-    it.skip('should handle round-trip export/import with XML', async () => {
+    it('should handle round-trip export/import with XML', async () => {
       // Arrange
       const newEncounterId = new Types.ObjectId();
       const createdEncounter = { ...mockEncounter, _id: newEncounterId };
