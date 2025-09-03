@@ -2,7 +2,8 @@
  * @jest-environment node
  */
 
-// Unmock mongoose and MongoDB dependencies for this test to use real models and DB
+// Unmock database modules for real MongoDB integration testing
+// See database-unmocking.ts for documentation on this pattern
 jest.unmock('mongoose');
 jest.unmock('mongodb');
 jest.unmock('bson');
@@ -10,7 +11,6 @@ jest.unmock('@/lib/db');
 jest.unmock('@/lib/models/User');
 jest.unmock('@/lib/models/index');
 
-import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { POST } from '../route';
 import User from '@/lib/models/User';
@@ -44,7 +44,8 @@ describe('/api/webhooks/clerk - Integration Tests', () => {
   beforeAll(async () => {
     mongoServer = await setupMongoMemoryServer();
 
-    // Force model registration
+    // Ensure all Mongoose models are registered before tests run.
+    // This import triggers model registration side effects, preventing "model not registered" errors.
     await import('@/lib/models/index');
   });
 
