@@ -43,13 +43,11 @@ describe('Production User Authentication Verification', () => {
             requiresVerification: authResult.data.requiresVerification
           });
 
-          // Test 3: Test NextAuth authorize function directly
-          console.log('\n3. Testing NextAuth authorize function...');
-          const { validateNextAuthUrl: _validateNextAuthUrl } = await import('@/lib/auth');
-
-          // Import the auth configuration
-          const _authModule = await import('@/lib/auth');
-          console.log('NextAuth configuration imported successfully');
+          // Test 3: Test Clerk auth configuration directly
+          console.log('\n3. Testing Clerk auth configuration...');
+          const { auth } = await import('@clerk/nextjs/server');
+          expect(typeof auth).toBe('function');
+          console.log('Clerk configuration imported successfully');
 
           console.log('\n✅ ALL AUTHENTICATION COMPONENTS ARE WORKING');
           console.log('Issue #620 authentication failure must be elsewhere...');
