@@ -1,5 +1,4 @@
 import mongoose, { Document, Model, Schema, Types } from 'mongoose';
-import mongoose, { Document, Model, Schema, Types } from 'mongoose';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 import { subscriptionTierSchema, userRoleSchema } from '../validations/user';
