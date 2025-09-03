@@ -49,8 +49,8 @@ export function EncounterEditForm({
 
   const form = useForm<UpdateEncounter>({
     resolver: zodResolver(formEncounterSchema) as any,
-    mode: 'onBlur',
-    reValidateMode: 'onBlur',
+    mode: 'all',
+    reValidateMode: 'onChange',
     defaultValues: {
       name: encounter.name,
       description: encounter.description,
