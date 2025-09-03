@@ -16,11 +16,11 @@ describe('UserService - Registration Integration', () => {
   beforeAll(async () => {
     // Ensure database connection is established
     await connectToDatabase();
-    
+
     // Dynamically import User model to ensure it's properly loaded
     const UserModule = await import('../../models/User');
     User = UserModule.default;
-    
+
     // Verify User model is available
     if (!User) {
       throw new Error('User model is not available in test environment');
