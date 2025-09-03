@@ -14,7 +14,8 @@ if (!process.env.MONGODB_URI) {
     console.log('No MONGODB_URI set, using Atlas connection for tests');
   }
   // Use Atlas connection for tests (same as development)
-  process.env.MONGODB_URI = process.env.JEST_MONGODB_URI || 'mongodb://localhost:27017/testdb';
+  process.env.MONGODB_URI =
+    process.env.JEST_MONGODB_URI || 'mongodb://localhost:27017/testdb';
 }
 
 if (!process.env.MONGODB_DB_NAME) {
@@ -27,7 +28,10 @@ if (!process.env.MONGODB_DB_NAME) {
 // Log the MongoDB connection details for debugging
 if (debug_logs) {
   console.log(
-    "Using MongoDB: "+process.env.MONGODB_URI+", DB: "+process.env.MONGODB_DB_NAME
+    'Using MongoDB: ' +
+      process.env.MONGODB_URI +
+      ', DB: ' +
+      process.env.MONGODB_DB_NAME
   );
 }
 // Set up missing browser APIs
@@ -95,8 +99,15 @@ if (typeof window !== 'undefined') {
   // Add getBoundingClientRect if not present
   if (!Element.prototype.getBoundingClientRect) {
     const mockBoundingRect = () => ({
-      width: 0, height: 0, top: 0, left: 0,
-      bottom: 0, right: 0, x: 0, y: 0, toJSON: () => {},
+      width: 0,
+      height: 0,
+      top: 0,
+      left: 0,
+      bottom: 0,
+      right: 0,
+      x: 0,
+      y: 0,
+      toJSON: () => {},
     });
     Element.prototype.getBoundingClientRect = jest.fn(mockBoundingRect);
   }
@@ -127,7 +138,9 @@ const reactSchedulerWarnings = [
 
 function shouldSuppressWarning(args) {
   return args.some(
-    arg => typeof arg === 'string' && reactSchedulerWarnings.some(warning => arg.includes(warning))
+    arg =>
+      typeof arg === 'string' &&
+      reactSchedulerWarnings.some(warning => arg.includes(warning))
   );
 }
 
@@ -166,7 +179,7 @@ function generateTestObjectId() {
 // Helper function to create mock ObjectId
 function createMockObjectId() {
   return jest.fn().mockImplementation(id => ({
-    toString: () => id || generateTestObjectId()
+    toString: () => id || generateTestObjectId(),
   }));
 }
 
@@ -240,8 +253,10 @@ jest.mock('mongoose', () => {
           if (k === '$or' && Array.isArray(v)) {
             return v.some(cond => applyQueryFilter([d], cond).length === 1);
           }
-          if (k === '_id') return d._id === v || (v && v.toString && v.toString() === d._id);
-          if (k === 'ownerId') return d.ownerId === (v && v.toString ? v.toString() : v);
+          if (k === '_id')
+            return d._id === v || (v && v.toString && v.toString() === d._id);
+          if (k === 'ownerId')
+            return d.ownerId === (v && v.toString ? v.toString() : v);
           if (k === 'isPublic') return d.isPublic === v;
           if (k === 'sharedWith') {
             if (Array.isArray(d.sharedWith)) {
@@ -254,10 +269,14 @@ jest.mock('mongoose', () => {
             return new RegExp(v.$regex, v.$options || 'i').test(d.name || '');
           }
           if (k === 'description' && v && v.$regex) {
-            return new RegExp(v.$regex, v.$options || 'i').test(d.description || '');
+            return new RegExp(v.$regex, v.$options || 'i').test(
+              d.description || ''
+            );
           }
           if (k === 'tags' && v && v.$in) {
-            return (d.tags || []).some(tag => v.$in.some(r => (r instanceof RegExp ? r.test(tag) : r === tag)));
+            return (d.tags || []).some(tag =>
+              v.$in.some(r => (r instanceof RegExp ? r.test(tag) : r === tag))
+            );
           }
           return true; // ignore unsupported filters
         });
@@ -266,10 +285,18 @@ jest.mock('mongoose', () => {
 
     function chainable(resultArray) {
       return {
-        sort: function () { return this; },
-        skip: function () { return this; },
-        limit: function () { return this; },
-        lean: function () { return resultArray.map(r => ({ ...r })); },
+        sort: function () {
+          return this;
+        },
+        skip: function () {
+          return this;
+        },
+        limit: function () {
+          return this;
+        },
+        lean: function () {
+          return resultArray.map(r => ({ ...r }));
+        },
       };
     }
 
@@ -278,7 +305,10 @@ jest.mock('mongoose', () => {
         const created = wrap({
           ...doc,
           _id: generateId(),
-          ownerId: (doc.ownerId && doc.ownerId.toString) ? doc.ownerId.toString() : doc.ownerId,
+          ownerId:
+            doc.ownerId && doc.ownerId.toString
+              ? doc.ownerId.toString()
+              : doc.ownerId,
           sharedWith: doc.sharedWith || [],
           tags: doc.tags || [],
         });
@@ -286,17 +316,29 @@ jest.mock('mongoose', () => {
         return created;
       },
       findById: async function (id) {
-        const found = docs.find(d => d._id === (id && id.toString ? id.toString() : id));
+        const found = docs.find(
+          d => d._id === (id && id.toString ? id.toString() : id)
+        );
         return found ? wrap(found) : null;
       },
       findByIdAndDelete: async function (id) {
-        const idx = docs.findIndex(d => d._id === (id && id.toString ? id.toString() : id));
+        const idx = docs.findIndex(
+          d => d._id === (id && id.toString ? id.toString() : id)
+        );
         if (idx !== -1) docs.splice(idx, 1);
       },
-      deleteMany: async function () { docs.length = 0; },
-      countDocuments: async function (query = {}) { return applyQueryFilter(docs, query).length; },
-      find: function (query = {}) { return chainable(applyQueryFilter(docs, query)); },
-      aggregate: async function () { return []; },
+      deleteMany: async function () {
+        docs.length = 0;
+      },
+      countDocuments: async function (query = {}) {
+        return applyQueryFilter(docs, query).length;
+      },
+      find: function (query = {}) {
+        return chainable(applyQueryFilter(docs, query));
+      },
+      aggregate: async function () {
+        return [];
+      },
       // For character related virtuals not needed here
     };
   }
@@ -310,7 +352,7 @@ jest.mock('mongoose', () => {
       close: jest.fn().mockResolvedValue({}),
     },
     Schema: MockSchema,
-    model: (name) => {
+    model: name => {
       if (!models[name]) models[name] = createModel(name);
       return models[name];
     },
@@ -339,5 +381,3 @@ jest.mock('./src/lib/db', () => ({
     },
   },
 }));
-
-

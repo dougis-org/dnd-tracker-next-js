@@ -10,8 +10,14 @@ const parties: any[] = [];
 jest.mock('@/lib/models/User', () => ({
   __esModule: true,
   default: {
-    deleteMany: async () => { users.length = 0; },
-    create: async (data: any) => { const u = { _id: 'user1', ...data }; users.push(u); return u; },
+    deleteMany: async () => {
+      users.length = 0;
+    },
+    create: async (data: any) => {
+      const u = { _id: 'user1', ...data };
+      users.push(u);
+      return u;
+    },
   },
 }));
 
@@ -21,7 +27,10 @@ jest.mock('@/lib/models/Party', () => {
     const now = new Date();
     const doc: any = {
       _id: { toString: () => id },
-      ownerId: data.ownerId && data.ownerId.toString ? data.ownerId : { toString: () => String(data.ownerId) },
+      ownerId:
+        data.ownerId && data.ownerId.toString
+          ? data.ownerId
+          : { toString: () => String(data.ownerId) },
       name: data.name,
       description: data.description ?? '',
       tags: data.tags ?? [],
@@ -32,31 +41,47 @@ jest.mock('@/lib/models/Party', () => {
       updatedAt: now,
       lastActivity: now,
       save: async () => doc,
-      updateActivity: () => { doc.lastActivity = new Date(); },
+      updateActivity: () => {
+        doc.lastActivity = new Date();
+      },
     };
     return doc;
   }
 
   const api = {
-    deleteMany: async () => { parties.length = 0; },
-    create: async (data: any) => { const p = makeDoc(data); parties.push(p); return p; },
+    deleteMany: async () => {
+      parties.length = 0;
+    },
+    create: async (data: any) => {
+      const p = makeDoc(data);
+      parties.push(p);
+      return p;
+    },
     countDocuments: async () => parties.length,
     find: (_query: any = {}) => ({
-      sort: () => ({ skip: () => ({ limit: () => ({ lean: () => parties.map(p => ({
-        _id: p._id.toString(),
-        ownerId: p.ownerId.toString(),
-        name: p.name,
-        description: p.description,
-        tags: p.tags,
-        isPublic: p.isPublic,
-        sharedWith: p.sharedWith.map((u: any) => u.toString()),
-        settings: p.settings,
-        createdAt: p.createdAt,
-        updatedAt: p.updatedAt,
-        lastActivity: p.lastActivity,
-      })) }) }) })
+      sort: () => ({
+        skip: () => ({
+          limit: () => ({
+            lean: () =>
+              parties.map(p => ({
+                _id: p._id.toString(),
+                ownerId: p.ownerId.toString(),
+                name: p.name,
+                description: p.description,
+                tags: p.tags,
+                isPublic: p.isPublic,
+                sharedWith: p.sharedWith.map((u: any) => u.toString()),
+                settings: p.settings,
+                createdAt: p.createdAt,
+                updatedAt: p.updatedAt,
+                lastActivity: p.lastActivity,
+              })),
+          }),
+        }),
+      }),
     }),
-    findById: async (id: string) => parties.find(p => p._id.toString() === id) || null,
+    findById: async (id: string) =>
+      parties.find(p => p._id.toString() === id) || null,
   };
 
   return {
@@ -84,25 +109,30 @@ describe('/api/parties integration tests', () => {
   });
 
   beforeEach(async () => {
-  const User = require('@/lib/models/User').default;
-  const Party = require('@/lib/models/Party').default;
-  await User.deleteMany({});
-  await Party.deleteMany({});
-  await User.create({ clerkId: TEST_USER_ID, email: 'test@example.com' });
+    const User = require('@/lib/models/User').default;
+    const Party = require('@/lib/models/Party').default;
+    await User.deleteMany({});
+    await Party.deleteMany({});
+    await User.create({ clerkId: TEST_USER_ID, email: 'test@example.com' });
   });
 
   describe('POST /api/parties', () => {
     it('should create a new party successfully', async () => {
       const { req } = createMocks({
         method: 'POST',
-        json: () => Promise.resolve({
-          name: 'The Fellowship',
-          description: '',
-          tags: [],
-          isPublic: false,
-          sharedWith: [],
-          settings: { allowJoining: false, requireApproval: true, maxMembers: 6 },
-        }),
+        json: () =>
+          Promise.resolve({
+            name: 'The Fellowship',
+            description: '',
+            tags: [],
+            isPublic: false,
+            sharedWith: [],
+            settings: {
+              allowJoining: false,
+              requireApproval: true,
+              maxMembers: 6,
+            },
+          }),
       });
 
       const response = await POST(req as unknown as NextRequest);
@@ -118,7 +148,7 @@ describe('/api/parties integration tests', () => {
     it('should return an empty array when no parties exist', async () => {
       const { req } = createMocks({
         method: 'GET',
-        url: 'http://localhost/api/parties'
+        url: 'http://localhost/api/parties',
       });
 
       const response = await GET(req as unknown as NextRequest);
@@ -130,8 +160,8 @@ describe('/api/parties integration tests', () => {
     });
 
     it('should return parties for the current user', async () => {
-  const Party = require('@/lib/models/Party').default;
-  await Party.create({
+      const Party = require('@/lib/models/Party').default;
+      await Party.create({
         name: 'The Fellowship',
         ownerId: TEST_USER_ID,
         members: [],
@@ -139,7 +169,7 @@ describe('/api/parties integration tests', () => {
 
       const { req } = createMocks({
         method: 'GET',
-        url: 'http://localhost/api/parties'
+        url: 'http://localhost/api/parties',
       });
 
       const response = await GET(req as unknown as NextRequest);

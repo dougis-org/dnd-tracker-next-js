@@ -10,16 +10,28 @@ const parties: any[] = [];
 jest.mock('@/lib/models/User', () => ({
   __esModule: true,
   default: {
-    deleteMany: async () => { users.length = 0; },
-    create: async (data: any) => { const u = { _id: 'user1', ...data }; users.push(u); return u; },
+    deleteMany: async () => {
+      users.length = 0;
+    },
+    create: async (data: any) => {
+      const u = { _id: 'user1', ...data };
+      users.push(u);
+      return u;
+    },
   },
 }));
 
 jest.mock('@/lib/models/Party', () => ({
   __esModule: true,
   default: {
-    deleteMany: async () => { parties.length = 0; },
-    create: async (data: any) => { const p = makeParty(data); parties.push(p); return p; },
+    deleteMany: async () => {
+      parties.length = 0;
+    },
+    create: async (data: any) => {
+      const p = makeParty(data);
+      parties.push(p);
+      return p;
+    },
     findById: async (id: string) => {
       const p = parties.find(p => p._id === id);
       return p || null;
@@ -27,35 +39,51 @@ jest.mock('@/lib/models/Party', () => ({
     findByIdAndDelete: async (id: string) => {
       const idx = parties.findIndex(p => p._id === id);
       if (idx !== -1) {
-        const [removed] = parties.splice(idx,1);
+        const [removed] = parties.splice(idx, 1);
         return removed;
       }
       return null;
     },
   },
   Party: {
-    create: async (data: any) => { const p = makeParty(data); parties.push(p); return p; },
-  }
+    create: async (data: any) => {
+      const p = makeParty(data);
+      parties.push(p);
+      return p;
+    },
+  },
 }));
 
 // helper to emulate minimal mongoose document behavior required by service layer
 function makeParty(data: any) {
   const now = new Date();
   return {
-    _id: 'party'+(parties.length+1),
+    _id: 'party' + (parties.length + 1),
     name: data.name,
     description: data.description ?? null,
-    ownerId: { toString: () => data.ownerId, equals: (other: any) => other === data.ownerId },
+    ownerId: {
+      toString: () => data.ownerId,
+      equals: (other: any) => other === data.ownerId,
+    },
     members: data.members || [],
-    sharedWith: data.sharedWith?.map((id: string) => ({ toString: () => id, equals: (other: any) => other === id })) || [],
+    sharedWith:
+      data.sharedWith?.map((id: string) => ({
+        toString: () => id,
+        equals: (other: any) => other === id,
+      })) || [],
     tags: data.tags || [],
     isPublic: data.isPublic || false,
     settings: data.settings || {},
     createdAt: now,
     updatedAt: now,
     lastActivity: now,
-    updateActivity() { this.lastActivity = new Date(); },
-    save: async function () { this.updatedAt = new Date(); return this; },
+    updateActivity() {
+      this.lastActivity = new Date();
+    },
+    save: async function () {
+      this.updatedAt = new Date();
+      return this;
+    },
   };
 }
 
@@ -84,12 +112,12 @@ describe.skip('/api/parties/[id] integration tests', () => {
   });
 
   beforeEach(async () => {
-  const User = require('@/lib/models/User').default;
-  const Party = require('@/lib/models/Party').default;
-  await User.deleteMany({});
-  await Party.deleteMany({});
-  await User.create({ clerkId: TEST_USER_ID, email: 'test@example.com' });
-  testParty = await Party.create({
+    const User = require('@/lib/models/User').default;
+    const Party = require('@/lib/models/Party').default;
+    await User.deleteMany({});
+    await Party.deleteMany({});
+    await User.create({ clerkId: TEST_USER_ID, email: 'test@example.com' });
+    testParty = await Party.create({
       name: 'The Fellowship',
       ownerId: TEST_USER_ID,
       members: [],
