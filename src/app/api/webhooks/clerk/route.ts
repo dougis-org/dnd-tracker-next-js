@@ -1,7 +1,11 @@
 import { headers } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import { Webhook } from 'svix';
-import { WebhookEvent, UserJSON, DeletedObjectJSON } from '@clerk/nextjs/server';
+import {
+  WebhookEvent,
+  UserJSON,
+  DeletedObjectJSON,
+} from '@clerk/nextjs/server';
 import User from '@/lib/models/User';
 import { connectToDatabase } from '@/lib/db';
 
@@ -10,7 +14,7 @@ import { connectToDatabase } from '@/lib/db';
  */
 function getPrimaryEmail(userData: UserJSON) {
   const primaryEmail = userData.email_addresses?.find(
-    (email) => email.id === userData.primary_email_address_id
+    email => email.id === userData.primary_email_address_id
   );
 
   if (!primaryEmail) {
@@ -45,18 +49,31 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Get the body
-    const body = await req.text();
+    // Get the body (support both Next.js and Jest environments)
+    let body: string;
+    if (typeof req.text === 'function') {
+      body = await req.text();
+    } else if (typeof req.body === 'string') {
+      body = req.body;
+    } else if (req.body && typeof req.body === 'object') {
+      body = JSON.stringify(req.body);
+    } else {
+      body = '';
+    }
 
     // Get the webhook secret from environment
-    const webhook_secret = process.env.CLERK_WEBHOOK_SECRET;
-    if (!webhook_secret) {
+    // For test environments, allow explicit undefined to simulate missing secret
+    if (
+      !('CLERK_WEBHOOK_SECRET' in process.env) ||
+      !process.env.CLERK_WEBHOOK_SECRET
+    ) {
       console.error('Missing CLERK_WEBHOOK_SECRET environment variable');
       return NextResponse.json(
         { error: 'Server configuration error' },
         { status: 500 }
       );
     }
+    const webhook_secret = process.env.CLERK_WEBHOOK_SECRET;
 
     // Create a new Svix instance with the webhook secret
     const wh = new Webhook(webhook_secret);
@@ -91,7 +108,9 @@ export async function POST(req: NextRequest) {
 
     // Handle the webhook event
     const eventType = evt.type;
-    console.log(`Processing Clerk webhook: ${eventType} for user ${evt.data.id}`);
+    console.log(
+      `Processing Clerk webhook: ${eventType} for user ${evt.data.id}`
+    );
 
     try {
       switch (eventType) {
