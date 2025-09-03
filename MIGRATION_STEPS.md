@@ -410,15 +410,8 @@ setupAuthenticatedState(mockAuth, 'test-user-123');
 
 ---
 
-<<<<<<< HEAD
 *Last Updated: 2025-09-03*
 *Status: NextAuth to Clerk Migration COMPLETE - All verification tests passing.*
 *NextAuth cleanup verification completed. All obsolete NextAuth files removed and direct Clerk authentication implemented.*
-*Latest update: PR #712 fixed remaining Jest test import failures. Issue #713 created to track code quality
-improvements for helper function deduplication.*
-=======
-_Last Updated: 2025-09-02_
-*Status: NextAuth to Clerk Migration COMPLETE - All verification tests passing._
-*NextAuth cleanup verification completed. All obsolete NextAuth files removed and direct Clerk authentication implemented._
-*Feature branch `feature/nextauth-cleanup-verification-test` merged (PR #708). Issue #655 resolved - migration fully complete._
->>>>>>> 18df34a (Fix Sidebar.test.tsx for Clerk migration)
+*Latest update: PR #715 fixed User.registration.test.ts Jest mocking patterns. PR #712 fixed remaining Jest test
+import failures. Issue #713 created to track code quality improvements for helper function deduplication.*
