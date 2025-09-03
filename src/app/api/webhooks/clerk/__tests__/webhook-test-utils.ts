@@ -36,6 +36,7 @@ export const mockClerkUserData = {
 export const mockClerkUserDataWithoutUsername = {
   ...mockClerkUserData,
   username: null,
+  primary_email_address_id: 'email_456',
   email_addresses: [
     {
       id: 'email_456',
@@ -61,6 +62,11 @@ export async function setupMongoMemoryServer(): Promise<MongoMemoryServer> {
 
   const mongoServer = await MongoMemoryServer.create();
   const mongoUri = mongoServer.getUri();
+
+  // Set environment variables for connectToDatabase function
+  process.env.MONGODB_URI = mongoUri;
+  process.env.MONGODB_DB_NAME = 'test';
+
   await mongoose.connect(mongoUri);
 
   return mongoServer;
@@ -76,6 +82,10 @@ export async function cleanupMongoMemoryServer(mongoServer: MongoMemoryServer) {
   if (mongoServer) {
     await mongoServer.stop();
   }
+
+  // Clean up environment variables
+  delete process.env.MONGODB_URI;
+  delete process.env.MONGODB_DB_NAME;
 }
 
 /**
