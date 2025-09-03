@@ -39,6 +39,15 @@ jest.mock('next/headers', () => ({
 setupWebhookTestEnvironment();
 
 describe('/api/webhooks/clerk - Integration Tests', () => {
+  // Shared mock data for existing user
+  const existingUserData = {
+    clerkId: 'existing_user',
+    email: 'existing@example.com',
+    firstName: 'Existing',
+    lastName: 'User',
+    username: 'johndoe',
+    emailVerified: true,
+  };
   let mongoServer: MongoMemoryServer;
 
   beforeAll(async () => {
@@ -91,7 +100,10 @@ describe('/api/webhooks/clerk - Integration Tests', () => {
 
     it('should generate username from email when username not provided', async () => {
       createMockWebhook('user.created', mockClerkUserDataWithoutUsername);
-      const request = createWebhookRequest('user.created', mockClerkUserDataWithoutUsername);
+      const request = createWebhookRequest(
+        'user.created',
+        mockClerkUserDataWithoutUsername
+      );
 
       const response = await POST(request);
       expect(response.status).toBe(200);
@@ -102,14 +114,7 @@ describe('/api/webhooks/clerk - Integration Tests', () => {
 
     it('should handle username conflicts by adding suffix', async () => {
       // Create first user with username 'johndoe'
-      await User.createClerkUser({
-        clerkId: 'existing_user',
-        email: 'existing@example.com',
-        firstName: 'Existing',
-        lastName: 'User',
-        username: 'johndoe',
-        emailVerified: true,
-      });
+      await User.createClerkUser(existingUserData);
 
       const request = createWebhookRequest('user.created', mockClerkUserData);
       const response = await POST(request);
@@ -201,11 +206,19 @@ describe('/api/webhooks/clerk - Integration Tests', () => {
   describe('Error Scenarios - Real Database', () => {
     it('should handle webhook with missing primary email address', async () => {
       createMockWebhook('user.created', mockClerkUserDataWithoutEmail);
-      const request = createWebhookRequest('user.created', mockClerkUserDataWithoutEmail);
+      const request = createWebhookRequest(
+        'user.created',
+        mockClerkUserDataWithoutEmail
+      );
       const response = await POST(request);
       const data = await response.json();
 
-      expectFailedWebhookResponse(response, data, 500, 'Failed to process webhook');
+      expectFailedWebhookResponse(
+        response,
+        data,
+        500,
+        'Failed to process webhook'
+      );
 
       // Verify no user was created
       const user = await User.findByClerkId('clerk_user_123');
@@ -227,7 +240,12 @@ describe('/api/webhooks/clerk - Integration Tests', () => {
       const response = await POST(request);
       const data = await response.json();
 
-      expectFailedWebhookResponse(response, data, 500, 'Failed to process webhook');
+      expectFailedWebhookResponse(
+        response,
+        data,
+        500,
+        'Failed to process webhook'
+      );
 
       // Verify only one user exists
       const users = await User.find({ clerkId: 'clerk_user_123' });
