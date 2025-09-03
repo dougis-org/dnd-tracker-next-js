@@ -1,3 +1,16 @@
+/**
+ * @jest-environment node
+ */
+
+// Unmock database modules for real MongoDB integration testing
+// See database-unmocking.ts for documentation on this pattern
+jest.unmock('mongoose');
+jest.unmock('mongodb');
+jest.unmock('bson');
+jest.unmock('@/lib/db');
+jest.unmock('@/lib/models/User');
+jest.unmock('@/lib/models/index');
+
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { POST } from '../route';
 import User from '@/lib/models/User';
@@ -30,6 +43,10 @@ describe('/api/webhooks/clerk - Integration Tests', () => {
 
   beforeAll(async () => {
     mongoServer = await setupMongoMemoryServer();
+
+    // Ensure all Mongoose models are registered before tests run.
+    // This import triggers model registration side effects, preventing "model not registered" errors.
+    await import('@/lib/models/index');
   });
 
   afterAll(async () => {
@@ -88,6 +105,8 @@ describe('/api/webhooks/clerk - Integration Tests', () => {
       await User.createClerkUser({
         clerkId: 'existing_user',
         email: 'existing@example.com',
+        firstName: 'Existing',
+        lastName: 'User',
         username: 'johndoe',
         emailVerified: true,
       });
@@ -143,6 +162,8 @@ describe('/api/webhooks/clerk - Integration Tests', () => {
       _existingUser = await User.createClerkUser({
         clerkId: 'clerk_user_123',
         email: 'todelete@example.com',
+        firstName: 'ToDelete',
+        lastName: 'User',
         emailVerified: true,
       });
 
@@ -196,6 +217,8 @@ describe('/api/webhooks/clerk - Integration Tests', () => {
       await User.createClerkUser({
         clerkId: 'clerk_user_123',
         email: 'first@example.com',
+        firstName: 'First',
+        lastName: 'User',
         emailVerified: true,
       });
 
