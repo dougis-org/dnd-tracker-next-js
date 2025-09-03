@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     const session = await auth();
     if (!session?.userId) {
       return NextResponse.json(
-        { error: 'Authentication required' },
+        { success: false, error: 'Authentication required' },
         { status: 401 }
       );
     }
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
     const session = await auth();
     if (!session?.userId) {
       return NextResponse.json(
-        { error: 'Authentication required' },
+        { success: false, error: 'Authentication required' },
         { status: 401 }
       );
     }
