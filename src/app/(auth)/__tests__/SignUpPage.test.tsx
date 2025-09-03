@@ -2,6 +2,7 @@ import SignUpPage from '../signup/page';
 import { mockNavigation, testAuthPageBehavior, mockUseAuth } from './auth-test-utils';
 import { render } from '@testing-library/react';
 import { authStates } from './test-helpers';
+import { SignUp } from '@clerk/nextjs';
 
 jest.mock('@clerk/nextjs', () => ({
   useAuth: jest.fn(),
@@ -23,7 +24,6 @@ describe('SignUpPage Component', () => {
 
   it('should configure SignUp component with correct redirectUrl', () => {
     mockUseAuth(authStates.notSignedIn);
-    const { SignUp } = require('@clerk/nextjs');
 
     render(<SignUpPage />);
 
