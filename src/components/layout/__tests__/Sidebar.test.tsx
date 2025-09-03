@@ -96,9 +96,12 @@ describe('Sidebar', () => {
   });
 
   describe('Active State Tests', () => {
-    const activeTests = createActiveStateTests(Sidebar, mockUsePathname as jest.Mock);
-    test.each(Object.entries(activeTests))('%s', (_, testFn) => {
-      testFn();
+    const activeTests = createActiveStateTests(
+      Sidebar,
+      mockUsePathname as jest.Mock
+    );
+    Object.keys(activeTests).forEach(testName => {
+      test(testName, activeTests[testName]);
     });
 
     test('active state works for secondary navigation items', () => {

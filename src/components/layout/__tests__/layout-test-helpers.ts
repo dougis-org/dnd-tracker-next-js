@@ -174,19 +174,20 @@ export const createUserProfileTests = <T extends React.ComponentType<any>>(
     renderWithProps(Component, { isAuthenticated: true, ...additionalProps });
     const userSection = screen.queryByTestId('user-menu');
     expect(userSection).toBeInTheDocument();
-    // Mock component doesn't have the styling classes, just verify it exists
+    expect(userSection).toHaveClass('border-t border-border p-4');
   },
 
   'user avatar placeholder exists when authenticated': () => {
     renderWithProps(Component, { isAuthenticated: true, ...additionalProps });
-    // Mock component doesn't have specific avatar element - just verify UserMenu exists
-    expect(screen.getByTestId('user-menu')).toBeInTheDocument();
+    const avatar = screen.queryByTestId('user-avatar');
+    expect(avatar).toBeInTheDocument();
   },
 
   'user info has proper text truncation when authenticated': () => {
     renderWithProps(Component, { isAuthenticated: true, ...additionalProps });
-    // Mock component doesn't have specific user info element - just verify UserMenu exists
-    expect(screen.getByTestId('user-menu')).toBeInTheDocument();
+    const userInfo = screen.queryByTestId('user-info');
+    expect(userInfo).toBeInTheDocument();
+    expect(userInfo).toHaveClass('flex-1 min-w-0');
   },
 });
 
