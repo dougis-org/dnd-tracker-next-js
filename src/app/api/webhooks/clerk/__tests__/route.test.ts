@@ -23,9 +23,7 @@ import {
 } from './webhook-test-utils';
 
 // We still mock next/headers to control header values deterministically
-jest.mock('next/headers', () => ({
-  headers: jest.fn(),
-}));
+jest.mock('next/headers', () => ({ headers: jest.fn() }));
 
 // We'll stub only the svix Webhook.verify method per test case instead of the whole model/db layer
 function applySvixMock() {
