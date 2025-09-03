@@ -1,4 +1,6 @@
-const nextJest = require('next/jest');
+/* eslint-env node */
+/* global process */
+import nextJest from 'next/jest';
 
 const createJestConfig = nextJest({
   dir: './',
@@ -19,13 +21,15 @@ const customJestConfig = {
     '<rootDir>/node_modules/',
     '<rootDir>/src/components/forms/character/__tests__/CharacterCreationForm.test.tsx',
     '<rootDir>/src/lib/hooks/__tests__/useInitiativeTracker.test.ts',
-    ...(process.env.CI ? [
-      '<rootDir>/src/app/characters/hooks/__tests__/useCharacterPageActions.test.ts',
-      '<rootDir>/src/components/party/hooks/__tests__/usePartyData.test.ts',
-      '<rootDir>/src/lib/validations/__tests__/error-recovery.test.ts',
-      '<rootDir>/src/lib/models/encounter/__tests__/combatStateManager.test.ts',
-      '<rootDir>/src/app/api/encounters/[id]/combat/__tests__/turn-management-api.test.ts'
-    ] : [])
+    ...(process.env.CI
+      ? [
+          '<rootDir>/src/app/characters/hooks/__tests__/useCharacterPageActions.test.ts',
+          '<rootDir>/src/components/party/hooks/__tests__/usePartyData.test.ts',
+          '<rootDir>/src/lib/validations/__tests__/error-recovery.test.ts',
+          '<rootDir>/src/lib/models/encounter/__tests__/combatStateManager.test.ts',
+          '<rootDir>/src/app/api/encounters/[id]/combat/__tests__/turn-management-api.test.ts',
+        ]
+      : []),
   ],
   testMatch: ['<rootDir>/src/**/*.test.{js,jsx,ts,tsx}'],
   collectCoverage: true,
@@ -62,8 +66,9 @@ const customJestConfig = {
     '@auth/mongodb-adapter': '<rootDir>/src/lib/test-utils/shared-clerk-test-helpers.tsx',
   },
   transformIgnorePatterns: [
-    'node_modules/(?!(next/|@next/|@swc/helpers|@babel/runtime|@clerk/.*|jose|@panva/.*|@web3-storage/.*|@stablelib/.*|zod-validation-error)/)',
+    // Allow transformation of ESM packages that ship untranspiled .mjs (bson/mongodb)
+    'node_modules/(?!(next/|@next/|@swc/helpers|@babel/runtime|@clerk/.*|jose|@panva/.*|@web3-storage/.*|@stablelib/.*|zod-validation-error|mongodb|bson)/)',
   ],
 };
 
-module.exports = createJestConfig(customJestConfig);
+export default createJestConfig(customJestConfig);
