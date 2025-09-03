@@ -34,17 +34,17 @@ export function createMockClerkUser(overrides: Partial<{
   firstName: string;
   lastName: string;
   fullName: string;
-  username: string;
+  username: string | null;
   imageUrl: string;
   primaryEmailAddressId: string;
   emailAddress: string;
 }> = {}) {
-  const emailAddress = overrides.emailAddress || SHARED_TEST_DATA_CONSTANTS.TEST_EMAIL;
-  const firstName = overrides.firstName || SHARED_TEST_DATA_CONSTANTS.TEST_FIRST_NAME;
-  const lastName = overrides.lastName || SHARED_TEST_DATA_CONSTANTS.TEST_LAST_NAME;
+  const emailAddress = overrides.emailAddress ?? SHARED_TEST_DATA_CONSTANTS.TEST_EMAIL;
+  const firstName = overrides.firstName ?? SHARED_TEST_DATA_CONSTANTS.TEST_FIRST_NAME;
+  const lastName = overrides.lastName ?? SHARED_TEST_DATA_CONSTANTS.TEST_LAST_NAME;
 
   return {
-    id: overrides.id || SHARED_TEST_DATA_CONSTANTS.TEST_USER_ID,
+    id: overrides.id ?? SHARED_TEST_DATA_CONSTANTS.TEST_USER_ID,
     emailAddresses: [
       {
         id: SHARED_TEST_DATA_CONSTANTS.TEST_EMAIL_ID,
@@ -56,9 +56,9 @@ export function createMockClerkUser(overrides: Partial<{
     primaryEmailAddressId: SHARED_TEST_DATA_CONSTANTS.TEST_EMAIL_ID,
     firstName,
     lastName,
-    fullName: overrides.fullName || `${firstName} ${lastName}`,
-    username: overrides.username || SHARED_TEST_DATA_CONSTANTS.TEST_USERNAME,
-    imageUrl: overrides.imageUrl || SHARED_TEST_DATA_CONSTANTS.TEST_IMAGE_URL,
+    fullName: overrides.fullName ?? `${firstName} ${lastName}`,
+    username: overrides.username ?? SHARED_TEST_DATA_CONSTANTS.TEST_USERNAME,
+    imageUrl: overrides.imageUrl ?? SHARED_TEST_DATA_CONSTANTS.TEST_IMAGE_URL,
   };
 }
 
@@ -109,29 +109,11 @@ export function createValidationErrors(errors: { name?: string; email?: string }
   return errors;
 }
 
-/**
- * Create mock React form event
- */
-export function createMockFormEvent(): React.FormEvent {
-  return {
-    preventDefault: jest.fn(),
-  } as unknown as React.FormEvent;
-}
-
-/**
- * Async act helper for testing hook state changes
- */
-export async function actAsync(callback: () => Promise<void>) {
-  const { act } = await import('@testing-library/react');
-  await act(async () => {
-    await callback();
-  });
-}
 
 // Variant data for testing different scenarios (following webhook test patterns)
 export const MOCK_CLERK_USER_VARIANTS = {
   withoutUsername: () => createMockClerkUser({
-    username: null as any,
+    username: null,
     emailAddress: 'jane.smith@example.com',
   }),
 

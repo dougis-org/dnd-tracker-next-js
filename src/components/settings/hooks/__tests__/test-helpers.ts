@@ -5,9 +5,11 @@ import {
   createMockClerkUserReturn,
   createProfileData,
   createValidationErrors as createValidationErrorsShared,
+} from '@/lib/test-utils/shared-test-data';
+import {
   createMockFormEvent,
   actAsync as actAsyncShared,
-} from '@/lib/test-utils/shared-test-data';
+} from '@/lib/test-utils/shared-test-utils';
 
 // Re-export centralized utilities with backwards compatibility
 export const createMockEvent = createMockFormEvent;
