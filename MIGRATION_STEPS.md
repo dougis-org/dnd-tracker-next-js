@@ -250,6 +250,18 @@ incomplete mocks. The following fixes were implemented:
   - ✅ **Integration Testing**: All 8 webhook tests now pass with real Clerk webhook processing and MongoDB operations
   - ✅ **Pattern Documentation**: Established reusable pattern for database integration testing across the codebase
 
+#### Latest Branch: `refactor/unit-to-integration-tests` (MERGED - PR #725)
+
+- **Unit to Integration Test Refactoring Complete**: Converted failing unit tests to integration tests and removed mocks
+  for improved reliability and real database testing
+  - ✅ **Mock Removal**: Removed all mocks related to session and database from parties API route tests
+  - ✅ **Integration Testing**: Updated tests to connect to live test database with proper setup/teardown logic
+  - ✅ **Dependency Addition**: Added `node-mocks-http` dev dependency for API route testing infrastructure
+  - ✅ **Model Import Fixes**: Corrected User and Party model imports in integration tests
+  - ✅ **File Cleanup**: Deleted unused mock utility file `src/app/api/parties/__tests__/api-test-utils.ts`
+  - ✅ **Test Reliability**: All tests now pass successfully with real database connections instead of brittle mocks
+  - ✅ **Test Infrastructure**: Established pattern for API route integration testing across the codebase
+
 #### Previous Branch: `feature/jest-mock-initialization` (MERGED - PR #718)
 
 - **UserServiceRegistration Test Fix Complete**: Fixed failing UserServiceRegistration test by removing Jest mocks and
