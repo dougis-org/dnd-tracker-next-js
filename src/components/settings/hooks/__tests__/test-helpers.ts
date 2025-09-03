@@ -1,24 +1,23 @@
 import { act, renderHook } from '@testing-library/react';
 import { useSettingsForm } from '../useSettingsForm';
+import {
+  createMockClerkUser,
+  createMockClerkUserReturn,
+  createProfileData,
+  createValidationErrors as createValidationErrorsShared,
+  createMockFormEvent,
+  actAsync as actAsyncShared,
+} from '@/lib/test-utils/shared-test-data';
 
-export const createMockEvent = (): React.FormEvent => ({
-  preventDefault: jest.fn(),
-} as unknown as React.FormEvent);
+// Re-export centralized utilities with backwards compatibility
+export const createMockEvent = createMockFormEvent;
+export const createMockUser = createMockClerkUser;
+export const createMockUserReturn = createMockClerkUserReturn;
+export const actAsync = actAsyncShared;
+export const createValidationErrors = createValidationErrorsShared;
 
-export const createMockUser = () => ({
-  id: '1',
-  emailAddresses: [{ emailAddress: 'test@example.com' }],
-  primaryEmailAddress: { emailAddress: 'test@example.com' },
-  firstName: 'Test',
-  lastName: 'User',
-  fullName: 'Test User',
-});
-
-export const createMockUserReturn = (user: any = createMockUser()) => ({
-  user,
-  isLoaded: true,
-  isSignedIn: true,
-});
+// Use centralized profile data generation that matches actual hook behavior
+export const createProfileDataWith = createProfileData;
 
 export const createAsyncPromise = () => {
   let resolvePromise: (_value: any) => void;
@@ -46,27 +45,12 @@ export const expectValidationErrors = (result: any, errors: { name?: string; ema
   expect(result.current.formErrors).toEqual(errors);
 };
 
-export const actAsync = async (callback: () => Promise<void>) => {
-  await act(async () => {
-    await callback();
-  });
-};
-
 // Test setup helpers
 export const setupUseSettingsFormTest = () => {
   const mockEvent = createMockEvent();
   const mockUser = createMockUserReturn();
   return { mockEvent, mockUser };
 };
-
-// Common test data patterns
-export const createProfileDataWith = (overrides: Partial<{ name: string; email: string }> = {}) => ({
-  name: 'Test User',
-  email: 'test@example.com',
-  ...overrides,
-});
-
-export const createValidationErrors = (errors: { name?: string; email?: string }) => errors;
 
 // Common assertion helpers
 export const expectNoApiCall = (mockFn: jest.MockedFunction<any>) => {

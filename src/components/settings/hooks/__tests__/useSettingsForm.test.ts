@@ -43,7 +43,7 @@ describe('useSettingsForm', () => {
 
       expect(result.current.notifications).toEqual({
         email: true,
-        combat: false,
+        combat: true,  // This matches DEFAULT_NOTIFICATION_PREFERENCES
         encounters: true,
         weeklyDigest: false,
         productUpdates: true,
@@ -93,15 +93,15 @@ describe('useSettingsForm', () => {
         result.current.handleNotificationChange('weeklyDigest');
       });
 
-      expect(result.current.notifications.combat).toBe(true);
-      expect(result.current.notifications.weeklyDigest).toBe(true);
+      expect(result.current.notifications.combat).toBe(false); // combat starts as true, so toggling makes it false
+      expect(result.current.notifications.weeklyDigest).toBe(true); // weeklyDigest starts as false, so toggling makes it true
     });
   });
 
   describe('Profile Form Submission', () => {
     it('should handle successful profile submission', async () => {
       await testFormSubmission('profile', mockUpdateUser, true);
-      expectApiCallWith(mockUpdateUser, '1', createProfileDataWith());
+      expectApiCallWith(mockUpdateUser, 'test-user-123', createProfileDataWith());
     });
 
     it('should handle profile submission with validation errors', async () => {
@@ -138,7 +138,7 @@ describe('useSettingsForm', () => {
   describe('Notifications Form Submission', () => {
     it('should handle successful notifications submission', async () => {
       const { result } = await testFormSubmission('notifications', mockUpdateUser, true);
-      expectApiCallWith(mockUpdateUser, '1', {
+      expectApiCallWith(mockUpdateUser, 'test-user-123', {
         notifications: result.current.notifications,
       });
     });
