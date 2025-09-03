@@ -81,7 +81,7 @@ describe('UserService - Registration Integration', () => {
       // Use the User model directly
       expect(User).toBeDefined();
       expect(typeof User.createClerkUser).toBe('function');
-      
+
       const clerkUserData = createMockClerkUserData({
         clerkId: 'test_clerk_user_123',
         email: 'testuser@example.com',
