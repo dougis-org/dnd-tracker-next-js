@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { NextRequest } from 'next/server';
 import { createMocks } from 'node-mocks-http';
 import { connectToDatabase, closeDatabaseConnection } from '@/lib/db';
@@ -99,6 +100,21 @@ jest.mock('@clerk/nextjs/server', () => ({
   auth: () => Promise.resolve({ userId: TEST_USER_ID }),
 }));
 
+=======
+import { GET, POST } from '@/app/api/parties/route';
+import { NextRequest } from 'next/server';
+import { createMocks } from 'node-mocks-http';
+import { connectToDatabase, closeDatabaseConnection } from '@/lib/db';
+import User from '@/lib/models/User';
+import Party from '@/lib/models/Party';
+import { TEST_USER_ID } from '@/lib/services/__tests__/test-utils';
+
+// Mock Clerk's auth function
+jest.mock('@clerk/nextjs/server', () => ({
+  auth: () => Promise.resolve({ userId: TEST_USER_ID }),
+}));
+
+>>>>>>> origin/main
 describe('/api/parties integration tests', () => {
   beforeAll(async () => {
     await connectToDatabase();
@@ -109,8 +125,11 @@ describe('/api/parties integration tests', () => {
   });
 
   beforeEach(async () => {
+<<<<<<< HEAD
     const User = require('@/lib/models/User').default;
     const Party = require('@/lib/models/Party').default;
+=======
+>>>>>>> origin/main
     await User.deleteMany({});
     await Party.deleteMany({});
     await User.create({ clerkId: TEST_USER_ID, email: 'test@example.com' });
@@ -120,6 +139,7 @@ describe('/api/parties integration tests', () => {
     it('should create a new party successfully', async () => {
       const { req } = createMocks({
         method: 'POST',
+<<<<<<< HEAD
         json: () =>
           Promise.resolve({
             name: 'The Fellowship',
@@ -133,6 +153,9 @@ describe('/api/parties integration tests', () => {
               maxMembers: 6,
             },
           }),
+=======
+        json: () => Promise.resolve({ name: 'The Fellowship' }),
+>>>>>>> origin/main
       });
 
       const response = await POST(req as unknown as NextRequest);
@@ -148,7 +171,10 @@ describe('/api/parties integration tests', () => {
     it('should return an empty array when no parties exist', async () => {
       const { req } = createMocks({
         method: 'GET',
+<<<<<<< HEAD
         url: 'http://localhost/api/parties',
+=======
+>>>>>>> origin/main
       });
 
       const response = await GET(req as unknown as NextRequest);
@@ -160,7 +186,10 @@ describe('/api/parties integration tests', () => {
     });
 
     it('should return parties for the current user', async () => {
+<<<<<<< HEAD
       const Party = require('@/lib/models/Party').default;
+=======
+>>>>>>> origin/main
       await Party.create({
         name: 'The Fellowship',
         ownerId: TEST_USER_ID,
@@ -169,7 +198,10 @@ describe('/api/parties integration tests', () => {
 
       const { req } = createMocks({
         method: 'GET',
+<<<<<<< HEAD
         url: 'http://localhost/api/parties',
+=======
+>>>>>>> origin/main
       });
 
       const response = await GET(req as unknown as NextRequest);
