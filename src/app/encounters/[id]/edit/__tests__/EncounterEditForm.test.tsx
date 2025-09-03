@@ -121,7 +121,7 @@ describe('EncounterEditForm', () => {
       const user = userEvent.setup();
       renderForm();
 
-      const nameInput = screen.getByDisplayValue('Test Encounter');
+      const nameInput = screen.getByLabelText('Encounter Name');
       await user.clear(nameInput);
       await user.tab(); // Trigger blur event for validation
 
@@ -129,7 +129,12 @@ describe('EncounterEditForm', () => {
       await user.click(submitButton);
 
       await waitFor(() => {
-        expect(screen.getAllByText('Name is required')[0]).toBeInTheDocument();
+        // Use aria-describedby to find the error message more robustly
+        const errorId = nameInput.getAttribute('aria-describedby');
+        expect(errorId).toBe('encounter-name-error');
+        const errorMessage = document.getElementById('encounter-name-error');
+        expect(errorMessage).toBeInTheDocument();
+        expect(errorMessage).toHaveTextContent('Name is required');
       }, { timeout: 5000 });
 
       expect(mockOnSubmit).not.toHaveBeenCalled();
@@ -158,17 +163,9 @@ describe('EncounterEditForm', () => {
     it('should validate level range', async () => {
       // TODO: Fix validation timing issues - see Issue #290
       const user = userEvent.setup();
-      render(
-        <EncounterEditForm
-          encounter={mockEncounter}
-          onSubmit={mockOnSubmit}
-          onCancel={mockOnCancel}
-          onReset={mockOnReset}
-          isSubmitting={false}
-        />
-      );
+      renderForm();
 
-      const levelInput = screen.getByDisplayValue('5');
+      const levelInput = screen.getByLabelText('Target Level');
       await user.clear(levelInput);
       await user.type(levelInput, '25');
       await user.tab(); // Trigger blur event for validation
@@ -177,7 +174,12 @@ describe('EncounterEditForm', () => {
       await user.click(submitButton);
 
       await waitFor(() => {
-        expect(screen.getAllByText('Level must be between 1 and 20')[0]).toBeInTheDocument();
+        // Use aria-describedby to find the error message more robustly
+        const errorId = levelInput.getAttribute('aria-describedby');
+        expect(errorId).toBe('target-level-error');
+        const errorMessage = document.getElementById('target-level-error');
+        expect(errorMessage).toBeInTheDocument();
+        expect(errorMessage).toHaveTextContent('Level must be between 1 and 20');
       }, { timeout: 5000 });
     });
   });
@@ -356,10 +358,12 @@ describe('EncounterEditForm', () => {
       await user.click(screen.getByText('Save Encounter'));
 
       await waitFor(() => {
-        const errorMessage = screen.getAllByText('Name is required')[0];
+        // Use aria-describedby to find the error message more robustly
+        const errorId = nameInput.getAttribute('aria-describedby');
+        expect(errorId).toBe('encounter-name-error');
+        const errorMessage = document.getElementById('encounter-name-error');
         expect(errorMessage).toBeInTheDocument();
-        // Check that the input has the aria-describedby attribute
-        expect(nameInput).toHaveAttribute('aria-describedby', 'encounter-name-error');
+        expect(errorMessage).toHaveTextContent('Name is required');
       }, { timeout: 5000 });
     });
 
