@@ -223,6 +223,10 @@ jest.mock('mongoose', () => {
     return mockObjectId().toString();
   }
 
+  function escapeRegExp(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // Escape special characters
+  }
+
   function createModel(name) {
     if (!dataStore.has(name)) dataStore.set(name, []);
     const docs = dataStore.get(name);
@@ -266,10 +270,12 @@ jest.mock('mongoose', () => {
             return false;
           }
           if (k === 'name' && v && v.$regex) {
-            return new RegExp(v.$regex, v.$options || 'i').test(d.name || '');
+            return new RegExp(escapeRegExp(v.$regex), v.$options || 'i').test(
+              d.name || ''
+            );
           }
           if (k === 'description' && v && v.$regex) {
-            return new RegExp(v.$regex, v.$options || 'i').test(
+            return new RegExp(escapeRegExp(v.$regex), v.$options || 'i').test(
               d.description || ''
             );
           }

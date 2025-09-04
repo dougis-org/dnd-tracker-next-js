@@ -20,7 +20,11 @@ function escapeXml(text: string): string {
 /**
  * Build XML element recursively
  */
-function buildXmlElement(name: string, value: any, indent: string = ''): string {
+function buildXmlElement(
+  name: string,
+  value: any,
+  indent: string = ''
+): string {
   if (value === null || value === undefined) {
     return '';
   }
@@ -43,7 +47,11 @@ function buildXmlElement(name: string, value: any, indent: string = ''): string 
 /**
  * Build XML element for object values
  */
-function buildObjectXmlElement(name: string, value: object, indent: string): string {
+function buildObjectXmlElement(
+  name: string,
+  value: object,
+  indent: string
+): string {
   const children = Object.entries(value)
     .map(([key, val]) => buildXmlElement(key, val, indent + '  '))
     .filter(Boolean)
@@ -54,9 +62,15 @@ function buildObjectXmlElement(name: string, value: object, indent: string): str
 /**
  * Build XML element for array values
  */
-function buildArrayXmlElement(name: string, value: any[], indent: string): string {
+function buildArrayXmlElement(
+  name: string,
+  value: any[],
+  indent: string
+): string {
   const items = value
-    .map((item, _index) => buildXmlElement(name.slice(0, -1) || 'item', item, indent + '  '))
+    .map((item, _index) =>
+      buildXmlElement(name.slice(0, -1) || 'item', item, indent + '  ')
+    )
     .join('\n');
   return `${indent}<${name}>\n${items}\n${indent}</${name}>`;
 }
@@ -67,7 +81,6 @@ function buildArrayXmlElement(name: string, value: any[], indent: string): strin
 export function convertToXml(data: EncounterExportData): string {
   return `<?xml version="1.0" encoding="UTF-8"?>\n${buildXmlElement('encounterExport', data)}`;
 }
-
 
 // Type definitions for XML parser structures
 interface XmlTagsStructure {
@@ -87,7 +100,9 @@ function hasTagProperty(value: unknown): value is XmlTagsStructure {
   return typeof value === 'object' && value !== null && 'tag' in value;
 }
 
-function hasParticipantProperty(value: unknown): value is XmlParticipantsStructure {
+function hasParticipantProperty(
+  value: unknown
+): value is XmlParticipantsStructure {
   return typeof value === 'object' && value !== null && 'participant' in value;
 }
 
@@ -111,18 +126,30 @@ function convertTypes(obj: unknown): unknown {
     const converted: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(obj)) {
       // Handle array structures from XML parser
-      if (key === 'tags' && value && hasTagProperty(value)) {
-        converted[key] = Array.isArray(value.tag) ? value.tag : [value.tag];
-      } else if (key === 'participants' && value && hasParticipantProperty(value)) {
-        const participants = Array.isArray(value.participant) ? value.participant : [value.participant];
-        converted[key] = participants.map(convertTypes);
+      if (key === 'tags') {
+        if (value && hasTagProperty(value)) {
+          converted[key] = Array.isArray(value.tag) ? value.tag : [value.tag];
+        } else {
+          converted[key] = [];
+        }
+      } else if (key === 'participants') {
+        if (value && hasParticipantProperty(value)) {
+          const participants = Array.isArray(value.participant)
+            ? value.participant
+            : [value.participant];
+          converted[key] = participants.map(convertTypes);
+        } else {
+          converted[key] = [];
+        }
       } else if (key === 'conditions') {
         // Handle conditions array - empty, non-empty, or nested structure
         if (value === '' || value === null || value === undefined) {
           converted[key] = [];
         } else if (hasConditionProperty(value) && value.condition) {
           // Handle nested conditions structure from XML parser
-          const conditions = Array.isArray(value.condition) ? value.condition : [value.condition];
+          const conditions = Array.isArray(value.condition)
+            ? value.condition
+            : [value.condition];
           converted[key] = conditions.map(convertTypes);
         } else if (Array.isArray(value)) {
           // Handle direct array of conditions
@@ -142,7 +169,7 @@ function convertTypes(obj: unknown): unknown {
     if (obj === 'true') return true;
     if (obj === 'false') return false;
 
-    // Convert string numbers - improved logic as suggested in PR
+    // Convert string numbers using Number() for better edge case handling than regex patterns
     const numValue = Number(obj);
     if (!Number.isNaN(numValue) && obj.trim() !== '') {
       return numValue;
@@ -168,8 +195,14 @@ export function parseXmlToData(xmlString: string): unknown {
 
     // The parser returns { encounterExport: { metadata: {...}, encounter: {...} } }
     // But we need to return the contents of encounterExport directly
-    if (jsonObj && typeof jsonObj === 'object' && 'encounterExport' in jsonObj) {
-      return convertTypes((jsonObj as { encounterExport: unknown }).encounterExport);
+    if (
+      jsonObj &&
+      typeof jsonObj === 'object' &&
+      'encounterExport' in jsonObj
+    ) {
+      return convertTypes(
+        (jsonObj as { encounterExport: unknown }).encounterExport
+      );
     }
 
     return convertTypes(jsonObj);

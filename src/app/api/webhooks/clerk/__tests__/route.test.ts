@@ -78,14 +78,20 @@ jest.mock('@/lib/models/User', () => {
 // Setup test environment
 setupWebhookTestEnvironment();
 
+// Helper function to reduce webhook mock duplication
+function mockWebhookVerify(eventType: string, data: any) {
+  (Webhook as unknown as jest.Mock).mockImplementationOnce(() => ({
+    verify: jest.fn().mockReturnValue({ type: eventType, data }),
+  }));
+}
+
 describe('/api/webhooks/clerk (mvp mocked model)', () => {
   beforeAll(async () => {
     process.env.CLERK_WEBHOOK_SECRET = 'test_secret';
     applySvixMock();
     ({ POST } = await import('../route'));
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore - mocked module without type declarations in MVP scope
-    User = (await import('@/lib/models/User')).default;
+    // Import mocked module without full type declarations for MVP scope
+    User = ((await import('@/lib/models/User')) as any).default;
     Webhook = (await import('svix')).Webhook;
   });
 
@@ -205,18 +211,10 @@ describe('/api/webhooks/clerk (mvp mocked model)', () => {
 
     it('should handle user creation errors', async () => {
       // Force duplicate creation to trigger user exists error
-      (Webhook as unknown as jest.Mock).mockImplementationOnce(() => ({
-        verify: jest
-          .fn()
-          .mockReturnValue({ type: 'user.created', data: mockClerkUserData }),
-      }));
+      mockWebhookVerify('user.created', mockClerkUserData);
       await POST(createWebhookRequest('user.created', mockClerkUserData));
       // Second attempt causes duplicate error inside model create
-      (Webhook as unknown as jest.Mock).mockImplementationOnce(() => ({
-        verify: jest
-          .fn()
-          .mockReturnValue({ type: 'user.created', data: mockClerkUserData }),
-      }));
+      mockWebhookVerify('user.created', mockClerkUserData);
       const response = await POST(
         createWebhookRequest('user.created', mockClerkUserData)
       );

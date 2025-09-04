@@ -103,10 +103,6 @@ function makeParty(data: any) {
   };
 }
 
-// Import route handlers after mocks
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const { GET, PUT, DELETE } = require('@/app/api/parties/[id]/route');
-
 // Mock Clerk's auth function
 jest.mock('@clerk/nextjs/server', () => ({
   auth: () => Promise.resolve({ userId: TEST_USER_ID }),
@@ -118,6 +114,13 @@ jest.mock('@clerk/nextjs/server', () => ({
 // TODO(issue-727): Implement real integration tests and unskip.
 describe.skip('/api/parties/[id] integration tests (skipped, see https://github.com/dougis-org/dnd-tracker-next-js/issues/731)', () => {
   let testParty: any;
+  let GET: any, PUT: any, DELETE: any;
+
+  beforeAll(async () => {
+    // Import route handlers after mocks
+    ({ GET, PUT, DELETE } = await import('../route'));
+  });
+
   beforeEach(async () => {
     parties.length = 0; // Ensure clean state
     const Party = require('@/lib/models/Party').default;

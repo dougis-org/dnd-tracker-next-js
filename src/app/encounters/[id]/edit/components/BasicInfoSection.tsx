@@ -126,7 +126,7 @@ export function BasicInfoSection({ form }: BasicInfoSectionProps) {
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                {difficultyOptions.map((option) => (
+                {difficultyOptions.map(option => (
                   <SelectItem key={option.value} value={option.value}>
                     {option.label}
                   </SelectItem>
@@ -151,8 +151,13 @@ export function BasicInfoSection({ form }: BasicInfoSectionProps) {
                 type="number"
                 placeholder="1-20"
                 {...field}
-                onChange={(e) => {
-                  const value = e.target.value === '' ? undefined : parseInt(e.target.value, 10);
+                onChange={e => {
+                  const value =
+                    e.target.value === ''
+                      ? undefined
+                      : Number.isNaN(parseInt(e.target.value, 10))
+                        ? undefined
+                        : parseInt(e.target.value, 10);
                   field.onChange(value);
                 }}
                 aria-describedby="target-level-error"
@@ -169,15 +174,20 @@ export function BasicInfoSection({ form }: BasicInfoSectionProps) {
         name="estimatedDuration"
         render={({ field }) => (
           <FormItem>
-            <FormLabel htmlFor="estimated-duration">Estimated Duration (minutes)</FormLabel>
+            <FormLabel htmlFor="estimated-duration">
+              Estimated Duration (minutes)
+            </FormLabel>
             <FormControl>
               <Input
                 id="estimated-duration"
                 type="number"
                 placeholder="60"
                 {...field}
-                onChange={(e) => {
-                  const value = e.target.value === '' ? undefined : parseInt(e.target.value, 10);
+                onChange={e => {
+                  const value =
+                    e.target.value === ''
+                      ? undefined
+                      : parseInt(e.target.value, 10);
                   field.onChange(value);
                 }}
                 aria-describedby="estimated-duration-error"
@@ -200,7 +210,7 @@ export function BasicInfoSection({ form }: BasicInfoSectionProps) {
                 {/* Existing Tags */}
                 {tags.length > 0 && (
                   <div className="flex flex-wrap gap-2">
-                    {tags.map((tag) => (
+                    {tags.map(tag => (
                       <Badge
                         key={tag}
                         variant="secondary"
@@ -227,7 +237,7 @@ export function BasicInfoSection({ form }: BasicInfoSectionProps) {
                   <Input
                     placeholder="Add tag..."
                     value={newTag}
-                    onChange={(e) => setNewTag(e.target.value)}
+                    onChange={e => setNewTag(e.target.value)}
                     onKeyPress={handleKeyPress}
                     className="flex-1"
                     aria-label="New tag input"
@@ -237,7 +247,10 @@ export function BasicInfoSection({ form }: BasicInfoSectionProps) {
                     variant="outline"
                     size="sm"
                     onClick={handleAddTag}
-                    disabled={!newTag.trim() || tags.includes(newTag.trim().toLowerCase())}
+                    disabled={
+                      !newTag.trim() ||
+                      tags.includes(newTag.trim().toLowerCase())
+                    }
                     className="flex items-center space-x-1"
                     aria-label="Add tag"
                   >
