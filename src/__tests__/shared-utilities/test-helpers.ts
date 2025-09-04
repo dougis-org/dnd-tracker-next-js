@@ -107,7 +107,7 @@ export const createValidationTest = (
     await waitFor(() => {
       // Expect at least one validation error to be rendered. Some forms render both inline field error
       // and a list item within an aggregated error summary, which produces duplicate text.
-      const errors = screen.queryAllByTestId('form-error');
+      const errors = document.querySelectorAll('.text-destructive');
       expect(errors.length).toBeGreaterThan(0);
       // Ensure the Save button is present (may be enabled under new UX) so tests still confirm rendering.
       const saveButton = screen.getByRole('button', {
