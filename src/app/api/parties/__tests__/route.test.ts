@@ -1,8 +1,7 @@
-<<<<<<< HEAD
 import { NextRequest } from 'next/server';
 import { createMocks } from 'node-mocks-http';
-import { connectToDatabase, closeDatabaseConnection } from '@/lib/db';
-import { TEST_USER_ID } from '@/lib/services/__tests__/test-utils';
+// import { connectToDatabase, closeDatabaseConnection } from '@/lib/db';
+// import { TEST_USER_ID } from '@/lib/services/__tests__/test-utils';
 
 // Minimal in-memory model mocks (isolated for this test file)
 const users: any[] = [];
@@ -97,65 +96,27 @@ const { GET, POST } = require('@/app/api/parties/route');
 
 // Mock Clerk's auth function
 jest.mock('@clerk/nextjs/server', () => ({
-  auth: () => Promise.resolve({ userId: TEST_USER_ID }),
+  auth: () => Promise.resolve({ userId: 'test-user' }),
 }));
-
-=======
-import { GET, POST } from '@/app/api/parties/route';
-import { NextRequest } from 'next/server';
-import { createMocks } from 'node-mocks-http';
-import { connectToDatabase, closeDatabaseConnection } from '@/lib/db';
-import User from '@/lib/models/User';
-import Party from '@/lib/models/Party';
-import { TEST_USER_ID } from '@/lib/services/__tests__/test-utils';
-
-// Mock Clerk's auth function
-jest.mock('@clerk/nextjs/server', () => ({
-  auth: () => Promise.resolve({ userId: TEST_USER_ID }),
-}));
-
->>>>>>> origin/main
 describe('/api/parties integration tests', () => {
-  beforeAll(async () => {
-    await connectToDatabase();
-  });
-
-  afterAll(async () => {
-    await closeDatabaseConnection();
-  });
-
   beforeEach(async () => {
-<<<<<<< HEAD
     const User = require('@/lib/models/User').default;
     const Party = require('@/lib/models/Party').default;
-=======
->>>>>>> origin/main
     await User.deleteMany({});
     await Party.deleteMany({});
-    await User.create({ clerkId: TEST_USER_ID, email: 'test@example.com' });
+    await User.create({ clerkId: 'test-user', email: 'test@example.com' });
   });
 
   describe('POST /api/parties', () => {
     it('should create a new party successfully', async () => {
+      const partyPayload =
+        require('@/lib/services/__tests__/test-utils').createMockPartyData({
+          name: 'The Fellowship',
+          ownerId: 'test-user',
+        });
       const { req } = createMocks({
         method: 'POST',
-<<<<<<< HEAD
-        json: () =>
-          Promise.resolve({
-            name: 'The Fellowship',
-            description: '',
-            tags: [],
-            isPublic: false,
-            sharedWith: [],
-            settings: {
-              allowJoining: false,
-              requireApproval: true,
-              maxMembers: 6,
-            },
-          }),
-=======
-        json: () => Promise.resolve({ name: 'The Fellowship' }),
->>>>>>> origin/main
+        json: () => Promise.resolve(partyPayload),
       });
 
       const response = await POST(req as unknown as NextRequest);
@@ -171,10 +132,7 @@ describe('/api/parties integration tests', () => {
     it('should return an empty array when no parties exist', async () => {
       const { req } = createMocks({
         method: 'GET',
-<<<<<<< HEAD
         url: 'http://localhost/api/parties',
-=======
->>>>>>> origin/main
       });
 
       const response = await GET(req as unknown as NextRequest);
@@ -186,22 +144,17 @@ describe('/api/parties integration tests', () => {
     });
 
     it('should return parties for the current user', async () => {
-<<<<<<< HEAD
       const Party = require('@/lib/models/Party').default;
-=======
->>>>>>> origin/main
-      await Party.create({
-        name: 'The Fellowship',
-        ownerId: TEST_USER_ID,
-        members: [],
-      });
+      const partyPayload =
+        require('@/lib/services/__tests__/test-utils').createMockPartyData({
+          name: 'The Fellowship',
+          ownerId: 'test-user',
+        });
+      await Party.create(partyPayload);
 
       const { req } = createMocks({
         method: 'GET',
-<<<<<<< HEAD
         url: 'http://localhost/api/parties',
-=======
->>>>>>> origin/main
       });
 
       const response = await GET(req as unknown as NextRequest);
