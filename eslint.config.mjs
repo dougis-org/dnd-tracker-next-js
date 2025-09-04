@@ -136,5 +136,16 @@ export default [
         global: 'readonly' // eslint-disable-line
       }
     }
+  },
+  // Jest config (ESM) override to ensure Node globals accessible
+  {
+    files: ['jest.config.mjs'],
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: 'module',
+      globals: { // eslint-disable-line
+        process: 'readonly' // eslint-disable-line
+      }
+    }
   }
 ];

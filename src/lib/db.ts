@@ -77,6 +77,12 @@ export async function disconnectFromDatabase(): Promise<void> {
   }
 }
 
+// Backwards compatibility: some tests/imports still reference closeDatabaseConnection.
+// Provide an alias so those tests do not fail. Prefer using disconnectFromDatabase going forward.
+export async function closeDatabaseConnection(): Promise<void> {
+  return disconnectFromDatabase();
+}
+
 export function getConnectionStatus(): boolean {
   return Boolean(connection.isConnected);
 }
