@@ -39,7 +39,7 @@ function SSOCallbackContent({
       router.push(safeRedirectUrl as any);
     } else {
       // Authentication failed or was cancelled
-      router.push(errorRedirect);
+      router.push(errorRedirect as any);
     }
   }, [isSignedIn, isLoaded, router, searchParams, defaultRedirect, errorRedirect]);
 
