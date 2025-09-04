@@ -57,11 +57,14 @@ describe('NextAuth Cleanup Verification - Issue #655', () => {
 
       expect(existsSync(authCallbacksPath)).toBe(false);
 
-      // If auth directory exists, it should be empty or not exist
+      // If auth directory exists, it should only contain allowed SSO files
       if (existsSync(authDirPath)) {
         const authDirContents = readdirSync(authDirPath);
         const nonTestFiles = authDirContents.filter(file => !file.includes('__tests__'));
-        expect(nonTestFiles).toEqual([]);
+        // Allow SSO-related files for Issue #828
+        const allowedFiles = ['sso-redirect-handler.ts', 'sso-callback-component.tsx'];
+        const unexpectedFiles = nonTestFiles.filter(file => !allowedFiles.includes(file));
+        expect(unexpectedFiles).toEqual([]);
       }
     });
   });

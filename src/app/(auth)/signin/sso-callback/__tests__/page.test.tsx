@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@clerk/nextjs';
 import SignInSSOCallbackPage from '../page';
+import { getSafeRedirectUrl } from '@/lib/auth/sso-redirect-handler';
 
 jest.mock('next/navigation', () => ({
   useRouter: jest.fn(),
@@ -11,6 +12,11 @@ jest.mock('next/navigation', () => ({
 
 jest.mock('@clerk/nextjs', () => ({
   useAuth: jest.fn(),
+}));
+
+const mockGetSafeRedirectUrl = jest.fn();
+jest.mock('@/lib/auth/sso-redirect-handler', () => ({
+  getSafeRedirectUrl: mockGetSafeRedirectUrl,
 }));
 
 describe('SSO Callback Page (Sign In)', () => {
@@ -24,6 +30,11 @@ describe('SSO Callback Page (Sign In)', () => {
     jest.clearAllMocks();
     (useRouter as jest.Mock).mockReturnValue({ push: mockPush });
     (useSearchParams as jest.Mock).mockReturnValue(mockSearchParams);
+    
+    // Setup default mock for getSafeRedirectUrl
+    mockGetSafeRedirectUrl.mockImplementation(({ redirectUrl, defaultRedirect }) => {
+      return redirectUrl || defaultRedirect;
+    });
   });
 
   afterAll(() => {
@@ -69,14 +80,17 @@ describe('SSO Callback Page (Sign In)', () => {
       const redirectUrl = 'https://example.com/dashboard';
       mockSearchParams.get.mockReturnValue(redirectUrl);
 
-      // Mock window.location.origin
-      delete (window as any).location;
-      window.location = { origin: 'https://example.com' } as Location;
+      // Mock getSafeRedirectUrl to return the same-origin URL
+      mockGetSafeRedirectUrl.mockReturnValue(redirectUrl);
 
       render(<SignInSSOCallbackPage />);
 
       await waitFor(() => {
         expect(mockPush).toHaveBeenCalledWith(redirectUrl);
+        expect(mockGetSafeRedirectUrl).toHaveBeenCalledWith({
+          redirectUrl,
+          defaultRedirect: '/dashboard',
+        });
       });
     });
 
@@ -84,40 +98,36 @@ describe('SSO Callback Page (Sign In)', () => {
       const redirectUrl = 'https://malicious-site.com/steal-data';
       mockSearchParams.get.mockReturnValue(redirectUrl);
 
-      // Mock window.location.origin
-      delete (window as any).location;
-      window.location = { origin: 'https://example.com' } as Location;
-
-      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+      // Mock getSafeRedirectUrl to return default for cross-origin
+      mockGetSafeRedirectUrl.mockReturnValue('/dashboard');
 
       render(<SignInSSOCallbackPage />);
 
       await waitFor(() => {
         expect(mockPush).toHaveBeenCalledWith('/dashboard');
-        expect(consoleSpy).not.toHaveBeenCalled(); // Cross-origin doesn't log warning, just falls through
+        expect(mockGetSafeRedirectUrl).toHaveBeenCalledWith({
+          redirectUrl,
+          defaultRedirect: '/dashboard',
+        });
       });
-
-      consoleSpy.mockRestore();
     });
 
     it('should redirect to dashboard when redirect_url is malformed', async () => {
       const redirectUrl = 'not-a-valid-url';
       mockSearchParams.get.mockReturnValue(redirectUrl);
 
-      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+      // Mock getSafeRedirectUrl to return default for malformed URL
+      mockGetSafeRedirectUrl.mockReturnValue('/dashboard');
 
       render(<SignInSSOCallbackPage />);
 
       await waitFor(() => {
         expect(mockPush).toHaveBeenCalledWith('/dashboard');
-        expect(consoleSpy).toHaveBeenCalledWith(
-          'Invalid redirect URL:',
+        expect(mockGetSafeRedirectUrl).toHaveBeenCalledWith({
           redirectUrl,
-          expect.any(TypeError)
-        );
+          defaultRedirect: '/dashboard',
+        });
       });
-
-      consoleSpy.mockRestore();
     });
   });
 
