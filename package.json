@@ -35,7 +35,11 @@
     "test:production:full": "node scripts/run-production-auth-tests.js",
     "test:e2e": "jest --config jest.config.e2e.js",
     "test:e2e:watch": "jest --config jest.config.e2e.js --watch",
-    "test:e2e:issue-620": "jest --config jest.config.e2e.js --testPathPatterns=auth-issue-620-comprehensive-e2e"
+    "test:e2e:issue-620": "jest --config jest.config.e2e.js --testPathPatterns=auth-issue-620-comprehensive-e2e",
+    "test:playwright": "playwright test",
+    "test:playwright:ui": "playwright test --ui",
+    "test:playwright:debug": "playwright test --debug",
+    "test:playwright:headed": "playwright test --headed"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.31.6",
@@ -79,6 +83,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
     "@next/eslint-plugin-next": "^15.3.5",
+    "@playwright/test": "^1.55.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",
