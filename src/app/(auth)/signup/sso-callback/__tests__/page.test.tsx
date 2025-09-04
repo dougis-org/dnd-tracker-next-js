@@ -1,4 +1,9 @@
 import { jest } from '@jest/globals';
+import { render, screen, waitFor } from '@testing-library/react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useAuth } from '@clerk/nextjs';
+import SignUpSSOCallbackPage from '../page';
+import { testBasicSSOCallbackBehavior } from '@/app/(auth)/__tests__/auth-test-utils';
 
 const mockGetSafeRedirectUrl = jest.fn();
 
@@ -15,12 +20,7 @@ jest.mock('@/lib/auth/sso-redirect-handler', () => ({
   getSafeRedirectUrl: mockGetSafeRedirectUrl,
 }));
 
-import { render, screen, waitFor } from '@testing-library/react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useAuth } from '@clerk/nextjs';
-import SignUpSSOCallbackPage from '../page';
-
-describe('SSO Callback Page (Signup)', () => {
+describe('SSO Callback Page (Sign Up)', () => {
   const mockPush = jest.fn();
   const mockSearchParams = {
     get: jest.fn(),
@@ -37,23 +37,15 @@ describe('SSO Callback Page (Signup)', () => {
     });
   });
 
-  describe('Loading State', () => {
-    it('should show loading spinner when auth is not loaded', () => {
-      (useAuth as jest.Mock).mockReturnValue({
-        isSignedIn: false,
-        isLoaded: false,
-      });
-      mockSearchParams.get.mockReturnValue(null);
-
-      render(<SignUpSSOCallbackPage />);
-
-      expect(screen.getByText('Completing Sign Up')).toBeInTheDocument();
-      expect(screen.getByText('Please wait while we finish setting up your account...')).toBeInTheDocument();
-      expect(document.querySelector('.animate-spin')).toBeInTheDocument();
-    });
+  testBasicSSOCallbackBehavior({
+    component: SignUpSSOCallbackPage,
+    defaultRedirect: '/profile-setup',
+    errorRedirect: '/signup?error=sso_failed',
+    loadingTitle: 'Completing Sign Up',
+    loadingMessage: 'Please wait while we finish setting up your account...'
   });
 
-  describe('Successful Authentication', () => {
+  describe('Redirect URL Validation', () => {
     beforeEach(() => {
       (useAuth as jest.Mock).mockReturnValue({
         isSignedIn: true,
@@ -61,29 +53,57 @@ describe('SSO Callback Page (Signup)', () => {
       });
     });
 
-    it('should redirect to profile-setup when no redirect_url is provided', async () => {
-      mockSearchParams.get.mockReturnValue(null);
+    it('should redirect to provided redirect_url when valid same-origin URL', async () => {
+      const redirectUrl = 'https://example.com/dashboard';
+      mockSearchParams.get.mockReturnValue(redirectUrl);
+
+      // Mock getSafeRedirectUrl to return the same-origin URL
+      mockGetSafeRedirectUrl.mockReturnValueOnce(redirectUrl);
 
       render(<SignUpSSOCallbackPage />);
 
       await waitFor(() => {
+        expect(mockGetSafeRedirectUrl).toHaveBeenCalledWith({
+          redirectUrl,
+          defaultRedirect: '/profile-setup',
+        });
+        expect(mockPush).toHaveBeenCalledWith(redirectUrl);
+      });
+    });
+
+    it('should redirect to /profile-setup when redirect_url is different origin', async () => {
+      const redirectUrl = 'https://malicious-site.com/steal-data';
+      mockSearchParams.get.mockReturnValue(redirectUrl);
+
+      // Mock getSafeRedirectUrl to return default for cross-origin
+      mockGetSafeRedirectUrl.mockReturnValueOnce('/profile-setup');
+
+      render(<SignUpSSOCallbackPage />);
+
+      await waitFor(() => {
+        expect(mockGetSafeRedirectUrl).toHaveBeenCalledWith({
+          redirectUrl,
+          defaultRedirect: '/profile-setup',
+        });
         expect(mockPush).toHaveBeenCalledWith('/profile-setup');
       });
     });
-  });
 
-  describe('Failed Authentication', () => {
-    it('should redirect to signup with error when authentication failed', async () => {
-      (useAuth as jest.Mock).mockReturnValue({
-        isSignedIn: false,
-        isLoaded: true,
-      });
-      mockSearchParams.get.mockReturnValue(null);
+    it('should redirect to /profile-setup when redirect_url is malformed', async () => {
+      const redirectUrl = 'not-a-valid-url';
+      mockSearchParams.get.mockReturnValue(redirectUrl);
+
+      // Mock getSafeRedirectUrl to return default for malformed URL
+      mockGetSafeRedirectUrl.mockReturnValueOnce('/profile-setup');
 
       render(<SignUpSSOCallbackPage />);
 
       await waitFor(() => {
-        expect(mockPush).toHaveBeenCalledWith('/signup?error=sso_failed');
+        expect(mockGetSafeRedirectUrl).toHaveBeenCalledWith({
+          redirectUrl,
+          defaultRedirect: '/profile-setup',
+        });
+        expect(mockPush).toHaveBeenCalledWith('/profile-setup');
       });
     });
   });

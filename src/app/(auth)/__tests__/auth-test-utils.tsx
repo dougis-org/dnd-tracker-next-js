@@ -89,31 +89,7 @@ export const testAuthPageBehavior = ({
 };
 
 // SSO Callback Test Utilities
-export const mockGetSafeRedirectUrl = jest.fn();
-
-export const setupSSOCallbackMocks = () => {
-  const mockPush = jest.fn();
-  const mockSearchParams = {
-    get: jest.fn(),
-  };
-
-  jest.mock('next/navigation', () => ({
-    useRouter: jest.fn(),
-    useSearchParams: jest.fn(),
-  }));
-
-  jest.mock('@clerk/nextjs', () => ({
-    useAuth: jest.fn(),
-  }));
-
-  jest.mock('@/lib/auth/sso-redirect-handler', () => ({
-    getSafeRedirectUrl: mockGetSafeRedirectUrl,
-  }));
-
-  return { mockPush, mockSearchParams };
-};
-
-export const setupSSOCallbackMocksInTest = () => {
+export const setupSSOCallbackMocksInTest = (mockGetSafeRedirectUrl?: jest.Mock) => {
   const mockPush = jest.fn();
   const mockSearchParams = {
     get: jest.fn(),
@@ -125,11 +101,13 @@ export const setupSSOCallbackMocksInTest = () => {
     (useRouter as jest.Mock).mockReturnValue({ push: mockPush });
     (useSearchParams as jest.Mock).mockReturnValue(mockSearchParams);
 
-    // Reset and setup default mock for getSafeRedirectUrl
-    mockGetSafeRedirectUrl.mockReset();
-    mockGetSafeRedirectUrl.mockImplementation(({ redirectUrl, defaultRedirect }) => {
-      return redirectUrl || defaultRedirect;
-    });
+    // Reset and setup default mock for getSafeRedirectUrl if provided
+    if (mockGetSafeRedirectUrl) {
+      mockGetSafeRedirectUrl.mockReset();
+      mockGetSafeRedirectUrl.mockImplementation(({ redirectUrl, defaultRedirect }) => {
+        return redirectUrl || defaultRedirect;
+      });
+    }
   });
 
   afterAll(() => {
@@ -147,16 +125,16 @@ interface SSOCallbackTestConfig {
   loadingTitle: string;
   loadingMessage: string;
   pageName: string;
+  mockGetSafeRedirectUrl: jest.Mock;
 }
 
-export const testSSOCallbackBehavior = ({
+export const testBasicSSOCallbackBehavior = ({
   component: SSOCallbackPage,
   defaultRedirect,
   errorRedirect,
   loadingTitle,
-  loadingMessage,
-  pageName: _pageName
-}: SSOCallbackTestConfig) => {
+  loadingMessage
+}: Omit<SSOCallbackTestConfig, 'pageName' | 'mockGetSafeRedirectUrl'>) => {
   const { mockPush, mockSearchParams } = setupSSOCallbackMocksInTest();
 
   describe('Loading State', () => {
@@ -189,60 +167,6 @@ export const testSSOCallbackBehavior = ({
       render(<SSOCallbackPage />);
 
       await waitFor(() => {
-        expect(mockPush).toHaveBeenCalledWith(defaultRedirect);
-      });
-    });
-
-    it('should redirect to provided redirect_url when valid same-origin URL', async () => {
-      const redirectUrl = 'https://example.com/dashboard';
-      mockSearchParams.get.mockReturnValue(redirectUrl);
-
-      // Mock getSafeRedirectUrl to return the same-origin URL
-      mockGetSafeRedirectUrl.mockReturnValueOnce(redirectUrl);
-
-      render(<SSOCallbackPage />);
-
-      await waitFor(() => {
-        expect(mockGetSafeRedirectUrl).toHaveBeenCalledWith({
-          redirectUrl,
-          defaultRedirect,
-        });
-        expect(mockPush).toHaveBeenCalledWith(redirectUrl);
-      });
-    });
-
-    it(`should redirect to ${defaultRedirect} when redirect_url is different origin`, async () => {
-      const redirectUrl = 'https://malicious-site.com/steal-data';
-      mockSearchParams.get.mockReturnValue(redirectUrl);
-
-      // Mock getSafeRedirectUrl to return default for cross-origin
-      mockGetSafeRedirectUrl.mockReturnValueOnce(defaultRedirect);
-
-      render(<SSOCallbackPage />);
-
-      await waitFor(() => {
-        expect(mockGetSafeRedirectUrl).toHaveBeenCalledWith({
-          redirectUrl,
-          defaultRedirect,
-        });
-        expect(mockPush).toHaveBeenCalledWith(defaultRedirect);
-      });
-    });
-
-    it(`should redirect to ${defaultRedirect} when redirect_url is malformed`, async () => {
-      const redirectUrl = 'not-a-valid-url';
-      mockSearchParams.get.mockReturnValue(redirectUrl);
-
-      // Mock getSafeRedirectUrl to return default for malformed URL
-      mockGetSafeRedirectUrl.mockReturnValueOnce(defaultRedirect);
-
-      render(<SSOCallbackPage />);
-
-      await waitFor(() => {
-        expect(mockGetSafeRedirectUrl).toHaveBeenCalledWith({
-          redirectUrl,
-          defaultRedirect,
-        });
         expect(mockPush).toHaveBeenCalledWith(defaultRedirect);
       });
     });
