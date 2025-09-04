@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@clerk/nextjs';
+import { getSafeRedirectUrl } from '@/lib/auth/sso-redirect-handler';
 
 /**
  * SSO Callback Handler for Clerk Sign-in Authentication
@@ -12,7 +13,7 @@ import { useAuth } from '@clerk/nextjs';
  *
  * Related to Issue #828: Handles SSO callbacks for existing users signing in
  */
-export default function SignInSSOCallbackPage() {
+function SignInSSOCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { isSignedIn, isLoaded } = useAuth();
@@ -26,24 +27,12 @@ export default function SignInSSOCallbackPage() {
     if (isSignedIn) {
       // Successfully authenticated via SSO
       const redirectUrl = searchParams.get('redirect_url');
+      const safeRedirectUrl = getSafeRedirectUrl({
+        redirectUrl,
+        defaultRedirect: '/dashboard',
+      });
 
-      if (redirectUrl) {
-        // If there's a specific redirect URL, use it
-        try {
-          const url = new URL(redirectUrl);
-          // Only allow same-origin redirects for security
-          if (url.origin === window.location.origin) {
-            router.push(redirectUrl);
-            return;
-          }
-        } catch (error) {
-          // Invalid URL, fall through to default redirect
-          console.warn('Invalid redirect URL:', redirectUrl, error);
-        }
-      }
-
-      // Default redirect to dashboard for existing users
-      router.push('/dashboard');
+      router.push(safeRedirectUrl as any);
     } else {
       // Authentication failed or was cancelled
       // Redirect back to signin with error message
@@ -64,5 +53,29 @@ export default function SignInSSOCallbackPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+function LoadingFallback() {
+  return (
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="text-center space-y-4">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+        <div className="space-y-2">
+          <h1 className="text-2xl font-bold">Loading...</h1>
+          <p className="text-muted-foreground">
+            Please wait...
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function SignInSSOCallbackPage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <SignInSSOCallbackContent />
+    </Suspense>
   );
 }

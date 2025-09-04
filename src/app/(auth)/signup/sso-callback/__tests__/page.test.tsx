@@ -18,11 +18,17 @@ describe('SSO Callback Page (Signup)', () => {
   const mockSearchParams = {
     get: jest.fn(),
   };
+  const originalLocation = window.location;
 
   beforeEach(() => {
     jest.clearAllMocks();
     (useRouter as jest.Mock).mockReturnValue({ push: mockPush });
     (useSearchParams as jest.Mock).mockReturnValue(mockSearchParams);
+  });
+
+  afterAll(() => {
+    // Restore original location
+    window.location = originalLocation;
   });
 
   describe('Loading State', () => {
@@ -73,6 +79,70 @@ describe('SSO Callback Page (Signup)', () => {
       await waitFor(() => {
         expect(mockPush).toHaveBeenCalledWith('/signup?error=sso_failed');
       });
+    });
+  });
+
+  describe('Successful Authentication', () => {
+    beforeEach(() => {
+      (useAuth as jest.Mock).mockReturnValue({
+        isSignedIn: true,
+        isLoaded: true,
+      });
+    });
+
+    it('should redirect to provided redirect_url when valid same-origin URL', async () => {
+      const redirectUrl = 'https://example.com/dashboard';
+      mockSearchParams.get.mockReturnValue(redirectUrl);
+
+      // Mock window.location.origin
+      delete (window as any).location;
+      window.location = { origin: 'https://example.com' } as Location;
+
+      render(<SSOCallbackPage />);
+
+      await waitFor(() => {
+        expect(mockPush).toHaveBeenCalledWith(redirectUrl);
+      });
+    });
+
+    it('should redirect to profile-setup when redirect_url is different origin', async () => {
+      const redirectUrl = 'https://malicious-site.com/steal-data';
+      mockSearchParams.get.mockReturnValue(redirectUrl);
+
+      // Mock window.location.origin
+      delete (window as any).location;
+      window.location = { origin: 'https://example.com' } as Location;
+
+      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+
+      render(<SSOCallbackPage />);
+
+      await waitFor(() => {
+        expect(mockPush).toHaveBeenCalledWith('/profile-setup');
+        expect(consoleSpy).not.toHaveBeenCalled(); // Cross-origin doesn't log warning, just falls through
+      });
+
+      consoleSpy.mockRestore();
+    });
+
+    it('should redirect to profile-setup when redirect_url is malformed', async () => {
+      const redirectUrl = 'not-a-valid-url';
+      mockSearchParams.get.mockReturnValue(redirectUrl);
+
+      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+
+      render(<SSOCallbackPage />);
+
+      await waitFor(() => {
+        expect(mockPush).toHaveBeenCalledWith('/profile-setup');
+        expect(consoleSpy).toHaveBeenCalledWith(
+          'Invalid redirect URL:',
+          redirectUrl,
+          expect.any(TypeError)
+        );
+      });
+
+      consoleSpy.mockRestore();
     });
   });
 });
