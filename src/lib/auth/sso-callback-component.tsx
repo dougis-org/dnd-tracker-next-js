@@ -12,6 +12,25 @@ interface SSOCallbackProps {
   loadingMessage: string;
 }
 
+interface LoadingSpinnerProps {
+  title: string;
+  message: string;
+}
+
+function LoadingSpinner({ title, message }: LoadingSpinnerProps) {
+  return (
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="text-center space-y-4">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+        <div className="space-y-2">
+          <h1 className="text-2xl font-bold">{title}</h1>
+          <p className="text-muted-foreground">{message}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function SSOCallbackContent({
   defaultRedirect,
   errorRedirect,
@@ -43,32 +62,11 @@ function SSOCallbackContent({
     }
   }, [isSignedIn, isLoaded, router, searchParams, defaultRedirect, errorRedirect]);
 
-  // Show loading state while authentication is processing
-  return (
-    <div className="flex items-center justify-center min-h-screen">
-      <div className="text-center space-y-4">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-        <div className="space-y-2">
-          <h1 className="text-2xl font-bold">{loadingTitle}</h1>
-          <p className="text-muted-foreground">{loadingMessage}</p>
-        </div>
-      </div>
-    </div>
-  );
+  return <LoadingSpinner title={loadingTitle} message={loadingMessage} />;
 }
 
 function LoadingFallback() {
-  return (
-    <div className="flex items-center justify-center min-h-screen">
-      <div className="text-center space-y-4">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-        <div className="space-y-2">
-          <h1 className="text-2xl font-bold">Loading...</h1>
-          <p className="text-muted-foreground">Please wait...</p>
-        </div>
-      </div>
-    </div>
-  );
+  return <LoadingSpinner title="Loading..." message="Please wait..." />;
 }
 
 export function SSOCallbackPage(props: SSOCallbackProps) {
