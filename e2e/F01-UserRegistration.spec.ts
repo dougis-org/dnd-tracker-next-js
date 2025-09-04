@@ -35,17 +35,17 @@ test.describe('F01-UserRegistration', () => {
 
     // Step 4: Fill out registration form
     // Note: Using unique test data to avoid conflicts
-    const testEmail = `test-user-${Date.now()}@example.com`;
+    const testEmail = `test-user-${crypto.randomUUID()}@example.com`;
     const testPassword = 'TestPassword123!';
 
     // Fill in email address
-    await page.fill('input[name="emailAddress"], input[type="email"]', testEmail);
+    await page.fill('input[name="emailAddress"]', testEmail);
     
     // Fill in password
-    await page.fill('input[name="password"], input[type="password"]', testPassword);
+    await page.fill('input[name="password"]', testPassword);
 
     // Step 5: Submit registration form
-    await page.click('button[type="submit"], button:has-text("Sign up"), button:has-text("Continue")');
+    await page.click('button[type="submit"]');
 
     // Step 6: Handle email verification if required
     // In test environment, email verification should be bypassed
@@ -90,13 +90,14 @@ test.describe('F01-UserRegistration', () => {
     await page.waitForSelector('[data-clerk-element]', { timeout: 15000 });
 
     // Try to submit with invalid email
-    await page.fill('input[name="emailAddress"], input[type="email"]', 'invalid-email');
-    await page.fill('input[name="password"], input[type="password"]', 'weak');
+    await page.fill('input[name="emailAddress"]', 'invalid-email');
+    await page.fill('input[name="password"]', 'weak');
     
-    await page.click('button[type="submit"], button:has-text("Sign up"), button:has-text("Continue")');
+    await page.click('button[type="submit"]');
 
     // Should show validation errors
-    await expect(page.locator('text=valid email, text=invalid email')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('text=valid email')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('text=invalid email')).toBeVisible({ timeout: 5000 });
   });
 
   test('should redirect authenticated users away from signup page', async ({ page }) => {
