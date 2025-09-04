@@ -23,7 +23,7 @@ export const mockUseAuth = (authState: any) => {
 
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 // Define common authentication states
 export const authStates = {
@@ -85,6 +85,172 @@ export const testAuthPageBehavior = ({
     render(<AuthPage />);
     const container = screen.getByTestId(expectedTestId).parentElement;
     expect(container).toHaveClass('space-y-6');
+  });
+};
+
+// SSO Callback Test Utilities
+export const setupSSOCallbackMocksInTest = (mockGetSafeRedirectUrl?: jest.Mock) => {
+  const mockPush = jest.fn();
+  const mockSearchParams = {
+    get: jest.fn(),
+  };
+  const originalLocation = window.location;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (useRouter as jest.Mock).mockReturnValue({ push: mockPush });
+    (useSearchParams as jest.Mock).mockReturnValue(mockSearchParams);
+
+    // Reset and setup default mock for getSafeRedirectUrl if provided
+    if (mockGetSafeRedirectUrl) {
+      mockGetSafeRedirectUrl.mockReset();
+      mockGetSafeRedirectUrl.mockImplementation(({ redirectUrl, defaultRedirect }) => {
+        return redirectUrl || defaultRedirect;
+      });
+    }
+  });
+
+  afterAll(() => {
+    // Restore original location
+    window.location = originalLocation;
+  });
+
+  return { mockPush, mockSearchParams, originalLocation };
+};
+
+interface SSOCallbackTestConfig {
+  component: React.ComponentType;
+  defaultRedirect: string;
+  errorRedirect: string;
+  loadingTitle: string;
+  loadingMessage: string;
+  pageName: string;
+  mockGetSafeRedirectUrl: jest.Mock;
+}
+
+export const createSSOCallbackTestSuite = (
+  mockGetSafeRedirectUrl: jest.Mock,
+  mockPush: jest.Mock,
+  mockSearchParams: { get: jest.Mock }
+) => ({
+  component: SSOCallbackPage,
+  defaultRedirect,
+  errorRedirect,
+  loadingTitle,
+  loadingMessage
+}: Omit<SSOCallbackTestConfig, 'pageName' | 'mockGetSafeRedirectUrl'>) => {
+  describe('Loading State', () => {
+    it('should show loading spinner when auth is not loaded', () => {
+      (useAuth as jest.Mock).mockReturnValue({
+        isSignedIn: false,
+        isLoaded: false,
+      });
+      mockSearchParams.get.mockReturnValue(null);
+
+      render(<SSOCallbackPage />);
+
+      expect(screen.getByText(loadingTitle)).toBeInTheDocument();
+      expect(screen.getByText(loadingMessage)).toBeInTheDocument();
+      expect(document.querySelector('.animate-spin')).toBeInTheDocument();
+    });
+  });
+
+  describe('Successful Authentication', () => {
+    beforeEach(() => {
+      (useAuth as jest.Mock).mockReturnValue({
+        isSignedIn: true,
+        isLoaded: true,
+      });
+    });
+
+    it(`should redirect to ${defaultRedirect} when no redirect_url is provided`, async () => {
+      mockSearchParams.get.mockReturnValue(null);
+
+      render(<SSOCallbackPage />);
+
+      await waitFor(() => {
+        expect(mockPush).toHaveBeenCalledWith(defaultRedirect);
+      });
+    });
+  });
+
+  describe('Failed Authentication', () => {
+    it(`should redirect to ${errorRedirect} when authentication failed`, async () => {
+      (useAuth as jest.Mock).mockReturnValue({
+        isSignedIn: false,
+        isLoaded: true,
+      });
+      mockSearchParams.get.mockReturnValue(null);
+
+      render(<SSOCallbackPage />);
+
+      await waitFor(() => {
+        expect(mockPush).toHaveBeenCalledWith(errorRedirect);
+      });
+    });
+  });
+
+  describe('Redirect URL Validation', () => {
+    beforeEach(() => {
+      (useAuth as jest.Mock).mockReturnValue({
+        isSignedIn: true,
+        isLoaded: true,
+      });
+    });
+
+    it('should redirect to provided redirect_url when valid same-origin URL', async () => {
+      const redirectUrl = 'https://example.com/dashboard';
+      mockSearchParams.get.mockReturnValue(redirectUrl);
+
+      // Mock getSafeRedirectUrl to return the same-origin URL
+      mockGetSafeRedirectUrl.mockReturnValueOnce(redirectUrl);
+
+      render(<SSOCallbackPage />);
+
+      await waitFor(() => {
+        expect(mockGetSafeRedirectUrl).toHaveBeenCalledWith({
+          redirectUrl,
+          defaultRedirect,
+        });
+        expect(mockPush).toHaveBeenCalledWith(redirectUrl);
+      });
+    });
+
+    it(`should redirect to ${defaultRedirect} when redirect_url is different origin`, async () => {
+      const redirectUrl = 'https://malicious-site.com/steal-data';
+      mockSearchParams.get.mockReturnValue(redirectUrl);
+
+      // Mock getSafeRedirectUrl to return default for cross-origin
+      mockGetSafeRedirectUrl.mockReturnValueOnce(defaultRedirect);
+
+      render(<SSOCallbackPage />);
+
+      await waitFor(() => {
+        expect(mockGetSafeRedirectUrl).toHaveBeenCalledWith({
+          redirectUrl,
+          defaultRedirect,
+        });
+        expect(mockPush).toHaveBeenCalledWith(defaultRedirect);
+      });
+    });
+
+    it(`should redirect to ${defaultRedirect} when redirect_url is malformed`, async () => {
+      const redirectUrl = 'not-a-valid-url';
+      mockSearchParams.get.mockReturnValue(redirectUrl);
+
+      // Mock getSafeRedirectUrl to return default for malformed URL
+      mockGetSafeRedirectUrl.mockReturnValueOnce(defaultRedirect);
+
+      render(<SSOCallbackPage />);
+
+      await waitFor(() => {
+        expect(mockGetSafeRedirectUrl).toHaveBeenCalledWith({
+          redirectUrl,
+          defaultRedirect,
+        });
+        expect(mockPush).toHaveBeenCalledWith(defaultRedirect);
+      });
+    });
   });
 };
 
